@@ -386,11 +386,36 @@ export function RegisterScreen({ navigate, goBack, setUser }: NavProps) {
           }
           navigate("home");
         } else {
-          setErrors({ password: data.error || `Failed to link account (HTTP ${res.status}).` });
+          // If 400, it might be the okhttp retry bug. Let's try to login just in case!
+          throw new Error("Trigger Fallback Login");
         }
       } catch (err) {
-        console.warn("Set Password Network Error:", err);
-        setErrors({ password: "Network error. Please try again." });
+        console.warn("Set Password Error, attempting fallback login...");
+        try {
+          const loginRes = await fetch(`${API_BASE}/login/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: form.email, password: form.password }),
+          });
+          
+          if (loginRes.ok) {
+            const loginData = await loginRes.json();
+            const userEmail = loginData.user?.email || form.email;
+            const userName = loginData.user?.name || userEmail.split('@')[0];
+            if (setUser) {
+              setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '' }));
+            }
+            if (loadUserData) {
+              await loadUserData(userEmail);
+            }
+            navigate("home");
+          } else {
+            setErrors({ password: "Network error or account could not be claimed. Please check your connection." });
+          }
+        } catch (fallbackErr) {
+          console.warn("Fallback login failed:", fallbackErr);
+          setErrors({ password: "Network error. Please check your internet connection and try again." });
+        }
       } finally {
         setLoading(false);
       }
