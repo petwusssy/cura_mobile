@@ -30,6 +30,7 @@ export interface AppUser {
   lastName: string;
   displayName: string;
   email: string;
+  accessToken?: string;
   avatarId: string;
   avatarColor: string;
   avatarEmoji: string;

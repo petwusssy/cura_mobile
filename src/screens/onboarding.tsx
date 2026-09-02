@@ -254,10 +254,10 @@ export function AvatarScreen({ navigate, user, setUser }: NavProps) {
     try {
       const res = await fetch("https://cura-backend-dvj5.onrender.com/api/auth/complete-profile/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // IMPORTANT: Assuming token is handled globally or via cookies. If not, this might need auth header.
-        // Wait, the API requires token. I need to make sure we are authenticated. 
-        // For simplicity, we just send it. If we have local storage of token, we should attach it.
+        headers: { 
+          "Content-Type": "application/json",
+          ...(user.accessToken ? { "Authorization": `Bearer ${user.accessToken}` } : {})
+        },
         body: JSON.stringify(payload)
       });
       if (res.ok) {

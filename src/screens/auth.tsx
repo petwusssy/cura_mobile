@@ -141,7 +141,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         const userName = loginData.user?.name || userEmail.split('@')[0];
         
         if (setUser) {
-          setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '' }));
+          setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
         }
         if (loadUserData) {
           await loadUserData(userEmail);
@@ -403,7 +403,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           const userEmail = data.user?.email || form.email;
           const userName = data.user?.name || userEmail.split('@')[0];
           if (setUser) {
-            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '' }));
+            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access || data.refresh }));
           }
           if (loadUserData) {
             await loadUserData(userEmail);
@@ -427,7 +427,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
             const userEmail = loginData.user?.email || form.email;
             const userName = loginData.user?.name || userEmail.split('@')[0];
             if (setUser) {
-              setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '' }));
+              setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
             }
             if (loadUserData) {
               await loadUserData(userEmail);
@@ -456,7 +456,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           const userEmail = data.user?.email || form.email;
           const userName = data.user?.name || userEmail.split('@')[0];
           if (setUser) {
-            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '' }));
+            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access }));
           }
           if (loadUserData) {
             await loadUserData(userEmail);
