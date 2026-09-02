@@ -128,11 +128,35 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     setError("");
     if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
-    if (loadUserData) {
-      await loadUserData(email);
+    try {
+      const loginRes = await fetch(`https://cura-backend-dvj5.onrender.com/api/auth/login/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password: password }),
+      });
+      
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        const userEmail = loginData.user?.email || email;
+        const userName = loginData.user?.name || userEmail.split('@')[0];
+        
+        if (setUser) {
+          setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '' }));
+        }
+        if (loadUserData) {
+          await loadUserData(userEmail);
+        }
+        navigate("home");
+      } else {
+        const errData = await loginRes.json().catch(() => ({}));
+        setError(errData.detail || errData.error || "Invalid email or password.");
+      }
+    } catch (err) {
+      console.warn("Login Network Error:", err);
+      setError("Network error. Please check your internet connection.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    navigate("home");
   };
 
   return (

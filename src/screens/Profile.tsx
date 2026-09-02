@@ -16,6 +16,7 @@ export function ProfileScreen({ user, resetApp }: Props) {
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
 
   const myInfoItems = [
+    { icon: "🪪", label: "ID", sub: (user as any).id || user.id_number || "—", color: "#F3F4F6" },
     { icon: "📞", label: "Contact Details", sub: user.phone || (user as any).contact || "—", color: "#ECFEFF" },
     { icon: "📧", label: "Email", sub: user.email || "—", color: "#EFF8FF" },
     { icon: "🆘", label: "Emergency Contact", sub: `${user.emergencyName || (user as any).emergencyContact || "—"} (${user.emergencyPhone || "—"})`, color: "#FFF7ED" },
