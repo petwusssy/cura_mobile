@@ -108,7 +108,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
-export function LoginScreen({ navigate, goBack, setUser }: NavProps) {
+export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -246,7 +246,7 @@ export function LoginScreen({ navigate, goBack, setUser }: NavProps) {
 
 // ── Register ──────────────────────────────────────────────────────────────────
 
-export function RegisterScreen({ navigate, goBack, setUser }: NavProps) {
+export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 4 is OTP
   const [form, setForm] = useState({ email: "", role: "outsider", password: "", confirm: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
