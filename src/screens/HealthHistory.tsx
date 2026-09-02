@@ -73,7 +73,7 @@ export function HealthHistoryScreen({ navigate, consultations = [] }: Props) {
                     <View className="flex-row items-start justify-between gap-2 mb-2">
                       <View className="flex-1">
                         <Text className="text-xs font-bold text-cura-500 mb-0.5">
-                          {new Date(c.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                          {new Date(c.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" })}
                         </Text>
                         <Text className="text-sm font-bold text-slate-800 leading-tight">{c.complaint}</Text>
                       </View>
@@ -143,7 +143,7 @@ export function HealthDetailScreen({ navigate: _navigate, goBack, params, consul
                 <Text className="text-white text-[10px] font-bold">#{consult.id.toUpperCase()}</Text>
               </View>
               <Text className="text-white/70 text-xs">
-                {new Date(consult.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                {new Date(consult.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "Asia/Manila" })}
               </Text>
             </View>
             <Text className="text-white text-lg font-bold mb-1" style={{ fontFamily: "Outfit" }}>{consult.complaint}</Text>

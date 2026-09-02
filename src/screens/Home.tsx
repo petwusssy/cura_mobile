@@ -190,7 +190,7 @@ export function HomeScreen({ navigate, user, consultations = [] }: Props) {
               <View className="items-end gap-1">
                 <Text className="text-xs font-bold text-slate-800">{latestConsult.timeIn}</Text>
                 <Text className="text-[10px] font-semibold text-slate-400">
-                  {new Date(latestConsult.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  {new Date(latestConsult.date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "Asia/Manila" })}
                 </Text>
               </View>
             </Pressable>

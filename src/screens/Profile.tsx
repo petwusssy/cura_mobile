@@ -163,7 +163,7 @@ export function ProfileScreen({ user, resetApp }: Props) {
                 {[
                   { label: "Blood Type", value: user.bloodType || "—", bg: "#FFF1F2", color: "#F43F5E" },
                   { label: "Gender", value: user.gender || (user as any).sex || "—", bg: "#EFF8FF", color: "#0994E8" },
-                  { label: "Date of Birth", value: user.dob || (user as any).birthday ? new Date(user.dob || (user as any).birthday).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—", bg: "#ECFDF5", color: "#059669" },
+                  { label: "Date of Birth", value: user.dob || (user as any).birthday ? new Date(user.dob || (user as any).birthday).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" }) : "—", bg: "#ECFDF5", color: "#059669" },
                   { label: "Emergency", value: user.emergencyName || (user as any).emergencyContact ? `${user.emergencyName || (user as any).emergencyContact}` : "—", bg: "#FFFBEB", color: "#D97706" },
                 ].map((item, idx) => (
                   <View key={item.label} className="rounded-xl p-3 mb-2" style={{ backgroundColor: item.bg, width: '48%' }}>
