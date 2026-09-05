@@ -1,10 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { Screen, AppUser } from "./types";
 import { MobileShell, BottomNav } from "./components/Shell";
 import { DEFAULT_USER } from "./data";
 import { SplashScreen } from "./screens/Splash";
 import { AlertProvider, useAlert } from "./components/AlertProvider";
-import { useEffect } from "react";
 
 // Auth
 import { WelcomeScreen, LoginScreen, RegisterScreen, ForgotPasswordScreen } from "./screens/auth";
@@ -34,42 +33,40 @@ type NavEntry = { screen: Screen; params?: Record<string, unknown> };
 
 const MAIN_TABS: Screen[] = ["home", "telemedicine", "appointment", "medications", "profile"];
 
-function NotificationPoller({ user }: { user: Partial<AppUser> }) {
+function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>; setNotifications: (n: any[]) => void }) {
   const { showAlert } = useAlert();
-  const [lastNotified, setLastNotified] = useState<Record<string, boolean>>({});
+  const lastNotified = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!user?.id) return;
 
-    const poll = async () => {
+    const fetchNotifications = async () => {
       try {
         const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/`);
-        if (!res.ok) return;
-        const data = await res.json();
-        
-        const myNotifs = data.filter((n: any) => n.patient_id === user.id && !n.read && (n.type === 'telemedicine_update' || n.type === 'appointment_update'));
-        
-        myNotifs.forEach((n: any) => {
-          if (!lastNotified[n.id]) {
-            showAlert("Request Update", n.message);
-            setLastNotified(prev => ({ ...prev, [n.id]: true }));
-            
-            fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/${n.id}/`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ read: true })
-            }).catch(console.error);
-          }
-        });
+        if (res.ok) {
+          const data = await res.json();
+          // Find notifications for this patient
+          const myNotifs = data.filter((n: any) => n.patient_id === user.id);
+          setNotifications(myNotifs);
+          
+          // Show alert for newly unread notifications
+          const unreadNotifs = myNotifs.filter((n: any) => !n.read);
+          unreadNotifs.forEach((n: any) => {
+            if (!lastNotified.current[n.id]) {
+               showAlert('Notification', n.message || n.title, 'info');
+               lastNotified.current[n.id] = true;
+            }
+          });
+        }
       } catch (e) {
-        console.error(e);
+        console.error('Failed to poll notifications:', e);
       }
     };
 
-    const interval = setInterval(poll, 15000);
-    poll();
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 3000);
     return () => clearInterval(interval);
-  }, [user, lastNotified, showAlert]);
+  }, [user, setNotifications, showAlert]);
 
   return null;
 }
@@ -81,6 +78,7 @@ export default function App() {
   const [consultations, setConsultations] = useState<any[]>([]);
   const [medications, setMedications] = useState<any[]>([]);
   const [certificates, setCertificates] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   const loadUserData = useCallback(async (email: string) => {
     try {
@@ -177,8 +175,8 @@ export default function App() {
       case "onboard-avatar":   return <AvatarScreen {...navProps} />;
       case "onboard-complete": return <ProfileCompleteScreen {...navProps} />;
 
-      case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} />;
-      case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} />;
+      case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} />;
+      case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} />;
       case "telemedicine":   return <TelemedicineScreen navigate={navigate} goBack={goBack} user={user} />;
       case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
       case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
@@ -195,7 +193,7 @@ export default function App() {
 
   return (
     <AlertProvider>
-      <NotificationPoller user={user} />
+      <NotificationPoller user={user} setNotifications={setNotifications} />
       <MobileShell>
         {renderScreen()}
         {splashDone && isMainTab && (

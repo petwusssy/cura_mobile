@@ -37,9 +37,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchRequests = useCallback(async () => {
+  const fetchRequests = useCallback(async (background = false) => {
     if (!user?.id) return;
-    setIsLoading(true);
+    if (!background) setIsLoading(true);
     try {
       // NOTE: Make sure your backend is deployed with the new Telemedicine endpoints!
       const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/`);
@@ -52,13 +52,15 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     } catch (err) {
       console.error("Failed to fetch telemedicine requests", err);
     } finally {
-      setIsLoading(false);
+      if (!background) setIsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
     if (activeTab === "history") {
-      fetchRequests();
+      fetchRequests(false);
+      const interval = setInterval(() => fetchRequests(true), 3000);
+      return () => clearInterval(interval);
     }
   }, [activeTab, fetchRequests]);
 

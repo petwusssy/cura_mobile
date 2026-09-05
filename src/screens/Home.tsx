@@ -10,6 +10,7 @@ interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   user: Partial<AppUser>;
   consultations?: any[];
+  notifications?: any[];
 }
 
 function getGreeting() {
@@ -19,10 +20,10 @@ function getGreeting() {
   return "Good Evening";
 }
 
-export function HomeScreen({ navigate, user, consultations = [] }: Props) {
+export function HomeScreen({ navigate, user, consultations = [], notifications = [] }: Props) {
   const insets = useSafeAreaInsets();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
-  const unread = NOTIFICATIONS.filter((n) => !n.read).length;
+  const unread = notifications.filter((n) => !n.read).length;
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
   
   // Find a due medication from treatments of recent consultations
@@ -193,9 +194,31 @@ export function HomeScreen({ navigate, user, consultations = [] }: Props) {
   );
 }
 
-export function NotificationsScreen({ navigate, goBack }: { navigate: Props["navigate"]; goBack: () => void }) {
-  const icons: Record<string, string> = { medication: "💊", appointment: "📅", result: "📋", info: "ℹ️" };
-  const bgs: Record<string, string> = { medication: "#ECFDF5", appointment: "#EFF6FF", result: "#FDF4FF", info: "#F8FAFC" };
+export function NotificationsScreen({ navigate, goBack, notifications = [], setNotifications }: { navigate: Props["navigate"]; goBack: () => void; notifications?: any[]; setNotifications?: any }) {
+  const icons: Record<string, string> = { medication: "💊", appointment: "📅", result: "📋", info: "ℹ️", telemedicine_update: "📹", appointment_update: "📅" };
+  const bgs: Record<string, string> = { medication: "#ECFDF5", appointment: "#EFF6FF", result: "#FDF4FF", info: "#F8FAFC", telemedicine_update: "#EFF6FF", appointment_update: "#FDF4FF" };
+
+  const activeNotifs = notifications.filter(n => !n.read);
+
+  const handlePress = async (n: any) => {
+    // Mark as read in backend
+    try {
+      await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/${n.id}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ read: true })
+      });
+      if (setNotifications) {
+         setNotifications((prev: any[]) => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
+      }
+    } catch (e) {}
+
+    // Navigate
+    if (n.type.includes('telemedicine')) navigate('telemedicine');
+    else if (n.type.includes('appointment')) navigate('appointment');
+    else if (n.type === 'medication') navigate('medications');
+    else if (n.type === 'result') navigate('documents');
+  };
 
   return (
     <View className="flex-1 bg-white">
@@ -208,36 +231,36 @@ export function NotificationsScreen({ navigate, goBack }: { navigate: Props["nav
         <Text className="flex-1 text-lg font-bold text-slate-800" style={{ fontFamily: "Outfit" }}>Notifications</Text>
         <View className="bg-cura-500 rounded-full px-2.5 py-1">
           <Text className="text-white text-[11px] font-bold">
-            {NOTIFICATIONS.filter((n) => !n.read).length} new
+            {activeNotifs.length} new
           </Text>
         </View>
       </View>
       
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-3 pb-8">
-          {NOTIFICATIONS.length > 0 ? NOTIFICATIONS.map((n) => (
-            <View
+          {activeNotifs.length > 0 ? activeNotifs.map((n) => (
+            <Pressable
               key={n.id}
+              onPress={() => handlePress(n)}
               className="bg-white rounded-[24px] p-4 flex-row items-start gap-4"
               style={{
                 elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8,
-                opacity: n.read ? 0.6 : 1,
                 borderWidth: 1,
-                borderColor: !n.read ? "#EFF6FF" : "#F8FAFC",
+                borderColor: "#EFF6FF",
               }}
             >
-              <View className="w-12 h-12 rounded-full items-center justify-center" style={{ backgroundColor: bgs[n.type] }}>
-                <Text className="text-2xl">{icons[n.type]}</Text>
+              <View className="w-12 h-12 rounded-full items-center justify-center" style={{ backgroundColor: bgs[n.type] || '#F8FAFC' }}>
+                <Text className="text-2xl">{icons[n.type] || 'ℹ️'}</Text>
               </View>
               <View className="flex-1 pt-1">
                 <View className="flex-row items-center gap-2 mb-1">
-                  <Text className="text-sm font-bold text-slate-800">{n.title}</Text>
-                  {!n.read && <View className="w-2 h-2 rounded-full bg-cura-500" />}
+                  <Text className="text-sm font-bold text-slate-800">{n.title || n.type}</Text>
+                  <View className="w-2 h-2 rounded-full bg-cura-500" />
                 </View>
                 <Text className="text-xs text-slate-500 leading-relaxed">{n.message}</Text>
-                <Text className="text-[10px] text-slate-400 mt-2 font-medium">{n.time}</Text>
+                <Text className="text-[10px] text-slate-400 mt-2 font-medium">{n.created_at ? new Date(n.created_at).toLocaleString() : 'recently'}</Text>
               </View>
-            </View>
+            </Pressable>
           )) : (
             <View className="bg-white rounded-[24px] p-8 items-center justify-center mt-4 border border-slate-100">
               <Text className="text-4xl mb-3">🔔</Text>

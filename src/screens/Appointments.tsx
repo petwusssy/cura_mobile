@@ -27,9 +27,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchRequests = useCallback(async () => {
+  const fetchRequests = useCallback(async (background = false) => {
     if (!user?.id) return;
-    setIsLoading(true);
+    if (!background) setIsLoading(true);
     try {
       const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/appointments/`);
       if (res.ok) {
@@ -40,13 +40,15 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     } catch (err) {
       console.error("Failed to fetch appointment requests", err);
     } finally {
-      setIsLoading(false);
+      if (!background) setIsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
     if (activeTab === "history") {
-      fetchRequests();
+      fetchRequests(false);
+      const interval = setInterval(() => fetchRequests(true), 3000);
+      return () => clearInterval(interval);
     }
   }, [activeTab, fetchRequests]);
 
@@ -217,6 +219,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
               Request Appointment
             </Button>
           </View>
+        </View>
         </ScrollView>
       ) : (
         <ScrollView
