@@ -26,7 +26,7 @@ export function DocumentsScreen({ navigate, params }: Props) {
   ];
 
   return (
-    <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+    <View className="flex-1 bg-transparent">
       <Header title="My Documents" />
 
       {/* Tabs */}
@@ -65,7 +65,7 @@ export function DocumentsScreen({ navigate, params }: Props) {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-4 py-4">
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         {tab === "prescriptions" && <PrescriptionList navigate={navigate} />}
         {tab === "certificates"  && <CertificateList navigate={navigate} />}
         {tab === "transfers"     && <TransferList />}
@@ -217,7 +217,7 @@ export function PrescriptionDetailScreen({ goBack, params }: Props) {
 
   if (!prescription) {
     return (
-      <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+      <View className="flex-1 bg-transparent">
         <Header title="Prescription Details" onBack={goBack} />
         <View className="flex-1 justify-center">
           <EmptyState emoji="🔍" title="Not Found" message="The prescription could not be found." />
@@ -308,7 +308,7 @@ export function CertificateDetailScreen({ goBack, params }: Props) {
 
   if (!cert) {
     return (
-      <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+      <View className="flex-1 bg-transparent">
         <Header title="Medical Certificate" onBack={goBack} />
         <View className="flex-1 justify-center">
           <EmptyState emoji="🔍" title="Not Found" message="The medical certificate could not be found." />
@@ -318,7 +318,7 @@ export function CertificateDetailScreen({ goBack, params }: Props) {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+    <View className="flex-1 bg-transparent">
       <LinearGradient
         colors={['#EFF8FF', '#DEF0FF']}
         start={{ x: 0, y: 0 }}

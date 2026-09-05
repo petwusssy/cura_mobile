@@ -4,6 +4,8 @@ import {
   KeyboardAvoidingView, Platform
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAlert } from "../components/AlertProvider";
 import Svg, { Path, Polyline, Circle, Rect } from "react-native-svg";
 import { AppUser, PatientCategory, Screen } from "../types";
 import { MASCOTS } from "../data";
@@ -18,8 +20,9 @@ interface NavProps {
 // ── Shared UI ─────────────────────────────────────────────────────────────────
 
 function OnboardProgress({ step, total }: { step: number; total: number }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View className="px-6 py-4 flex-row gap-1">
+    <View className="px-6 py-4 flex-row gap-1" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
       {Array.from({ length: total }).map((_, i) => (
         <View key={i} className={`h-1 flex-1 rounded-full ${i < step ? "bg-cura-500" : "bg-slate-100"}`} />
       ))}
@@ -104,7 +107,7 @@ export function PersonalInfoScreen({ navigate, user, setUser }: NavProps) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-white">
       <OnboardProgress step={1} total={3} />
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, gap: 4 }}>
         <View className="mb-6">
           <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>Basic Information</Text>
           <Text className="text-slate-400 text-sm">Tell us about yourself</Text>
@@ -169,7 +172,7 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-white">
       <OnboardProgress step={2} total={3} />
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 40, gap: 4 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, gap: 16 }}>
         <View className="mb-6">
           <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>
             {category === "student" ? "Student Information" : category === "employee" ? "Employee Information" : "Address"}
@@ -210,7 +213,8 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
 
-export function AvatarScreen({ navigate, user, setUser }: NavProps) {
+export function AvatarScreen({ navigate, goBack, user, setUser }: NavProps) {
+  const { showAlert } = useAlert();
   const [selected, setSelected] = useState<string>("");
   const [displayName, setDisplayName] = useState(user.firstName || "");
   const [loading, setLoading] = useState(false);
@@ -263,10 +267,10 @@ export function AvatarScreen({ navigate, user, setUser }: NavProps) {
       if (res.ok) {
         navigate("onboard-complete");
       } else {
-        alert("Failed to save profile. Please try again.");
+        showAlert("Error", "Failed to save profile. Please try again.");
       }
     } catch (e) {
-      alert("Network Error");
+      showAlert("Error", "Network Error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -275,7 +279,7 @@ export function AvatarScreen({ navigate, user, setUser }: NavProps) {
   return (
     <View className="flex-1 bg-white">
       <OnboardProgress step={3} total={3} />
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}>
         <View className="mb-8">
           <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>Choose an avatar</Text>
           <Text className="text-slate-400 text-sm">Pick a companion for your health journey</Text>
@@ -378,3 +382,4 @@ export function ProfileCompleteScreen({ navigate, user }: NavProps) {
     </LinearGradient>
   );
 }
+

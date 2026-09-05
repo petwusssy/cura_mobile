@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
 import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
 import { Card, SectionHeader, Badge, AvatarBadge } from "../components/Shell";
 import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT, MASCOTS } from "../data";
@@ -19,6 +20,7 @@ function getGreeting() {
 }
 
 export function HomeScreen({ navigate, user, consultations = [] }: Props) {
+  const insets = useSafeAreaInsets();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
   const unread = NOTIFICATIONS.filter((n) => !n.read).length;
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
@@ -49,8 +51,8 @@ export function HomeScreen({ navigate, user, consultations = [] }: Props) {
   const isBedActive = secs > 0 && hasBed;
 
   return (
-    <View className="flex-1 bg-slate-50">
-      <ScrollView className="flex-1 pt-12 pb-32" showsVerticalScrollIndicator={false}>
+    <View className="flex-1 bg-transparent">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: Math.max(insets.top, 24) + 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         
         {/* 1. Header Section */}
         <View className="px-6 flex-row items-center justify-between mb-6 mt-4">
@@ -76,46 +78,7 @@ export function HomeScreen({ navigate, user, consultations = [] }: Props) {
           </Pressable>
         </View>
 
-        {/* 2. Search Bar */}
-        <View className="px-6 mb-8">
-          <View className="flex-row items-center bg-white rounded-full p-1.5 shadow-sm border border-slate-100" style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
-            <View className="flex-row items-center gap-1 pl-3 pr-2 border-r border-slate-200">
-              <Text className="text-sm">📍</Text>
-              <Text className="text-xs font-bold text-slate-700">UA Clinic</Text>
-            </View>
-            <TextInput
-              placeholder="Search here..."
-              placeholderTextColor="#94A3B8"
-              className="flex-1 px-3 text-sm text-slate-800"
-            />
-            <View className="w-10 h-10 rounded-full bg-slate-50 items-center justify-center">
-              <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <Circle cx="11" cy="11" r="8"/><Line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </Svg>
-            </View>
-          </View>
-        </View>
-
-        {/* 3. Categories (Horizontal Scroll) */}
-        <View className="mb-8">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
-            {[
-              { label: "Medical", icon: "🩺", bg: "#EFF6FF", screen: "health-history" as Screen },
-              { label: "Dental", icon: "🦷", bg: "#FDF4FF", screen: "health-history" as Screen },
-              { label: "Meds", icon: "💊", bg: "#ECFDF5", screen: "medications" as Screen },
-              { label: "Certs", icon: "📄", bg: "#FFFBEB", screen: "documents" as Screen },
-            ].map((c) => (
-              <Pressable key={c.label} onPress={() => navigate(c.screen)} className="items-center gap-2">
-                <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: c.bg }}>
-                  <Text className="text-2xl">{c.icon}</Text>
-                </View>
-                <Text className="text-xs font-semibold text-slate-600">{c.label}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* 4. Hero Card (Most Urgent Action) */}
+        {/* 2. Hero Card (Most Urgent Action) */}
         <View className="px-6 mb-8">
           <SectionHeader title={isBedActive ? "Active Rest" : dueMed ? "Medication Due" : latestConsult ? "Next Follow-up" : "All Caught Up!"} action={latestConsult ? "See all" : undefined} onAction={latestConsult ? () => navigate("health-history") : undefined} />
           
@@ -166,6 +129,28 @@ export function HomeScreen({ navigate, user, consultations = [] }: Props) {
               </Text>
             </View>
           </Pressable>
+        </View>
+
+        {/* 3. Categories (Horizontal Scroll) */}
+        <View className="mb-8">
+          <View className="px-6 mb-4">
+            <SectionHeader title="Quick Actions" />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
+            {[
+              { label: "Telemed", icon: "📹", bg: "#EFF6FF", screen: "telemedicine" as Screen },
+              { label: "Appoint", icon: "📅", bg: "#FDF4FF", screen: "appointment" as Screen },
+              { label: "Meds", icon: "💊", bg: "#ECFDF5", screen: "medications" as Screen },
+              { label: "Certs", icon: "📄", bg: "#FFFBEB", screen: "documents" as Screen },
+            ].map((c) => (
+              <Pressable key={c.label} onPress={() => navigate(c.screen)} className="items-center gap-2">
+                <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: c.bg }}>
+                  <Text className="text-2xl">{c.icon}</Text>
+                </View>
+                <Text className="text-xs font-semibold text-slate-600">{c.label}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
 
         {/* 5. Bottom List (Recent Visits) */}
@@ -228,7 +213,7 @@ export function NotificationsScreen({ navigate, goBack }: { navigate: Props["nav
         </View>
       </View>
       
-      <ScrollView className="flex-1 px-6 py-4">
+      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-3 pb-8">
           {NOTIFICATIONS.length > 0 ? NOTIFICATIONS.map((n) => (
             <View

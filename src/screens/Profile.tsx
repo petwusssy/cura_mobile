@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline } from "react-native-svg";
 import type { Screen, AppUser } from "../types";
 import { AvatarBadge } from "../components/Shell";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MASCOTS } from "../data";
 
 interface Props {
@@ -10,9 +11,13 @@ interface Props {
   goBack: () => void;
   user: Partial<AppUser>;
   resetApp: () => void;
+  consultations?: any[];
+  medications?: any[];
+  certificates?: any[];
 }
 
-export function ProfileScreen({ user, resetApp }: Props) {
+export function ProfileScreen({ user, resetApp, consultations = [], medications = [], certificates = [] }: Props) {
+  const insets = useSafeAreaInsets();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
 
   const myInfoItems = [
@@ -60,13 +65,11 @@ export function ProfileScreen({ user, resetApp }: Props) {
   ];
 
   return (
-    <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+    <View className="flex-1 bg-transparent">
       {/* Profile header */}
-      <LinearGradient
-        colors={['#EFF8FF', '#DEF0FF', '#BAE6FD']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="px-5 pt-5 pb-7"
+      <View
+        className="px-5 pb-7"
+        style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
         <Text className="text-base font-bold text-slate-800 mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
 
@@ -106,9 +109,9 @@ export function ProfileScreen({ user, resetApp }: Props) {
         {/* Stats */}
         <View className="flex-row gap-3 mt-5">
           {[
-            { label: "Visits", value: "3", icon: "🩺" },
-            { label: "Medications", value: "4", icon: "💊" },
-            { label: "Documents", value: "4", icon: "📄" },
+            { label: "Visits", value: consultations.length.toString(), icon: "🩺" },
+            { label: "Medications", value: medications.length.toString(), icon: "💊" },
+            { label: "Documents", value: certificates.length.toString(), icon: "📄" },
           ].map((s) => (
             <View
               key={s.label}
@@ -121,9 +124,9 @@ export function ProfileScreen({ user, resetApp }: Props) {
             </View>
           ))}
         </View>
-      </LinearGradient>
+      </View>
 
-      <ScrollView className="flex-1 px-4 py-4">
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-4 pb-12">
           {sections.map((section) => (
             <View key={section.title}>
@@ -202,3 +205,4 @@ export function ProfileScreen({ user, resetApp }: Props) {
     </View>
   );
 }
+

@@ -16,6 +16,8 @@ export type Screen =
   | "notifications"
   | "health-history"
   | "health-detail"
+  | "telemedicine"
+  | "appointment"
   | "medications"
   | "documents"
   | "prescription-detail"

@@ -14,7 +14,7 @@ interface Props {
 
 export function HealthHistoryScreen({ navigate, consultations = [] }: Props) {
   return (
-    <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+    <View className="flex-1 bg-transparent">
       <Header
         title="Health History"
         right={
@@ -26,7 +26,7 @@ export function HealthHistoryScreen({ navigate, consultations = [] }: Props) {
         }
       />
 
-      <ScrollView className="flex-1 px-4 py-4">
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         {/* Summary row */}
         <View className="flex-row gap-2 mb-5 flex-wrap">
           {[
@@ -115,7 +115,7 @@ export function HealthDetailScreen({ navigate: _navigate, goBack, params, consul
 
   if (!consult) {
     return (
-      <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+      <View className="flex-1 bg-transparent">
         <Header title="Consultation Record" onBack={goBack} />
         <View className="flex-1 justify-center">
           <EmptyState emoji="🔍" title="Not Found" message="The consultation record could not be found." />
@@ -125,10 +125,10 @@ export function HealthDetailScreen({ navigate: _navigate, goBack, params, consul
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+    <View className="flex-1 bg-transparent">
       <Header title="Consultation Record" onBack={goBack} />
 
-      <ScrollView className="flex-1 px-4 py-4">
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-3 pb-8">
           {/* Hero card */}
           <LinearGradient

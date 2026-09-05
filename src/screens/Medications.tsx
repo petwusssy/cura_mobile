@@ -32,7 +32,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack: _goBack }: Prop
   });
 
   return (
-    <View className="flex-1" style={{ backgroundColor: "#F0F9FF" }}>
+    <View className="flex-1 bg-transparent">
       <Header title="Medications" />
 
       {/* Status overview */}
@@ -80,7 +80,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack: _goBack }: Prop
         </ScrollView>
       </View>
 
-      <ScrollView className="flex-1 px-4 py-4">
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-3 pb-8">
           {filtered.length === 0 && (
             <View className="items-center justify-center py-14 gap-3">

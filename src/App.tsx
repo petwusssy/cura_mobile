@@ -3,6 +3,8 @@ import type { Screen, AppUser } from "./types";
 import { MobileShell, BottomNav } from "./components/Shell";
 import { DEFAULT_USER } from "./data";
 import { SplashScreen } from "./screens/Splash";
+import { AlertProvider, useAlert } from "./components/AlertProvider";
+import { useEffect } from "react";
 
 // Auth
 import { WelcomeScreen, LoginScreen, RegisterScreen, ForgotPasswordScreen } from "./screens/auth";
@@ -25,16 +27,60 @@ import {
   CertificateDetailScreen,
 } from "./screens/Documents";
 import { ProfileScreen } from "./screens/Profile";
+import { TelemedicineScreen } from "./screens/Telemedicine";
+import { AppointmentsScreen } from "./screens/Appointments";
 
 type NavEntry = { screen: Screen; params?: Record<string, unknown> };
 
-const MAIN_TABS: Screen[] = ["home", "health-history", "medications", "documents", "profile"];
+const MAIN_TABS: Screen[] = ["home", "telemedicine", "appointment", "medications", "profile"];
+
+function NotificationPoller({ user }: { user: Partial<AppUser> }) {
+  const { showAlert } = useAlert();
+  const [lastNotified, setLastNotified] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        const myNotifs = data.filter((n: any) => n.patient_id === user.id && !n.read && (n.type === 'telemedicine_update' || n.type === 'appointment_update'));
+        
+        myNotifs.forEach((n: any) => {
+          if (!lastNotified[n.id]) {
+            showAlert("Request Update", n.message);
+            setLastNotified(prev => ({ ...prev, [n.id]: true }));
+            
+            fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/${n.id}/`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ read: true })
+            }).catch(console.error);
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    const interval = setInterval(poll, 15000);
+    poll();
+    return () => clearInterval(interval);
+  }, [user, lastNotified, showAlert]);
+
+  return null;
+}
 
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [stack, setStack] = useState<NavEntry[]>([{ screen: "welcome" }]);
   const [user, setUser] = useState<Partial<AppUser>>(DEFAULT_USER);
   const [consultations, setConsultations] = useState<any[]>([]);
+  const [medications, setMedications] = useState<any[]>([]);
+  const [certificates, setCertificates] = useState<any[]>([]);
 
   const loadUserData = useCallback(async (email: string) => {
     try {
@@ -54,7 +100,13 @@ export default function App() {
         
         const cRes = await fetch(`https://cura-backend-dvj5.onrender.com/api/consultations/`);
         const allConsultations = await cRes.json();
-        const userConsultations = allConsultations.filter((c: any) => c.patient === patient.id);
+        
+        const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === patient.id);
+        
+        // Deduplicate consultations to remove any duplicate records
+        const userConsultationsMap = new Map();
+        userConsultationsRaw.forEach((c: any) => userConsultationsMap.set(c.id, c));
+        const userConsultations = Array.from(userConsultationsMap.values());
         
         userConsultations.sort((a: any, b: any) => {
           const dateA = new Date(`${a.date}T${a.timeIn || '00:00'}`).getTime();
@@ -63,6 +115,27 @@ export default function App() {
         });
         
         setConsultations(userConsultations);
+
+        // Extract medications from treatments
+        const extractedMedications = userConsultations.flatMap((c: any) => 
+          (c.treatments || []).map((t: any) => ({
+            id: t.id || Math.random().toString(),
+            name: t.medicineName,
+            dose: `${t.quantity} ${t.unit}`,
+            instructions: t.remarks || "No instructions",
+            timeGiven: `${c.date} ${t.timeGiven}`,
+            nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
+            status: "taken", // Always taken since it's in a past visit
+            consultationId: c.id
+          }))
+        );
+        setMedications(extractedMedications);
+
+        // Fetch Certificates
+        const certRes = await fetch(`https://cura-backend-dvj5.onrender.com/api/certificates/`);
+        const allCertificates = await certRes.json();
+        const userCertificates = allCertificates.filter((c: any) => c.patient === patient.id);
+        setCertificates(userCertificates);
       }
     } catch (err) {
       console.error("Failed to load user data:", err);
@@ -106,24 +179,29 @@ export default function App() {
 
       case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} />;
       case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} />;
+      case "telemedicine":   return <TelemedicineScreen navigate={navigate} goBack={goBack} user={user} />;
+      case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
       case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
       case "health-detail":  return <HealthDetailScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
-      case "medications":    return <MedicationsScreen navigate={navigate} goBack={goBack} />;
-      case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} />;
+      case "medications":    return <MedicationsScreen navigate={navigate} goBack={goBack} medications={medications} />;
+      case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "prescription-detail": return <PrescriptionDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
       case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
-      case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} />;
+      case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} />;
 
       default: return <WelcomeScreen navigate={navigate} goBack={goBack} />;
     }
   };
 
   return (
-    <MobileShell>
-      {renderScreen()}
-      {splashDone && isMainTab && (
-        <BottomNav active={current.screen} navigate={navigate} />
-      )}
-    </MobileShell>
+    <AlertProvider>
+      <NotificationPoller user={user} />
+      <MobileShell>
+        {renderScreen()}
+        {splashDone && isMainTab && (
+          <BottomNav active={current.screen} navigate={navigate} />
+        )}
+      </MobileShell>
+    </AlertProvider>
   );
 }

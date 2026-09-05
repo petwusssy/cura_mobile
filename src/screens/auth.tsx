@@ -5,7 +5,9 @@ import Svg, { Rect, Path, Polyline, Circle } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import type { Screen } from "../types";
+import { useAlert } from "../components/AlertProvider";
 import { Button, Input } from "../components/Shell";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -21,6 +23,7 @@ interface NavProps {
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
 export function WelcomeScreen({ navigate }: NavProps) {
+  const insets = useSafeAreaInsets();
   return (
     <LinearGradient
       colors={['#EFF8FF', '#DEF0FF', '#BAE6FD']}
@@ -33,7 +36,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
       <View className="absolute top-8 right-8 w-20 h-20 rounded-full opacity-10" style={{ backgroundColor: "#06B6D4" }} />
 
       {/* Hero content */}
-      <View className="flex-1 items-center justify-center px-8 pt-12 relative">
+      <View className="flex-1 items-center justify-center px-8 relative" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
         {/* Logo */}
         <View className="relative mb-6">
           <LinearGradient
@@ -109,6 +112,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
 // ── Login ─────────────────────────────────────────────────────────────────────
 
 export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -166,7 +170,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         colors={['#EFF8FF', '#DEF0FF']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="px-6 pt-12 pb-8"
+        className="px-6 pb-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
         <Pressable
           onPress={goBack}
@@ -197,7 +201,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       </LinearGradient>
 
       {/* Form */}
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ gap: 16 }} keyboardShouldPersistTaps="handled">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
         {error ? (
           <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
             <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>
@@ -271,6 +275,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
 // ── Register ──────────────────────────────────────────────────────────────────
 
 export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
+  const { showAlert } = useAlert();
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 4 is OTP
   const [form, setForm] = useState({ email: "", role: "outsider", password: "", confirm: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -321,7 +327,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
       
       if (data.exists) {
         if (data.claimed) {
-          alert("This account has already been claimed! Please use Sign In instead.");
+          showAlert("Error", "This account has already been claimed! Please use Sign In instead.");
           setLoading(false);
           return;
         }
@@ -340,7 +346,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
       }
     } catch (err) {
       console.warn("API Error:", err);
-      alert("Cannot connect to backend! Please make sure your backend is running and API_BASE is correct.");
+      showAlert("Error", "Cannot connect to backend! Please make sure your backend is running and API_BASE is correct.");
     } finally {
       setLoading(false);
     }
@@ -373,12 +379,11 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
       if (res.ok) {
         setStep(3); // OTP verified, go to set password
       } else {
-        const data = await res.json().catch(() => ({}));
-        setErrors({ otp: data.error || "Invalid OTP or Server Error" });
+        showAlert("Error", "Invalid OTP.");
       }
     } catch (err) {
       console.warn("OTP Network Error:", err);
-      alert("Network Error: Could not verify OTP. Please try again.");
+      showAlert("Error", "Network Error: Could not verify OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -468,11 +473,11 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           }
         } else {
           const data = await res.json().catch(() => ({}));
-          setErrors({ password: data.error || "Failed to create account. Please try again." });
+          showAlert("Error", "Failed to create account. Please try again.");
         }
       } catch (err) {
         console.warn("Register Network Error:", err);
-        alert("Network Error: Could not create account. Please try again.");
+        showAlert("Error", "Network Error: Could not create account. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -493,7 +498,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
 
   return (
     <View className="flex-1 bg-white">
-      <LinearGradient colors={['#EFF8FF', '#DEF0FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="px-6 pt-12 pb-8">
+      <LinearGradient colors={['#EFF8FF', '#DEF0FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="px-6 pb-8" style={{ paddingTop: Math.max(insets.top, 40) + 16 }}>
         <Pressable onPress={handleBack} className="w-9 h-9 rounded-full bg-white items-center justify-center mb-6 shadow-sm shadow-sky-100" style={{ elevation: 2 }}>
           <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
         </Pressable>
@@ -505,7 +510,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
         </Text>
       </LinearGradient>
 
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ gap: 16 }} keyboardShouldPersistTaps="handled">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
         {step === 1 && (
           <View className="gap-4">
             <Input
@@ -641,11 +646,88 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
 // ── Forgot Password ───────────────────────────────────────────────────────────
 
 export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
+  const insets = useSafeAreaInsets();
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  if (sent) {
+  const API_URL = "https://cura-backend-dvj5.onrender.com/api";
+
+  const handleRequestOTP = async () => {
+    setError("");
+    if (!email) { setError("Please enter your email."); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/request-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setStep(2);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error || "Failed to send OTP.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    setError("");
+    if (!otp) { setError("Please enter the OTP."); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      if (res.ok) {
+        setStep(3);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error || "Invalid or expired OTP.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetPassword = async () => {
+    setError("");
+    if (!password || password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/set-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        setStep(4);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error || "Failed to reset password.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step === 4) {
     return (
       <View className="flex-1 items-center justify-center bg-white px-8">
         <LinearGradient
@@ -658,9 +740,9 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
             <Polyline points="20 6 9 17 4 12"/>
           </Svg>
         </LinearGradient>
-        <Text className="text-2xl font-bold text-slate-800 mb-2" style={{ fontFamily: "Outfit" }}>Email sent! 📬</Text>
+        <Text className="text-2xl font-bold text-slate-800 mb-2" style={{ fontFamily: "Outfit" }}>Password Reset! 🎉</Text>
         <Text className="text-slate-400 text-center text-sm mb-8">
-          We sent a reset link to <Text className="text-slate-700 font-bold">{email}</Text>. Check your inbox.
+          Your password has been changed successfully. You can now log in with your new password.
         </Text>
         <Button onPress={() => navigate("login")}>Back to Sign In</Button>
       </View>
@@ -669,35 +751,84 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
 
   return (
     <View className="flex-1 bg-white">
-      <LinearGradient colors={['#EFF8FF', '#DEF0FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="px-6 pt-12 pb-8">
-        <Pressable onPress={goBack} className="w-9 h-9 rounded-full bg-white items-center justify-center mb-6 shadow-sm shadow-sky-100" style={{ elevation: 2 }}>
+      <LinearGradient colors={['#EFF8FF', '#DEF0FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="px-6 pb-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
+        <Pressable onPress={() => step === 1 ? goBack() : setStep((s) => (s - 1) as any)} className="w-9 h-9 rounded-full bg-white items-center justify-center mb-6 shadow-sm shadow-sky-100" style={{ elevation: 2 }}>
           <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
         </Pressable>
-        <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>Forgot password?</Text>
-        <Text className="text-sm text-slate-400">{"We'll send a reset link to your email"}</Text>
+        <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>
+          {step === 1 ? "Forgot password?" : step === 2 ? "Enter OTP" : "Set New Password"}
+        </Text>
+        <Text className="text-sm text-slate-400">
+          {step === 1 ? "We'll send a 6-digit code to your email" : step === 2 ? `Sent to ${email}` : "Enter your new secure password"}
+        </Text>
       </LinearGradient>
       
-      <View className="flex-1 px-6 py-6 flex-col gap-4">
-        <Input
-          label="Email address"
-          placeholder="you@university.edu"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+      <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24, gap: 16 }}>
+        {error ? (
+          <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
+            <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>
+          </View>
+        ) : null}
+
+        {step === 1 && (
+          <Input
+            label="Email address"
+            placeholder="you@university.edu"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        )}
+
+        {step === 2 && (
+          <Input
+            label="6-Digit OTP"
+            placeholder="123456"
+            value={otp}
+            onChangeText={setOtp}
+            keyboardType="number-pad"
+            maxLength={6}
+          />
+        )}
+
+        {step === 3 && (
+          <View className="flex-col gap-1.5">
+            <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">New Password</Text>
+            <View className="relative justify-center">
+              <TextInput
+                secureTextEntry={!showPass}
+                placeholder="••••••••"
+                placeholderTextColor="#CBD5E1"
+                value={password}
+                onChangeText={setPassword}
+                className="w-full bg-white border border-sky-200 rounded-2xl px-4 py-3.5 text-sm text-slate-800 pr-12"
+              />
+              <Pressable onPress={() => setShowPass(!showPass)} className="absolute right-4 p-2">
+                <Svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><Circle cx="12" cy="12" r="3"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         <Button
           fullWidth
-          onPress={() => { setLoading(true); setTimeout(() => { setLoading(false); setSent(true); }, 1200); }}
+          onPress={step === 1 ? handleRequestOTP : step === 2 ? handleVerifyOTP : handleSetPassword}
           loading={loading}
-          disabled={!email}
+          disabled={step === 1 ? !email : step === 2 ? otp.length < 6 : password.length < 6}
         >
-          Send Reset Link
+          {step === 1 ? "Send Reset Code" : step === 2 ? "Verify OTP" : "Reset Password"}
         </Button>
-        <Pressable onPress={goBack} className="py-2 mt-1 items-center">
-          <Text className="text-sm text-slate-400 font-medium">← Back to sign in</Text>
-        </Pressable>
+        
+        {step === 1 && (
+          <Pressable onPress={goBack} className="py-2 mt-1 items-center">
+            <Text className="text-sm text-slate-400 font-medium">← Back to sign in</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
 }
+

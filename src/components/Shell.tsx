@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator } from "react-native";
 import Svg, { Path, Circle, Rect, Polyline, Line } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen } from "../types";
 
 // ── Mobile shell wrapper ────────────────────────────────────────────────────
@@ -11,10 +12,15 @@ interface MobileShellProps { children: ReactNode }
 
 export function MobileShell({ children }: MobileShellProps) {
   return (
-    <View className="flex-1 bg-slate-50">
+    <LinearGradient
+      colors={['#E0F2FE', '#FFFFFF']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      className="flex-1"
+    >
       {/* Screen content */}
       <View className="flex-1">{children}</View>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -35,7 +41,15 @@ const tabs: { screen: Screen; icon: (a: boolean) => ReactNode }[] = [
     ),
   },
   {
-    screen: "health-history", // mapped to Calendar in ref
+    screen: "telemedicine",
+    icon: (a) => (
+      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M23 7l-7 5 7 5V7z" /><Rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+      </Svg>
+    ),
+  },
+  {
+    screen: "appointment", 
     icon: (a) => (
       <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a ? "white" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><Line x1="16" y1="2" x2="16" y2="6"/><Line x1="8" y1="2" x2="8" y2="6"/><Line x1="3" y1="10" x2="21" y2="10"/>
@@ -99,8 +113,9 @@ interface HeaderProps {
 }
 
 export function Header({ title, onBack, right }: HeaderProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View className="bg-white border-b border-sky-100 flex-row items-center px-4 py-3" style={{ minHeight: 56 }}>
+    <View className="bg-transparent flex-row items-center px-4" style={{ paddingTop: Math.max(insets.top, 12) + 12, paddingBottom: 12 }}>
       {onBack && (
         <Pressable
           onPress={onBack}
@@ -155,6 +170,7 @@ interface InputProps {
   keyboardType?: "default" | "email-address" | "numeric" | "phone-pad" | "number-pad";
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   maxLength?: number;
+  editable?: boolean;
 }
 
 export function Input({ label, error, icon, ...props }: InputProps) {
