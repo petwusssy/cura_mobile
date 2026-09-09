@@ -6,16 +6,16 @@ module.exports = {
     extend: {
       colors: {
         cura: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6', // reference blue
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: '#F0F9FF',
+          100: '#E4F4FB', // Soft background light blue
+          200: '#B9E6FE',
+          300: '#7CD4FD',
+          400: '#38BDF8',
+          500: '#0EA5E9',
+          600: '#0284C7',
+          700: '#0369A1',
+          800: '#075985',
+          900: '#0B2136', // Deep navy for primary buttons
         }
       },
       fontFamily: {

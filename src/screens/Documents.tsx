@@ -10,6 +10,7 @@ interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
   params?: { tab?: string; id?: string };
+  certificates?: any[];
 }
 
 type Tab = "prescriptions" | "certificates" | "transfers";
@@ -42,19 +43,19 @@ export function DocumentsScreen({ navigate, params }: Props) {
                 <Text className="text-lg">{t.icon}</Text>
                 <View
                   className="absolute -top-1 -right-2 rounded-full items-center justify-center"
-                  style={{ backgroundColor: tab === t.id ? "#0994E8" : "#CBD5E1", width: 16, height: 16 }}
+                  style={{ backgroundColor: tab === t.id ? "#0B2136" : "#CBD5E1", width: 16, height: 16 }}
                 >
                   <Text className="text-white font-extrabold" style={{ fontSize: 8 }}>{t.count}</Text>
                 </View>
               </View>
               <Text 
-                className={`mt-0.5 text-[10px] font-bold ${tab === t.id ? "text-cura-600" : "text-slate-400"}`}
+                className={`mt-0.5 text-[10px] font-bold ${tab === t.id ? "text-[#0B2136]" : "text-slate-400"}`}
               >
                 {t.label}
               </Text>
               {tab === t.id && (
                 <LinearGradient
-                  colors={['#0994E8', '#06B6D4']}
+                  colors={['#0B2136', '#0B2136']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full"
@@ -263,11 +264,11 @@ export function PrescriptionDetailScreen({ goBack, params }: Props) {
       </View>
 
       <View className="flex-1">
-        <View className={`${zoomed ? "flex-1" : ""} items-center justify-center p-4`}>
+        <View className={`${zoomed ? "flex-1" : ""} items-center justify-center p-4`} style={!zoomed ? { elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 32 } : undefined}>
           <Image
             source={{ uri: prescription.imageUrl }}
             className={`rounded-2xl ${zoomed ? "w-full h-full" : "w-full"}`}
-            style={!zoomed ? { height: 256, elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 32 } : undefined}
+            style={!zoomed ? { height: 256 } : undefined}
             resizeMode="contain"
           />
         </View>

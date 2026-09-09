@@ -57,7 +57,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
       title: "Preferences",
       items: [
         { icon: "🔔", label: "Notification Preferences", sub: "Reminders, updates", color: "#EFF8FF" },
-        { icon: "🎨", label: "Mascot & Display Name", sub: `${mascot.name} · ${user.displayName || ""}`, color: "#F5F3FF" },
+        { icon: "🎨", label: "Mascot & Display Name", sub: `${mascot.name} · ${(user.displayName || "").toUpperCase()}`, color: "#F5F3FF" },
         { icon: "🔒", label: "Privacy & Security", sub: "Password, data sharing", color: "#ECFDF5" },
         { icon: "ℹ️", label: "About CURA", sub: "Version 1.0.0", color: "#F8FAFC" },
       ],
@@ -71,14 +71,14 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
         className="px-5 pb-7"
         style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
-        <Text className="text-base font-bold text-slate-800 mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
+        <Text className="text-[#0B2136] text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
 
         <View className="flex-row items-center gap-4">
           <View className="relative">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={66} />
             <Pressable
               className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center border-2 border-white"
-              style={{ backgroundColor: "#0994E8", elevation: 4, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+              style={{ backgroundColor: "#0B2136", elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8 }}
             >
               <Svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -86,14 +86,14 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
             </Pressable>
           </View>
           <View>
-            <Text className="text-lg font-extrabold text-slate-800" style={{ fontFamily: "Outfit" }}>
-              {user.firstName} {user.lastName}
+            <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>
+              {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
             <Text className="text-xs text-slate-400 mt-0.5">{user.email}</Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
                 className="rounded-full px-2.5 py-0.5"
-                style={{ backgroundColor: "#0994E8" }}
+                style={{ backgroundColor: "#0B2136" }}
               >
                 <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
               </View>
@@ -115,11 +115,11 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
           ].map((s) => (
             <View
               key={s.label}
-              className="flex-1 bg-white rounded-2xl px-3 py-2.5 items-center"
-              style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 }}
+              className="flex-1 bg-white rounded-[32px] px-3 py-4 items-center"
+              style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
             >
-              <Text className="text-base mb-0.5">{s.icon}</Text>
-              <Text className="text-lg font-extrabold text-cura-600" style={{ fontFamily: "Outfit" }}>{s.value}</Text>
+              <Text className="text-base mb-1">{s.icon}</Text>
+              <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>{s.value}</Text>
               <Text className="text-[10px] text-slate-400 font-medium">{s.label}</Text>
             </View>
           ))}
@@ -132,8 +132,8 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
             <View key={section.title}>
               <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">{section.title}</Text>
               <View
-                className="bg-white rounded-2xl overflow-hidden"
-                style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}
+                className="bg-white rounded-[32px] overflow-hidden p-2"
+                style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
               >
                 {section.items.map((item, i) => (
                   <Pressable

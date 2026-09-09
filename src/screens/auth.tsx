@@ -26,51 +26,41 @@ export function WelcomeScreen({ navigate }: NavProps) {
   const insets = useSafeAreaInsets();
   return (
     <LinearGradient
-      colors={['#EFF8FF', '#DEF0FF', '#BAE6FD']}
+      colors={['#E4F4FB', '#E4F4FB']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       className="flex-1"
     >
-      {/* Decorative shapes */}
-      <View className="absolute top-0 right-0 w-40 h-40 rounded-bl-full opacity-20" style={{ backgroundColor: "#0994E8" }} />
-      <View className="absolute top-8 right-8 w-20 h-20 rounded-full opacity-10" style={{ backgroundColor: "#06B6D4" }} />
-
       {/* Hero content */}
       <View className="flex-1 items-center justify-center px-8 relative" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
         {/* Logo */}
-        <View className="relative mb-6">
+        <View className="relative mb-8">
           <LinearGradient
-            colors={['#0994E8', '#06B6D4']}
+            colors={['#0EA5E9', '#0284C7']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="w-24 h-24 rounded-3xl items-center justify-center"
-            style={{ elevation: 16, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.3, shadowRadius: 48 }}
+            className="w-24 h-24 rounded-[32px] items-center justify-center"
+            style={{ elevation: 12, shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 32 }}
           >
             <Svg width="46" height="46" viewBox="0 0 46 46" fill="none">
               <Rect x="18" y="4" width="10" height="38" rx="5" fill="white"/>
               <Rect x="4" y="18" width="38" height="10" rx="5" fill="white"/>
             </Svg>
           </LinearGradient>
-          <View
-            className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full items-center justify-center border-2 border-white"
-            style={{ backgroundColor: "#ECFEFF", elevation: 2, shadowColor: '#06B6D4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-          >
-            <Text className="text-base">💙</Text>
-          </View>
         </View>
 
-        <Text className="text-5xl font-extrabold tracking-tight mb-1" style={{ color: "#0A4171", fontFamily: "Outfit" }}>
+        <Text className="text-[52px] font-black tracking-tight mb-1" style={{ color: "#0B2136", fontFamily: "Outfit" }}>
           CURA
         </Text>
-        <Text className="text-sm font-bold tracking-widest uppercase mb-4" style={{ color: "#0994E8" }}>
+        <Text className="text-sm font-bold tracking-widest uppercase mb-6" style={{ color: "#0284C7" }}>
           University Clinic
         </Text>
-        <Text className="text-slate-500 text-center text-sm leading-relaxed mb-10" style={{ maxWidth: 280 }}>
+        <Text className="text-slate-600 text-center text-sm leading-relaxed mb-10 font-medium" style={{ maxWidth: 280 }}>
           Your personal health companion — smarter, simpler campus care, right in your pocket.
         </Text>
 
         {/* Feature pills */}
-        <View className="flex-row flex-wrap gap-2 justify-center mb-4">
+        <View className="flex-row flex-wrap gap-2.5 justify-center mb-4">
           {[
             { icon: "🩺", label: "Health Records" },
             { icon: "💊", label: "Medications" },
@@ -79,11 +69,11 @@ export function WelcomeScreen({ navigate }: NavProps) {
           ].map((f) => (
             <View
               key={f.label}
-              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-sky-200"
-              style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 }}
+              className="flex-row items-center gap-1.5 px-4 py-2.5 rounded-full bg-white"
+              style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
             >
-              <Text>{f.icon}</Text>
-              <Text className="text-xs font-semibold text-sky-700">{f.label}</Text>
+              <Text className="text-sm">{f.icon}</Text>
+              <Text className="text-xs font-bold text-slate-700">{f.label}</Text>
             </View>
           ))}
         </View>
@@ -91,17 +81,17 @@ export function WelcomeScreen({ navigate }: NavProps) {
 
       {/* CTA */}
       <View className="px-6 pb-12 flex-col gap-3">
-        <Button fullWidth onPress={() => navigate("register")} className="py-4">
-          <Text className="text-white font-bold text-base">Create Account — {"It's Free"}</Text>
+        <Button fullWidth onPress={() => navigate("register")}>
+          Create Account — {"It's Free"}
         </Button>
         <Button
           fullWidth
           variant="secondary"
           onPress={() => navigate("login")}
         >
-          <Text className="text-cura-500 font-bold text-base">Sign In</Text>
+          Sign In
         </Button>
-        <Text className="text-center text-[11px] text-slate-400 mt-1">
+        <Text className="text-center text-[12px] text-slate-500 font-medium mt-1">
           Protected by university-grade security 🔒
         </Text>
       </View>
@@ -142,7 +132,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       if (loginRes.ok) {
         const loginData = await loginRes.json();
         const userEmail = loginData.user?.email || email;
-        const userName = loginData.user?.name || userEmail.split('@')[0];
+        const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
         
         if (setUser) {
           setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
@@ -164,44 +154,41 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-[#E4F4FB]">
       {/* Top light banner */}
-      <LinearGradient
-        colors={['#EFF8FF', '#DEF0FF']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="px-6 pb-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
+      <View
+        className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
         <Pressable
           onPress={goBack}
-          className="w-9 h-9 rounded-full bg-white items-center justify-center mb-6 shadow-sm shadow-sky-100"
-          style={{ elevation: 2 }}
+          className="w-10 h-10 rounded-full bg-white/60 items-center justify-center mb-8"
         >
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="15 18 9 12 15 6"/>
           </Svg>
         </Pressable>
 
-        <View className="flex-row items-center gap-3 mb-3">
+        <View className="flex-row items-center gap-3 mb-4">
           <LinearGradient
-            colors={['#0994E8', '#06B6D4']}
+            colors={['#0EA5E9', '#0284C7']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="w-10 h-10 rounded-xl items-center justify-center"
+            className="w-12 h-12 rounded-[16px] items-center justify-center"
           >
-            <Svg width="20" height="20" viewBox="0 0 46 46" fill="none">
+            <Svg width="24" height="24" viewBox="0 0 46 46" fill="none">
               <Rect x="18" y="4" width="10" height="38" rx="5" fill="white"/>
               <Rect x="4" y="18" width="38" height="10" rx="5" fill="white"/>
             </Svg>
           </LinearGradient>
-          <Text className="text-2xl font-extrabold tracking-tight" style={{ color: "#0A4171", fontFamily: "Outfit" }}>CURA</Text>
+          <Text className="text-[28px] font-black tracking-tight" style={{ color: "#0B2136", fontFamily: "Outfit" }}>CURA</Text>
         </View>
-        <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>Welcome back! 👋</Text>
-        <Text className="text-sm text-slate-400">Sign in to your patient account</Text>
-      </LinearGradient>
+        <Text className="text-[28px] font-bold text-slate-800 mb-2" style={{ fontFamily: "Outfit" }}>Welcome back! 👋</Text>
+        <Text className="text-base text-slate-500 font-medium">Sign in to your patient account</Text>
+      </View>
 
       {/* Form */}
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
+      <View className="flex-1 bg-[#F8FAFC] rounded-t-[40px] overflow-hidden" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.05, shadowRadius: 24 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
         {error ? (
           <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
             <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>
@@ -268,6 +255,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
           </Pressable>
         </View>
       </ScrollView>
+      </View>
     </View>
   );
 }
@@ -406,7 +394,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
         
         if (res.ok || data.error?.includes("Email not verified")) {
           const userEmail = data.user?.email || form.email;
-          const userName = data.user?.name || userEmail.split('@')[0];
+          const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
           if (setUser) {
             setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access || data.refresh }));
           }
@@ -430,7 +418,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           if (loginRes.ok) {
             const loginData = await loginRes.json();
             const userEmail = loginData.user?.email || form.email;
-            const userName = loginData.user?.name || userEmail.split('@')[0];
+            const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
             if (setUser) {
               setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
             }
@@ -459,7 +447,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           const userEmail = data.user?.email || form.email;
-          const userName = data.user?.name || userEmail.split('@')[0];
+          const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
           if (setUser) {
             setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access }));
           }
@@ -497,21 +485,22 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <LinearGradient colors={['#EFF8FF', '#DEF0FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="px-6 pb-8" style={{ paddingTop: Math.max(insets.top, 40) + 16 }}>
-        <Pressable onPress={handleBack} className="w-9 h-9 rounded-full bg-white items-center justify-center mb-6 shadow-sm shadow-sky-100" style={{ elevation: 2 }}>
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
+    <View className="flex-1 bg-[#E4F4FB]">
+      <View className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
+        <Pressable onPress={handleBack} className="w-10 h-10 rounded-full bg-white/60 items-center justify-center mb-8">
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
         </Pressable>
-        <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>
+        <Text className="text-[28px] font-black text-slate-800 mb-2 tracking-tight" style={{ fontFamily: "Outfit" }}>
           {step === 1 ? "Create your account ✨" : step === 4 ? "Verify your email 📬" : "Almost done 🔒"}
         </Text>
-        <Text className="text-sm text-slate-400">
+        <Text className="text-base font-medium text-slate-500">
           {step === 1 ? "Join CURA — University Clinic Patient Portal" : step === 4 ? "An account with this email already exists. Enter the OTP sent to your email to claim it." : "Secure your account with a password"}
         </Text>
-      </LinearGradient>
+      </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
-        {step === 1 && (
+      <View className="flex-1 bg-[#F8FAFC] rounded-t-[40px] overflow-hidden" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.05, shadowRadius: 24 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
+          {step === 1 && (
           <View className="gap-4">
             <Input
               label="Email address"
@@ -638,7 +627,8 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
             </Button>
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -750,20 +740,20 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
   }
 
   return (
-    <View className="flex-1 bg-white">
-      <LinearGradient colors={['#EFF8FF', '#DEF0FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="px-6 pb-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-        <Pressable onPress={() => step === 1 ? goBack() : setStep((s) => (s - 1) as any)} className="w-9 h-9 rounded-full bg-white items-center justify-center mb-6 shadow-sm shadow-sky-100" style={{ elevation: 2 }}>
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
+    <View className="flex-1 bg-[#E4F4FB]">
+      <View className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
+        <Pressable onPress={() => step === 1 ? goBack() : setStep((s) => (s - 1) as any)} className="w-10 h-10 rounded-full bg-white/60 items-center justify-center mb-8">
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
         </Pressable>
-        <Text className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "Outfit" }}>
+        <Text className="text-[28px] font-black text-slate-800 mb-2 tracking-tight" style={{ fontFamily: "Outfit" }}>
           {step === 1 ? "Forgot password?" : step === 2 ? "Enter OTP" : "Set New Password"}
         </Text>
-        <Text className="text-sm text-slate-400">
+        <Text className="text-base font-medium text-slate-500">
           {step === 1 ? "We'll send a 6-digit code to your email" : step === 2 ? `Sent to ${email}` : "Enter your new secure password"}
         </Text>
-      </LinearGradient>
+      </View>
       
-      <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24, gap: 16 }}>
+      <View className="flex-1 bg-[#F8FAFC] rounded-t-[40px] overflow-hidden" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.05, shadowRadius: 24, paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24, gap: 16 }}>
         {error ? (
           <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
             <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>

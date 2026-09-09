@@ -9,6 +9,7 @@ import { MEDICATIONS } from "../data";
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
+  medications?: any[];
 }
 
 type Filter = "all" | "active" | "taken" | "missed";
@@ -44,7 +45,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack: _goBack }: Prop
             return (
               <View
                 key={s}
-                className="flex-row items-center gap-2 px-3 py-2 rounded-xl mr-2.5"
+                className="flex-row items-center gap-2 px-4 py-2 rounded-full mr-2.5"
                 style={{ backgroundColor: cfg.bg }}
               >
                 <Text className="text-sm">{cfg.icon}</Text>
@@ -96,7 +97,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack: _goBack }: Prop
             return (
               <Card key={med.id} onPress={() => setExpanded(isExpanded ? null : med.id)} className="relative overflow-hidden">
                 {/* Status accent line */}
-                <View className="absolute top-0 left-0 w-1 h-full rounded-l-2xl z-10" style={{ backgroundColor: cfg.dot }} />
+                <View className="absolute top-0 left-0 w-1.5 h-full rounded-l-full z-10" style={{ backgroundColor: cfg.dot }} />
                 
                 <View className="flex-row items-start gap-3 pl-2">
                   <View
@@ -107,7 +108,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack: _goBack }: Prop
                   </View>
                   <View className="flex-1">
                     <View className="flex-row items-center justify-between gap-2 mb-0.5">
-                      <Text className="text-sm font-bold text-slate-900 flex-1" numberOfLines={1}>{med.name}</Text>
+                      <Text className="text-base font-black text-[#0B2136] flex-1" numberOfLines={1}>{med.name}</Text>
                       <Badge variant={cfg.badge}>{cfg.label}</Badge>
                     </View>
                     <Text className="text-xs text-slate-400">{med.dose}</Text>

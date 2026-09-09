@@ -4,6 +4,10 @@ import { MobileShell, BottomNav } from "./components/Shell";
 import { DEFAULT_USER } from "./data";
 import { SplashScreen } from "./screens/Splash";
 import { AlertProvider, useAlert } from "./components/AlertProvider";
+import { cssInterop } from "nativewind";
+import { LinearGradient } from "expo-linear-gradient";
+
+cssInterop(LinearGradient, { className: "style" });
 
 // Auth
 import { WelcomeScreen, LoginScreen, RegisterScreen, ForgotPasswordScreen } from "./screens/auth";
@@ -87,12 +91,14 @@ export default function App() {
       const patient = patients.find((p: any) => p.email?.toLowerCase().trim() === email.toLowerCase().trim());
       
       if (patient) {
+        const upperName = (patient.name || '').toUpperCase();
         setUser((prev) => ({
           ...prev,
           ...patient,
-          firstName: patient.name?.split(' ')[0] || prev.firstName,
-          lastName: patient.name?.split(' ').slice(1).join(' ') || prev.lastName,
-          displayName: patient.name || prev.displayName,
+          name: upperName,
+          firstName: upperName.split(' ')[0] || (prev.firstName ? prev.firstName.toUpperCase() : prev.firstName),
+          lastName: upperName.split(' ').slice(1).join(' ') || (prev.lastName ? prev.lastName.toUpperCase() : prev.lastName),
+          displayName: upperName || (prev.displayName ? prev.displayName.toUpperCase() : prev.displayName),
           id_number: patient.id,
         }));
         

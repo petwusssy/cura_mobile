@@ -18,8 +18,8 @@ export function HealthHistoryScreen({ navigate, consultations = [] }: Props) {
       <Header
         title="Health History"
         right={
-          <View className="w-9 h-9 rounded-full bg-sky-100 items-center justify-center">
-            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <View className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+            <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <Circle cx="11" cy="11" r="8"/><Line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </Svg>
           </View>
@@ -55,7 +55,7 @@ export function HealthHistoryScreen({ navigate, consultations = [] }: Props) {
                 {/* Timeline */}
                 <View className="flex-col items-center w-9">
                   <LinearGradient
-                    colors={['#0994E8', '#06B6D4']}
+                    colors={['#0B2136', '#0B2136']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     className="w-9 h-9 rounded-full items-center justify-center z-10 mt-3.5"
@@ -75,7 +75,7 @@ export function HealthHistoryScreen({ navigate, consultations = [] }: Props) {
                         <Text className="text-xs font-bold text-cura-500 mb-0.5">
                           {new Date(c.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" })}
                         </Text>
-                        <Text className="text-sm font-bold text-slate-800 leading-tight">{c.complaint}</Text>
+                        <Text className="text-sm font-black text-[#0B2136] leading-tight">{c.complaint}</Text>
                       </View>
                       <Badge variant={badge.variant}>{badge.label}</Badge>
                     </View>

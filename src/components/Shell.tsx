@@ -13,7 +13,7 @@ interface MobileShellProps { children: ReactNode }
 export function MobileShell({ children }: MobileShellProps) {
   return (
     <LinearGradient
-      colors={['#E0F2FE', '#FFFFFF']}
+      colors={['#E4F4FB', '#E4F4FB']}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -93,7 +93,7 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
             <Pressable
               key={tab.screen}
               onPress={() => navigate(tab.screen)}
-              className={`w-12 h-12 rounded-full items-center justify-center ${isActive ? 'bg-cura-500' : 'bg-transparent'}`}
+              className={`w-12 h-12 rounded-full items-center justify-center ${isActive ? 'bg-cura-900' : 'bg-transparent'}`}
             >
               {tab.icon(isActive)}
             </Pressable>
@@ -119,14 +119,15 @@ export function Header({ title, onBack, right }: HeaderProps) {
       {onBack && (
         <Pressable
           onPress={onBack}
-          className="w-9 h-9 rounded-full items-center justify-center bg-sky-50 mr-3"
+          className="w-10 h-10 rounded-full items-center justify-center bg-white mr-3 shadow-sm"
+          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
         >
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="15 18 9 12 15 6"/>
           </Svg>
         </Pressable>
       )}
-      <Text className="flex-1 text-base font-bold text-slate-800" style={{ fontFamily: 'Outfit' }}>{title}</Text>
+      <Text className="flex-1 text-[22px] font-black tracking-tight" style={{ color: "#0B2136", fontFamily: 'Outfit' }}>{title}</Text>
       {right && <View>{right}</View>}
     </View>
   );
@@ -171,21 +172,24 @@ interface InputProps {
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   maxLength?: number;
   editable?: boolean;
+  multiline?: boolean;
+  numberOfLines?: number;
+  style?: any;
 }
 
 export function Input({ label, error, icon, ...props }: InputProps) {
   return (
     <View className="flex-col gap-1.5">
-      <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</Text>
+      <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">{label}</Text>
       <View className="relative justify-center">
-        {icon && <View className="absolute left-3.5 z-10">{icon}</View>}
+        {icon && <View className="absolute left-4 z-10">{icon}</View>}
         <TextInput
           {...props}
-          placeholderTextColor="#cbd5e1"
-          className={`w-full bg-white border rounded-2xl px-4 py-3.5 text-sm text-slate-800 ${icon ? "pl-10" : ""} ${error ? "border-rose-300 bg-rose-50" : "border-sky-200"}`}
+          placeholderTextColor="#94A3B8"
+          className={`w-full bg-white rounded-[32px] px-5 py-4 text-sm text-slate-800 ${icon ? "pl-12" : ""} ${error ? "border border-rose-300 bg-rose-50" : ""}`}
         />
       </View>
-      {error && <Text className="text-xs text-rose-500">{error}</Text>}
+      {error && <Text className="text-xs text-rose-500 pl-1">{error}</Text>}
     </View>
   );
 }
@@ -204,31 +208,32 @@ interface ButtonProps {
 
 export function Button({ variant = "primary", loading, fullWidth, children, onPress, disabled, className = "" }: ButtonProps) {
   const variants = {
-    primary:   "bg-cura-500",
-    secondary: "bg-sky-50 border border-sky-200",
+    primary:   "bg-cura-900",
+    secondary: "bg-white",
     ghost:     "",
     danger:    "bg-rose-50 border border-rose-100",
   };
   
   const textVariants = {
     primary:   "text-white",
-    secondary: "text-cura-700",
-    ghost:     "text-cura-600",
+    secondary: "text-slate-800",
+    ghost:     "text-slate-600",
     danger:    "text-rose-600",
   };
 
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center justify-center gap-2 rounded-2xl px-6 py-4 ${variants[variant]} ${fullWidth ? "w-full" : ""} ${className}`}
+      className={`flex-row items-center justify-center gap-2 rounded-full px-6 py-4 ${variants[variant]} ${fullWidth ? "w-full" : ""} ${className}`}
       disabled={loading || disabled}
       style={({ pressed }) => ({
         transform: [{ scale: pressed && !disabled && !loading ? 0.96 : 1 }],
-        opacity: pressed && !disabled && !loading ? 0.85 : (disabled || loading ? 0.5 : 1)
+        opacity: pressed && !disabled && !loading ? 0.85 : (disabled || loading ? 0.5 : 1),
+        ...(variant === 'secondary' ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 } : {})
       })}
     >
-      {loading && <ActivityIndicator size="small" color={variant === 'primary' ? 'white' : '#0994E8'} />}
-      <Text className={`font-semibold text-sm ${textVariants[variant]}`}>
+      {loading && <ActivityIndicator size="small" color={variant === 'primary' ? 'white' : '#0B2136'} />}
+      <Text className={`font-bold text-sm ${textVariants[variant]}`}>
         {children}
       </Text>
     </Pressable>
@@ -271,8 +276,8 @@ export function Card({ children, className = "", onPress }: { children: ReactNod
   return (
     <CardView
       onPress={onPress}
-      className={`bg-white rounded-2xl p-4 overflow-hidden ${className}`}
-      style={{ shadowColor: '#0994E8', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 16, elevation: 2 }}
+      className={`bg-white rounded-[32px] p-5 overflow-hidden ${className}`}
+      style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 16, elevation: 2 }}
     >
       {children}
     </CardView>
@@ -317,10 +322,10 @@ export function VitalItem({ icon, label, value }: { icon: string; label: string;
 export function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
     <View className="flex-row items-center justify-between mb-3">
-      <Text className="text-sm font-bold text-slate-700">{title}</Text>
+      <Text className="text-base font-black tracking-tight" style={{ color: "#0B2136", fontFamily: "Outfit" }}>{title}</Text>
       {action && (
-        <Pressable onPress={onAction} className="bg-sky-50 px-3 py-1 rounded-full">
-          <Text className="text-xs font-semibold text-cura-500">{action}</Text>
+        <Pressable onPress={onAction} className="bg-white px-3 py-1.5 rounded-full" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }}>
+          <Text className="text-xs font-bold text-slate-700">{action}</Text>
         </Pressable>
       )}
     </View>
@@ -359,10 +364,10 @@ export function Select({ label, value, options, onValueChange }: SelectProps) {
             <Pressable
               key={opt.value}
               onPress={() => onValueChange(opt.value)}
-              className={`px-4 py-2.5 rounded-2xl border ${active ? 'bg-cura-500 border-cura-500' : 'bg-white border-slate-200'}`}
-              style={active ? { shadowColor: '#0994E8', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 } : {}}
+              className={`px-4 py-2.5 rounded-full border ${active ? 'bg-cura-900 border-cura-900' : 'bg-white border-transparent'}`}
+              style={active ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 } : { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 }}
             >
-              <Text className={`font-semibold ${active ? 'text-white' : 'text-slate-600'}`}>{opt.label}</Text>
+              <Text className={`font-bold ${active ? 'text-white' : 'text-slate-600'}`}>{opt.label}</Text>
             </Pressable>
           );
         })}

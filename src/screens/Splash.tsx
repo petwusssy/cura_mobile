@@ -29,7 +29,7 @@ export function SplashScreen({ onDone }: Props) {
 
   return (
     <LinearGradient
-      colors={['#EFF8FF', '#DEF0FF', '#BAE6FD']}
+      colors={['#0B2136', '#0B2136']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       className="flex-1 items-center justify-center relative"
@@ -37,36 +37,36 @@ export function SplashScreen({ onDone }: Props) {
       <Animated.View style={{ transform: [{ scale }], opacity }} className="items-center">
         <View className="relative mb-5">
           <LinearGradient
-            colors={['#0994E8', '#06B6D4']}
+            colors={['#ffffff', '#ffffff']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="w-24 h-24 rounded-3xl items-center justify-center"
-            style={{ elevation: 12, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 48 }}
+            className="w-24 h-24 rounded-[32px] items-center justify-center"
+            style={{ elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 48 }}
           >
             <Svg width="46" height="46" viewBox="0 0 46 46" fill="none">
-              <Rect x="18" y="4" width="10" height="38" rx="5" fill="white"/>
-              <Rect x="4" y="18" width="38" height="10" rx="5" fill="white"/>
+              <Rect x="18" y="4" width="10" height="38" rx="5" fill="#0B2136"/>
+              <Rect x="4" y="18" width="38" height="10" rx="5" fill="#0B2136"/>
             </Svg>
           </LinearGradient>
           <View
             className="absolute -top-2 -right-2 w-7 h-7 rounded-full items-center justify-center border-2 border-white"
-            style={{ backgroundColor: "#06B6D4", elevation: 4 }}
+            style={{ backgroundColor: "#E4F4FB", elevation: 4 }}
           >
-            <Text className="text-white text-xs font-bold">✦</Text>
+            <Text className="text-[#0B2136] text-xs font-black">✦</Text>
           </View>
         </View>
 
-        <Text className="text-5xl font-extrabold tracking-tight mb-1" style={{ fontFamily: "Outfit", color: "#0A4171" }}>
+        <Text className="text-5xl font-black tracking-tight mb-1" style={{ fontFamily: "Outfit", color: "#ffffff" }}>
           CURA
         </Text>
-        <Text className="text-sm font-semibold tracking-widest uppercase" style={{ color: "#0994E8" }}>
+        <Text className="text-sm font-black tracking-widest uppercase" style={{ color: "#E4F4FB" }}>
           University Clinic
         </Text>
       </Animated.View>
 
       {phase === "hold" && (
         <View className="absolute bottom-12">
-          <Text className="text-xs font-medium text-center" style={{ color: "#0994E8" }}>
+          <Text className="text-xs font-bold text-center" style={{ color: "#E4F4FB" }}>
             Your health, our priority
           </Text>
         </View>

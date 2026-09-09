@@ -60,8 +60,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           <View className="flex-row items-center gap-3">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={48} />
             <View>
-              <Text className="text-slate-800 text-base font-bold" style={{ fontFamily: "Outfit" }}>
-                Hi, {user.displayName || user.firstName || "Patient"}
+              <Text className="text-[#0B2136] text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
+                Hi, {(user.displayName || user.firstName || "Patient").toUpperCase()}
               </Text>
               <Text className="text-slate-400 text-xs font-medium">{getGreeting()}</Text>
             </View>
@@ -85,8 +85,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           
           <Pressable 
             onPress={() => isBedActive ? {} : dueMed ? navigate("medications") : latestConsult ? navigate("health-history") : {}}
-            className="w-full bg-cura-500 rounded-[32px] p-6 relative overflow-hidden mt-2"
-            style={{ shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.3, shadowRadius: 24, elevation: 12 }}
+            className="w-full bg-cura-900 rounded-[32px] p-6 relative overflow-hidden mt-2"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 }}
           >
             {/* Background Decorations */}
             <View className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10" />

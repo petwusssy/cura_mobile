@@ -3,6 +3,7 @@ import { View, ScrollView, Text, Pressable, RefreshControl, Linking } from "reac
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as WebBrowser from 'expo-web-browser';
 import type { Screen, AppUser } from "../types";
 
 interface Props {
@@ -26,11 +27,41 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
+    if (event?.type === 'dismissed') return;
     if (selectedDate) {
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
       setDate(`${year}-${month}-${day}`);
+    }
+  };
+
+  const handleJoinMeeting = async (rawUrl?: string, reqId?: string) => {
+    try {
+      let roomId = '';
+      if (rawUrl) {
+        const match = rawUrl.match(/CURA-Telemed-[a-zA-Z0-9_-]+/i);
+        if (match) {
+          roomId = match[0];
+        }
+      }
+      if (!roomId) {
+        const cleanId = (reqId || 'room').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+        roomId = `CURA-Telemed-${cleanId}`;
+      }
+
+      const targetUrl = `https://cura-bice.vercel.app/call/${roomId}?role=patient`;
+      
+      await WebBrowser.openBrowserAsync(targetUrl, {
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+        toolbarColor: '#0B2136',
+        secondaryToolbarColor: '#0B2136',
+        controlsColor: '#FFFFFF',
+        showTitle: false,
+        enableBarCollapsing: false,
+      });
+    } catch (err) {
+      console.warn("Could not open in-app call browser:", err);
     }
   };
   // History State
@@ -58,7 +89,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   useEffect(() => {
     if (activeTab === "history") {
-      fetchRequests(false);
+      setTimeout(() => fetchRequests(false), 0);
       const interval = setInterval(() => fetchRequests(true), 3000);
       return () => clearInterval(interval);
     }
@@ -98,7 +129,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   if (isPending) {
     return (
-      <View className="flex-1 bg-slate-50">
+      <View className="flex-1 bg-transparent">
         <Header title="Telemedicine" onBack={goBack} />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-6xl mb-6">⏳</Text>
@@ -126,22 +157,22 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-[#F8FAFC]">
       <Header title="Telemedicine" onBack={goBack} />
 
       {/* Tabs */}
       <View className="flex-row px-6 mb-4 mt-2">
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-cura-500" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#0B2136]" : "border-transparent"}`}
           onPress={() => setActiveTab("book")}
         >
-          <Text className={`font-bold ${activeTab === "book" ? "text-cura-600" : "text-slate-400"}`}>Book Consult</Text>
+          <Text className={`font-bold ${activeTab === "book" ? "text-[#0B2136]" : "text-slate-400"}`}>Book Call</Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-cura-500" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#0B2136]" : "border-transparent"}`}
           onPress={() => setActiveTab("history")}
         >
-          <Text className={`font-bold ${activeTab === "history" ? "text-cura-600" : "text-slate-400"}`}>My Requests</Text>
+          <Text className={`font-bold ${activeTab === "history" ? "text-[#0B2136]" : "text-slate-400"}`}>My Requests</Text>
         </Pressable>
       </View>
 
@@ -171,7 +202,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   value={date ? new Date(date) : new Date()}
                   mode="date"
                   display="default"
-                  onChange={onDateChange}
+                  onValueChange={onDateChange}
+                  onDismiss={() => setShowDatePicker(false)}
                 />
               )}
             </View>
@@ -243,16 +275,25 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                     <Text className="text-xs text-emerald-700 mb-1">
                       <Text className="font-bold">Scheduled:</Text> {req.scheduled_date || req.preferred_date} at {req.scheduled_time || req.preferred_time}
                     </Text>
-                    {req.meeting_link ? (
+                    <Pressable
+                      className="bg-emerald-600 active:bg-emerald-700 rounded-xl py-3 px-4 mt-3 items-center justify-center shadow-sm"
+                      onPress={() => handleJoinMeeting(req.meeting_link, req.id)}
+                    >
+                      <Text className="text-white text-xs font-bold tracking-wider uppercase">
+                        🎥 Join Video Call (In-App)
+                      </Text>
+                    </Pressable>
+
+                    {req.secondary_link ? (
                       <Pressable
-                        className="bg-emerald-600 rounded-lg py-2 mt-3 items-center justify-center"
-                        onPress={() => Linking.openURL(req.meeting_link)}
+                        className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs active:bg-emerald-50"
+                        onPress={() => Linking.openURL(req.secondary_link)}
                       >
-                        <Text className="text-white text-xs font-bold">Join Meeting</Text>
+                        <Text className="text-emerald-700 text-xs font-semibold">
+                          🌐 Join via Google Meet Backup
+                        </Text>
                       </Pressable>
-                    ) : (
-                      <Text className="text-xs text-emerald-700 italic mt-2">Meeting link will be provided shortly.</Text>
-                    )}
+                    ) : null}
                   </View>
                 )}
 

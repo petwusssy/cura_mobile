@@ -96,7 +96,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   if (isPending) {
     return (
-      <View className="flex-1 bg-slate-50">
+      <View className="flex-1 bg-transparent">
         <Header title="Appointment" onBack={goBack} />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-6xl mb-6">📅</Text>
@@ -124,22 +124,22 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-transparent">
       <Header title="Appointments" onBack={goBack} />
 
       {/* Tabs */}
       <View className="flex-row px-6 mb-4 mt-2">
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-cura-500" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#0B2136]" : "border-transparent"}`}
           onPress={() => setActiveTab("book")}
         >
-          <Text className={`font-bold ${activeTab === "book" ? "text-cura-600" : "text-slate-400"}`}>Book Visit</Text>
+          <Text className={`font-bold ${activeTab === "book" ? "text-[#0B2136]" : "text-slate-400"}`}>Book Visit</Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-cura-500" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#0B2136]" : "border-transparent"}`}
           onPress={() => setActiveTab("history")}
         >
-          <Text className={`font-bold ${activeTab === "history" ? "text-cura-600" : "text-slate-400"}`}>My Requests</Text>
+          <Text className={`font-bold ${activeTab === "history" ? "text-[#0B2136]" : "text-slate-400"}`}>My Requests</Text>
         </Pressable>
       </View>
 
@@ -181,7 +181,8 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 value={date ? new Date(date) : new Date()}
                 mode="date"
                 display="default"
-                onChange={onDateChange}
+                onValueChange={onDateChange}
+                onDismiss={() => setShowDatePicker(false)}
               />
             )}
           </View>
