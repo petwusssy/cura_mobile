@@ -291,7 +291,8 @@ export function AvatarScreen({ navigate, goBack, user, setUser }: NavProps) {
         <Text className="text-[#0B2136]/60 text-sm font-bold">Pick a companion for your health journey</Text>
       </View>
       <View className="flex-1 bg-white rounded-t-[40px]" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 16, elevation: 10 }}>
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40 }}>        <View className="flex-row flex-wrap justify-between gap-y-4 mb-8">
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40 }}>
+          <View className="flex-row flex-wrap justify-between gap-y-4 mb-8">
           {MASCOTS.map((m) => (
             <Pressable
               key={m.id}
