@@ -372,7 +372,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         presentationStyle="fullScreen"
         onRequestClose={() => setActiveCallRoom(null)}
       >
-        <SafeAreaView className="flex-1 bg-[#020617]" edges={["top", "bottom"]}>
+        <SafeAreaView className="flex-1 bg-[#0B1C33]" edges={["top", "bottom"]}>
           {/* Header Bar */}
           <View className="flex-row items-center justify-between px-4 py-3 bg-[#0B2136] border-b border-slate-800">
             <View className="flex-row items-center gap-2">
@@ -406,7 +406,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           {activeCallRoom && (
             <WebView
               source={{ uri: `https://cura-bice.vercel.app/call/${activeCallRoom}?role=patient&embedded=true` }}
-              style={{ flex: 1, backgroundColor: "#020617" }}
+              style={{ flex: 1, backgroundColor: "#0B1C33" }}
               allowsInlineMediaPlayback={true}
               mediaPlaybackRequiresUserAction={false}
               javaScriptEnabled={true}
