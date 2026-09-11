@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, Pressable, RefreshControl, Linking, Modal } from "react-native";
+import { View, ScrollView, Text, Pressable, RefreshControl, Linking, Modal, Platform, PermissionsAndroid } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -47,7 +47,17 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     return `CURA-Telemed-${cleanId}`;
   };
 
-  const handleJoinMeeting = (rawUrl?: string, reqId?: string) => {
+  const handleJoinMeeting = async (rawUrl?: string, reqId?: string) => {
+    if (Platform.OS === 'android') {
+      try {
+        await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        ]);
+      } catch (err) {
+        console.warn('Android permissions request error:', err);
+      }
+    }
     const roomId = getRoomId(rawUrl, reqId);
     setActiveCallRoom(roomId);
   };
@@ -360,6 +370,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
               cameraEnabled={true}
               microphoneEnabled={true}
               mediaCapturePermissionGrantType="grant"
+              androidHardwareAccelerationDisabled={false}
+              androidLayerType="hardware"
               onPermissionRequest={(request: any) => {
                 request.grant(request.resources);
               }}
