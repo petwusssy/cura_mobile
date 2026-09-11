@@ -42,38 +42,48 @@ const MAIN_TABS: Screen[] = ["home", "telemedicine", "appointment", "medications
 
 function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>; setNotifications: (n: any[]) => void }) {
   const { showAlert } = useAlert();
-  const lastNotified = useRef<Record<string, boolean>>({});
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const isInitialFetchRef = useRef(true);
 
   useEffect(() => {
-    if (!user?.id) return;
+    const userId = user?.id;
+    if (!userId) return;
+
+    knownIdsRef.current = new Set();
+    isInitialFetchRef.current = true;
 
     const fetchNotifications = async () => {
       try {
         const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/`);
         if (res.ok) {
           const data = await res.json();
-          // Find notifications for this patient
-          const myNotifs = data.filter((n: any) => n.patient_id === user.id);
+          const myNotifs = data.filter((n: any) => n.patient_id === userId);
           setNotifications(myNotifs);
           
-          // Show alert for newly unread notifications
-          const unreadNotifs = myNotifs.filter((n: any) => !n.read);
-          unreadNotifs.forEach((n: any) => {
-            if (!lastNotified.current[n.id]) {
-               showAlert('Notification', n.message || n.title, 'info');
-               lastNotified.current[n.id] = true;
-            }
-          });
+          if (isInitialFetchRef.current) {
+            // Seed known IDs without spamming alerts for existing past notifications
+            myNotifs.forEach((n: any) => {
+              if (n.id) knownIdsRef.current.add(String(n.id));
+            });
+            isInitialFetchRef.current = false;
+          } else {
+            // Only alert on new unread notifications that arrive in real time
+            const brandNewNotifs = myNotifs.filter((n: any) => !n.read && n.id && !knownIdsRef.current.has(String(n.id)));
+            brandNewNotifs.forEach((n: any) => {
+              knownIdsRef.current.add(String(n.id));
+              showAlert('Notification', n.message || n.title, 'info');
+            });
+          }
         }
       } catch (e) {
-        console.error('Failed to poll notifications:', e);
+        // silent fail
       }
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 3000);
+    const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
-  }, [user, setNotifications, showAlert]);
+  }, [user?.id, setNotifications, showAlert]);
 
   return null;
 }
@@ -106,8 +116,15 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         setUser(updated);
         AsyncStorage.setItem('@cura_user_session', JSON.stringify(updated)).catch(() => {});
         
-        const cRes = await fetch(`https://cura-backend-dvj5.onrender.com/api/consultations/`);
-        const allConsultations = await cRes.json();
+        // Fetch consultations and certificates concurrently
+        const [cRes, certRes] = await Promise.all([
+          fetch(`https://cura-backend-dvj5.onrender.com/api/consultations/`),
+          fetch(`https://cura-backend-dvj5.onrender.com/api/certificates/`),
+        ]);
+        const [allConsultations, allCertificates] = await Promise.all([
+          cRes.json(),
+          certRes.json(),
+        ]);
         
         const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === patient.id);
         
@@ -133,15 +150,12 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
             instructions: t.remarks || "No instructions",
             timeGiven: `${c.date} ${t.timeGiven}`,
             nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
-            status: "taken", // Always taken since it's in a past visit
+            status: "taken",
             consultationId: c.id
           }))
         );
         setMedications(extractedMedications);
 
-        // Fetch Certificates
-        const certRes = await fetch(`https://cura-backend-dvj5.onrender.com/api/certificates/`);
-        const allCertificates = await certRes.json();
         const userCertificates = allCertificates.filter((c: any) => c.patient === patient.id);
         setCertificates(userCertificates);
       }

@@ -123,31 +123,40 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
       const loginRes = await fetch(`https://cura-backend-dvj5.onrender.com/api/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password: password }),
+        body: JSON.stringify({ username: email.trim(), password: password }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       
       if (loginRes.ok) {
         const loginData = await loginRes.json();
-        const userEmail = loginData.user?.email || email;
+        const userEmail = loginData.user?.email || email.trim();
         const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
         
         if (setUser) {
           setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
         }
         if (loadUserData) {
-          await loadUserData(userEmail);
+          loadUserData(userEmail);
         }
         navigate("home");
       } else {
         const errData = await loginRes.json().catch(() => ({}));
-        setError(errData.detail || errData.error || "Invalid email or password.");
+        setError(errData.detail || errData.error || "Invalid email or password. Please try again.");
       }
-    } catch (err) {
-      console.warn("Login Network Error:", err);
-      setError("Network error. Please check your internet connection.");
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        setError("Login timed out. Please check your internet connection and try again.");
+      } else {
+        console.warn("Login Network Error:", err);
+        setError("Network error. Please check your internet connection and try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -199,7 +208,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
           label="Email address"
           placeholder="you@university.edu"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(val) => { setError(""); setEmail(val); }}
           keyboardType="email-address"
           autoCapitalize="none"
         />
@@ -212,7 +221,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
               placeholder="••••••••"
               placeholderTextColor="#CBD5E1"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(val) => { setError(""); setPassword(val); }}
               className="w-full bg-white border border-sky-200 rounded-2xl px-4 py-3.5 text-sm text-slate-800 pr-12"
             />
             <Pressable onPress={() => setShowPass(!showPass)} className="absolute right-4 p-2">

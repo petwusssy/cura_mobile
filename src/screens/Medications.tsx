@@ -21,11 +21,13 @@ const statusConfig = {
   missed:    { badge: "error" as const,   label: "Missed",   dot: "#F43F5E", bg: "#FFF1F2", icon: "❌" },
 };
 
-export function MedicationsScreen({ navigate: _navigate, goBack: _goBack }: Props) {
+export function MedicationsScreen({ navigate: _navigate, goBack, medications = [] }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const filtered = MEDICATIONS.filter((m) => {
+  const activeMeds = medications.length > 0 ? medications : MEDICATIONS;
+
+  const filtered = activeMeds.filter((m) => {
     if (filter === "active")  return m.status === "due-now" || m.status === "upcoming";
     if (filter === "taken")   return m.status === "taken";
     if (filter === "missed")  return m.status === "missed";
@@ -34,7 +36,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack: _goBack }: Prop
 
   return (
     <View className="flex-1 bg-transparent">
-      <Header title="Medications" />
+      <Header title="Medications" onBack={goBack} />
 
       {/* Status overview */}
       <View className="bg-white border-b border-sky-100 px-4 py-3">

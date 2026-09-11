@@ -12,11 +12,12 @@ interface Props {
   consultations?: any[];
 }
 
-export function HealthHistoryScreen({ navigate, consultations = [] }: Props) {
+export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Props) {
   return (
     <View className="flex-1 bg-transparent">
       <Header
         title="Health History"
+        onBack={goBack}
         right={
           <View className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
             <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
