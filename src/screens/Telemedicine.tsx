@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, Pressable, RefreshControl, Linking, Modal, Platform, PermissionsAndroid } from "react-native";
+import { View, ScrollView, Text, Pressable, RefreshControl, Modal, Platform, PermissionsAndroid } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import type { Screen, AppUser } from "../types";
 
@@ -316,36 +317,54 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 </Text>
 
                 {req.status === "Approved" && (
-                  <View className="bg-emerald-50 rounded-xl p-4 mt-2 border border-emerald-100">
-                    <Text className="text-xs font-bold text-emerald-800 mb-2">✅ CONSULTATION APPROVED</Text>
-                    <Text className="text-xs text-emerald-700 mb-1">
-                      <Text className="font-bold">Scheduled:</Text> {req.scheduled_date || req.preferred_date} at {req.scheduled_time || req.preferred_time}
-                    </Text>
+                  <View className="bg-emerald-50/70 rounded-2xl p-4 mt-3 border border-emerald-200/80 shadow-xs">
+                    <View className="flex-row items-center justify-between mb-2">
+                      <View className="flex-row items-center gap-1.5">
+                        <View className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <Text className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Consultation Approved</Text>
+                      </View>
+                      <View className="bg-emerald-100 px-2 py-0.5 rounded-md">
+                        <Text className="text-[10px] font-bold text-emerald-800">Call Ready</Text>
+                      </View>
+                    </View>
+
+                    <View className="bg-white/90 rounded-xl p-2.5 border border-emerald-100 flex-row items-center justify-between mb-3">
+                      <Text className="text-xs text-slate-500 font-medium">Scheduled:</Text>
+                      <Text className="text-xs font-bold text-slate-900">
+                        {req.scheduled_date || req.preferred_date} at {req.scheduled_time || req.preferred_time}
+                      </Text>
+                    </View>
+
+                    {/* Primary Action Button (Matches Web App #1B3A6B styling) */}
                     <Pressable
-                      className="bg-emerald-600 active:bg-emerald-700 rounded-xl py-3 px-4 mt-3 items-center justify-center shadow-sm"
+                      className="bg-[#1B3A6B] active:bg-[#142d54] rounded-xl py-3 px-4 flex-row items-center justify-center gap-2 shadow-sm"
                       onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id)}
                     >
+                      <Text className="text-emerald-400 font-bold text-base">🎥</Text>
                       <Text className="text-white text-xs font-bold tracking-wider uppercase">
-                        🎥 Join Video Call (Recommended)
+                        Join Video Call
                       </Text>
+                      <View className="ml-auto bg-emerald-500/30 px-2 py-0.5 rounded-full">
+                        <Text className="text-emerald-300 text-[10px] font-bold">LIVE</Text>
+                      </View>
                     </Pressable>
 
                     <Pressable
-                      className="bg-slate-800 active:bg-slate-700 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
+                      className="bg-white border border-slate-200 active:bg-slate-50 rounded-xl py-2 px-3 flex-row items-center justify-center gap-1.5 mt-2"
                       onPress={() => handleJoinMeeting(req.meeting_link, req.id)}
                     >
-                      <Text className="text-slate-300 text-xs font-semibold">
-                        📱 Join In-App (Modal WebView)
+                      <Text className="text-slate-600 text-xs font-semibold">
+                        📱 Open via In-App (Modal)
                       </Text>
                     </Pressable>
 
                     {req.secondary_link ? (
                       <Pressable
-                        className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs active:bg-emerald-50"
+                        className="bg-white border border-emerald-300 active:bg-emerald-50 rounded-xl py-2 px-3 flex-row items-center justify-center gap-1.5 mt-2"
                         onPress={() => Linking.openURL(req.secondary_link)}
                       >
                         <Text className="text-emerald-700 text-xs font-semibold">
-                          🌐 Join via Google Meet Backup
+                          🌐 Google Meet Backup
                         </Text>
                       </Pressable>
                     ) : null}
