@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import type { Screen, AppUser } from "./types";
 import { MobileShell, BottomNav } from "./components/Shell";
 import { DEFAULT_USER } from "./data";
@@ -162,6 +164,23 @@ export default function App() {
   const resetApp = useCallback(() => {
     setStack([{ screen: "welcome" }]);
   }, []);
+
+  useEffect(() => {
+    const handleUrl = (event: { url: string }) => {
+      try {
+        WebBrowser.dismissBrowser();
+      } catch (e) {}
+      if (event?.url && event.url.includes("telemedicine")) {
+        navigate("telemedicine");
+      }
+    };
+
+    const sub = Linking.addEventListener("url", handleUrl);
+    Linking.getInitialURL().then((url) => {
+      if (url) handleUrl({ url });
+    });
+    return () => sub.remove();
+  }, [navigate]);
 
   const isMainTab = MAIN_TABS.includes(current.screen);
 

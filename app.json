@@ -8,7 +8,11 @@
     "scheme": "curamobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSCameraUsageDescription": "CURA requires camera access for telemedicine video consultations.",
+        "NSMicrophoneUsageDescription": "CURA requires microphone access for telemedicine consultations."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,6 +21,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {

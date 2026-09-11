@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, Pressable, RefreshControl, Linking } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, ScrollView, Text, Pressable, RefreshControl, Linking, Modal } from "react-native";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as WebBrowser from 'expo-web-browser';
+import { WebView } from 'react-native-webview';
 import type { Screen, AppUser } from "../types";
 
 interface Props {
@@ -16,6 +17,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const insets = useSafeAreaInsets();
 
   const [activeTab, setActiveTab] = useState<"book" | "history">("book");
+  const [activeCallRoom, setActiveCallRoom] = useState<string | null>(null);
 
   // Book Form State
   const [date, setDate] = useState("");
@@ -36,22 +38,24 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     }
   };
 
-  const handleJoinMeeting = async (rawUrl?: string, reqId?: string) => {
-    try {
-      let roomId = '';
-      if (rawUrl) {
-        const match = rawUrl.match(/CURA-Telemed-[a-zA-Z0-9_-]+/i);
-        if (match) {
-          roomId = match[0];
-        }
-      }
-      if (!roomId) {
-        const cleanId = (reqId || 'room').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
-        roomId = `CURA-Telemed-${cleanId}`;
-      }
+  const getRoomId = (rawUrl?: string, reqId?: string) => {
+    if (rawUrl) {
+      const match = rawUrl.match(/CURA-Telemed-[a-zA-Z0-9_-]+/i);
+      if (match) return match[0];
+    }
+    const cleanId = (reqId || 'room').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+    return `CURA-Telemed-${cleanId}`;
+  };
 
+  const handleJoinMeeting = (rawUrl?: string, reqId?: string) => {
+    const roomId = getRoomId(rawUrl, reqId);
+    setActiveCallRoom(roomId);
+  };
+
+  const handleOpenExternalBrowser = async (rawUrl?: string, reqId?: string) => {
+    try {
+      const roomId = getRoomId(rawUrl, reqId);
       const targetUrl = `https://cura-bice.vercel.app/call/${roomId}?role=patient`;
-      
       await WebBrowser.openBrowserAsync(targetUrl, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
         toolbarColor: '#0B2136',
@@ -284,6 +288,15 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       </Text>
                     </Pressable>
 
+                    <Pressable
+                      className="py-2 items-center justify-center mt-0.5 active:opacity-70"
+                      onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id)}
+                    >
+                      <Text className="text-slate-500 text-[11px] underline">
+                        Open in external browser instead
+                      </Text>
+                    </Pressable>
+
                     {req.secondary_link ? (
                       <Pressable
                         className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs active:bg-emerald-50"
@@ -308,6 +321,91 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           )}
         </ScrollView>
       )}
+
+      {/* In-App Embedded Video Call Modal (Messenger style) */}
+      <Modal
+        visible={!!activeCallRoom}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setActiveCallRoom(null)}
+      >
+        <SafeAreaView className="flex-1 bg-[#020617]" edges={["top", "bottom"]}>
+          {/* Header Bar */}
+          <View className="flex-row items-center justify-between px-4 py-3 bg-[#0B2136] border-b border-slate-800">
+            <View className="flex-row items-center gap-2">
+              <View className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+              <View>
+                <Text className="text-white font-bold text-sm">CURA Telemedicine</Text>
+                <Text className="text-[10px] text-slate-400">Encrypted Consultation</Text>
+              </View>
+            </View>
+            <Pressable
+              onPress={() => setActiveCallRoom(null)}
+              className="bg-rose-600 active:bg-rose-700 px-3.5 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
+            >
+              <Text className="text-white text-xs font-bold uppercase tracking-wider">✕ Exit</Text>
+            </Pressable>
+          </View>
+
+          {/* Embedded WebRTC Call via WebView */}
+          {activeCallRoom && (
+            <WebView
+              source={{ uri: `https://cura-bice.vercel.app/call/${activeCallRoom}?role=patient&embedded=true` }}
+              style={{ flex: 1, backgroundColor: "#020617" }}
+              allowsInlineMediaPlayback={true}
+              mediaPlaybackRequiresUserAction={false}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              originWhitelist={["*"]}
+              cameraEnabled={true}
+              microphoneEnabled={true}
+              mediaCapturePermissionGrantType="grant"
+              onPermissionRequest={(request: any) => {
+                request.grant(request.resources);
+              }}
+              onNavigationStateChange={(navState: any) => {
+                if (navState.url.startsWith("curamobile://") || (!navState.url.includes("/call/") && !navState.loading)) {
+                  setActiveCallRoom(null);
+                }
+              }}
+              onMessage={(event: any) => {
+                try {
+                  const data = JSON.parse(event.nativeEvent.data);
+                  if (data?.type === "END_CALL") {
+                    setActiveCallRoom(null);
+                  }
+                } catch {
+                  if (event.nativeEvent.data === "END_CALL") {
+                    setActiveCallRoom(null);
+                  }
+                }
+              }}
+              injectedJavaScript={`
+                (function() {
+                  var notifyEnd = function() {
+                    if (window.ReactNativeWebView) {
+                      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'END_CALL' }));
+                    }
+                  };
+                  var origPushState = history.pushState;
+                  history.pushState = function() {
+                    origPushState.apply(this, arguments);
+                    if (!window.location.pathname.includes('/call/')) {
+                      notifyEnd();
+                    }
+                  };
+                  window.addEventListener('popstate', function() {
+                    if (!window.location.pathname.includes('/call/')) {
+                      notifyEnd();
+                    }
+                  });
+                })();
+                true;
+              `}
+            />
+          )}
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }

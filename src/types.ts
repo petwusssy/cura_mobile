@@ -28,6 +28,7 @@ export type Screen =
 export type PatientCategory = "student" | "employee" | "outsider";
 
 export interface AppUser {
+  id?: string;
   firstName: string;
   lastName: string;
   displayName: string;
