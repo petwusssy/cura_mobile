@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Screen, AppUser } from "./types";
 import { MobileShell, BottomNav } from "./components/Shell";
 import { DEFAULT_USER } from "./data";
@@ -77,9 +78,9 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
   return null;
 }
 
-export default function App() {
+export default function App({ initialScreen }: { initialScreen?: Screen } = {}) {
   const [splashDone, setSplashDone] = useState(false);
-  const [stack, setStack] = useState<NavEntry[]>([{ screen: "welcome" }]);
+  const [stack, setStack] = useState<NavEntry[]>([{ screen: initialScreen || "welcome" }]);
   const [user, setUser] = useState<Partial<AppUser>>(DEFAULT_USER);
   const [consultations, setConsultations] = useState<any[]>([]);
   const [medications, setMedications] = useState<any[]>([]);
@@ -94,15 +95,16 @@ export default function App() {
       
       if (patient) {
         const upperName = (patient.name || '').toUpperCase();
-        setUser((prev) => ({
-          ...prev,
+        const updated = {
           ...patient,
           name: upperName,
-          firstName: upperName.split(' ')[0] || (prev.firstName ? prev.firstName.toUpperCase() : prev.firstName),
-          lastName: upperName.split(' ').slice(1).join(' ') || (prev.lastName ? prev.lastName.toUpperCase() : prev.lastName),
-          displayName: upperName || (prev.displayName ? prev.displayName.toUpperCase() : prev.displayName),
+          firstName: upperName.split(' ')[0] || '',
+          lastName: upperName.split(' ').slice(1).join(' ') || '',
+          displayName: upperName,
           id_number: patient.id,
-        }));
+        };
+        setUser(updated);
+        AsyncStorage.setItem('@cura_user_session', JSON.stringify(updated)).catch(() => {});
         
         const cRes = await fetch(`https://cura-backend-dvj5.onrender.com/api/consultations/`);
         const allConsultations = await cRes.json();
@@ -162,8 +164,33 @@ export default function App() {
   }, []);
 
   const resetApp = useCallback(() => {
+    AsyncStorage.removeItem('@cura_user_session').catch(() => {});
+    setUser(DEFAULT_USER);
     setStack([{ screen: "welcome" }]);
   }, []);
+
+  useEffect(() => {
+    AsyncStorage.getItem('@cura_user_session').then((stored) => {
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed?.id || parsed?.email) {
+            setUser(parsed);
+            setStack([{ screen: initialScreen || "home" }]);
+            if (parsed.email) {
+              loadUserData(parsed.email);
+            }
+          }
+        } catch (e) {}
+      } else if (initialScreen) {
+        setStack([{ screen: initialScreen }]);
+      }
+    }).catch(() => {
+      if (initialScreen) {
+        setStack([{ screen: initialScreen }]);
+      }
+    });
+  }, [initialScreen, loadUserData]);
 
   useEffect(() => {
     const handleUrl = (event: { url: string }) => {
