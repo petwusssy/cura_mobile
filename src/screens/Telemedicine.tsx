@@ -291,19 +291,19 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                     </Text>
                     <Pressable
                       className="bg-emerald-600 active:bg-emerald-700 rounded-xl py-3 px-4 mt-3 items-center justify-center shadow-sm"
-                      onPress={() => handleJoinMeeting(req.meeting_link, req.id)}
+                      onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id)}
                     >
                       <Text className="text-white text-xs font-bold tracking-wider uppercase">
-                        🎥 Join Video Call (In-App)
+                        🎥 Join Video Call (Recommended)
                       </Text>
                     </Pressable>
 
                     <Pressable
-                      className="py-2 items-center justify-center mt-0.5 active:opacity-70"
-                      onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id)}
+                      className="bg-slate-800 active:bg-slate-700 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
+                      onPress={() => handleJoinMeeting(req.meeting_link, req.id)}
                     >
-                      <Text className="text-slate-500 text-[11px] underline">
-                        Open in external browser instead
+                      <Text className="text-slate-300 text-xs font-semibold">
+                        📱 Join In-App (Modal WebView)
                       </Text>
                     </Pressable>
 
@@ -349,12 +349,24 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 <Text className="text-[10px] text-slate-400">Encrypted Consultation</Text>
               </View>
             </View>
-            <Pressable
-              onPress={() => setActiveCallRoom(null)}
-              className="bg-rose-600 active:bg-rose-700 px-3.5 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
-            >
-              <Text className="text-white text-xs font-bold uppercase tracking-wider">✕ Exit</Text>
-            </Pressable>
+            <View className="flex-row items-center gap-2">
+              <Pressable
+                onPress={() => {
+                  const room = activeCallRoom;
+                  setActiveCallRoom(null);
+                  if (room) handleOpenExternalBrowser(undefined, room);
+                }}
+                className="bg-slate-700 active:bg-slate-600 px-2.5 py-1.5 rounded-lg flex-row items-center"
+              >
+                <Text className="text-emerald-300 text-[11px] font-bold">🌐 Switch to Chrome</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setActiveCallRoom(null)}
+                className="bg-rose-600 active:bg-rose-700 px-3 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
+              >
+                <Text className="text-white text-xs font-bold uppercase tracking-wider">✕ Exit</Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Embedded WebRTC Call via WebView */}
