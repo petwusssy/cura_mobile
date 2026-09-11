@@ -65,15 +65,25 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const handleOpenExternalBrowser = async (rawUrl?: string, reqId?: string) => {
     try {
       const roomId = getRoomId(rawUrl, reqId);
-      const targetUrl = `https://cura-bice.vercel.app/call/${roomId}?role=patient`;
-      await WebBrowser.openBrowserAsync(targetUrl, {
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        toolbarColor: '#0B2136',
-        secondaryToolbarColor: '#0B2136',
-        controlsColor: '#FFFFFF',
-        showTitle: false,
-        enableBarCollapsing: false,
-      });
+      const redirectUrl = Linking.createURL('telemedicine');
+      const targetUrl = `https://cura-bice.vercel.app/call/${roomId}?role=patient&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+      try {
+        const res = await WebBrowser.openAuthSessionAsync(targetUrl, redirectUrl);
+        if (res.type === 'success' || res.type === 'dismiss') {
+          fetchRequests(true);
+          return;
+        }
+      } catch {
+        await WebBrowser.openBrowserAsync(targetUrl, {
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+          toolbarColor: '#0B2136',
+          secondaryToolbarColor: '#0B2136',
+          controlsColor: '#FFFFFF',
+          showTitle: false,
+          enableBarCollapsing: false,
+        });
+      }
     } catch (err) {
       console.warn("Could not open in-app call browser:", err);
     }
@@ -163,10 +173,32 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
-      case "Approved": return <Badge variant="success">Approved</Badge>;
-      case "Rejected": return <Badge variant="error">Rejected</Badge>;
-      case "Completed": return <Badge variant="neutral">Completed</Badge>;
-      default: return <Badge variant="warning">Pending</Badge>;
+      case "Approved":
+        return (
+          <View className="flex-row items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+            <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <Text className="text-xs font-bold text-emerald-800">Approved</Text>
+          </View>
+        );
+      case "Rejected":
+        return (
+          <View className="flex-row items-center gap-1.5 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
+            <Text className="text-xs font-bold text-rose-800">Rejected</Text>
+          </View>
+        );
+      case "Completed":
+        return (
+          <View className="flex-row items-center gap-1.5 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full">
+            <Text className="text-xs font-bold text-slate-700">Completed</Text>
+          </View>
+        );
+      default:
+        return (
+          <View className="flex-row items-center gap-1.5 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+            <View className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <Text className="text-xs font-bold text-amber-800">Pending</Text>
+          </View>
+        );
     }
   };
 
@@ -177,16 +209,16 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       {/* Tabs */}
       <View className="flex-row px-6 mb-4 mt-2">
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#0B2136]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#1B3A6B]" : "border-transparent"}`}
           onPress={() => setActiveTab("book")}
         >
-          <Text className={`font-bold ${activeTab === "book" ? "text-[#0B2136]" : "text-slate-400"}`}>Book Call</Text>
+          <Text className={`font-bold text-sm ${activeTab === "book" ? "text-[#1B3A6B]" : "text-slate-400"}`}>Book Call</Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#0B2136]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#1B3A6B]" : "border-transparent"}`}
           onPress={() => setActiveTab("history")}
         >
-          <Text className={`font-bold ${activeTab === "history" ? "text-[#0B2136]" : "text-slate-400"}`}>My Requests</Text>
+          <Text className={`font-bold text-sm ${activeTab === "history" ? "text-[#1B3A6B]" : "text-slate-400"}`}>My Requests</Text>
         </Pressable>
       </View>
 

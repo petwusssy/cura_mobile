@@ -169,8 +169,9 @@ export default function App() {
     const handleUrl = (event: { url: string }) => {
       try {
         WebBrowser.dismissBrowser();
+        WebBrowser.dismissAuthSession();
       } catch (e) {}
-      if (event?.url && event.url.includes("telemedicine")) {
+      if (event?.url && (event.url.includes("telemedicine") || event.url.includes("curamobile"))) {
         navigate("telemedicine");
       }
     };
