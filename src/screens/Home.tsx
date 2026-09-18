@@ -41,15 +41,47 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const elapsed = hasBed ? Math.floor((Date.now() - new Date(BED_ASSIGNMENT.startTime).getTime()) / 1000) : 0;
   const [secs, setSecs] = useState(Math.max(totalSecs - elapsed, 0));
 
-  useEffect(() => {
-    if (secs <= 0) return;
-    const t = setInterval(() => setSecs((s) => Math.max(s - 1, 0)), 1000);
-    return () => clearInterval(t);
-  }, [secs]);
-
   const mins = Math.floor(secs / 60);
   const sec = secs % 60;
   const isBedActive = secs > 0 && hasBed;
+
+  const [queue, setQueue] = useState<any>(null);
+  const [joining, setJoining] = useState(false);
+
+  useEffect(() => {
+    const fetchQueue = async () => {
+      try {
+        const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/');
+        if (res.ok) {
+          const qs = await res.json();
+          const myQueue = qs.find((q: any) => q.patient === (user as any).id && q.status !== 'done');
+          setQueue(myQueue || null);
+        }
+      } catch (e) {}
+    };
+    fetchQueue();
+    const t = setInterval(fetchQueue, 3000);
+    return () => clearInterval(t);
+  }, [user]);
+
+  const joinQueue = async () => {
+    if (queue || joining) return;
+    setJoining(true);
+    try {
+      const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient: (user as any).id })
+      });
+      if (res.ok) {
+        const q = await res.json();
+        setQueue(q);
+      }
+    } catch (e) {}
+    setJoining(false);
+  };
+
+  const isQueueActive = !!queue;
 
   return (
     <View className="flex-1 bg-transparent">
@@ -81,10 +113,10 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
         {/* 2. Hero Card (Most Urgent Action) */}
         <View className="px-6 mb-8">
-          <SectionHeader title={isBedActive ? "Active Rest" : dueMed ? "Medication Due" : latestConsult ? "Next Follow-up" : "All Caught Up!"} action={latestConsult ? "See all" : undefined} onAction={latestConsult ? () => navigate("health-history") : undefined} />
+          <SectionHeader title={isQueueActive ? "Live Queue" : isBedActive ? "Active Rest" : dueMed ? "Medication Due" : latestConsult ? "Next Follow-up" : "All Caught Up!"} action={latestConsult ? "See all" : undefined} onAction={latestConsult ? () => navigate("health-history") : undefined} />
           
           <Pressable 
-            onPress={() => isBedActive ? {} : dueMed ? navigate("medications") : latestConsult ? navigate("health-history") : {}}
+            onPress={() => isQueueActive ? {} : isBedActive ? {} : dueMed ? navigate("medications") : latestConsult ? navigate("health-history") : {}}
             className="w-full bg-cura-900 rounded-[32px] p-6 relative overflow-hidden mt-2"
             style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 }}
           >
@@ -93,9 +125,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             <View className="absolute right-12 -bottom-10 w-24 h-24 rounded-full bg-white/10" />
 
             <View className="flex-row items-start justify-between mb-4">
-              <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center gap-1">
+              <View className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 ${isQueueActive && queue.status === 'called' ? 'bg-green-500' : 'bg-white/20'}`}>
                 <Text className="text-white text-xs font-bold">
-                  {isBedActive ? "🛏️ Timer" : dueMed ? "💊 Alert" : latestConsult ? "📅 Soon" : "✨ Great"}
+                  {isQueueActive ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist") : isBedActive ? "🛏️ Timer" : dueMed ? "💊 Alert" : latestConsult ? "📅 Soon" : "✨ Great"}
                 </Text>
               </View>
               <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
@@ -107,18 +139,18 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
             <View className="mb-6 z-10 w-2/3">
               <Text className="text-white/80 text-sm font-medium mb-1">
-                {isBedActive ? BED_ASSIGNMENT?.reason : dueMed ? dueMed.instructions || "Take medication" : latestConsult ? latestConsult.complaint : "You have no pending actions"}
+                {isQueueActive ? (queue.status === 'called' ? "Please proceed to the counter" : "You are currently in queue") : isBedActive ? BED_ASSIGNMENT?.reason : dueMed ? dueMed.instructions || "Take medication" : latestConsult ? latestConsult.complaint : "You have no pending actions"}
               </Text>
               <Text className="text-white text-2xl font-bold" style={{ fontFamily: "Outfit" }}>
-                {isBedActive ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : dueMed ? dueMed.medicineName : latestConsult ? latestConsult.doctorName || "Doctor" : "Stay Healthy!"}
+                {isQueueActive ? `Queue #${queue.queue_number}` : isBedActive ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : dueMed ? dueMed.medicineName : latestConsult ? latestConsult.doctorName || "Doctor" : "Stay Healthy!"}
               </Text>
               {isBedActive && <Text className="text-white/80 text-xs mt-1">Remaining time</Text>}
             </View>
 
-            { (isBedActive || dueMed || latestConsult) && (
-              <View className="bg-white px-5 py-2.5 rounded-full self-start z-10">
-                <Text className="text-cura-600 text-xs font-bold">
-                  {isBedActive ? "View Status" : dueMed ? "Take Meds" : "View Details"}
+            { (isQueueActive || isBedActive || dueMed || latestConsult) && (
+              <View className={`px-5 py-2.5 rounded-full self-start z-10 ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
+                <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
+                  {isQueueActive ? (queue.status === 'called' ? "Ready Now" : "Waiting...") : isBedActive ? "View Status" : dueMed ? "Take Meds" : "View Details"}
                 </Text>
               </View>
             )}
@@ -126,7 +158,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             {/* Giant illustrative emoji on the right */}
             <View className="absolute -right-4 bottom-2 opacity-90">
               <Text style={{ fontSize: 96, transform: [{ rotate: '-10deg' }] }}>
-                {isBedActive ? "😴" : dueMed ? "💊" : latestConsult ? "👨‍⚕️" : "🌟"}
+                {isQueueActive ? "🎟️" : isBedActive ? "😴" : dueMed ? "💊" : latestConsult ? "👨‍⚕️" : "🌟"}
               </Text>
             </View>
           </Pressable>
@@ -139,13 +171,14 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
             {[
+              { label: "Queue", icon: "🎫", bg: "#FEF2F2", action: joinQueue },
               { label: "Telemed", icon: "📹", bg: "#EFF6FF", screen: "telemedicine" as Screen },
               { label: "Appoint", icon: "📅", bg: "#FDF4FF", screen: "appointment" as Screen },
               { label: "Meds", icon: "💊", bg: "#ECFDF5", screen: "medications" as Screen },
               { label: "Certs", icon: "📄", bg: "#FFFBEB", screen: "documents" as Screen },
             ].map((c) => (
-              <Pressable key={c.label} onPress={() => navigate(c.screen)} className="items-center gap-2">
-                <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: c.bg }}>
+              <Pressable key={c.label} onPress={() => c.action ? c.action() : navigate(c.screen)} className="items-center gap-2">
+                <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: c.bg, opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 }}>
                   <Text className="text-2xl">{c.icon}</Text>
                 </View>
                 <Text className="text-xs font-semibold text-slate-600">{c.label}</Text>

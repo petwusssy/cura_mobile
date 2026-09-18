@@ -143,3 +143,12 @@ export interface BedAssignment {
   startTime: string; // ISO string
   reason: string;
 }
+
+export interface PatientQueue {
+  id: string;
+  patient: string;
+  queue_number: number;
+  status: "waiting" | "called" | "done";
+  date: string;
+}
+
