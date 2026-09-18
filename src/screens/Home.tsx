@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
 import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,6 +47,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
   const [queue, setQueue] = useState<any>(null);
   const [joining, setJoining] = useState(false);
+  const joiningRef = useRef(false);
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -65,7 +66,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   }, [user]);
 
   const joinQueue = async () => {
-    if (queue || joining) return;
+    if (queue || joining || joiningRef.current) return;
+    joiningRef.current = true;
     setJoining(true);
     try {
       const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/', {
@@ -79,6 +81,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       }
     } catch (e) {}
     setJoining(false);
+    joiningRef.current = false;
   };
 
   const isQueueActive = !!queue;
