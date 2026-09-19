@@ -53,19 +53,48 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
   useEffect(() => {
     const fetchQueue = async () => {
+      if (joiningRef.current) return;
+
       try {
         const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/');
         if (res.ok) {
           const qs = await res.json();
-          const myQueue = qs.find((q: any) => q.patient === (user as any).id && q.status !== 'done');
-          setQueue(myQueue || null);
+          if (!Array.isArray(qs)) return;
+
+          const currentPatientId = (user as any)?.id || (user as any)?.id_number;
+          const currentPatientName = (
+            (user as any)?.displayName || 
+            (user as any)?.name || 
+            `${user.firstName || ''} ${user.lastName || ''}`
+          ).trim().toUpperCase();
+
+          const myQueue = qs.find((q: any) => {
+            if (q.status === 'done') return false;
+            if (queue?.id && q.id === queue.id) return true;
+            if (currentPatientId && String(q.patient) === String(currentPatientId)) return true;
+            if (currentPatientName && q.patient_name && q.patient_name.trim().toUpperCase() === currentPatientName) return true;
+            return false;
+          });
+
+          // If current queue was marked done by clinic staff, clear it
+          if (queue?.id) {
+            const wasDone = qs.some((q: any) => q.id === queue.id && q.status === 'done');
+            if (wasDone) {
+              setQueue(null);
+              setAheadCount(0);
+              return;
+            }
+          }
+
           if (myQueue) {
+            setQueue(myQueue);
             const ahead = qs.filter((q: any) => 
               (q.status === 'waiting' || q.status === 'called') && 
               q.queue_number < myQueue.queue_number
             ).length;
             setAheadCount(ahead);
-          } else {
+          } else if (!queue) {
+            setQueue(null);
             setAheadCount(0);
           }
         }
@@ -74,17 +103,36 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     fetchQueue();
     const t = setInterval(fetchQueue, 1500);
     return () => clearInterval(t);
-  }, [user]);
+  }, [user, queue?.id]);
 
   const joinQueue = async () => {
     if (queue || joining || joiningRef.current) return;
+
+    let patientId = (user as any)?.id || (user as any)?.id_number;
+
+    if (!patientId && user?.email) {
+      try {
+        const pRes = await fetch('https://cura-backend-dvj5.onrender.com/api/patients/');
+        if (pRes.ok) {
+          const patients = await pRes.json();
+          const p = patients.find((item: any) => item.email?.toLowerCase().trim() === user.email?.toLowerCase().trim());
+          if (p?.id) patientId = p.id;
+        }
+      } catch (e) {}
+    }
+
+    if (!patientId) {
+      console.warn("Patient ID missing for queue");
+      return;
+    }
+
     joiningRef.current = true;
     setJoining(true);
     try {
       const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patient: (user as any).id })
+        body: JSON.stringify({ patient: String(patientId) })
       });
       if (res.ok) {
         const q = await res.json();

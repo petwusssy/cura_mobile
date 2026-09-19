@@ -110,13 +110,14 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         setUser((prev: any) => {
           const token = prev?.accessToken || storedToken || patient.accessToken;
           const updated = {
-            ...patient,
             ...prev,
+            ...patient,
+            id: String(patient.id || prev?.id || prev?.id_number || ''),
+            id_number: String(patient.id || prev?.id_number || ''),
             name: upperName,
             firstName: upperName.split(' ')[0] || prev?.firstName || '',
             lastName: upperName.split(' ').slice(1).join(' ') || prev?.lastName || '',
             displayName: upperName || prev?.displayName || '',
-            id_number: patient.id || prev?.id_number || '',
             category: (patient.category || prev?.category || 'outsider').toLowerCase(),
             accessToken: token,
           };

@@ -780,6 +780,13 @@ export function AvatarScreen({ navigate, user, setUser }: NavProps) {
       });
 
       if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        if (resData?.patient_id || resData?.user?.id) {
+          const resolvedId = resData.patient_id || resData.user.id;
+          finalUser.id = resolvedId;
+          (finalUser as any).id_number = resolvedId;
+          setUser(finalUser);
+        }
         await AsyncStorage.setItem('@cura_user_session', JSON.stringify(finalUser)).catch(() => {});
         navigate("onboard-complete");
       } else {
