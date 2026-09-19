@@ -72,7 +72,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       } catch (e) {}
     };
     fetchQueue();
-    const t = setInterval(fetchQueue, 3000);
+    const t = setInterval(fetchQueue, 1500);
     return () => clearInterval(t);
   }, [user]);
 
