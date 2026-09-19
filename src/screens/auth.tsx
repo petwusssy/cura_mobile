@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Rect, Path, Polyline, Circle } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
@@ -141,6 +142,9 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         
         if (setUser) {
           setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
+        }
+        if (loginData.access) {
+          AsyncStorage.setItem('@cura_access_token', loginData.access).catch(() => {});
         }
         if (loadUserData) {
           loadUserData(userEmail);
@@ -457,8 +461,20 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           const data = await res.json().catch(() => ({}));
           const userEmail = data.user?.email || form.email;
           const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
+          const token = data.access || data.token;
+          if (token) {
+            await AsyncStorage.setItem('@cura_access_token', token).catch(() => {});
+          }
           if (setUser) {
-            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access }));
+            setUser((prev: any) => ({
+              ...prev,
+              email: userEmail,
+              firstName: userName,
+              displayName: userName,
+              lastName: '',
+              category: (form.role || 'outsider').toLowerCase(),
+              accessToken: token
+            }));
           }
           if (loadUserData) {
             await loadUserData(userEmail);

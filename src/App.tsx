@@ -71,7 +71,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
             const brandNewNotifs = myNotifs.filter((n: any) => !n.read && n.id && !knownIdsRef.current.has(String(n.id)));
             brandNewNotifs.forEach((n: any) => {
               knownIdsRef.current.add(String(n.id));
-              showAlert('Notification', n.message || n.title, 'info');
+              showAlert('Notification', n.message || n.title);
             });
           }
         }
@@ -103,18 +103,29 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       const patients = await pRes.json();
       const patient = patients.find((p: any) => p.email?.toLowerCase().trim() === email.toLowerCase().trim());
       
+      const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
+      
       if (patient) {
         const upperName = (patient.name || '').toUpperCase();
-        const updated = {
-          ...patient,
-          name: upperName,
-          firstName: upperName.split(' ')[0] || '',
-          lastName: upperName.split(' ').slice(1).join(' ') || '',
-          displayName: upperName,
-          id_number: patient.id,
-        };
-        setUser(updated);
-        AsyncStorage.setItem('@cura_user_session', JSON.stringify(updated)).catch(() => {});
+        setUser((prev: any) => {
+          const token = prev?.accessToken || storedToken || patient.accessToken;
+          const updated = {
+            ...patient,
+            ...prev,
+            name: upperName,
+            firstName: upperName.split(' ')[0] || prev?.firstName || '',
+            lastName: upperName.split(' ').slice(1).join(' ') || prev?.lastName || '',
+            displayName: upperName || prev?.displayName || '',
+            id_number: patient.id || prev?.id_number || '',
+            category: (patient.category || prev?.category || 'outsider').toLowerCase(),
+            accessToken: token,
+          };
+          AsyncStorage.setItem('@cura_user_session', JSON.stringify(updated)).catch(() => {});
+          if (token) {
+            AsyncStorage.setItem('@cura_access_token', token).catch(() => {});
+          }
+          return updated;
+        });
         
         // Fetch consultations and certificates concurrently
         const [cRes, certRes] = await Promise.all([
@@ -179,16 +190,21 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const resetApp = useCallback(() => {
     AsyncStorage.removeItem('@cura_user_session').catch(() => {});
+    AsyncStorage.removeItem('@cura_access_token').catch(() => {});
     setUser(DEFAULT_USER);
     setStack([{ screen: "welcome" }]);
   }, []);
 
   useEffect(() => {
-    AsyncStorage.getItem('@cura_user_session').then((stored) => {
+    AsyncStorage.getItem('@cura_user_session').then(async (stored) => {
+      const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
           if (parsed?.id || parsed?.email) {
+            if (storedToken && !parsed.accessToken) {
+              parsed.accessToken = storedToken;
+            }
             setUser(parsed);
             setStack([{ screen: initialScreen || "home" }]);
             if (parsed.email) {
