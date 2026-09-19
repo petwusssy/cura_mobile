@@ -13,10 +13,17 @@ interface MobileShellProps { children: ReactNode; theme?: string; }
 export function MobileShell({ children, theme = 'light' }: MobileShellProps) {
   return (
     <View
-      className={`flex-1 bg-[var(--background)] ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
+      className={`flex-1 ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
+      style={{ backgroundColor: '#1B3A6B' }}
     >
+      {/* Animated Blobs for Background */}
+      <View className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <View className="absolute top-[10%] left-[-20%] w-[120px] h-[120px] bg-[#dbeafe]/10 rounded-full animate-blob1" />
+        <View className="absolute bottom-[20%] right-[-10%] w-[150px] h-[150px] bg-[#bfdbfe]/10 rounded-full animate-blob2" />
+      </View>
+
       {/* Screen content */}
-      <View className="flex-1">{children}</View>
+      <View className="flex-1 z-10">{children}</View>
     </View>
   );
 }
