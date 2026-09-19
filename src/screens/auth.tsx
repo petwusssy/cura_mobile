@@ -27,21 +27,21 @@ export function WelcomeScreen({ navigate }: NavProps) {
   const insets = useSafeAreaInsets();
   return (
     <LinearGradient
-      colors={['#E4F4FB', '#E4F4FB']}
+      colors={['#0a1628', '#0d1f3c', '#091422']}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 0.3, y: 1 }}
       className="flex-1"
     >
       {/* Hero content */}
-      <View className="flex-1 items-center justify-center px-8 relative" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
+      <View className="flex-1 items-center justify-center px-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
         {/* Logo */}
         <View className="relative mb-8">
           <LinearGradient
-            colors={['#0EA5E9', '#0284C7']}
+            colors={['#2563eb', '#1d4ed8']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             className="w-24 h-24 rounded-[32px] items-center justify-center"
-            style={{ elevation: 12, shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 32 }}
+            style={{ elevation: 16, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 32 }}
           >
             <Svg width="46" height="46" viewBox="0 0 46 46" fill="none">
               <Rect x="18" y="4" width="10" height="38" rx="5" fill="white"/>
@@ -50,38 +50,19 @@ export function WelcomeScreen({ navigate }: NavProps) {
           </LinearGradient>
         </View>
 
-        <Text className="text-[52px] font-black tracking-tight mb-1" style={{ color: "#0B2136", fontFamily: "Outfit" }}>
+        <Text className="text-[56px] font-black tracking-tight mb-1" style={{ color: '#ffffff', fontFamily: 'Outfit', letterSpacing: -1 }}>
           CURA
         </Text>
-        <Text className="text-sm font-bold tracking-widest uppercase mb-6" style={{ color: "#0284C7" }}>
+        <Text className="text-sm font-bold tracking-widest uppercase mb-8" style={{ color: '#60a5fa' }}>
           University Clinic
         </Text>
-        <Text className="text-slate-600 text-center text-sm leading-relaxed mb-10 font-medium" style={{ maxWidth: 280 }}>
-          Your personal health companion — smarter, simpler campus care, right in your pocket.
+        <Text className="text-center font-semibold leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)', maxWidth: 260, fontSize: 15 }}>
+          Your personal health companion for smarter, simpler campus care.
         </Text>
-
-        {/* Feature pills */}
-        <View className="flex-row flex-wrap gap-2.5 justify-center mb-4">
-          {[
-            { icon: "🩺", label: "Health Records" },
-            { icon: "💊", label: "Medications" },
-            { icon: "📋", label: "Documents" },
-            { icon: "🏥", label: "Clinic Visits" },
-          ].map((f) => (
-            <View
-              key={f.label}
-              className="flex-row items-center gap-1.5 px-4 py-2.5 rounded-full bg-white"
-              style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
-            >
-              <Text className="text-sm">{f.icon}</Text>
-              <Text className="text-xs font-bold text-slate-700">{f.label}</Text>
-            </View>
-          ))}
-        </View>
       </View>
 
       {/* CTA */}
-      <View className="px-6 pb-12 flex-col gap-3">
+      <View className="px-6 flex-col gap-3" style={{ paddingBottom: Math.max(insets.bottom, 32) + 16 }}>
         <Button fullWidth onPress={() => navigate("register")}>
           Create Account — {"It's Free"}
         </Button>
@@ -92,7 +73,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
         >
           Sign In
         </Button>
-        <Text className="text-center text-[12px] text-slate-500 font-medium mt-1">
+        <Text className="text-center font-semibold mt-1" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
           Protected by university-grade security 🔒
         </Text>
       </View>

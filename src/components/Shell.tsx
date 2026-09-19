@@ -209,14 +209,14 @@ interface ButtonProps {
 export function Button({ variant = "primary", loading, fullWidth, children, onPress, disabled, className = "" }: ButtonProps) {
   const variants = {
     primary:   "bg-cura-900",
-    secondary: "bg-white",
+    secondary: "",
     ghost:     "",
     danger:    "bg-rose-50 border border-rose-100",
   };
   
   const textVariants = {
     primary:   "text-white",
-    secondary: "text-slate-800",
+    secondary: "text-white",
     ghost:     "text-slate-600",
     danger:    "text-rose-600",
   };
@@ -229,11 +229,11 @@ export function Button({ variant = "primary", loading, fullWidth, children, onPr
       style={({ pressed }) => ({
         transform: [{ scale: pressed && !disabled && !loading ? 0.96 : 1 }],
         opacity: pressed && !disabled && !loading ? 0.85 : (disabled || loading ? 0.5 : 1),
-        ...(variant === 'secondary' ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 } : {})
+        ...(variant === 'secondary' ? { backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' } : {})
       })}
     >
       {loading && <ActivityIndicator size="small" color={variant === 'primary' ? 'white' : '#0B2136'} />}
-      <Text className={`font-bold text-sm ${textVariants[variant]}`}>
+      <Text className={`font-bold ${textVariants[variant]}`} style={{ fontSize: 15 }}>
         {children}
       </Text>
     </Pressable>
