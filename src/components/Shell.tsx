@@ -8,19 +8,16 @@ import type { Screen } from "../types";
 // ── Mobile shell wrapper ────────────────────────────────────────────────────
 // In a real mobile app, we don't need the fake device frame.
 // We just render the children in a flexible container.
-interface MobileShellProps { children: ReactNode }
+interface MobileShellProps { children: ReactNode; theme?: string; }
 
-export function MobileShell({ children }: MobileShellProps) {
+export function MobileShell({ children, theme = 'light' }: MobileShellProps) {
   return (
-    <LinearGradient
-      colors={['#E4F4FB', '#E4F4FB']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="flex-1"
+    <View
+      className={`flex-1 bg-[var(--background)] ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
     >
       {/* Screen content */}
       <View className="flex-1">{children}</View>
-    </LinearGradient>
+    </View>
   );
 }
 

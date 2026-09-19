@@ -96,6 +96,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const [medications, setMedications] = useState<any[]>([]);
   const [certificates, setCertificates] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [theme, setTheme] = useState<string>("light");
 
   const loadUserData = useCallback(async (email: string) => {
     try {
@@ -205,6 +206,9 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   useEffect(() => {
     AsyncStorage.getItem('@cura_user_session').then(async (stored) => {
       const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
+      const storedTheme = await AsyncStorage.getItem('@cura_theme').catch(() => null);
+      if (storedTheme) setTheme(storedTheme);
+      
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -249,7 +253,12 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const isMainTab = MAIN_TABS.includes(current.screen);
 
-  const navProps = { navigate, goBack, user, setUser, params: current.params, resetApp };
+  const handleSetTheme = useCallback((newTheme: string) => {
+    setTheme(newTheme);
+    AsyncStorage.setItem('@cura_theme', newTheme).catch(() => {});
+  }, []);
+
+  const navProps = { navigate, goBack, user, setUser, params: current.params, resetApp, theme, setTheme: handleSetTheme };
 
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
@@ -277,7 +286,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "prescription-detail": return <PrescriptionDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
       case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
-      case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} />;
+      case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
 
       default: return <WelcomeScreen navigate={navigate} goBack={goBack} />;
     }
@@ -286,7 +295,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   return (
     <AlertProvider>
       {splashDone && <NotificationPoller user={user} setNotifications={setNotifications} />}
-      <MobileShell>
+      <MobileShell theme={theme}>
         {renderScreen()}
         {splashDone && isMainTab && (
           <BottomNav active={current.screen} navigate={navigate} />

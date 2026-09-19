@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline } from "react-native-svg";
 import type { Screen, AppUser } from "../types";
-import { AvatarBadge } from "../components/Shell";
+import { AvatarBadge, Select } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MASCOTS } from "../data";
 
@@ -14,9 +14,11 @@ interface Props {
   consultations?: any[];
   medications?: any[];
   certificates?: any[];
+  theme?: string;
+  setTheme?: (theme: string) => void;
 }
 
-export function ProfileScreen({ user, resetApp, consultations = [], medications = [], certificates = [] }: Props) {
+export function ProfileScreen({ user, resetApp, consultations = [], medications = [], certificates = [], theme, setTheme }: Props) {
   const insets = useSafeAreaInsets();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
 
@@ -158,6 +160,23 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
               </View>
             </View>
           ))}
+
+          {/* Appearance Summary */}
+          <View className="mb-4">
+            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Appearance</Text>
+            <View className="bg-white rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
+              <Select
+                label="Theme"
+                value={theme || 'light'}
+                options={[
+                  { label: 'Light', value: 'light' },
+                  { label: 'Dark', value: 'dark' },
+                  { label: 'Ocean', value: 'ocean' },
+                ]}
+                onValueChange={(val) => setTheme && setTheme(val)}
+              />
+            </View>
+          </View>
 
           {/* Health Summary */}
           <View>
