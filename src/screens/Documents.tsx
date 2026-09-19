@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, ScrollView, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Polyline, Rect, Line } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, Header, EmptyState } from "../components/Shell";
@@ -17,18 +18,18 @@ type Tab = "prescriptions" | "certificates" | "transfers";
 
 // ── Documents ─────────────────────────────────────────────────────────────────
 
-export function DocumentsScreen({ navigate, params }: Props) {
+export function DocumentsScreen({ navigate, goBack, params, certificates }: Props) {
   const [tab, setTab] = useState<Tab>((params?.tab as Tab) || "prescriptions");
 
   const tabs: { id: Tab; label: string; icon: string; count: number }[] = [
     { id: "prescriptions", label: "Prescriptions", icon: "🩺", count: PRESCRIPTIONS.length },
-    { id: "certificates",  label: "Certificates",  icon: "📄", count: CERTIFICATES.length },
+    { id: "certificates",  label: "Certificates",  icon: "📄", count: (certificates && certificates.length > 0) ? certificates.length : CERTIFICATES.length },
     { id: "transfers",     label: "Transfers",     icon: "🚑", count: TRANSFERS.length },
   ];
 
   return (
     <View className="flex-1 bg-transparent">
-      <Header title="My Documents" />
+      <Header title="My Documents" onBack={goBack} />
 
       {/* Tabs */}
       <View className="bg-white border-b border-sky-100">
@@ -213,6 +214,7 @@ function TransferList() {
 // ── Prescription Detail ───────────────────────────────────────────────────────
 
 export function PrescriptionDetailScreen({ goBack, params }: Props) {
+  const insets = useSafeAreaInsets();
   const prescription = PRESCRIPTIONS.find((p) => p.id === params?.id);
   const [zoomed, setZoomed] = useState(false);
 
@@ -229,27 +231,30 @@ export function PrescriptionDetailScreen({ goBack, params }: Props) {
 
   return (
     <View className="flex-1" style={{ backgroundColor: "#0F172A" }}>
-      <View className="flex-row items-center gap-3 px-4 py-3" style={{ backgroundColor: "#0F172A" }}>
-        <Pressable onPress={goBack} className="w-9 h-9 rounded-full bg-white/10 items-center justify-center">
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <View
+        className="flex-row items-center gap-3 px-4 pb-3"
+        style={{ backgroundColor: "#0F172A", paddingTop: Math.max(insets.top, 12) + 8 }}
+      >
+        <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="15 18 9 12 15 6"/>
           </Svg>
         </Pressable>
         <View className="flex-1">
-          <Text className="text-white text-sm font-bold">Prescription</Text>
+          <Text className="text-white text-base font-bold" style={{ fontFamily: "Outfit" }}>Prescription</Text>
           <Text className="text-slate-400 text-xs">{prescription.date}</Text>
         </View>
         <Pressable
           onPress={() => setZoomed(!zoomed)}
-          className="w-9 h-9 rounded-full bg-white/10 items-center justify-center"
+          className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
         >
-          <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             {zoomed ? (
               <>
                 <Polyline points="4 14 10 14 10 20"/>
                 <Polyline points="20 10 14 10 14 4"/>
-                <Line x1="10" y1="14" x2="3" y2="21"/>
-                <Line x1="21" y1="3" x2="14" y2="10"/>
+                <Line x1="14" y1="10" x2="21" y2="3"/>
+                <Line x1="3" y1="21" x2="10" y2="14"/>
               </>
             ) : (
               <>
@@ -263,6 +268,7 @@ export function PrescriptionDetailScreen({ goBack, params }: Props) {
         </Pressable>
       </View>
 
+      {/* Main content */}
       <View className="flex-1">
         <View className={`${zoomed ? "flex-1" : ""} items-center justify-center p-4`} style={!zoomed ? { elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 32 } : undefined}>
           <Image
@@ -276,7 +282,7 @@ export function PrescriptionDetailScreen({ goBack, params }: Props) {
         {!zoomed && (
           <ScrollView className="flex-1 bg-white rounded-t-3xl p-5 mt-auto">
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-base font-bold text-slate-900">Prescription Details</Text>
+              <Text className="text-base font-bold text-slate-900" style={{ fontFamily: "Outfit" }}>Prescription Details</Text>
               <Badge variant="neutral">View-only</Badge>
             </View>
             <View className="mb-4">
@@ -305,6 +311,7 @@ export function PrescriptionDetailScreen({ goBack, params }: Props) {
 // ── Certificate Detail ────────────────────────────────────────────────────────
 
 export function CertificateDetailScreen({ goBack, params }: Props) {
+  const insets = useSafeAreaInsets();
   const cert = CERTIFICATES.find((c) => c.id === params?.id);
 
   if (!cert) {
@@ -324,15 +331,16 @@ export function CertificateDetailScreen({ goBack, params }: Props) {
         colors={['#EFF8FF', '#DEF0FF']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="flex-row items-center gap-3 px-4 py-3"
+        className="flex-row items-center gap-3 px-4 pb-3"
+        style={{ paddingTop: Math.max(insets.top, 12) + 8 }}
       >
-        <Pressable onPress={goBack} className="w-9 h-9 rounded-full bg-white items-center justify-center shadow-sm" style={{ elevation: 2 }}>
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm" style={{ elevation: 2 }}>
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="15 18 9 12 15 6"/>
           </Svg>
         </Pressable>
         <View>
-          <Text className="text-slate-800 text-sm font-bold">Medical Certificate</Text>
+          <Text className="text-slate-800 text-base font-bold">Medical Certificate</Text>
           <Text className="text-slate-400 text-xs">View-only document</Text>
         </View>
       </LinearGradient>

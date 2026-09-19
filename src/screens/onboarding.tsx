@@ -27,13 +27,26 @@ interface NavProps {
 
 // ── Shared UI ─────────────────────────────────────────────────────────────────
 
-function OnboardProgress({ step, total }: { step: number; total: number }) {
+function OnboardProgress({ step, total, onBack }: { step: number; total: number; onBack?: () => void }) {
   const insets = useSafeAreaInsets();
   return (
-    <View className="px-6 py-4 flex-row gap-1" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-      {Array.from({ length: total }).map((_, i) => (
-        <View key={i} className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-[#0B2136]" : "bg-[#0B2136]/20"}`} />
-      ))}
+    <View className="px-6 py-4 flex-row items-center gap-3" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
+      {onBack && (
+        <Pressable
+          onPress={onBack}
+          className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm"
+          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
+        >
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <Polyline points="15 18 9 12 15 6"/>
+          </Svg>
+        </Pressable>
+      )}
+      <View className="flex-1 flex-row gap-1">
+        {Array.from({ length: total }).map((_, i) => (
+          <View key={i} className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-[#0B2136]" : "bg-[#0B2136]/20"}`} />
+        ))}
+      </View>
     </View>
   );
 }
@@ -332,7 +345,7 @@ function Button({ children, onPress, disabled, loading, fullWidth, className = "
 
 // ── Basic Info (Name, Contact, DOB, Sex, Emergency) ───────────────────────────
 
-export function PersonalInfoScreen({ navigate, user, setUser }: NavProps) {
+export function PersonalInfoScreen({ navigate, user, setUser, goBack }: NavProps) {
   const [form, setForm] = useState({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
@@ -349,7 +362,7 @@ export function PersonalInfoScreen({ navigate, user, setUser }: NavProps) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-[#E4F4FB]">
-      <OnboardProgress step={1} total={3} />
+      <OnboardProgress step={1} total={3} onBack={goBack} />
       <View className="px-6 py-2 mb-4">
         <Text className="text-[28px] font-black text-[#0B2136] tracking-tight mb-1" style={{ fontFamily: "Outfit" }}>Basic Info</Text>
         <Text className="text-[#0B2136]/60 text-sm font-bold">Tell us about yourself</Text>
@@ -440,7 +453,7 @@ export function PersonalInfoScreen({ navigate, user, setUser }: NavProps) {
 
 // ── Category Specific Info (Student, Employee, or eGov-style Address for Outsider) ─
 
-export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
+export function AcademicInfoScreen({ navigate, user, setUser, goBack }: NavProps) {
   const rawCat = (user.category || (user.email?.endsWith(".student@ua.edu.ph") ? "student" : user.email?.endsWith("@ua.edu.ph") ? "employee" : "outsider")).toLowerCase();
   const category = rawCat === "student" || rawCat === "employee" ? rawCat : "outsider";
 
@@ -479,23 +492,21 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
   }, [availableProvinces, selectedProvinceCode]);
 
   const availableCities = useMemo(() => {
-    if (!currentProvince) return [];
-    return getCitiesByProvince(currentProvince.province_code);
-  }, [currentProvince]);
+    return getCitiesByProvince(selectedProvinceCode);
+  }, [selectedProvinceCode]);
 
   const currentCity = useMemo(() => {
     return availableCities.find((c) => c.city_code === selectedCityCode) || availableCities[0];
   }, [availableCities, selectedCityCode]);
 
   const availableBarangays = useMemo(() => {
-    if (!currentCity) return [];
-    return getBarangaysByCity(currentCity.city_code);
-  }, [currentCity]);
+    return getBarangaysByCity(selectedCityCode);
+  }, [selectedCityCode]);
 
-  // Keep form.address in sync for outsiders
+  // Sync address preview string whenever location components change
   useEffect(() => {
     if (category === "outsider") {
-      const parts = [];
+      const parts: string[] = [];
       if (street.trim()) parts.push(street.trim());
       if (selectedBarangay.trim()) parts.push(`Brgy. ${selectedBarangay.trim()}`);
       if (currentCity?.city_name) parts.push(currentCity.city_name);
@@ -527,7 +538,7 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-[#E4F4FB]">
-      <OnboardProgress step={2} total={3} />
+      <OnboardProgress step={2} total={3} onBack={goBack} />
       <View className="px-6 py-2 mb-4">
         <Text className="text-[28px] font-black text-[#0B2136] tracking-tight mb-1" style={{ fontFamily: "Outfit" }}>
           {category === "student" ? "Student Info" : category === "employee" ? "Employee Info" : "Address"}
@@ -697,7 +708,7 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
 
-export function AvatarScreen({ navigate, user, setUser }: NavProps) {
+export function AvatarScreen({ navigate, user, setUser, goBack }: NavProps) {
   const { showAlert } = useAlert();
   const [selected, setSelected] = useState<string>("");
   const [displayName, setDisplayName] = useState((user.firstName || "").toUpperCase());
@@ -776,7 +787,7 @@ export function AvatarScreen({ navigate, user, setUser }: NavProps) {
       const res = await fetch("https://cura-backend-dvj5.onrender.com/api/auth/complete-profile/", {
         method: "POST",
         headers,
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -807,7 +818,7 @@ export function AvatarScreen({ navigate, user, setUser }: NavProps) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-[#E4F4FB]">
-      <OnboardProgress step={3} total={3} />
+      <OnboardProgress step={3} total={3} onBack={goBack} />
       <View className="px-6 py-2 mb-4">
         <Text className="text-[28px] font-black text-[#0B2136] tracking-tight mb-1" style={{ fontFamily: "Outfit" }}>Choose avatar</Text>
         <Text className="text-[#0B2136]/60 text-sm font-bold">Pick a companion for your health journey</Text>

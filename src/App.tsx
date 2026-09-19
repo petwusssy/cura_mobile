@@ -186,7 +186,13 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   }, []);
 
   const goBack = useCallback(() => {
-    setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
+    setStack((prev) => {
+      if (prev.length > 1) return prev.slice(0, -1);
+      if (prev.length === 1 && prev[0].screen !== "home" && MAIN_TABS.includes(prev[0].screen)) {
+        return [{ screen: "home" }];
+      }
+      return prev;
+    });
   }, []);
 
   const resetApp = useCallback(() => {

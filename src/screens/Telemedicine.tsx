@@ -210,16 +210,16 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       {/* Tabs */}
       <View className="flex-row px-6 mb-4 mt-2">
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#1B3A6B]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#0B2136]" : "border-transparent"}`}
           onPress={() => setActiveTab("book")}
         >
-          <Text className={`font-bold text-sm ${activeTab === "book" ? "text-[#1B3A6B]" : "text-slate-400"}`}>Book Call</Text>
+          <Text className={`font-bold text-sm ${activeTab === "book" ? "text-[#0B2136]" : "text-slate-400"}`}>Book Call</Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#1B3A6B]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#0B2136]" : "border-transparent"}`}
           onPress={() => setActiveTab("history")}
         >
-          <Text className={`font-bold text-sm ${activeTab === "history" ? "text-[#1B3A6B]" : "text-slate-400"}`}>My Requests</Text>
+          <Text className={`font-bold text-sm ${activeTab === "history" ? "text-[#0B2136]" : "text-slate-400"}`}>My Requests</Text>
         </Pressable>
       </View>
 

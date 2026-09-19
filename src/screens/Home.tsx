@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
 import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
-import { Card, SectionHeader, Badge, AvatarBadge } from "../components/Shell";
+import { Card, SectionHeader, Badge, AvatarBadge, Header } from "../components/Shell";
 import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT, MASCOTS } from "../data";
 
 interface Props {
@@ -37,8 +37,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
   // Bed Timer Logic
   const hasBed = !!BED_ASSIGNMENT;
-  const totalSecs = hasBed ? (BED_ASSIGNMENT.allottedMinutes * 60) : 0;
-  const elapsed = hasBed ? Math.floor((Date.now() - new Date(BED_ASSIGNMENT.startTime).getTime()) / 1000) : 0;
+  const totalSecs = BED_ASSIGNMENT ? (BED_ASSIGNMENT.allottedMinutes * 60) : 0;
+  const elapsed = BED_ASSIGNMENT ? Math.floor((Date.now() - new Date(BED_ASSIGNMENT.startTime).getTime()) / 1000) : 0;
   const [secs, setSecs] = useState(Math.max(totalSecs - elapsed, 0));
 
   const mins = Math.floor(secs / 60);
@@ -342,22 +342,20 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <View className="border-b border-slate-100 flex-row items-center px-6 py-4 gap-4 mt-8">
-        <Pressable onPress={goBack} className="w-10 h-10 rounded-full border border-slate-200 items-center justify-center">
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <Polyline points="15 18 9 12 15 6"/>
-          </Svg>
-        </Pressable>
-        <Text className="flex-1 text-lg font-bold text-slate-800" style={{ fontFamily: "Outfit" }}>Notifications</Text>
-        <View className="bg-cura-500 rounded-full px-2.5 py-1">
-          <Text className="text-white text-[11px] font-bold">
-            {activeNotifs.length} new
-          </Text>
-        </View>
-      </View>
+    <View className="flex-1 bg-transparent">
+      <Header
+        title="Notifications"
+        onBack={goBack}
+        right={
+          <View className="bg-cura-500 rounded-full px-2.5 py-1">
+            <Text className="text-white text-[11px] font-bold">
+              {activeNotifs.length} new
+            </Text>
+          </View>
+        }
+      />
       
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-3 pb-8">
           {activeNotifs.length > 0 ? activeNotifs.map((n) => (
             <Pressable

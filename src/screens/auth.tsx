@@ -155,7 +155,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       >
         <Pressable
           onPress={goBack}
-          className="w-10 h-10 rounded-full bg-white/60 items-center justify-center mb-8"
+          className="w-10 h-10 rounded-full bg-white items-center justify-center mb-5 shadow-sm"
+          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
         >
           <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="15 18 9 12 15 6"/>
@@ -493,8 +494,14 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
   return (
     <View className="flex-1 bg-[#E4F4FB]">
       <View className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-        <Pressable onPress={handleBack} className="w-10 h-10 rounded-full bg-white/60 items-center justify-center mb-8">
-          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
+        <Pressable
+          onPress={handleBack}
+          className="w-10 h-10 rounded-full bg-white items-center justify-center mb-5 shadow-sm"
+          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
+        >
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <Polyline points="15 18 9 12 15 6"/>
+          </Svg>
         </Pressable>
         <Text className="text-[28px] font-black text-slate-800 mb-2 tracking-tight" style={{ fontFamily: "Outfit" }}>
           {step === 1 ? "Create your account ✨" : step === 4 ? "Verify your email 📬" : "Almost done 🔒"}
@@ -748,8 +755,14 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
   return (
     <View className="flex-1 bg-[#E4F4FB]">
       <View className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-        <Pressable onPress={() => step === 1 ? goBack() : setStep((s) => (s - 1) as any)} className="w-10 h-10 rounded-full bg-white/60 items-center justify-center mb-8">
-          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><Polyline points="15 18 9 12 15 6"/></Svg>
+        <Pressable
+          onPress={() => step === 1 ? goBack() : setStep((s) => (s - 1) as any)}
+          className="w-10 h-10 rounded-full bg-white items-center justify-center mb-5 shadow-sm"
+          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
+        >
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <Polyline points="15 18 9 12 15 6"/>
+          </Svg>
         </Pressable>
         <Text className="text-[28px] font-black text-slate-800 mb-2 tracking-tight" style={{ fontFamily: "Outfit" }}>
           {step === 1 ? "Forgot password?" : step === 2 ? "Enter OTP" : "Set New Password"}

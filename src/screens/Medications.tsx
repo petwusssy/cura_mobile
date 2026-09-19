@@ -93,7 +93,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
           )}
 
           {filtered.map((med) => {
-            const cfg = statusConfig[med.status];
+            const cfg = statusConfig[med.status as keyof typeof statusConfig] || statusConfig["upcoming"];
             const isExpanded = expanded === med.id;
 
             return (
