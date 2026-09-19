@@ -50,6 +50,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const [joining, setJoining] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const joiningRef = useRef(false);
+  const cancelledQueueIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -57,53 +58,45 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
       try {
         const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/');
-        if (res.ok) {
-          const qs = await res.json();
-          if (!Array.isArray(qs)) return;
+        if (!res.ok) return;
+        const qs = await res.json();
+        if (!Array.isArray(qs)) return;
 
-          const currentPatientId = (user as any)?.id || (user as any)?.id_number;
-          const currentPatientName = (
-            (user as any)?.displayName || 
-            (user as any)?.name || 
-            `${user.firstName || ''} ${user.lastName || ''}`
-          ).trim().toUpperCase();
+        const currentPatientId = (user as any)?.id || (user as any)?.id_number;
+        const currentPatientName = (
+          (user as any)?.displayName || 
+          (user as any)?.name || 
+          `${user.firstName || ''} ${user.lastName || ''}`
+        ).trim().toUpperCase();
 
-          const myQueue = qs.find((q: any) => {
-            if (q.status === 'done') return false;
-            if (queue?.id && q.id === queue.id) return true;
-            if (currentPatientId && String(q.patient) === String(currentPatientId)) return true;
-            if (currentPatientName && q.patient_name && q.patient_name.trim().toUpperCase() === currentPatientName) return true;
-            return false;
-          });
+        const activeTickets = qs.filter((q: any) => {
+          if (q.status === 'done') return false;
+          if (cancelledQueueIdRef.current && q.id === cancelledQueueIdRef.current) return false;
+          if (currentPatientId && String(q.patient) === String(currentPatientId)) return true;
+          if (currentPatientName && q.patient_name && q.patient_name.trim().toUpperCase() === currentPatientName) return true;
+          return false;
+        });
 
-          // If current queue was marked done by clinic staff, clear it
-          if (queue?.id) {
-            const wasDone = qs.some((q: any) => q.id === queue.id && q.status === 'done');
-            if (wasDone) {
-              setQueue(null);
-              setAheadCount(0);
-              return;
-            }
-          }
-
-          if (myQueue) {
-            setQueue(myQueue);
-            const ahead = qs.filter((q: any) => 
-              (q.status === 'waiting' || q.status === 'called') && 
-              q.queue_number < myQueue.queue_number
-            ).length;
-            setAheadCount(ahead);
-          } else if (!queue) {
-            setQueue(null);
-            setAheadCount(0);
-          }
+        if (activeTickets.length > 0) {
+          activeTickets.sort((a: any, b: any) => a.queue_number - b.queue_number);
+          const myQueue = activeTickets[activeTickets.length - 1];
+          setQueue(myQueue);
+          const ahead = qs.filter((q: any) => 
+            (q.status === 'waiting' || q.status === 'called') && 
+            q.queue_number < myQueue.queue_number
+          ).length;
+          setAheadCount(ahead);
+        } else {
+          setQueue(null);
+          setAheadCount(0);
         }
       } catch (e) {}
     };
+
     fetchQueue();
     const t = setInterval(fetchQueue, 1500);
     return () => clearInterval(t);
-  }, [user, queue?.id]);
+  }, [(user as any)?.id, (user as any)?.id_number, user?.email]);
 
   const joinQueue = async () => {
     if (queue || joining || joiningRef.current) return;
@@ -121,11 +114,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       } catch (e) {}
     }
 
-    if (!patientId) {
-      console.warn("Patient ID missing for queue");
-      return;
-    }
+    if (!patientId) return;
 
+    cancelledQueueIdRef.current = null;
     joiningRef.current = true;
     setJoining(true);
     try {
@@ -145,16 +136,16 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
   const cancelQueue = async () => {
     if (!queue || cancelling) return;
+    const targetId = queue.id;
+    cancelledQueueIdRef.current = targetId;
     setCancelling(true);
+    setQueue(null);
+    setAheadCount(0);
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/queue/${queue.id}/cancel/`, {
+      await fetch(`https://cura-backend-dvj5.onrender.com/api/queue/${targetId}/cancel/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      if (res.ok) {
-        setQueue(null);
-        setAheadCount(0);
-      }
     } catch (e) {}
     setCancelling(false);
   };
