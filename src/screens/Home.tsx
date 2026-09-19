@@ -46,7 +46,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const isBedActive = secs > 0 && hasBed;
 
   const [queue, setQueue] = useState<any>(null);
+  const [aheadCount, setAheadCount] = useState<number>(0);
   const [joining, setJoining] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const joiningRef = useRef(false);
 
   useEffect(() => {
@@ -57,6 +59,15 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           const qs = await res.json();
           const myQueue = qs.find((q: any) => q.patient === (user as any).id && q.status !== 'done');
           setQueue(myQueue || null);
+          if (myQueue) {
+            const ahead = qs.filter((q: any) => 
+              (q.status === 'waiting' || q.status === 'called') && 
+              q.queue_number < myQueue.queue_number
+            ).length;
+            setAheadCount(ahead);
+          } else {
+            setAheadCount(0);
+          }
         }
       } catch (e) {}
     };
@@ -82,6 +93,22 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     } catch (e) {}
     setJoining(false);
     joiningRef.current = false;
+  };
+
+  const cancelQueue = async () => {
+    if (!queue || cancelling) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/queue/${queue.id}/cancel/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        setQueue(null);
+        setAheadCount(0);
+      }
+    } catch (e) {}
+    setCancelling(false);
   };
 
   const isQueueActive = !!queue;
@@ -140,9 +167,15 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               </View>
             </View>
 
-            <View className="mb-6 z-10 w-2/3">
+            <View className="mb-6 z-10 w-3/4">
               <Text className="text-white/80 text-sm font-medium mb-1">
-                {isQueueActive ? (queue.status === 'called' ? "Please proceed to the counter" : "You are currently in queue") : isBedActive ? BED_ASSIGNMENT?.reason : dueMed ? dueMed.instructions || "Take medication" : latestConsult ? latestConsult.complaint : "You have no pending actions"}
+                {isQueueActive ? (
+                  queue.status === 'called' 
+                    ? "📢 It's your turn! Proceed to counter" 
+                    : aheadCount === 0 
+                      ? "🎉 You are next in line! (0 ahead)" 
+                      : `⏳ ${aheadCount} ${aheadCount === 1 ? 'patient' : 'patients'} ahead of you`
+                ) : isBedActive ? BED_ASSIGNMENT?.reason : dueMed ? dueMed.instructions || "Take medication" : latestConsult ? latestConsult.complaint : "You have no pending actions"}
               </Text>
               <Text className="text-white text-2xl font-bold" style={{ fontFamily: "Outfit" }}>
                 {isQueueActive ? `Queue #${queue.queue_number}` : isBedActive ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : dueMed ? dueMed.medicineName : latestConsult ? latestConsult.doctorName || "Doctor" : "Stay Healthy!"}
@@ -151,10 +184,23 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             </View>
 
             { (isQueueActive || isBedActive || dueMed || latestConsult) && (
-              <View className={`px-5 py-2.5 rounded-full self-start z-10 ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
-                <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
-                  {isQueueActive ? (queue.status === 'called' ? "Ready Now" : "Waiting...") : isBedActive ? "View Status" : dueMed ? "Take Meds" : "View Details"}
-                </Text>
+              <View className="flex-row items-center gap-2 z-10">
+                <View className={`px-5 py-2.5 rounded-full ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
+                  <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
+                    {isQueueActive ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line") : isBedActive ? "View Status" : dueMed ? "Take Meds" : "View Details"}
+                  </Text>
+                </View>
+                {isQueueActive && (
+                  <Pressable 
+                    onPress={cancelQueue}
+                    disabled={cancelling}
+                    className="px-4 py-2.5 rounded-full bg-white/20 active:bg-white/30"
+                  >
+                    <Text className="text-white/90 text-xs font-semibold">
+                      {cancelling ? "Leaving..." : "Leave Queue"}
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             )}
 
