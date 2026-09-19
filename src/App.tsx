@@ -245,8 +245,10 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const navProps = { navigate, goBack, user, setUser, params: current.params, resetApp };
 
+  const handleSplashDone = useCallback(() => setSplashDone(true), []);
+
   const renderScreen = () => {
-    if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
+    if (!splashDone) return <SplashScreen onDone={handleSplashDone} />;
 
     switch (current.screen) {
       case "welcome":       return <WelcomeScreen navigate={navigate} goBack={goBack} />;
@@ -277,7 +279,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   return (
     <AlertProvider>
-      <NotificationPoller user={user} setNotifications={setNotifications} />
+      {splashDone && <NotificationPoller user={user} setNotifications={setNotifications} />}
       <MobileShell>
         {renderScreen()}
         {splashDone && isMainTab && (

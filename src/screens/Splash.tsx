@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { View, Text, Animated } from "react-native";
+import { useEffect, useState, useRef } from "react";
+import { View, Text, Animated, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Rect, Path } from "react-native-svg";
 
@@ -9,31 +9,39 @@ interface Props {
 
 export function SplashScreen({ onDone }: Props) {
   const [phase, setPhase] = useState<"in" | "hold" | "out">("in");
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
   
   // Basic react-native animation values
-  const scale = new Animated.Value(0.7);
-  const opacity = new Animated.Value(0);
+  const scale = useRef(new Animated.Value(0.7)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(scale, { toValue: 1, duration: 700, useNativeDriver: true }).start();
-    Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }).start();
+    Animated.timing(scale, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }).start();
 
-    const t1 = setTimeout(() => setPhase("hold"), 700);
+    const t1 = setTimeout(() => setPhase("hold"), 500);
     const t2 = setTimeout(() => {
       setPhase("out");
-      Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }).start();
-    }, 2200);
-    const t3 = setTimeout(() => onDone(), 2600);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onDone]);
+      Animated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+    }, 1200);
+    const t3 = setTimeout(() => onDoneRef.current?.(), 1500);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
 
   return (
-    <LinearGradient
-      colors={['#0B2136', '#0B2136']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      className="flex-1 items-center justify-center relative"
-    >
+    <Pressable onPress={() => onDoneRef.current?.()} className="flex-1">
+      <LinearGradient
+        colors={['#0B2136', '#0B2136']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        className="flex-1 items-center justify-center relative"
+      >
       <Animated.View style={{ transform: [{ scale }], opacity }} className="items-center">
         <View className="relative mb-5">
           <LinearGradient
@@ -72,5 +80,6 @@ export function SplashScreen({ onDone }: Props) {
         </View>
       )}
     </LinearGradient>
-  );
+  </Pressable>
+);
 }
