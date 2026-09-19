@@ -59,18 +59,33 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #030213;
+  --sidebar: #1B3A6B;
+  --background: var(--sidebar);
+  --foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #0B2136;
+  --text-muted: #94A3B8;
+  --border: #f1f5f9;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --sidebar: oklch(0.145 0 0);
+  --background: var(--sidebar);
   --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --text-muted: oklch(0.708 0 0);
+  --border: oklch(0.269 0 0);
 }
 
 .ocean {
-  --background: oklch(0.20 0.05 250);
+  --sidebar: oklch(0.18 0.06 250);
+  --background: var(--sidebar);
   --foreground: oklch(0.98 0.02 250);
+  --card: oklch(0.25 0.06 250);
+  --card-foreground: oklch(0.98 0.02 250);
+  --text-muted: oklch(0.80 0.04 250);
+  --border: oklch(0.35 0.08 250);
 }
 
 html, body, #root {
@@ -170,3 +185,17 @@ h1, h2, h3, h4, h5 {
   50% { opacity: 0.35; }
 }
 .cura-pulse { animation: cura-pulse 1.8s ease-in-out infinite; }
+
+/* Background blobs */
+@keyframes blob1 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(20px, -10px) scale(1.1); }
+  66% { transform: translate(-10px, 15px) scale(0.95); }
+}
+@keyframes blob2 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(-25px, 10px) scale(0.9); }
+  66% { transform: translate(15px, -15px) scale(1.1); }
+}
+.animate-blob1 { animation: blob1 8s ease-in-out infinite; }
+.animate-blob2 { animation: blob2 10s ease-in-out infinite; }

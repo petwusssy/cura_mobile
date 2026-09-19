@@ -161,15 +161,15 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           <View className="flex-row items-center gap-3">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={48} />
             <View>
-              <Text className="text-[#0B2136] text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
+              <Text className="text-[var(--foreground)] text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
                 Hi, {(user.displayName || user.firstName || "Patient").toUpperCase()}
               </Text>
-              <Text className="text-slate-400 text-xs font-medium">{getGreeting()}</Text>
+              <Text className="text-[var(--text-muted)] text-xs font-medium">{getGreeting()}</Text>
             </View>
           </View>
           <Pressable
             onPress={() => navigate("notifications")}
-            className="w-12 h-12 rounded-full border border-slate-200 bg-white items-center justify-center relative"
+            className="w-12 h-12 rounded-full border border-[var(--border)] bg-[var(--card)] items-center justify-center relative"
           >
             <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><Path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -190,16 +190,16 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 }}
           >
             {/* Background Decorations */}
-            <View className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10" />
-            <View className="absolute right-12 -bottom-10 w-24 h-24 rounded-full bg-white/10" />
+            <View className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-[var(--card)]/10" />
+            <View className="absolute right-12 -bottom-10 w-24 h-24 rounded-full bg-[var(--card)]/10" />
 
             <View className="flex-row items-start justify-between mb-4">
-              <View className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 ${isQueueActive && queue.status === 'called' ? 'bg-green-500' : 'bg-white/20'}`}>
+              <View className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 ${isQueueActive && queue.status === 'called' ? 'bg-green-500' : 'bg-[var(--card)]/20'}`}>
                 <Text className="text-white text-xs font-bold">
                   {isQueueActive ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist") : isBedActive ? "🛏️ Timer" : dueMed ? "💊 Alert" : latestConsult ? "📅 Soon" : "✨ Great"}
                 </Text>
               </View>
-              <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
+              <View className="w-8 h-8 rounded-full bg-[var(--card)]/20 items-center justify-center">
                 <Svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="none">
                   <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </Svg>
@@ -224,7 +224,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
             { (isQueueActive || isBedActive || dueMed || latestConsult) && (
               <View className="flex-row items-center gap-2 z-10">
-                <View className={`px-5 py-2.5 rounded-full ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
+                <View className={`px-5 py-2.5 rounded-full ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-[var(--card)]'}`}>
                   <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
                     {isQueueActive ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line") : isBedActive ? "View Status" : dueMed ? "Take Meds" : "View Details"}
                   </Text>
@@ -233,7 +233,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                   <Pressable 
                     onPress={cancelQueue}
                     disabled={cancelling}
-                    className="px-4 py-2.5 rounded-full bg-white/20 active:bg-white/30"
+                    className="px-4 py-2.5 rounded-full bg-[var(--card)]/20 active:bg-[var(--card)]/30"
                   >
                     <Text className="text-white/90 text-xs font-semibold">
                       {cancelling ? "Leaving..." : "Leave Queue"}
@@ -269,7 +269,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: c.bg, opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 }}>
                   <Text className="text-2xl">{c.icon}</Text>
                 </View>
-                <Text className="text-xs font-semibold text-slate-600">{c.label}</Text>
+                <Text className="text-xs font-semibold text-[var(--text-muted)]">{c.label}</Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -281,7 +281,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           {latestConsult ? (
             <Pressable 
               onPress={() => navigate("health-detail", { id: latestConsult.id })}
-              className="bg-white rounded-[24px] p-4 flex-row items-center gap-4 mt-2"
+              className="bg-[var(--card)] rounded-[24px] p-4 flex-row items-center gap-4 mt-2"
               style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 }}
             >
               <View className="relative">
@@ -291,21 +291,21 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white" />
               </View>
               <View className="flex-1">
-                <Text className="text-sm font-bold text-slate-800">{latestConsult.doctorName || "Consultation"}</Text>
-                <Text className="text-xs text-slate-400 mt-0.5">{latestConsult.complaint}</Text>
+                <Text className="text-sm font-bold text-[var(--card-foreground)]">{latestConsult.doctorName || "Consultation"}</Text>
+                <Text className="text-xs text-[var(--text-muted)] mt-0.5">{latestConsult.complaint}</Text>
               </View>
               <View className="items-end gap-1">
-                <Text className="text-xs font-bold text-slate-800">{latestConsult.timeIn}</Text>
-                <Text className="text-[10px] font-semibold text-slate-400">
+                <Text className="text-xs font-bold text-[var(--card-foreground)]">{latestConsult.timeIn}</Text>
+                <Text className="text-[10px] font-semibold text-[var(--text-muted)]">
                   {new Date(latestConsult.date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "Asia/Manila" })}
                 </Text>
               </View>
             </Pressable>
           ) : (
-            <View className="bg-white rounded-[24px] p-6 items-center justify-center mt-2 border border-slate-100 shadow-sm shadow-slate-200">
+            <View className="bg-[var(--card)] rounded-[24px] p-6 items-center justify-center mt-2 border border-[var(--border)] shadow-sm shadow-slate-200">
               <Text className="text-3xl mb-2">🌿</Text>
               <Text className="text-sm font-bold text-slate-700">No recent visits</Text>
-              <Text className="text-xs text-slate-400 text-center mt-1">Your consultation history will appear here.</Text>
+              <Text className="text-xs text-[var(--text-muted)] text-center mt-1">Your consultation history will appear here.</Text>
             </View>
           )}
         </View>
@@ -361,7 +361,7 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
             <Pressable
               key={n.id}
               onPress={() => handlePress(n)}
-              className="bg-white rounded-[24px] p-4 flex-row items-start gap-4"
+              className="bg-[var(--card)] rounded-[24px] p-4 flex-row items-start gap-4"
               style={{
                 elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8,
                 borderWidth: 1,
@@ -373,18 +373,18 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
               </View>
               <View className="flex-1 pt-1">
                 <View className="flex-row items-center gap-2 mb-1">
-                  <Text className="text-sm font-bold text-slate-800">{n.title || n.type}</Text>
+                  <Text className="text-sm font-bold text-[var(--card-foreground)]">{n.title || n.type}</Text>
                   <View className="w-2 h-2 rounded-full bg-cura-500" />
                 </View>
-                <Text className="text-xs text-slate-500 leading-relaxed">{n.message}</Text>
-                <Text className="text-[10px] text-slate-400 mt-2 font-medium">{n.created_at ? new Date(n.created_at).toLocaleString() : 'recently'}</Text>
+                <Text className="text-xs text-[var(--text-muted)] leading-relaxed">{n.message}</Text>
+                <Text className="text-[10px] text-[var(--text-muted)] mt-2 font-medium">{n.created_at ? new Date(n.created_at).toLocaleString() : 'recently'}</Text>
               </View>
             </Pressable>
           )) : (
-            <View className="bg-white rounded-[24px] p-8 items-center justify-center mt-4 border border-slate-100">
+            <View className="bg-[var(--card)] rounded-[24px] p-8 items-center justify-center mt-4 border border-[var(--border)]">
               <Text className="text-4xl mb-3">🔔</Text>
               <Text className="text-base font-bold text-slate-700">No Notifications</Text>
-              <Text className="text-sm text-slate-400 text-center mt-1">You're all caught up!</Text>
+              <Text className="text-sm text-[var(--text-muted)] text-center mt-1">You're all caught up!</Text>
             </View>
           )}
         </View>
