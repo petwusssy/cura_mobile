@@ -73,7 +73,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
         className="px-5 pb-7"
         style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
-        <Text className="text-[var(--foreground)] text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
+        <Text className="text-[#0B2136] text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
 
         <View className="flex-row items-center gap-4">
           <View className="relative">
@@ -88,10 +88,10 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
             </Pressable>
           </View>
           <View>
-            <Text className="text-xl font-black text-[var(--foreground)]" style={{ fontFamily: "Outfit" }}>
+            <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>
               {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
-            <Text className="text-xs text-[var(--text-muted)] mt-0.5">{user.email}</Text>
+            <Text className="text-xs text-slate-400 mt-0.5">{user.email}</Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
                 className="rounded-full px-2.5 py-0.5"
@@ -100,7 +100,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
                 <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
               </View>
               {user.category?.toLowerCase() === "student" && (
-                <Text className="text-[10px] text-[var(--text-muted)] font-medium">
+                <Text className="text-[10px] text-slate-400 font-medium">
                   {[(user as any).studentCategory, user.course, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null, user.yearLevel].filter(Boolean).join(' · ')}
                 </Text>
               )}
@@ -117,12 +117,12 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
           ].map((s) => (
             <View
               key={s.label}
-              className="flex-1 bg-[var(--card)] rounded-[32px] px-3 py-4 items-center"
+              className="flex-1 bg-white rounded-[32px] px-3 py-4 items-center"
               style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
             >
               <Text className="text-base mb-1">{s.icon}</Text>
-              <Text className="text-xl font-black text-[var(--foreground)]" style={{ fontFamily: "Outfit" }}>{s.value}</Text>
-              <Text className="text-[10px] text-[var(--text-muted)] font-medium">{s.label}</Text>
+              <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>{s.value}</Text>
+              <Text className="text-[10px] text-slate-400 font-medium">{s.label}</Text>
             </View>
           ))}
         </View>
@@ -132,9 +132,9 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
         <View className="flex-col gap-4 pb-12">
           {sections.map((section) => (
             <View key={section.title}>
-              <Text className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2 px-1">{section.title}</Text>
+              <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">{section.title}</Text>
               <View
-                className="bg-[var(--card)] rounded-[32px] overflow-hidden p-2"
+                className="bg-white rounded-[32px] overflow-hidden p-2"
                 style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
               >
                 {section.items.map((item, i) => (
@@ -149,8 +149,8 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
                       <Text className="text-base">{item.icon}</Text>
                     </View>
                     <View className="flex-1">
-                      <Text className="text-sm font-semibold text-[var(--card-foreground)]">{item.label}</Text>
-                      <Text className="text-xs text-[var(--text-muted)] mt-0.5" numberOfLines={1}>{item.sub}</Text>
+                      <Text className="text-sm font-semibold text-slate-800">{item.label}</Text>
+                      <Text className="text-xs text-slate-400 mt-0.5" numberOfLines={1}>{item.sub}</Text>
                     </View>
                     <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <Polyline points="9 18 15 12 9 6"/>
@@ -163,8 +163,8 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
 
           {/* Appearance Summary */}
           <View className="mb-4">
-            <Text className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2 px-1">Appearance</Text>
-            <View className="bg-[var(--card)] rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
+            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Appearance</Text>
+            <View className="bg-white rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
               <Select
                 label="Theme"
                 value={theme || 'light'}
@@ -180,8 +180,8 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
 
           {/* Health Summary */}
           <View>
-            <Text className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2 px-1">Health Summary</Text>
-            <View className="bg-[var(--card)] rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
+            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Health Summary</Text>
+            <View className="bg-white rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
               <View className="flex-row flex-wrap justify-between">
                 {[
                   { label: "Blood Type", value: user.bloodType || "—", bg: "#FFF1F2", color: "#F43F5E" },
@@ -191,7 +191,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
                 ].map((item, idx) => (
                   <View key={item.label} className="rounded-xl p-3 mb-2" style={{ backgroundColor: item.bg, width: '48%' }}>
                     <Text className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: item.color }}>{item.label}</Text>
-                    <Text className="text-sm font-bold text-[var(--card-foreground)]" numberOfLines={1}>{item.value}</Text>
+                    <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>{item.value}</Text>
                   </View>
                 ))}
               </View>
@@ -201,7 +201,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
           {/* Logout */}
           <Pressable
             onPress={resetApp}
-            className="flex-row items-center gap-3 bg-[var(--card)] rounded-2xl px-4 py-4 mt-1 border border-rose-100"
+            className="flex-row items-center gap-3 bg-white rounded-2xl px-4 py-4 mt-1 border border-rose-100"
             style={{ elevation: 2, shadowColor: '#F43F5E', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 }}
           >
             <View className="w-9 h-9 rounded-xl bg-rose-50 items-center justify-center">
