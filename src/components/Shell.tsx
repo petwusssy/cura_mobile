@@ -13,6 +13,9 @@ interface MobileShellProps { children: ReactNode; theme?: string; }
 function AnimatedBackground() {
   const anim1 = useRef(new Animated.Value(0)).current;
   const anim2 = useRef(new Animated.Value(0)).current;
+  const anim3 = useRef(new Animated.Value(0)).current;
+  const anim4 = useRef(new Animated.Value(0)).current;
+  const anim5 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loop1 = Animated.loop(
@@ -29,14 +32,42 @@ function AnimatedBackground() {
         Animated.timing(anim2, { toValue: 3, duration: 3400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     );
+    const loop3 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim3, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim3, { toValue: 2, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim3, { toValue: 3, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    const loop4 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim4, { toValue: 1, duration: 5000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim4, { toValue: 2, duration: 5000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim4, { toValue: 3, duration: 5000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    const loop5 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim5, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim5, { toValue: 2, duration: 6000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim5, { toValue: 3, duration: 6000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
     loop1.start();
     loop2.start();
+    loop3.start();
+    loop4.start();
+    loop5.start();
     return () => {
       loop1.stop();
       loop2.stop();
+      loop3.stop();
+      loop4.stop();
+      loop5.stop();
     };
-  }, [anim1, anim2]);
+  }, [anim1, anim2, anim3, anim4, anim5]);
 
+  // Primary large blobs
   const blob1X = anim1.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 30, -15, 0] });
   const blob1Y = anim1.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -15, 20, 0] });
   const blob1Scale = anim1.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [1, 1.1, 0.95, 1] });
@@ -45,8 +76,22 @@ function AnimatedBackground() {
   const blob2Y = anim2.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 15, -20, 0] });
   const blob2Scale = anim2.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [1, 0.9, 1.1, 1] });
 
+  // Secondary small blobs
+  const blob3X = anim3.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -25, 15, 0] });
+  const blob3Y = anim3.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 30, -15, 0] });
+  const blob3Scale = anim3.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [1, 1.15, 0.9, 1] });
+
+  const blob4X = anim4.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 40, -20, 0] });
+  const blob4Y = anim4.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -10, 25, 0] });
+  const blob4Scale = anim4.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [1, 0.85, 1.1, 1] });
+
+  const blob5X = anim5.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -15, 30, 0] });
+  const blob5Y = anim5.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -25, 20, 0] });
+  const blob5Scale = anim5.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [1, 1.2, 0.9, 1] });
+
   return (
     <View className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {/* Primary large blobs */}
       <Animated.View
         className="absolute top-[10%] left-[-20%] w-[250px] h-[250px] bg-[#dbeafe]/10 rounded-full"
         style={{ transform: [{ translateX: blob1X }, { translateY: blob1Y }, { scale: blob1Scale }] }}
@@ -54,6 +99,20 @@ function AnimatedBackground() {
       <Animated.View
         className="absolute bottom-[20%] right-[-10%] w-[300px] h-[300px] bg-[#bfdbfe]/10 rounded-full"
         style={{ transform: [{ translateX: blob2X }, { translateY: blob2Y }, { scale: blob2Scale }] }}
+      />
+
+      {/* Secondary bokeh blobs */}
+      <Animated.View
+        className="absolute top-[25%] right-[5%] w-[80px] h-[80px] bg-[#dbeafe]/5 rounded-full"
+        style={{ transform: [{ translateX: blob3X }, { translateY: blob3Y }, { scale: blob3Scale }] }}
+      />
+      <Animated.View
+        className="absolute bottom-[35%] left-[5%] w-[110px] h-[110px] bg-[#bfdbfe]/5 rounded-full"
+        style={{ transform: [{ translateX: blob4X }, { translateY: blob4Y }, { scale: blob4Scale }] }}
+      />
+      <Animated.View
+        className="absolute top-[45%] left-[55%] w-[60px] h-[60px] bg-[#dbeafe]/5 rounded-full"
+        style={{ transform: [{ translateX: blob5X }, { translateY: blob5Y }, { scale: blob5Scale }] }}
       />
     </View>
   );
