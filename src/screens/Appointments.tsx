@@ -100,10 +100,10 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         <Header title="Appointment" onBack={goBack} />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-6xl mb-6">📅</Text>
-          <Text className="text-xl font-bold text-slate-800 text-center mb-2" style={{ fontFamily: "Outfit" }}>
+          <Text className="text-xl font-bold text-white text-center mb-2" style={{ fontFamily: "Outfit" }}>
             Booking Sent
           </Text>
-          <Text className="text-sm text-slate-500 text-center mb-8 px-4 leading-relaxed">
+          <Text className="text-sm text-white/80 text-center mb-8 px-4 leading-relaxed">
             Your appointment request for {date || "the selected date"} has been sent. Please wait for confirmation from the clinic admin.
           </Text>
           <Button fullWidth onPress={() => { setIsPending(false); setActiveTab("history"); }}>
@@ -130,16 +130,16 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       {/* Tabs */}
       <View className="flex-row px-6 mb-4 mt-2">
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#0B2136]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-white" : "border-transparent"}`}
           onPress={() => setActiveTab("book")}
         >
-          <Text className={`font-bold ${activeTab === "book" ? "text-[#0B2136]" : "text-slate-400"}`}>Book Visit</Text>
+          <Text className={`font-bold ${activeTab === "book" ? "text-white" : "text-white/50"}`}>Book Visit</Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#0B2136]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-white" : "border-transparent"}`}
           onPress={() => setActiveTab("history")}
         >
-          <Text className={`font-bold ${activeTab === "history" ? "text-[#0B2136]" : "text-slate-400"}`}>My Requests</Text>
+          <Text className={`font-bold ${activeTab === "history" ? "text-white" : "text-white/50"}`}>My Requests</Text>
         </Pressable>
       </View>
 
@@ -147,7 +147,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
 
         <View className="mb-6">
-          <Text className="text-sm text-slate-500 mb-2">
+          <Text className="text-sm text-white/80 mb-2">
             Schedule an in-person visit at our clinic by filling out the details below.
           </Text>
         </View>
@@ -231,7 +231,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
           {requests.length === 0 && !isLoading ? (
             <View className="items-center justify-center py-12">
               <Text className="text-4xl mb-4">📭</Text>
-              <Text className="text-slate-500 text-center">No appointment requests found.</Text>
+              <Text className="text-white/80 text-center">No appointment requests found.</Text>
             </View>
           ) : (
             requests.map((req) => (

@@ -161,22 +161,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
             </View>
           ))}
 
-          {/* Appearance Summary */}
-          <View className="mb-4">
-            <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-2 px-1">Appearance</Text>
-            <View className="bg-white rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
-              <Select
-                label="Theme"
-                value={theme || 'light'}
-                options={[
-                  { label: 'Light', value: 'light' },
-                  { label: 'Dark', value: 'dark' },
-                  { label: 'Ocean', value: 'ocean' },
-                ]}
-                onValueChange={(val) => setTheme && setTheme(val)}
-              />
-            </View>
-          </View>
+
 
           {/* Health Summary */}
           <View>
