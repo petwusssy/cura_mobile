@@ -73,7 +73,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
         className="px-5 pb-7"
         style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
-        <Text className="text-[#0B2136] text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
+        <Text className="text-white text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
 
         <View className="flex-row items-center gap-4">
           <View className="relative">
@@ -88,10 +88,10 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
             </Pressable>
           </View>
           <View>
-            <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>
+            <Text className="text-xl font-black text-white" style={{ fontFamily: "Outfit" }}>
               {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
-            <Text className="text-xs text-slate-400 mt-0.5">{user.email}</Text>
+            <Text className="text-xs text-white/70 mt-0.5">{user.email}</Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
                 className="rounded-full px-2.5 py-0.5"
@@ -100,7 +100,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
                 <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
               </View>
               {user.category?.toLowerCase() === "student" && (
-                <Text className="text-[10px] text-slate-400 font-medium">
+                <Text className="text-[10px] text-white/70 font-medium">
                   {[(user as any).studentCategory, user.course, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null, user.yearLevel].filter(Boolean).join(' · ')}
                 </Text>
               )}
@@ -132,7 +132,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
         <View className="flex-col gap-4 pb-12">
           {sections.map((section) => (
             <View key={section.title}>
-              <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">{section.title}</Text>
+              <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-2 px-1">{section.title}</Text>
               <View
                 className="bg-white rounded-[32px] overflow-hidden p-2"
                 style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
@@ -163,7 +163,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
 
           {/* Appearance Summary */}
           <View className="mb-4">
-            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Appearance</Text>
+            <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-2 px-1">Appearance</Text>
             <View className="bg-white rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
               <Select
                 label="Theme"
@@ -180,7 +180,7 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
 
           {/* Health Summary */}
           <View>
-            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Health Summary</Text>
+            <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-2 px-1">Health Summary</Text>
             <View className="bg-white rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
               <View className="flex-row flex-wrap justify-between">
                 {[
@@ -216,8 +216,8 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
           </Pressable>
 
           <View className="items-center flex-col gap-0.5 mt-4">
-            <Text className="text-[11px] text-slate-300 font-medium">CURA · University Clinic Patient App</Text>
-            <Text className="text-[10px] text-slate-200">v1.0.0 · Your health, our priority 💙</Text>
+            <Text className="text-[11px] text-white/60 font-medium">CURA · University Clinic Patient App</Text>
+            <Text className="text-[10px] text-white/50">v1.0.0 · Your health, our priority 💙</Text>
           </View>
         </View>
       </ScrollView>

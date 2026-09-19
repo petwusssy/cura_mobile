@@ -161,10 +161,10 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           <View className="flex-row items-center gap-3">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={48} />
             <View>
-              <Text className="text-[#0B2136] text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
+              <Text className="text-white text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
                 Hi, {(user.displayName || user.firstName || "Patient").toUpperCase()}
               </Text>
-              <Text className="text-slate-400 text-xs font-medium">{getGreeting()}</Text>
+              <Text className="text-white/70 text-xs font-medium">{getGreeting()}</Text>
             </View>
           </View>
           <Pressable
@@ -269,7 +269,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: c.bg, opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 }}>
                   <Text className="text-2xl">{c.icon}</Text>
                 </View>
-                <Text className="text-xs font-semibold text-slate-600">{c.label}</Text>
+                <Text className="text-xs font-semibold text-white/80">{c.label}</Text>
               </Pressable>
             ))}
           </ScrollView>

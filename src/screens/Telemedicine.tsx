@@ -158,10 +158,10 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         <Header title="Telemedicine" onBack={goBack} />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-6xl mb-6">⏳</Text>
-          <Text className="text-xl font-bold text-slate-800 text-center mb-2" style={{ fontFamily: "Outfit" }}>
+          <Text className="text-xl font-bold text-white text-center mb-2" style={{ fontFamily: "Outfit" }}>
             Request Sent
           </Text>
-          <Text className="text-sm text-slate-500 text-center mb-8 px-4 leading-relaxed">
+          <Text className="text-sm text-white/80 text-center mb-8 px-4 leading-relaxed">
             Your telemedicine request has been sent to the clinic. Please wait for a doctor or admin to approve your request.
           </Text>
           <Button fullWidth onPress={() => { setIsPending(false); setActiveTab("history"); }}>
@@ -204,29 +204,29 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-[#F8FAFC]">
+    <View className="flex-1 bg-transparent">
       <Header title="Telemedicine" onBack={goBack} />
 
       {/* Tabs */}
       <View className="flex-row px-6 mb-4 mt-2">
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-[#0B2136]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-white" : "border-transparent"}`}
           onPress={() => setActiveTab("book")}
         >
-          <Text className={`font-bold text-sm ${activeTab === "book" ? "text-[#0B2136]" : "text-slate-400"}`}>Book Call</Text>
+          <Text className={`font-bold text-sm ${activeTab === "book" ? "text-white" : "text-white/50"}`}>Book Call</Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-[#0B2136]" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-white" : "border-transparent"}`}
           onPress={() => setActiveTab("history")}
         >
-          <Text className={`font-bold text-sm ${activeTab === "history" ? "text-[#0B2136]" : "text-slate-400"}`}>My Requests</Text>
+          <Text className={`font-bold text-sm ${activeTab === "history" ? "text-white" : "text-white/50"}`}>My Requests</Text>
         </Pressable>
       </View>
 
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
           <View className="mb-6">
-            <Text className="text-sm text-slate-500 mb-2">
+            <Text className="text-sm text-white/80 mb-2">
               Request an online video consultation. The clinic will review your request and provide a meeting link if approved.
             </Text>
           </View>
@@ -299,7 +299,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           {requests.length === 0 && !isLoading ? (
             <View className="items-center justify-center py-12">
               <Text className="text-4xl mb-4">📭</Text>
-              <Text className="text-slate-500 text-center">No telemedicine requests found.</Text>
+              <Text className="text-white/80 text-center">No telemedicine requests found.</Text>
             </View>
           ) : (
             requests.map((req) => (

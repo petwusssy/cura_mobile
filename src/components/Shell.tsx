@@ -18,8 +18,8 @@ export function MobileShell({ children, theme = 'light' }: MobileShellProps) {
     >
       {/* Animated Blobs for Background */}
       <View className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <View className="absolute top-[10%] left-[-20%] w-[120px] h-[120px] bg-[#dbeafe]/10 rounded-full animate-blob1" />
-        <View className="absolute bottom-[20%] right-[-10%] w-[150px] h-[150px] bg-[#bfdbfe]/10 rounded-full animate-blob2" />
+        <View className="absolute top-[10%] left-[-20%] w-[150px] h-[150px] bg-[#dbeafe]/10 rounded-full animate-blob1" />
+        <View className="absolute bottom-[20%] right-[-10%] w-[190px] h-[190px] bg-[#bfdbfe]/10 rounded-full animate-blob2" />
       </View>
 
       {/* Screen content */}
@@ -131,7 +131,7 @@ export function Header({ title, onBack, right }: HeaderProps) {
           </Svg>
         </Pressable>
       )}
-      <Text className="flex-1 text-[22px] font-black tracking-tight" style={{ color: "#0B2136", fontFamily: 'Outfit' }}>{title}</Text>
+      <Text className="flex-1 text-[22px] font-black tracking-tight" style={{ color: "#FFFFFF", fontFamily: 'Outfit' }}>{title}</Text>
       {right && <View>{right}</View>}
     </View>
   );
@@ -184,7 +184,7 @@ interface InputProps {
 export function Input({ label, error, icon, ...props }: InputProps) {
   return (
     <View className="flex-col gap-1.5">
-      <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">{label}</Text>
+      <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">{label}</Text>
       <View className="relative justify-center">
         {icon && <View className="absolute left-4 z-10">{icon}</View>}
         <TextInput
@@ -326,7 +326,7 @@ export function VitalItem({ icon, label, value }: { icon: string; label: string;
 export function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
     <View className="flex-row items-center justify-between mb-3">
-      <Text className="text-base font-black tracking-tight" style={{ color: "#0B2136", fontFamily: "Outfit" }}>{title}</Text>
+      <Text className="text-base font-black tracking-tight" style={{ color: "#FFFFFF", fontFamily: "Outfit" }}>{title}</Text>
       {action && (
         <Pressable onPress={onAction} className="bg-white px-3 py-1.5 rounded-full" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }}>
           <Text className="text-xs font-bold text-slate-700">{action}</Text>
@@ -360,7 +360,7 @@ interface SelectProps {
 export function Select({ label, value, options, onValueChange }: SelectProps) {
   return (
     <View className="flex-col gap-1.5">
-      <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</Text>
+      <Text className="text-xs font-bold text-white/80 uppercase tracking-wider">{label}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
         {options.map((opt) => {
           const active = value === opt.value;
