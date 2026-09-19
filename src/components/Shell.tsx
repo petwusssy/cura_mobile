@@ -1,5 +1,5 @@
-import { type ReactNode } from "react";
-import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator } from "react-native";
+import { type ReactNode, useEffect, useRef } from "react";
+import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Animated, Easing } from "react-native";
 import Svg, { Path, Circle, Rect, Polyline, Line } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,17 +10,62 @@ import type { Screen } from "../types";
 // We just render the children in a flexible container.
 interface MobileShellProps { children: ReactNode; theme?: string; }
 
+function AnimatedBackground() {
+  const anim1 = useRef(new Animated.Value(0)).current;
+  const anim2 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop1 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim1, { toValue: 1, duration: 2640, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim1, { toValue: 2, duration: 2640, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim1, { toValue: 3, duration: 2720, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    const loop2 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim2, { toValue: 1, duration: 3300, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim2, { toValue: 2, duration: 3300, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim2, { toValue: 3, duration: 3400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    loop1.start();
+    loop2.start();
+    return () => {
+      loop1.stop();
+      loop2.stop();
+    };
+  }, [anim1, anim2]);
+
+  const blob1X = anim1.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 30, -15, 0] });
+  const blob1Y = anim1.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -15, 20, 0] });
+  const blob1Scale = anim1.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [1, 1.1, 0.95, 1] });
+
+  const blob2X = anim2.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -35, 20, 0] });
+  const blob2Y = anim2.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 15, -20, 0] });
+  const blob2Scale = anim2.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [1, 0.9, 1.1, 1] });
+
+  return (
+    <View className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      <Animated.View
+        className="absolute top-[10%] left-[-20%] w-[250px] h-[250px] bg-[#dbeafe]/10 rounded-full"
+        style={{ transform: [{ translateX: blob1X }, { translateY: blob1Y }, { scale: blob1Scale }] }}
+      />
+      <Animated.View
+        className="absolute bottom-[20%] right-[-10%] w-[300px] h-[300px] bg-[#bfdbfe]/10 rounded-full"
+        style={{ transform: [{ translateX: blob2X }, { translateY: blob2Y }, { scale: blob2Scale }] }}
+      />
+    </View>
+  );
+}
+
 export function MobileShell({ children, theme = 'light' }: MobileShellProps) {
   return (
     <View
       className={`flex-1 ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
       style={{ backgroundColor: '#1B3A6B' }}
     >
-      {/* Animated Blobs for Background */}
-      <View className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <View className="absolute top-[10%] left-[-20%] w-[150px] h-[150px] bg-[#dbeafe]/10 rounded-full animate-blob1" />
-        <View className="absolute bottom-[20%] right-[-10%] w-[190px] h-[190px] bg-[#bfdbfe]/10 rounded-full animate-blob2" />
-      </View>
+      <AnimatedBackground />
 
       {/* Screen content */}
       <View className="flex-1 z-10">{children}</View>

@@ -171,16 +171,3 @@ h1, h2, h3, h4, h5 {
 }
 .cura-pulse { animation: cura-pulse 1.8s ease-in-out infinite; }
 
-/* Background blobs */
-@keyframes blob1 {
-  0%, 100% { transform: translateX(0px) translateY(0px) scale(1); }
-  33% { transform: translateX(20px) translateY(-10px) scale(1.1); }
-  66% { transform: translateX(-10px) translateY(15px) scale(0.95); }
-}
-@keyframes blob2 {
-  0%, 100% { transform: translateX(0px) translateY(0px) scale(1); }
-  33% { transform: translateX(-25px) translateY(10px) scale(0.9); }
-  66% { transform: translateX(15px) translateY(-15px) scale(1.1); }
-}
-.animate-blob1 { animation: blob1 8s ease-in-out infinite; }
-.animate-blob2 { animation: blob2 10s ease-in-out infinite; }
