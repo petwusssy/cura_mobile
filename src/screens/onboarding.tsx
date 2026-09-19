@@ -11,7 +11,12 @@ import { useAlert } from "../components/AlertProvider";
 import Svg, { Polyline } from "react-native-svg";
 import { AppUser, PatientCategory, Screen } from "../types";
 import { MASCOTS } from "../data";
-import { PH_REGIONS } from "../constants/phLocations";
+import {
+  PH_REGIONS,
+  getProvincesByRegion,
+  getCitiesByProvince,
+  getBarangaysByCity,
+} from "../constants/phLocations";
 
 interface NavProps {
   navigate: (screen: Screen) => void;
@@ -105,22 +110,36 @@ function DatePickerField({ label, value, onChange, placeholder = "Select Birthda
       )}
 
       {Platform.OS === "ios" && (
-        <Modal visible={showPicker} transparent animationType="slide">
-          <View className="flex-1 justify-end bg-black/40">
+        <Modal visible={showPicker} transparent animationType="slide" onRequestClose={() => setShowPicker(false)}>
+          <View className="flex-1 justify-end bg-black/50">
             <View className="bg-white rounded-t-[32px] p-6 pb-10">
-              <View className="flex-row items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                <Text className="text-base font-bold text-slate-800" style={{ fontFamily: "Outfit" }}>Select Birthday</Text>
-                <Pressable onPress={handleIOSDone} className="bg-[#0B2136] px-4 py-2 rounded-full">
-                  <Text className="text-white text-xs font-bold">Done</Text>
+              <View className="flex-row items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                <Text className="text-lg font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>Select Birthday</Text>
+                <Pressable onPress={handleIOSDone} className="bg-[#0B2136] px-5 py-2.5 rounded-full">
+                  <Text className="text-white text-xs font-black">Done</Text>
                 </Pressable>
               </View>
-              <DateTimePicker
-                value={tempDate}
-                mode="date"
-                display="spinner"
-                maximumDate={new Date()}
-                onChange={(_, d) => { if (d) setTempDate(d); }}
-              />
+
+              <View className="my-2 p-3 bg-slate-50 rounded-2xl items-center border border-slate-100">
+                <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Selected Date</Text>
+                <Text className="text-base font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>
+                  {tempDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                </Text>
+              </View>
+
+              <View className="w-full items-center justify-center py-2">
+                <DateTimePicker
+                  value={tempDate}
+                  mode="date"
+                  display="inline"
+                  themeVariant="light"
+                  maximumDate={new Date()}
+                  onChange={(_, d) => {
+                    if (d) setTempDate(d);
+                  }}
+                  style={{ height: 320, width: "100%" }}
+                />
+              </View>
             </View>
           </View>
         </Modal>
@@ -140,9 +159,9 @@ function LocationModalPicker({
 }: {
   visible: boolean;
   title: string;
-  options: string[];
+  options: { label: string; value: string }[];
   selected: string;
-  onSelect: (val: string) => void;
+  onSelect: (item: { label: string; value: string }) => void;
   onClose: () => void;
   allowCustom?: boolean;
 }) {
@@ -150,61 +169,104 @@ function LocationModalPicker({
 
   const filtered = useMemo(() => {
     if (!search.trim()) return options;
-    return options.filter((o) => o.toLowerCase().includes(search.toLowerCase().trim()));
+    const query = search.toLowerCase().trim();
+    return options.filter((o) => o.label.toLowerCase().includes(query));
   }, [options, search]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 justify-end bg-black/50">
-        <View className="bg-white rounded-t-[32px] max-h-[75%] p-6 pb-8">
-          <View className="flex-row items-center justify-between mb-3 border-b border-slate-100 pb-3">
-            <Text className="text-lg font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>{title}</Text>
-            <Pressable onPress={() => { setSearch(""); onClose(); }} className="p-2">
-              <Text className="text-slate-400 font-bold text-sm">Close</Text>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View className="flex-1 bg-black/60 justify-end">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="w-full bg-white rounded-t-[32px] overflow-hidden"
+          style={{ height: "85%", maxHeight: "85%" }}
+        >
+          {/* Header */}
+          <View className="px-6 pt-5 pb-3 border-b border-slate-100 flex-row items-center justify-between">
+            <View>
+              <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>{title}</Text>
+              <Text className="text-xs text-slate-400 font-bold">{options.length} options available</Text>
+            </View>
+            <Pressable onPress={() => { setSearch(""); onClose(); }} className="bg-slate-100 px-4 py-2 rounded-full">
+              <Text className="text-slate-600 font-bold text-xs">Close</Text>
             </Pressable>
           </View>
 
-          <TextInput
-            placeholder="Search location..."
-            placeholderTextColor="#CBD5E1"
-            value={search}
-            onChangeText={setSearch}
-            className="w-full bg-[#F8FAFC] rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 mb-3"
-          />
+          {/* Search Box */}
+          <View className="px-6 py-3">
+            <View className="flex-row items-center bg-[#F8FAFC] rounded-2xl px-4 py-3 border border-slate-200">
+              <Text className="mr-2 text-slate-400">🔍</Text>
+              <TextInput
+                placeholder="Search..."
+                placeholderTextColor="#94A3B8"
+                value={search}
+                onChangeText={setSearch}
+                className="flex-1 text-sm font-bold text-slate-800 p-0"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+              {search.length > 0 && (
+                <Pressable onPress={() => setSearch("")} className="p-1">
+                  <Text className="text-xs text-slate-400 font-bold">✕</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
 
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={true}>
+          {/* List */}
+          <ScrollView
+            className="flex-1 px-6"
+            contentContainerStyle={{ paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={true}
+          >
             {filtered.map((item) => {
-              const isSel = item === selected;
+              const isSel = item.value === selected || item.label === selected;
               return (
                 <Pressable
-                  key={item}
-                  onPress={() => { onSelect(item); setSearch(""); onClose(); }}
-                  className={`py-3.5 px-4 rounded-xl flex-row items-center justify-between mb-1 ${isSel ? "bg-[#0B2136]/10" : "bg-transparent"}`}
+                  key={item.value}
+                  onPress={() => {
+                    onSelect(item);
+                    setSearch("");
+                    onClose();
+                  }}
+                  className={`py-4 px-4 rounded-2xl flex-row items-center justify-between mb-2 border ${
+                    isSel ? "bg-[#0B2136] border-[#0B2136]" : "bg-slate-50 border-slate-100"
+                  }`}
+                  style={isSel ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 } : {}}
                 >
-                  <Text className={`text-sm font-bold ${isSel ? "text-[#0B2136]" : "text-slate-700"}`}>{item}</Text>
-                  {isSel && <Text className="text-[#0B2136] font-bold">✓</Text>}
+                  <Text className={`text-sm font-bold flex-1 pr-2 ${isSel ? "text-white" : "text-slate-800"}`} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                  {isSel && <Text className="text-white font-bold text-base">✓</Text>}
                 </Pressable>
               );
             })}
 
-            {allowCustom && search.trim().length > 0 && !filtered.includes(search.trim()) && (
+            {allowCustom && search.trim().length > 0 && (
               <Pressable
-                onPress={() => { onSelect(search.trim()); setSearch(""); onClose(); }}
-                className="py-3.5 px-4 rounded-xl bg-blue-50 border border-blue-200 mt-2 flex-row items-center justify-between"
+                onPress={() => {
+                  onSelect({ label: search.trim(), value: search.trim() });
+                  setSearch("");
+                  onClose();
+                }}
+                className="py-4 px-4 rounded-2xl bg-sky-50 border border-sky-300 mt-2 flex-row items-center justify-between"
               >
-                <Text className="text-sm font-bold text-[#0B2136]">Use "{search.trim()}"</Text>
-                <Text className="text-xs text-blue-600 font-bold">Select ➔</Text>
+                <Text className="text-sm font-bold text-[#0B2136] flex-1">
+                  Use "{search.trim()}"
+                </Text>
+                <Text className="text-xs text-sky-600 font-bold ml-2">Select ➔</Text>
               </Pressable>
             )}
 
-            {filtered.length === 0 && (!allowCustom || !search.trim()) && (
-              <View className="py-8 items-center">
-                <Text className="text-slate-400 text-sm font-medium">No results found</Text>
+            {filtered.length === 0 && !allowCustom && (
+              <View className="py-12 items-center">
+                <Text className="text-slate-400 font-bold text-sm">No matches found</Text>
               </View>
             )}
           </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -394,42 +456,41 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
     address: user.address || "",
   });
 
-  // eGov Address Selector State (No GPS needed)
-  const [selectedRegion, setSelectedRegion] = useState("Region III (Central Luzon)");
-  const [selectedProvince, setSelectedProvince] = useState("Pampanga");
-  const [selectedCity, setSelectedCity] = useState("City of San Fernando");
+  // eGov Address Selector State (No GPS needed, 100% official PSGC data)
+  const [selectedRegionCode, setSelectedRegionCode] = useState("03"); // Default Region III Central Luzon
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState("0354"); // Default Pampanga
+  const [selectedCityCode, setSelectedCityCode] = useState("035416"); // Default City of San Fernando
   const [selectedBarangay, setSelectedBarangay] = useState("Dolores");
   const [street, setStreet] = useState("");
 
   const [modalType, setModalType] = useState<"region" | "province" | "city" | "barangay" | null>(null);
 
-  // Derive available options based on selections
-  const currentRegionObj = useMemo(() => {
-    return PH_REGIONS.find((r) => r.name === selectedRegion) || PH_REGIONS[0];
-  }, [selectedRegion]);
+  // Active items derived from PSGC
+  const currentRegion = useMemo(() => {
+    return PH_REGIONS.find((r) => r.region_code === selectedRegionCode) || PH_REGIONS[0];
+  }, [selectedRegionCode]);
 
-  const provinceOptions = useMemo(() => {
-    return currentRegionObj.provinces.map((p) => p.name);
-  }, [currentRegionObj]);
+  const availableProvinces = useMemo(() => {
+    return getProvincesByRegion(selectedRegionCode);
+  }, [selectedRegionCode]);
 
-  const currentProvinceObj = useMemo(() => {
-    return currentRegionObj.provinces.find((p) => p.name === selectedProvince) || currentRegionObj.provinces[0];
-  }, [currentRegionObj, selectedProvince]);
+  const currentProvince = useMemo(() => {
+    return availableProvinces.find((p) => p.province_code === selectedProvinceCode) || availableProvinces[0];
+  }, [availableProvinces, selectedProvinceCode]);
 
-  const cityOptions = useMemo(() => {
-    return currentProvinceObj?.cities.map((c) => c.name) || [];
-  }, [currentProvinceObj]);
+  const availableCities = useMemo(() => {
+    if (!currentProvince) return [];
+    return getCitiesByProvince(currentProvince.province_code);
+  }, [currentProvince]);
 
-  const currentCityObj = useMemo(() => {
-    return currentProvinceObj?.cities.find((c) => c.name === selectedCity);
-  }, [currentProvinceObj, selectedCity]);
+  const currentCity = useMemo(() => {
+    return availableCities.find((c) => c.city_code === selectedCityCode) || availableCities[0];
+  }, [availableCities, selectedCityCode]);
 
-  const barangayOptions = useMemo(() => {
-    return currentCityObj?.barangays || [
-      "Dolores", "San Agustin", "San Jose", "Del Pilar", "Sindalan",
-      "Telabastagan", "Saguin", "Juliana", "Poblacion", "San Nicolas"
-    ];
-  }, [currentCityObj]);
+  const availableBarangays = useMemo(() => {
+    if (!currentCity) return [];
+    return getBarangaysByCity(currentCity.city_code);
+  }, [currentCity]);
 
   // Keep form.address in sync for outsiders
   useEffect(() => {
@@ -437,12 +498,13 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
       const parts = [];
       if (street.trim()) parts.push(street.trim());
       if (selectedBarangay.trim()) parts.push(`Brgy. ${selectedBarangay.trim()}`);
-      if (selectedCity.trim()) parts.push(selectedCity.trim());
-      if (selectedProvince.trim()) parts.push(selectedProvince.trim());
+      if (currentCity?.city_name) parts.push(currentCity.city_name);
+      if (currentProvince?.province_name) parts.push(currentProvince.province_name);
+      if (currentRegion?.region_name) parts.push(currentRegion.region_name);
       const full = parts.join(", ");
       setForm((f) => ({ ...f, address: full }));
     }
-  }, [category, street, selectedBarangay, selectedCity, selectedProvince]);
+  }, [category, street, selectedBarangay, currentCity, currentProvince, currentRegion]);
 
   const studentCats = ["Elementary", "Junior High School", "Senior High School", "College"].map(v => ({ value: v, label: v }));
   const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Graduate"].map(v => ({ value: v, label: v }));
@@ -458,7 +520,7 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
     }
     if (category === "employee") return form.id_number && form.position && form.department;
     if (category === "outsider") {
-      return !!(selectedBarangay && selectedCity && selectedProvince && street.trim().length >= 2);
+      return !!(selectedBarangay && currentCity && currentProvince && street.trim().length >= 2);
     }
     return true;
   };
@@ -471,7 +533,7 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
           {category === "student" ? "Student Info" : category === "employee" ? "Employee Info" : "Address"}
         </Text>
         <Text className="text-[#0B2136]/60 text-sm font-bold">
-          {category === "outsider" ? "Select your location (eGov style)" : "Please provide your details below"}
+          {category === "outsider" ? "Select your location (PSGC / eGov style)" : "Please provide your details below"}
         </Text>
       </View>
       <View className="flex-1 bg-white rounded-t-[40px]" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 16, elevation: 10 }}>
@@ -500,25 +562,25 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
             <View className="w-full">
               <SelectRow
                 label="Region"
-                value={selectedRegion}
+                value={currentRegion?.region_name || "Select Region"}
                 onPress={() => setModalType("region")}
               />
 
               <SelectRow
                 label="Province"
-                value={selectedProvince}
+                value={currentProvince?.province_name || "Select Province"}
                 onPress={() => setModalType("province")}
               />
 
               <SelectRow
                 label="City / Municipality"
-                value={selectedCity}
+                value={currentCity?.city_name || "Select City / Municipality"}
                 onPress={() => setModalType("city")}
               />
 
               <SelectRow
                 label="Barangay"
-                value={selectedBarangay}
+                value={selectedBarangay || "Select Barangay"}
                 onPress={() => setModalType("barangay")}
               />
 
@@ -561,15 +623,21 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
       <LocationModalPicker
         visible={modalType === "region"}
         title="Select Region"
-        options={PH_REGIONS.map((r) => r.name)}
-        selected={selectedRegion}
-        onSelect={(reg) => {
-          setSelectedRegion(reg);
-          const regObj = PH_REGIONS.find((r) => r.name === reg);
-          if (regObj && regObj.provinces.length > 0) {
-            setSelectedProvince(regObj.provinces[0].name);
-            if (regObj.provinces[0].cities.length > 0) {
-              setSelectedCity(regObj.provinces[0].cities[0].name);
+        options={PH_REGIONS.map((r) => ({ label: r.region_name, value: r.region_code }))}
+        selected={selectedRegionCode}
+        allowCustom={false}
+        onSelect={(item) => {
+          setSelectedRegionCode(item.value);
+          const provs = getProvincesByRegion(item.value);
+          if (provs.length > 0) {
+            setSelectedProvinceCode(provs[0].province_code);
+            const cities = getCitiesByProvince(provs[0].province_code);
+            if (cities.length > 0) {
+              setSelectedCityCode(cities[0].city_code);
+              const brgys = getBarangaysByCity(cities[0].city_code);
+              if (brgys.length > 0) {
+                setSelectedBarangay(brgys[0]);
+              }
             }
           }
         }}
@@ -579,13 +647,18 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
       <LocationModalPicker
         visible={modalType === "province"}
         title="Select Province"
-        options={provinceOptions}
-        selected={selectedProvince}
-        onSelect={(prov) => {
-          setSelectedProvince(prov);
-          const provObj = currentRegionObj.provinces.find((p) => p.name === prov);
-          if (provObj && provObj.cities.length > 0) {
-            setSelectedCity(provObj.cities[0].name);
+        options={availableProvinces.map((p) => ({ label: p.province_name, value: p.province_code }))}
+        selected={selectedProvinceCode}
+        allowCustom={false}
+        onSelect={(item) => {
+          setSelectedProvinceCode(item.value);
+          const cities = getCitiesByProvince(item.value);
+          if (cities.length > 0) {
+            setSelectedCityCode(cities[0].city_code);
+            const brgys = getBarangaysByCity(cities[0].city_code);
+            if (brgys.length > 0) {
+              setSelectedBarangay(brgys[0]);
+            }
           }
         }}
         onClose={() => setModalType(null)}
@@ -594,10 +667,15 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
       <LocationModalPicker
         visible={modalType === "city"}
         title="Select City / Municipality"
-        options={cityOptions}
-        selected={selectedCity}
-        onSelect={(ct) => {
-          setSelectedCity(ct);
+        options={availableCities.map((c) => ({ label: c.city_name, value: c.city_code }))}
+        selected={selectedCityCode}
+        allowCustom={false}
+        onSelect={(item) => {
+          setSelectedCityCode(item.value);
+          const brgys = getBarangaysByCity(item.value);
+          if (brgys.length > 0) {
+            setSelectedBarangay(brgys[0]);
+          }
         }}
         onClose={() => setModalType(null)}
       />
@@ -605,10 +683,11 @@ export function AcademicInfoScreen({ navigate, user, setUser }: NavProps) {
       <LocationModalPicker
         visible={modalType === "barangay"}
         title="Select Barangay"
-        options={barangayOptions}
+        options={availableBarangays.map((b) => ({ label: b, value: b }))}
         selected={selectedBarangay}
-        onSelect={(brgy) => {
-          setSelectedBarangay(brgy);
+        allowCustom={true}
+        onSelect={(item) => {
+          setSelectedBarangay(item.label);
         }}
         onClose={() => setModalType(null)}
       />
