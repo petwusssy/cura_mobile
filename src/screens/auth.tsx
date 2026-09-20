@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Image } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Rect, Path, Polyline, Circle } from "react-native-svg";
+import Svg, { Path, Polyline, Circle } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import type { Screen } from "../types";
@@ -35,19 +35,23 @@ export function WelcomeScreen({ navigate }: NavProps) {
       {/* Hero content */}
       <View className="flex-1 items-center justify-center px-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
         {/* Logo */}
-        <View className="relative mb-8">
-          <LinearGradient
-            colors={['#2563eb', '#1d4ed8']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="w-24 h-24 rounded-[32px] items-center justify-center"
-            style={{ elevation: 16, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 32 }}
+        <View className="relative mb-8 items-center justify-center">
+          <View
+            className="w-28 h-28 rounded-[32px] bg-white items-center justify-center p-3.5"
+            style={{
+              elevation: 16,
+              shadowColor: '#38bdf8',
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.35,
+              shadowRadius: 32,
+            }}
           >
-            <Svg width="46" height="46" viewBox="0 0 46 46" fill="none">
-              <Rect x="18" y="4" width="10" height="38" rx="5" fill="white"/>
-              <Rect x="4" y="18" width="38" height="10" rx="5" fill="white"/>
-            </Svg>
-          </LinearGradient>
+            <Image
+              source={require("../../assets/images/cura-logo.png")}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         <Text className="text-[56px] font-black tracking-tight mb-1" style={{ color: '#ffffff', fontFamily: 'Outfit', letterSpacing: -1 }}>
@@ -164,17 +168,22 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         </Pressable>
 
         <View className="flex-row items-center gap-3 mb-4">
-          <LinearGradient
-            colors={['#0EA5E9', '#0284C7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="w-12 h-12 rounded-[16px] items-center justify-center"
+          <View
+            className="w-12 h-12 rounded-[16px] bg-white items-center justify-center p-1.5"
+            style={{
+              elevation: 4,
+              shadowColor: '#0284c7',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+            }}
           >
-            <Svg width="24" height="24" viewBox="0 0 46 46" fill="none">
-              <Rect x="18" y="4" width="10" height="38" rx="5" fill="white"/>
-              <Rect x="4" y="18" width="38" height="10" rx="5" fill="white"/>
-            </Svg>
-          </LinearGradient>
+            <Image
+              source={require("../../assets/images/cura-logo.png")}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="contain"
+            />
+          </View>
           <Text className="text-[28px] font-black tracking-tight" style={{ color: "#0B2136", fontFamily: "Outfit" }}>CURA</Text>
         </View>
         <Text className="text-[28px] font-bold text-slate-800 mb-2" style={{ fontFamily: "Outfit" }}>Welcome back! 👋</Text>

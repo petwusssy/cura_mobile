@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, ScrollView, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Polyline, Rect, Line } from "react-native-svg";
+import Svg, { Polyline, Line } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, Header, EmptyState } from "../components/Shell";
 import { PRESCRIPTIONS, CERTIFICATES, TRANSFERS } from "../data";
@@ -358,15 +358,25 @@ export function CertificateDetailScreen({ goBack, params, certificates = [] }: P
             end={{ x: 1, y: 1 }}
             className="px-6 py-6 items-center"
           >
-            <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center mb-3">
-              <Svg width="24" height="24" viewBox="0 0 46 46" fill="none">
-                <Rect x="18" y="4" width="10" height="38" rx="5" fill="white"/>
-                <Rect x="4" y="18" width="38" height="10" rx="5" fill="white"/>
-              </Svg>
+            <View
+              className="w-14 h-14 rounded-2xl bg-white items-center justify-center p-2 mb-3 shadow-md"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 10,
+                elevation: 4,
+              }}
+            >
+              <Image
+                source={require("../../assets/images/cura-logo.png")}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="contain"
+              />
             </View>
-            <Text className="text-white/70 text-[10px] font-bold tracking-widest uppercase mb-1">University Clinic · CURA</Text>
+            <Text className="text-white/80 text-[10px] font-bold tracking-widest uppercase mb-1">University Clinic · CURA</Text>
             <Text className="text-white text-xl font-bold" style={{ fontFamily: "Outfit" }}>Medical Certificate</Text>
-            <Text className="text-white/60 text-xs mt-1">Date issued: {cert.date}</Text>
+            <Text className="text-white/70 text-xs mt-1">Date issued: {cert.date}</Text>
           </LinearGradient>
 
           <View className="px-5 py-5 flex-col gap-4">

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline } from "react-native-svg";
 import type { Screen, AppUser } from "../types";
@@ -222,8 +222,15 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
             </View>
           </Pressable>
 
-          <View className="items-center flex-col gap-0.5 mt-4">
-            <Text className="text-[11px] text-white/60 font-medium">CURA · University Clinic Patient App</Text>
+          <View className="items-center flex-col gap-1.5 mt-6 mb-4">
+            <View className="w-9 h-9 rounded-xl bg-white items-center justify-center p-1.5 shadow-sm" style={{ elevation: 2 }}>
+              <Image
+                source={require("../../assets/images/cura-logo.png")}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="contain"
+              />
+            </View>
+            <Text className="text-[11px] text-white/70 font-semibold tracking-wide">CURA · University Clinic Patient App</Text>
             <Text className="text-[10px] text-white/50">v1.0.0 · Your health, our priority 💙</Text>
           </View>
         </View>

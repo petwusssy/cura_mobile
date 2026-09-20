@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { View, Text, Animated, Pressable } from "react-native";
+import { View, Text, Animated, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Rect, Path } from "react-native-svg";
 
 interface Props {
   onDone: () => void;
@@ -44,18 +43,16 @@ export function SplashScreen({ onDone }: Props) {
       >
       <Animated.View style={{ transform: [{ scale }], opacity }} className="items-center">
         <View className="relative mb-5">
-          <LinearGradient
-            colors={['#ffffff', '#ffffff']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="w-24 h-24 rounded-[32px] items-center justify-center"
-            style={{ elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 48 }}
+          <View
+            className="w-24 h-24 rounded-[30px] bg-white items-center justify-center p-3"
+            style={{ elevation: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 36 }}
           >
-            <Svg width="46" height="46" viewBox="0 0 46 46" fill="none">
-              <Rect x="18" y="4" width="10" height="38" rx="5" fill="#0B2136"/>
-              <Rect x="4" y="18" width="38" height="10" rx="5" fill="#0B2136"/>
-            </Svg>
-          </LinearGradient>
+            <Image
+              source={require("../../assets/images/cura-logo.png")}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="contain"
+            />
+          </View>
           <View
             className="absolute -top-2 -right-2 w-7 h-7 rounded-full items-center justify-center border-2 border-white"
             style={{ backgroundColor: "#E4F4FB", elevation: 4 }}
