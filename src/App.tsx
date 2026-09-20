@@ -180,7 +180,13 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         );
         setMedications(extractedMedications);
 
-        const userCertificates = allCertificates.filter((c: any) => c.patient === patient.id || c.patientId === patient.id || c.patient === patient.id_number);
+        const ptName = (patient.name || '').trim().toUpperCase();
+        const userCertificates = allCertificates.filter((c: any) =>
+          c.patient === patient.id ||
+          c.patientId === patient.id ||
+          c.patient === patient.id_number ||
+          (ptName && (c.patient_name || c.patientName || '').trim().toUpperCase() === ptName)
+        );
         setCertificates(userCertificates);
       }
     } catch (err) {
@@ -193,22 +199,22 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   // Refresh certificates whenever user views documents or profile screen
   useEffect(() => {
     const pId = user?.id || (user as any)?.id_number;
-    if (pId && (current?.screen === 'profile' || current?.screen === 'documents')) {
+    const uName = (user?.name || '').trim().toUpperCase();
+    if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents')) {
       fetch(`https://cura-backend-dvj5.onrender.com/api/certificates/`)
         .then(r => r.json())
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {
             const userCerts = allCertificates.filter((c: any) =>
-              c.patient === pId ||
-              c.patientId === pId ||
-              c.patient === (user as any)?.id_number
+              (pId && (c.patient === pId || c.patientId === pId || c.patient === (user as any)?.id_number)) ||
+              (uName && (c.patient_name || c.patientName || '').trim().toUpperCase() === uName)
             );
             setCertificates(userCerts);
           }
         })
         .catch(() => {});
     }
-  }, [current?.screen, user?.id]);
+  }, [current?.screen, user?.id, user?.name]);
 
   const navigate = useCallback((screen: Screen, params?: Record<string, unknown>) => {
     setStack((prev) => {
