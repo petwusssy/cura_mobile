@@ -446,8 +446,8 @@ export function EmptyState({ emoji, title, message }: { emoji: string; title: st
   return (
     <View className="flex-col items-center justify-center py-14 px-6 gap-3">
       <Text className="text-5xl text-center">{emoji}</Text>
-      <Text className="text-base font-bold text-slate-700 text-center">{title}</Text>
-      <Text className="text-sm text-slate-400 text-center max-w-[200px]">{message}</Text>
+      <Text className="text-base font-bold text-white text-center">{title}</Text>
+      <Text className="text-sm text-white/70 text-center max-w-[200px]">{message}</Text>
     </View>
   );
 }
