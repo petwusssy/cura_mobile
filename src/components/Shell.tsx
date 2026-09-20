@@ -305,7 +305,7 @@ export function Input({ label, error, icon, ...props }: InputProps) {
 // ── Button ───────────────────────────────────────────────────────────────────
 
 interface ButtonProps {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "white";
   loading?: boolean;
   fullWidth?: boolean;
   onPress?: () => void;
@@ -318,6 +318,7 @@ export function Button({ variant = "primary", loading, fullWidth, children, onPr
   const variants = {
     primary:   "bg-cura-900",
     secondary: "",
+    white:     "bg-white",
     ghost:     "",
     danger:    "bg-rose-50 border border-rose-100",
   };
@@ -325,6 +326,7 @@ export function Button({ variant = "primary", loading, fullWidth, children, onPr
   const textVariants = {
     primary:   "text-white",
     secondary: "text-white",
+    white:     "text-[#0B2136]",
     ghost:     "text-slate-600",
     danger:    "text-rose-600",
   };
@@ -337,10 +339,11 @@ export function Button({ variant = "primary", loading, fullWidth, children, onPr
       style={({ pressed }) => ({
         transform: [{ scale: pressed && !disabled && !loading ? 0.96 : 1 }],
         opacity: pressed && !disabled && !loading ? 0.85 : (disabled || loading ? 0.5 : 1),
-        ...(variant === 'secondary' ? { backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' } : {})
+        ...(variant === 'secondary' ? { backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' } : {}),
+        ...(variant === 'white' ? { backgroundColor: '#ffffff', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10 } : {})
       })}
     >
-      {loading && <ActivityIndicator size="small" color={variant === 'primary' ? 'white' : '#0B2136'} />}
+      {loading && <ActivityIndicator size="small" color={variant === 'primary' || variant === 'secondary' ? 'white' : '#0B2136'} />}
       <Text className={`font-bold ${textVariants[variant]}`} style={{ fontSize: 15 }}>
         {children}
       </Text>

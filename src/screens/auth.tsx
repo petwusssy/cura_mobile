@@ -54,21 +54,15 @@ export function WelcomeScreen({ navigate }: NavProps) {
           </View>
         </View>
 
-        <Text className="text-[56px] font-black tracking-tight mb-1" style={{ color: '#ffffff', fontFamily: 'Outfit', letterSpacing: -1 }}>
-          CURA
-        </Text>
-        <Text className="text-sm font-bold tracking-widest uppercase mb-8" style={{ color: '#60a5fa' }}>
+        <Text className="text-base font-black tracking-[0.2em] uppercase text-center" style={{ color: '#60a5fa', fontFamily: 'Outfit' }}>
           University Clinic
-        </Text>
-        <Text className="text-center font-semibold leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)', maxWidth: 260, fontSize: 15 }}>
-          Your personal health companion for smarter, simpler campus care.
         </Text>
       </View>
 
       {/* CTA */}
       <View className="px-6 flex-col gap-3" style={{ paddingBottom: Math.max(insets.bottom, 32) + 16 }}>
-        <Button fullWidth onPress={() => navigate("register")}>
-          Create Account — {"It's Free"}
+        <Button fullWidth variant="white" onPress={() => navigate("register")}>
+          Create Account
         </Button>
         <Button
           fullWidth
@@ -77,9 +71,6 @@ export function WelcomeScreen({ navigate }: NavProps) {
         >
           Sign In
         </Button>
-        <Text className="text-center font-semibold mt-1" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
-          Protected by university-grade security 🔒
-        </Text>
       </View>
     </LinearGradient>
   );
