@@ -18,7 +18,7 @@ interface Props {
   setTheme?: (theme: string) => void;
 }
 
-export function ProfileScreen({ user, resetApp, consultations = [], medications = [], certificates = [], theme, setTheme }: Props) {
+export function ProfileScreen({ navigate, user, resetApp, consultations = [], medications = [], certificates = [], theme, setTheme }: Props) {
   const insets = useSafeAreaInsets();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
 
@@ -50,10 +50,30 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
     myInfoItems.push({ icon: "📍", label: "Address", sub: user.address || "—", color: "#FEE2E2" });
   }
 
+  const certItems = certificates.length > 0 ? certificates.map((cert) => ({
+    icon: "📄",
+    label: cert.purpose || "Medical Certificate",
+    sub: `Issued: ${cert.date} · ${cert.doctor || "Clinic Physician"}`,
+    color: "#EFF8FF",
+    onPress: () => navigate("cert-detail", { id: cert.id, cert }),
+  })) : [
+    {
+      icon: "📄",
+      label: "No Medical Certificates",
+      sub: "No certificate records issued yet",
+      color: "#F8FAFC",
+      onPress: () => navigate("documents", { tab: "certificates" }),
+    }
+  ];
+
   const sections = [
     {
       title: "My Information",
       items: myInfoItems,
+    },
+    {
+      title: `Medical Certificates (${certificates.length})`,
+      items: certItems,
     },
     {
       title: "Preferences",
@@ -111,19 +131,20 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
         {/* Stats */}
         <View className="flex-row gap-3 mt-5">
           {[
-            { label: "Visits", value: consultations.length.toString(), icon: "🩺" },
-            { label: "Medications", value: medications.length.toString(), icon: "💊" },
-            { label: "Documents", value: certificates.length.toString(), icon: "📄" },
+            { label: "Visits", value: consultations.length.toString(), icon: "🩺", action: () => navigate("health-history") },
+            { label: "Medications", value: medications.length.toString(), icon: "💊", action: () => navigate("medications") },
+            { label: "Documents", value: certificates.length.toString(), icon: "📄", action: () => navigate("documents", { tab: "certificates" }) },
           ].map((s) => (
-            <View
+            <Pressable
               key={s.label}
-              className="flex-1 bg-white rounded-[32px] px-3 py-4 items-center"
+              onPress={s.action}
+              className="flex-1 bg-white rounded-[32px] px-3 py-4 items-center active:opacity-90"
               style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
             >
               <Text className="text-base mb-1">{s.icon}</Text>
               <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>{s.value}</Text>
               <Text className="text-[10px] text-slate-400 font-medium">{s.label}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
       </View>
@@ -137,9 +158,10 @@ export function ProfileScreen({ user, resetApp, consultations = [], medications 
                 className="bg-white rounded-[32px] overflow-hidden p-2"
                 style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
               >
-                {section.items.map((item, i) => (
+                {section.items.map((item: any, i) => (
                   <Pressable
                     key={item.label}
+                    onPress={item.onPress}
                     className={`flex-row items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-sky-50" : ""}`}
                   >
                     <View

@@ -10,7 +10,7 @@ import { PRESCRIPTIONS, CERTIFICATES, TRANSFERS } from "../data";
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
-  params?: { tab?: string; id?: string };
+  params?: { tab?: string; id?: string; cert?: any };
   certificates?: any[];
 }
 
@@ -69,7 +69,7 @@ export function DocumentsScreen({ navigate, goBack, params, certificates }: Prop
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         {tab === "prescriptions" && <PrescriptionList navigate={navigate} />}
-        {tab === "certificates"  && <CertificateList navigate={navigate} />}
+        {tab === "certificates"  && <CertificateList navigate={navigate} certificates={certificates} />}
         {tab === "transfers"     && <TransferList />}
         <View className="h-8" />
       </ScrollView>
@@ -118,8 +118,9 @@ function PrescriptionList({ navigate }: { navigate: Props["navigate"] }) {
   );
 }
 
-function CertificateList({ navigate }: { navigate: Props["navigate"] }) {
-  if (CERTIFICATES.length === 0) {
+function CertificateList({ navigate, certificates = [] }: { navigate: Props["navigate"], certificates?: any[] }) {
+  const certsToDisplay = (certificates && certificates.length > 0) ? certificates : CERTIFICATES;
+  if (certsToDisplay.length === 0) {
     return (
       <View className="pt-8">
         <EmptyState emoji="📄" title="No Certificates" message="You don't have any medical certificates yet." />
@@ -129,8 +130,8 @@ function CertificateList({ navigate }: { navigate: Props["navigate"] }) {
 
   return (
     <View className="flex-col gap-3">
-      {CERTIFICATES.map((c) => (
-        <Card key={c.id} onPress={() => navigate("cert-detail", { id: c.id })}>
+      {certsToDisplay.map((c) => (
+        <Card key={c.id} onPress={() => navigate("cert-detail", { id: c.id, cert: c })}>
           <View className="flex-row items-start gap-3">
             <LinearGradient
               colors={['#ECFEFF', '#BAE6FD']}
@@ -146,8 +147,8 @@ function CertificateList({ navigate }: { navigate: Props["navigate"] }) {
                 <Text className="text-[10px] font-medium text-slate-400">{c.date}</Text>
               </View>
               <Text className="text-sm font-bold text-slate-800 mb-0.5 leading-tight">{c.purpose}</Text>
-              <Text className="text-xs text-slate-400">{c.doctor}</Text>
-              <Text className="text-xs text-slate-500 mt-1 italic" numberOfLines={1}>{c.diagnosis}</Text>
+              <Text className="text-xs text-slate-400">{c.doctor || "Clinic Physician"}</Text>
+              <Text className="text-xs text-slate-500 mt-1 italic" numberOfLines={1}>{c.diagnosis || "No diagnosis specified"}</Text>
             </View>
             <View className="mt-1">
               <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BAE6FD" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -310,9 +311,9 @@ export function PrescriptionDetailScreen({ goBack, params }: Props) {
 
 // ── Certificate Detail ────────────────────────────────────────────────────────
 
-export function CertificateDetailScreen({ goBack, params }: Props) {
+export function CertificateDetailScreen({ goBack, params, certificates = [] }: Props) {
   const insets = useSafeAreaInsets();
-  const cert = CERTIFICATES.find((c) => c.id === params?.id);
+  const cert = params?.cert || (certificates && certificates.find((c: any) => c.id === params?.id)) || CERTIFICATES.find((c) => c.id === params?.id);
 
   if (!cert) {
     return (
@@ -376,8 +377,8 @@ export function CertificateDetailScreen({ goBack, params }: Props) {
 
             {[
               { label: "Purpose", value: cert.purpose },
-              { label: "Diagnosis", value: cert.diagnosis },
-              { label: "Recommendations", value: cert.recommendations },
+              { label: "Diagnosis", value: cert.diagnosis || "—" },
+              { label: "Recommendations", value: cert.recommendation || cert.recommendations || "—" },
             ].map((item, i) => (
               <View key={item.label} className={`pb-3 ${i < 2 ? "border-b border-sky-50" : ""}`}>
                 <Text className="text-[10px] font-bold text-cura-500 uppercase tracking-wider mb-1">{item.label}</Text>
@@ -387,8 +388,8 @@ export function CertificateDetailScreen({ goBack, params }: Props) {
 
             <View className="bg-sky-50 rounded-2xl p-4 border border-sky-100">
               <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Attending Physician</Text>
-              <Text className="text-sm font-bold text-slate-800">{cert.doctor}</Text>
-              <Text className="text-xs text-slate-400 mt-0.5">{cert.licenseNo}</Text>
+              <Text className="text-sm font-bold text-slate-800">{cert.doctor || "Clinic Physician"}</Text>
+              <Text className="text-xs text-slate-400 mt-0.5">{cert.licenseNo || "UA Clinic Health Services"}</Text>
             </View>
           </View>
         </View>

@@ -169,7 +169,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         );
         setMedications(extractedMedications);
 
-        const userCertificates = allCertificates.filter((c: any) => c.patient === patient.id);
+        const userCertificates = allCertificates.filter((c: any) => c.patient === patient.id || c.patientId === patient.id || c.patient === patient.id_number);
         setCertificates(userCertificates);
       }
     } catch (err) {
@@ -178,6 +178,26 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   }, []);
 
   const current = stack[stack.length - 1];
+
+  // Refresh certificates whenever user views documents or profile screen
+  useEffect(() => {
+    const pId = user?.id || (user as any)?.id_number;
+    if (pId && (current?.screen === 'profile' || current?.screen === 'documents')) {
+      fetch(`https://cura-backend-dvj5.onrender.com/api/certificates/`)
+        .then(r => r.json())
+        .then(allCertificates => {
+          if (Array.isArray(allCertificates)) {
+            const userCerts = allCertificates.filter((c: any) =>
+              c.patient === pId ||
+              c.patientId === pId ||
+              c.patient === (user as any)?.id_number
+            );
+            setCertificates(userCerts);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [current?.screen, user?.id]);
 
   const navigate = useCallback((screen: Screen, params?: Record<string, unknown>) => {
     setStack((prev) => {
@@ -285,7 +305,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "medications":    return <MedicationsScreen navigate={navigate} goBack={goBack} medications={medications} />;
       case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "prescription-detail": return <PrescriptionDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
-      case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
+      case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
 
       default: return <WelcomeScreen navigate={navigate} goBack={goBack} />;
