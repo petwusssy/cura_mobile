@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { Image } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -97,6 +98,16 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const [certificates, setCertificates] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [theme, setTheme] = useState<string>("light");
+
+  useEffect(() => {
+    // Eagerly pre-cache logo asset in native memory on boot to eliminate any render delay
+    try {
+      const asset = Image.resolveAssetSource(require("../assets/images/cura-logo.png"));
+      if (asset?.uri) {
+        Image.prefetch(asset.uri).catch(() => {});
+      }
+    } catch (e) {}
+  }, []);
 
   const loadUserData = useCallback(async (email: string) => {
     try {

@@ -27,46 +27,36 @@ export function WelcomeScreen({ navigate }: NavProps) {
   const insets = useSafeAreaInsets();
   return (
     <LinearGradient
-      colors={['#0a1628', '#0d1f3c', '#091422']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0.3, y: 1 }}
+      colors={['#E4F4FB', '#F0F9FF', '#FFFFFF']}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
       className="flex-1"
     >
       {/* Hero content */}
       <View className="flex-1 items-center justify-center px-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-        {/* Logo */}
-        <View className="relative mb-8 items-center justify-center">
-          <View
-            className="w-28 h-28 rounded-[32px] bg-white items-center justify-center p-3.5"
-            style={{
-              elevation: 16,
-              shadowColor: '#38bdf8',
-              shadowOffset: { width: 0, height: 12 },
-              shadowOpacity: 0.35,
-              shadowRadius: 32,
-            }}
-          >
-            <Image
-              source={require("../../assets/images/cura-logo.png")}
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="contain"
-            />
-          </View>
+        {/* Standalone Logo */}
+        <View className="items-center justify-center mb-6">
+          <Image
+            source={require("../../assets/images/cura-logo.png")}
+            style={{ width: 220, height: 220 }}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
         </View>
 
-        <Text className="text-base font-black tracking-[0.2em] uppercase text-center" style={{ color: '#60a5fa', fontFamily: 'Outfit' }}>
+        <Text className="text-base font-black tracking-[0.25em] uppercase text-center" style={{ color: '#0B2136', fontFamily: 'Outfit' }}>
           University Clinic
         </Text>
       </View>
 
       {/* CTA */}
       <View className="px-6 flex-col gap-3" style={{ paddingBottom: Math.max(insets.bottom, 32) + 16 }}>
-        <Button fullWidth variant="white" onPress={() => navigate("register")}>
+        <Button fullWidth variant="primary" onPress={() => navigate("register")}>
           Create Account
         </Button>
         <Button
           fullWidth
-          variant="secondary"
+          variant="outline"
           onPress={() => navigate("login")}
         >
           Sign In
