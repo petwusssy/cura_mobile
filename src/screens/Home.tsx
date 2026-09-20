@@ -118,6 +118,26 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     return () => clearInterval(t);
   }, [(user as any)?.id, (user as any)?.id_number, user?.email]);
 
+  const [advisory, setAdvisory] = useState<{ status: string; message: string } | null>(null);
+
+  useEffect(() => {
+    const fetchAdvisory = async () => {
+      try {
+        const res = await fetch('https://cura-backend-dvj5.onrender.com/api/advisory/');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.status) {
+            setAdvisory(data);
+          }
+        }
+      } catch (e) {}
+    };
+    fetchAdvisory();
+    const t = setInterval(fetchAdvisory, 2000);
+    return () => clearInterval(t);
+  }, []);
+
+
   const joinQueue = async () => {
     if (queue || joining || joiningRef.current) return;
 
@@ -199,6 +219,39 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             )}
           </Pressable>
         </View>
+
+        {/* Clinic Status Broadcast Banner */}
+        {advisory && (
+          <View className="px-6 mb-6">
+            <View 
+              className="bg-white rounded-[24px] p-5 border border-slate-100 relative overflow-hidden"
+              style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 }}
+            >
+              <View className="flex-row items-center justify-between mb-2">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-base">📢</Text>
+                  <Text className="text-xs font-bold uppercase tracking-wider text-slate-500">Clinic Advisory</Text>
+                </View>
+                <View className={`px-3 py-1 rounded-full ${
+                  advisory.status === 'Open' ? 'bg-emerald-100' :
+                  advisory.status === 'Half Day' ? 'bg-amber-100' :
+                  'bg-rose-100'
+                }`}>
+                  <Text className={`text-xs font-bold ${
+                    advisory.status === 'Open' ? 'text-emerald-700' :
+                    advisory.status === 'Half Day' ? 'text-amber-700' :
+                    'text-rose-700'
+                  }`}>
+                    {advisory.status === 'Open' ? '🟢 Open' : advisory.status === 'Half Day' ? '🟡 Half Day' : '🔴 Closed'}
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-sm font-semibold text-slate-800 leading-snug">
+                {advisory.message}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* 2. Hero Card (Most Urgent Action) */}
         <View className="px-6 mb-8">
