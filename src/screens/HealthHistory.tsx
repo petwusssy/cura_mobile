@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Line } from "react-native-svg";
@@ -13,6 +14,13 @@ interface Props {
 }
 
 export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Props) {
+  const [activeTab, setActiveTab] = useState<"consultations" | "non-consultations">("consultations");
+
+  const consultationList = consultations.filter((c: any) => c.status !== "Non-Consultation");
+  const nonConsultationList = consultations.filter((c: any) => c.status === "Non-Consultation");
+
+  const currentList = activeTab === "consultations" ? consultationList : nonConsultationList;
+
   return (
     <View className="flex-1 bg-transparent">
       <Header
@@ -28,11 +36,34 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
       />
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
+        {/* Tabs for Consultation / Non-Consultation */}
+        <View className="flex-row bg-white/10 rounded-full p-1 mb-5">
+          <Pressable
+            onPress={() => setActiveTab("consultations")}
+            className={`flex-1 py-2.5 rounded-full items-center justify-center flex-row gap-1.5 ${
+              activeTab === "consultations" ? "bg-white" : "bg-transparent"
+            }`}
+          >
+            <Text className={`text-xs font-bold ${activeTab === "consultations" ? "text-[#0B2136]" : "text-white/80"}`}>
+              🩺 Consultation ({consultationList.length})
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setActiveTab("non-consultations")}
+            className={`flex-1 py-2.5 rounded-full items-center justify-center flex-row gap-1.5 ${
+              activeTab === "non-consultations" ? "bg-white" : "bg-transparent"
+            }`}
+          >
+            <Text className={`text-xs font-bold ${activeTab === "non-consultations" ? "text-[#0B2136]" : "text-white/80"}`}>
+              🏥 Non-Consultation ({nonConsultationList.length})
+            </Text>
+          </Pressable>
+        </View>
+
         {/* Summary row */}
         <View className="flex-row gap-2 mb-5 flex-wrap">
           {[
-            { label: `${consultations.length} Total visits`, icon: "🩺", bg: "#EFF8FF", color: "#0994E8" },
-            { label: "2026 · 3 visits", icon: "📅", bg: "#ECFDF5", color: "#059669" },
+            { label: `${currentList.length} ${activeTab === "consultations" ? "Consultation" : "Non-Consultation"} visits`, icon: activeTab === "consultations" ? "🩺" : "🏥", bg: "#EFF8FF", color: "#0994E8" },
           ].map((chip) => (
             <View
               key={chip.label}
@@ -47,7 +78,7 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
 
         {/* Timeline */}
         <View className="flex-col gap-0 pb-8">
-          {consultations.length > 0 ? consultations.map((c, i) => {
+          {currentList.length > 0 ? currentList.map((c, i) => {
             const diff = (Date.now() - new Date(c.date).getTime()) / (1000 * 60 * 60 * 24);
             const badge = diff < 7 ? { variant: "info" as const, label: "Recent" } : { variant: "neutral" as const, label: "Past" };
 
@@ -62,9 +93,9 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
                     className="w-9 h-9 rounded-full items-center justify-center z-10 mt-3.5"
                     style={{ borderWidth: 3, borderColor: "#DEF0FF" }}
                   >
-                    <Text className="text-white text-xs font-extrabold">{consultations.length - i}</Text>
+                    <Text className="text-white text-xs font-extrabold">{currentList.length - i}</Text>
                   </LinearGradient>
-                  {i < consultations.length - 1 && (
+                  {i < currentList.length - 1 && (
                     <View className="w-0.5 bg-sky-200 flex-1 mt-1 min-h-[28px]" />
                   )}
                 </View>
@@ -90,9 +121,9 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
                     </View>
                     <View className="flex-row items-center gap-2 mt-3">
                       <View className="w-5 h-5 rounded-full bg-sky-100 items-center justify-center">
-                        <Text className="text-xs">👩‍⚕️</Text>
+                        <Text className="text-xs">{activeTab === "consultations" ? "👩‍⚕️" : "🏥"}</Text>
                       </View>
-                      <Text className="text-xs text-slate-500">{c.doctorName || "Consultation"}</Text>
+                      <Text className="text-xs text-slate-500">{c.doctorName || (activeTab === "consultations" ? "Consultation" : "Non-Consultation")}</Text>
                     </View>
                   </Card>
                 </View>
@@ -100,7 +131,11 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
             );
           }) : (
             <View className="pt-4">
-              <EmptyState emoji="📋" title="No Health History" message="You haven't had any clinic visits yet." />
+              <EmptyState
+                emoji="📋"
+                title={activeTab === "consultations" ? "No Consultation History" : "No Non-Consultation History"}
+                message={activeTab === "consultations" ? "You haven't had any consultation visits yet." : "You haven't had any non-consultation visits yet."}
+              />
             </View>
           )}
         </View>
