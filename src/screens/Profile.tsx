@@ -160,7 +160,7 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
               >
                 {section.items.map((item: any, i) => (
                   <Pressable
-                    key={item.label}
+                    key={`${item.label}-${i}`}
                     onPress={item.onPress}
                     className={`flex-row items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-sky-50" : ""}`}
                   >
