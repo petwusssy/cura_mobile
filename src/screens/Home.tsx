@@ -77,7 +77,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       if (joiningRef.current) return;
 
       try {
-        const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/');
+        const res = await fetch('http://127.0.0.1:8000/api/queue/');
         if (!res.ok) return;
         const qs = await res.json();
         if (!Array.isArray(qs)) return;
@@ -123,7 +123,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   useEffect(() => {
     const fetchAdvisory = async () => {
       try {
-        const res = await fetch('https://cura-backend-dvj5.onrender.com/api/advisory/');
+        const res = await fetch('http://127.0.0.1:8000/api/advisory/');
         if (res.ok) {
           const data = await res.json();
           if (data && data.status) {
@@ -145,7 +145,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
     if (!patientId && user?.email) {
       try {
-        const pRes = await fetch('https://cura-backend-dvj5.onrender.com/api/patients/');
+        const pRes = await fetch('http://127.0.0.1:8000/api/patients/');
         if (pRes.ok) {
           const patients = await pRes.json();
           const p = patients.find((item: any) => item.email?.toLowerCase().trim() === user.email?.toLowerCase().trim());
@@ -160,7 +160,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     joiningRef.current = true;
     setJoining(true);
     try {
-      const res = await fetch('https://cura-backend-dvj5.onrender.com/api/queue/', {
+      const res = await fetch('http://127.0.0.1:8000/api/queue/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ patient: String(patientId) })
@@ -182,7 +182,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     setQueue(null);
     setAheadCount(0);
     try {
-      await fetch(`https://cura-backend-dvj5.onrender.com/api/queue/${targetId}/cancel/`, {
+      await fetch(`http://127.0.0.1:8000/api/queue/${targetId}/cancel/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -403,7 +403,7 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
   const handlePress = async (n: any) => {
     // Mark as read in backend
     try {
-      await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/${n.id}/`, {
+      await fetch(`http://127.0.0.1:8000/api/notifications/${n.id}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ read: true })
