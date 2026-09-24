@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
 import { Card, SectionHeader, Badge, AvatarBadge, Header } from "../components/Shell";
 import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT, MASCOTS } from "../data";
+import { getManilaHour, formatManilaDateTime } from "../utils/philippineTime";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -14,7 +15,7 @@ interface Props {
 }
 
 function getGreeting() {
-  const h = new Date().getHours();
+  const h = getManilaHour();
   if (h < 12) return "Good Morning";
   if (h < 17) return "Good Afternoon";
   return "Good Evening";
@@ -456,7 +457,7 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
                   <View className="w-2 h-2 rounded-full bg-cura-500" />
                 </View>
                 <Text className="text-xs text-slate-500 leading-relaxed">{n.message}</Text>
-                <Text className="text-[10px] text-slate-400 mt-2 font-medium">{n.created_at ? new Date(n.created_at).toLocaleString() : 'recently'}</Text>
+                <Text className="text-[10px] text-slate-400 mt-2 font-medium">{n.created_at ? formatManilaDateTime(n.created_at) : 'recently'}</Text>
               </View>
             </Pressable>
           )) : (

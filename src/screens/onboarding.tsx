@@ -136,7 +136,7 @@ function DatePickerField({ label, value, onChange, placeholder = "Select Birthda
               <View className="my-2 p-3 bg-slate-50 rounded-2xl items-center border border-slate-100">
                 <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Selected Date</Text>
                 <Text className="text-base font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>
-                  {tempDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  {tempDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "Asia/Manila" })}
                 </Text>
               </View>
 
