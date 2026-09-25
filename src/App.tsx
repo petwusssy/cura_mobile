@@ -55,7 +55,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
 
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/notifications/`);
+        const res = await fetch(`http://192.168.100.141:8000/api/notifications/`);
         if (res.ok) {
           const data = await res.json();
           const myNotifs = data.filter((n: any) => n.patient_id === userId);
@@ -111,7 +111,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const loadUserData = useCallback(async (email: string) => {
     try {
-      const pRes = await fetch(`http://127.0.0.1:8000/api/patients/`);
+      const pRes = await fetch(`http://192.168.100.141:8000/api/patients/`);
       const patients = await pRes.json();
       const patient = patients.find((p: any) => p.email?.toLowerCase().trim() === email.toLowerCase().trim());
       
@@ -142,8 +142,8 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         
         // Fetch consultations and certificates concurrently
         const [cRes, certRes] = await Promise.all([
-          fetch(`http://127.0.0.1:8000/api/consultations/`),
-          fetch(`http://127.0.0.1:8000/api/certificates/`),
+          fetch(`http://192.168.100.141:8000/api/consultations/`),
+          fetch(`http://192.168.100.141:8000/api/certificates/`),
         ]);
         const [allConsultations, allCertificates] = await Promise.all([
           cRes.json(),
@@ -201,7 +201,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     const pId = user?.id || (user as any)?.id_number;
     const uName = (user?.name || '').trim().toUpperCase();
     if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents')) {
-      fetch(`http://127.0.0.1:8000/api/certificates/`)
+      fetch(`http://192.168.100.141:8000/api/certificates/`)
         .then(r => r.json())
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {

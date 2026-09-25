@@ -93,7 +93,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      const loginRes = await fetch(`http://127.0.0.1:8000/api/auth/login/`, {
+      const loginRes = await fetch(`http://192.168.100.141:8000/api/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email.trim(), password: password }),
@@ -258,7 +258,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
   const [otp, setOtp] = useState("");
   const [isLinking, setIsLinking] = useState(false);
 
-  const API_BASE = "http://127.0.0.1:8000/api/auth";
+  const API_BASE = "http://192.168.100.141:8000/api/auth";
 
   const mockGoogleSignIn = async () => {
     setLoading(true);
@@ -649,7 +649,7 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const API_URL = "http://127.0.0.1:8000/api";
+  const API_URL = "http://192.168.100.141:8000/api";
 
   const handleRequestOTP = async () => {
     setError("");

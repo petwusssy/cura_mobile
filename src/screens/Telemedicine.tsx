@@ -98,7 +98,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     if (!background) setIsLoading(true);
     try {
       // NOTE: Make sure your backend is deployed with the new Telemedicine endpoints!
-      const res = await fetch(`http://127.0.0.1:8000/api/telemedicine/`);
+      const res = await fetch(`http://192.168.100.141:8000/api/telemedicine/`);
       if (res.ok) {
         const data = await res.json();
         // Filter for this patient
@@ -125,7 +125,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/telemedicine/`, {
+      const res = await fetch(`http://192.168.100.141:8000/api/telemedicine/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
