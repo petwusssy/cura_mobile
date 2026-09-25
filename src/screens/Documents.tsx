@@ -120,17 +120,37 @@ function PrescriptionList({ navigate }: { navigate: Props["navigate"] }) {
 
 function CertificateList({ navigate, certificates = [] }: { navigate: Props["navigate"], certificates?: any[] }) {
   const certsToDisplay = (certificates && certificates.length > 0) ? certificates : CERTIFICATES;
-  if (certsToDisplay.length === 0) {
-    return (
-      <View className="pt-8">
-        <EmptyState emoji="📄" title="No Certificates" message="You don't have any medical certificates yet." />
-      </View>
-    );
-  }
 
   return (
     <View className="flex-col gap-3">
-      {certsToDisplay.map((c) => (
+      {/* Request Med Certificate Action Banner */}
+      <Pressable
+        onPress={() => navigate("request-med-cert")}
+        className="bg-white rounded-[28px] p-4 flex-row items-center justify-between shadow-sm active:opacity-90 mb-1"
+        style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 }}
+      >
+        <View className="flex-row items-center gap-3">
+          <View className="w-10 h-10 rounded-2xl bg-sky-50 items-center justify-center">
+            <Text className="text-xl">📝</Text>
+          </View>
+          <View>
+            <Text className="text-slate-800 font-bold text-sm">Request Medical Certificate</Text>
+            <Text className="text-slate-400 text-xs">Submit request for clinic validation</Text>
+          </View>
+        </View>
+        <View className="w-8 h-8 rounded-full bg-slate-50 items-center justify-center">
+          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <Polyline points="9 18 15 12 9 6"/>
+          </Svg>
+        </View>
+      </Pressable>
+
+      {certsToDisplay.length === 0 ? (
+        <View className="pt-4">
+          <EmptyState emoji="📄" title="No Issued Certificates" message="You don't have any issued medical certificates yet. Tap above to request one." />
+        </View>
+      ) : (
+        certsToDisplay.map((c) => (
         <Card key={c.id} onPress={() => navigate("cert-detail", { id: c.id, cert: c })}>
           <View className="flex-row items-start gap-3">
             <LinearGradient
@@ -157,7 +177,7 @@ function CertificateList({ navigate, certificates = [] }: { navigate: Props["nav
             </View>
           </View>
         </Card>
-      ))}
+      )))}
     </View>
   );
 }

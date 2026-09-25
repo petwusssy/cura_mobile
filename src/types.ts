@@ -23,7 +23,8 @@ export type Screen =
   | "prescription-detail"
   | "cert-detail"
   | "profile"
-  | "profile-edit";
+  | "profile-edit"
+  | "request-med-cert";
 
 export type PatientCategory = "student" | "employee" | "outsider";
 

@@ -36,6 +36,7 @@ import {
 import { ProfileScreen } from "./screens/Profile";
 import { TelemedicineScreen } from "./screens/Telemedicine";
 import { AppointmentsScreen } from "./screens/Appointments";
+import { RequestMedCertScreen } from "./screens/RequestMedCert";
 
 type NavEntry = { screen: Screen; params?: Record<string, unknown> };
 
@@ -211,7 +212,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   // Refresh certificates whenever user views documents or profile screen
   useEffect(() => {
     const pId = user?.id || (user as any)?.id_number;
-    const uName = (user?.name || '').trim().toUpperCase();
+    const uName = ((user as any)?.name || '').trim().toUpperCase();
     if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents')) {
       safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/certificates/`)
         .then(allCertificates => {
@@ -225,7 +226,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         })
         .catch(() => {});
     }
-  }, [current?.screen, user?.id, user?.name]);
+  }, [current?.screen, user?.id, (user as any)?.name]);
 
   const navigate = useCallback((screen: Screen, params?: Record<string, unknown>) => {
     setStack((prev) => {
@@ -334,6 +335,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "prescription-detail": return <PrescriptionDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
       case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
+      case "request-med-cert": return <RequestMedCertScreen navigate={navigate} goBack={goBack} user={user} />;
       case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
 
       default: return <WelcomeScreen navigate={navigate} goBack={goBack} />;
