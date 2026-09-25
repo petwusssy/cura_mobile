@@ -784,7 +784,7 @@ export function AvatarScreen({ navigate, user, setUser, goBack }: NavProps) {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const res = await fetch("http://192.168.100.141:8000/api/auth/complete-profile/", {
+      const res = await fetch("https://cura-backend.onrender.com/api/auth/complete-profile/", {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
