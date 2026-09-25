@@ -91,7 +91,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     setLoading(true);
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const loginRes = await fetch(`https://cura-backend.onrender.com/api/auth/login/`, {
         method: 'POST',
@@ -101,8 +101,11 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       });
       clearTimeout(timeoutId);
       
+      const resText = await loginRes.text();
+      let loginData: any = {};
+      try { loginData = resText ? JSON.parse(resText) : {}; } catch {}
+      
       if (loginRes.ok) {
-        const loginData = await loginRes.json();
         const userEmail = loginData.user?.email || email.trim();
         const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
         
@@ -117,8 +120,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         }
         navigate("home");
       } else {
-        const errData = await loginRes.json().catch(() => ({}));
-        setError(errData.detail || errData.error || "Invalid email or password. Please try again.");
+        setError(loginData.detail || loginData.error || "Invalid email or password. Please try again.");
       }
     } catch (err: any) {
       if (err?.name === 'AbortError') {
@@ -296,7 +298,9 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
       });
       clearTimeout(timeoutId);
       
-      const data = await res.json();
+      const resText = await res.text();
+      let data: any = {};
+      try { data = resText ? JSON.parse(resText) : {}; } catch {}
       
       if (data.exists) {
         if (data.claimed) {

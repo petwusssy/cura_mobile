@@ -109,10 +109,21 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     } catch (e) {}
   }, []);
 
+  const safeFetchJson = async (url: string, options?: RequestInit) => {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) return null;
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    } catch (err) {
+      return null;
+    }
+  };
+
   const loadUserData = useCallback(async (email: string) => {
     try {
-      const pRes = await fetch(`https://cura-backend.onrender.com/api/patients/`);
-      const patients = await pRes.json();
+      const patients = (await safeFetchJson(`https://cura-backend.onrender.com/api/patients/`)) || [];
+      if (!Array.isArray(patients)) return;
       const patient = patients.find((p: any) => p.email?.toLowerCase().trim() === email.toLowerCase().trim());
       
       const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
@@ -141,13 +152,9 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         });
         
         // Fetch consultations and certificates concurrently
-        const [cRes, certRes] = await Promise.all([
-          fetch(`https://cura-backend.onrender.com/api/consultations/`),
-          fetch(`https://cura-backend.onrender.com/api/certificates/`),
-        ]);
         const [allConsultations, allCertificates] = await Promise.all([
-          cRes.json(),
-          certRes.json(),
+          safeFetchJson(`https://cura-backend.onrender.com/api/consultations/`).then(d => Array.isArray(d) ? d : []),
+          safeFetchJson(`https://cura-backend.onrender.com/api/certificates/`).then(d => Array.isArray(d) ? d : []),
         ]);
         
         const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === patient.id);
@@ -201,8 +208,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     const pId = user?.id || (user as any)?.id_number;
     const uName = (user?.name || '').trim().toUpperCase();
     if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents')) {
-      fetch(`https://cura-backend.onrender.com/api/certificates/`)
-        .then(r => r.json())
+      safeFetchJson(`https://cura-backend.onrender.com/api/certificates/`)
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {
             const userCerts = allCertificates.filter((c: any) =>
