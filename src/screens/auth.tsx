@@ -111,7 +111,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
-      const loginRes = await fetchWithRetry(`https://cura-backend.onrender.com/api/auth/login/`, {
+      const loginRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email.trim(), password: password }),
@@ -272,7 +272,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
   const [otp, setOtp] = useState("");
   const [isLinking, setIsLinking] = useState(false);
 
-  const API_BASE = "https://cura-backend.onrender.com/api/auth";
+  const API_BASE = "https://cura-backend-dvj5.onrender.com/api/auth";
 
   const mockGoogleSignIn = async () => {
     setLoading(true);
@@ -286,11 +286,12 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
   const isUAEmail = (email: string) => email.toLowerCase().endsWith("@ua.edu.ph");
 
   const handleNextStep1 = async () => {
-    if (!form.email) {
+    const cleanEmail = form.email.trim();
+    if (!cleanEmail) {
       setErrors({ email: "Email is required" });
       return;
     }
-    if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) {
+    if (!/^[^@]+@[^@]+\.[^@]+$/.test(cleanEmail)) {
       setErrors({ email: "Enter a valid email" });
       return;
     }
@@ -301,7 +302,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
       const res = await fetchWithRetry(`${API_BASE}/check-email/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email }),
+        body: JSON.stringify({ email: cleanEmail }),
       });
       
       const resText = await res.text();
@@ -318,7 +319,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
         await fetchWithRetry(`${API_BASE}/request-otp/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: form.email })
+          body: JSON.stringify({ email: cleanEmail })
         }).catch(() => {});
         setIsLinking(true);
         setStep(4); // Go to OTP
@@ -344,14 +345,16 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
   };
 
   const handleVerifyOTP = async () => {
-    if (otp.length !== 6) { setErrors({ otp: "Enter a 6-digit OTP" }); return; }
+    const cleanOtp = otp.trim();
+    const cleanEmail = form.email.trim();
+    if (cleanOtp.length !== 6) { setErrors({ otp: "Enter a 6-digit OTP" }); return; }
     setLoading(true);
     setErrors({});
     try {
       const res = await fetchWithRetry(`${API_BASE}/verify-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email, otp }),
+        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
       });
       
       if (res.ok) {
@@ -371,13 +374,14 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
     const e = validateFinal();
     if (Object.keys(e).length) { setErrors(e); return; }
     setLoading(true);
+    const cleanEmail = form.email.trim();
 
     if (isLinking) {
       try {
         const res = await fetchWithRetry(`${API_BASE}/set-password/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: form.email, password: form.password }),
+          body: JSON.stringify({ email: cleanEmail, password: form.password }),
         });
         
         const resText = await res.text();
@@ -385,7 +389,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
         try { data = resText ? JSON.parse(resText) : {}; } catch {}
         
         if (res.ok || data.error?.includes("Email not verified")) {
-          const userEmail = data.user?.email || form.email;
+          const userEmail = data.user?.email || cleanEmail;
           const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
           if (setUser) {
             setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access || data.refresh }));
@@ -403,7 +407,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           const loginRes = await fetchWithRetry(`${API_BASE}/login/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: form.email, password: form.password }),
+            body: JSON.stringify({ username: cleanEmail, password: form.password }),
           });
           
           const loginText = await loginRes.text();
@@ -411,7 +415,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           try { loginData = loginText ? JSON.parse(loginText) : {}; } catch {}
 
           if (loginRes.ok) {
-            const userEmail = loginData.user?.email || form.email;
+            const userEmail = loginData.user?.email || cleanEmail;
             const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
             if (setUser) {
               setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
@@ -435,7 +439,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
         const res = await fetchWithRetry(`${API_BASE}/register/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: form.email, password: form.password, role: form.role }),
+          body: JSON.stringify({ email: cleanEmail, password: form.password, role: form.role }),
         });
         
         const resText = await res.text();
@@ -660,17 +664,18 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const API_URL = "https://cura-backend.onrender.com/api";
+  const API_URL = "https://cura-backend-dvj5.onrender.com/api";
 
   const handleRequestOTP = async () => {
     setError("");
-    if (!email) { setError("Please enter your email."); return; }
+    const cleanEmail = email.trim();
+    if (!cleanEmail) { setError("Please enter your email."); return; }
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: cleanEmail }),
       });
       if (res.ok) {
         setStep(2);
@@ -687,13 +692,15 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
 
   const handleVerifyOTP = async () => {
     setError("");
-    if (!otp) { setError("Please enter the OTP."); return; }
+    const cleanEmail = email.trim();
+    const cleanOtp = otp.trim();
+    if (!cleanOtp) { setError("Please enter the OTP."); return; }
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
       });
       if (res.ok) {
         setStep(3);
@@ -710,13 +717,14 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
 
   const handleSetPassword = async () => {
     setError("");
+    const cleanEmail = email.trim();
     if (!password || password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/set-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: cleanEmail, password }),
       });
       if (res.ok) {
         setStep(4);
