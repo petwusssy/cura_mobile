@@ -21,6 +21,27 @@ interface NavProps {
   loadUserData?: (email: string) => Promise<void>;
 }
 
+async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 2, delayMs = 1500): Promise<Response> {
+  let lastErr: any = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok || res.status === 400 || res.status === 401 || res.status === 403 || res.status === 404) {
+        return res;
+      }
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+  }
+  throw lastErr || new Error("Network request failed");
+}
+
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
 export function WelcomeScreen({ navigate }: NavProps) {
@@ -90,16 +111,11 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-      const loginRes = await fetch(`https://cura-backend.onrender.com/api/auth/login/`, {
+      const loginRes = await fetchWithRetry(`https://cura-backend.onrender.com/api/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email.trim(), password: password }),
-        signal: controller.signal,
       });
-      clearTimeout(timeoutId);
       
       const resText = await loginRes.text();
       let loginData: any = {};
@@ -123,12 +139,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         setError(loginData.detail || loginData.error || "Invalid email or password. Please try again.");
       }
     } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        setError("Login timed out. Please check your internet connection and try again.");
-      } else {
-        console.warn("Login Network Error:", err);
-        setError("Network error. Please check your internet connection and try again.");
-      }
+      console.warn("Login Network Error:", err);
+      setError("Network error. Please check your connection or try again in a few seconds.");
     } finally {
       setLoading(false);
     }
@@ -286,17 +298,11 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
     
     setLoading(true);
     try {
-      // 60-second timeout to allow Render free tier to wake up
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-      const res = await fetch(`${API_BASE}/check-email/`, {
+      const res = await fetchWithRetry(`${API_BASE}/check-email/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email }),
-        signal: controller.signal
       });
-      clearTimeout(timeoutId);
       
       const resText = await res.text();
       let data: any = {};
@@ -309,11 +315,11 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           return;
         }
         // Patient exists, trigger OTP
-        await fetch(`${API_BASE}/request-otp/`, {
+        await fetchWithRetry(`${API_BASE}/request-otp/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: form.email })
-        });
+        }).catch(() => {});
         setIsLinking(true);
         setStep(4); // Go to OTP
       } else {
@@ -323,7 +329,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
       }
     } catch (err) {
       console.warn("API Error:", err);
-      showAlert("Error", "Cannot connect to backend! Please make sure your backend is running and API_BASE is correct.");
+      showAlert("Error", "Cannot connect to backend! Please make sure your backend is running.");
     } finally {
       setLoading(false);
     }
@@ -342,16 +348,11 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
     setLoading(true);
     setErrors({});
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-      
-      const res = await fetch(`${API_BASE}/verify-otp/`, {
+      const res = await fetchWithRetry(`${API_BASE}/verify-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, otp }),
-        signal: controller.signal
       });
-      clearTimeout(timeoutId);
       
       if (res.ok) {
         setStep(3); // OTP verified, go to set password
@@ -373,13 +374,15 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
 
     if (isLinking) {
       try {
-        const res = await fetch(`${API_BASE}/set-password/`, {
+        const res = await fetchWithRetry(`${API_BASE}/set-password/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: form.email, password: form.password }),
         });
         
-        const data = await res.json().catch(() => ({}));
+        const resText = await res.text();
+        let data: any = {};
+        try { data = resText ? JSON.parse(resText) : {}; } catch {}
         
         if (res.ok || data.error?.includes("Email not verified")) {
           const userEmail = data.user?.email || form.email;
@@ -392,20 +395,22 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
           }
           navigate("home");
         } else {
-          // If 400, it might be the okhttp retry bug. Let's try to login just in case!
           throw new Error("Trigger Fallback Login");
         }
       } catch (err) {
         console.warn("Set Password Error, attempting fallback login...");
         try {
-          const loginRes = await fetch(`${API_BASE}/login/`, {
+          const loginRes = await fetchWithRetry(`${API_BASE}/login/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: form.email, password: form.password }),
           });
           
+          const loginText = await loginRes.text();
+          let loginData: any = {};
+          try { loginData = loginText ? JSON.parse(loginText) : {}; } catch {}
+
           if (loginRes.ok) {
-            const loginData = await loginRes.json();
             const userEmail = loginData.user?.email || form.email;
             const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
             if (setUser) {
@@ -427,14 +432,17 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
       }
     } else {
       try {
-        const res = await fetch(`${API_BASE}/register/`, {
+        const res = await fetchWithRetry(`${API_BASE}/register/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: form.email, password: form.password, role: form.role }),
         });
         
+        const resText = await res.text();
+        let data: any = {};
+        try { data = resText ? JSON.parse(resText) : {}; } catch {}
+
         if (res.ok) {
-          const data = await res.json().catch(() => ({}));
           const userEmail = data.user?.email || form.email;
           const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
           const token = data.access || data.token;
@@ -461,8 +469,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
             navigate("home");
           }
         } else {
-          const data = await res.json().catch(() => ({}));
-          showAlert("Error", "Failed to create account. Please try again.");
+          showAlert("Error", data.error || data.detail || "Failed to create account. Please try again.");
         }
       } catch (err) {
         console.warn("Register Network Error:", err);

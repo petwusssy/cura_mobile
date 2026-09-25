@@ -109,15 +109,20 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     } catch (e) {}
   }, []);
 
-  const safeFetchJson = async (url: string, options?: RequestInit) => {
-    try {
-      const res = await fetch(url, options);
-      if (!res.ok) return null;
-      const text = await res.text();
-      return text ? JSON.parse(text) : null;
-    } catch (err) {
-      return null;
+  const safeFetchJson = async (url: string, options?: RequestInit, retries = 2) => {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const res = await fetch(url, options);
+        if (res.ok) {
+          const text = await res.text();
+          return text ? JSON.parse(text) : null;
+        }
+      } catch (err) {}
+      if (i < retries) {
+        await new Promise(r => setTimeout(r, 1200));
+      }
     }
+    return null;
   };
 
   const loadUserData = useCallback(async (email: string) => {
