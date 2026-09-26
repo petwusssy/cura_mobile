@@ -250,20 +250,31 @@ export function WelcomeScreen({ navigate }: NavProps) {
             onPress={() => navigate("login")}
             accessibilityRole="button"
             accessibilityLabel="Sign In"
-            hitSlop={12}
             style={({ pressed }) => ({
-              marginTop: 22,
-              paddingVertical: 8,
-              paddingHorizontal: 24,
-              opacity: pressed ? 0.7 : 1,
+              width: buttonWidth,
+              height: 54,
+              borderRadius: 27,
+              backgroundColor: "#13234D",
+              borderWidth: 1.5,
+              borderColor: "#4EA8DE",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 14,
+              opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 5,
             })}
           >
             <Text
               style={{
                 color: "#FFFFFF",
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: "700",
-                letterSpacing: 0.2,
+                letterSpacing: 0.6,
               }}
             >
               Sign In
