@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Image, ImageBackground, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Polyline, Circle } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import type { Screen } from "../types";
@@ -48,80 +48,224 @@ export function WelcomeScreen({ navigate }: NavProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
-  const bottomPadding = Math.max(insets.bottom + 20, height * 0.10);
-  const buttonWidth = Math.min(300, width * 0.72);
+  // Proportional sizing based on reference design
+  const badgeSize = Math.min(186, Math.max(160, width * 0.44));
+  const logoSize = Math.round(badgeSize * 0.72);
+  const buttonWidth = Math.min(300, width * 0.74);
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/auth-bg.png")}
-      style={{ flex: 1, width: "100%", height: "100%" }}
-      resizeMode="cover"
-    >
+    <View style={{ flex: 1, backgroundColor: "#172454" }}>
+      {/* 1. High-Resolution UA Facade & Statue Hero Header */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: height * 0.52,
+          backgroundColor: "#FFFFFF",
+          overflow: "hidden",
+        }}
+      >
+        <Image
+          source={require("../../assets/images/ua-hero.jpg")}
+          style={{
+            width: "100%",
+            height: "100%",
+            marginTop: Math.max(0, insets.top - 6),
+          }}
+          resizeMode="cover"
+        />
+      </View>
+
+      {/* 2. Vector Arch Divider & Decorative Swooshes */}
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 414 896"
+        preserveAspectRatio="none"
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      >
+        <Defs>
+          <SvgLinearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#4A75BC" />
+            <Stop offset="0.35" stopColor="#2E4F98" />
+            <Stop offset="0.7" stopColor="#1E3372" />
+            <Stop offset="1" stopColor="#172454" />
+          </SvgLinearGradient>
+        </Defs>
+
+        {/* Blue background body covering from curve down to bottom */}
+        <Path
+          d="M -5 266 C 31.4 328.1 65.7 390.7 100.3 430.1 C 134.9 470.9 169.7 488.5 204.8 490.3 C 239.9 490.0 275.1 473.8 310.7 433.1 C 346.3 393.7 382.2 329.8 420 266 L 420 900 L -5 900 Z"
+          fill="url(#blueGrad)"
+        />
+
+        {/* Soft light-cyan arch border curve */}
+        <Path
+          d="M -5 266 C 31.4 328.1 65.7 390.7 100.3 430.1 C 134.9 470.9 169.7 488.5 204.8 490.3 C 239.9 490.0 275.1 473.8 310.7 433.1 C 346.3 393.7 382.2 329.8 420 266"
+          fill="none"
+          stroke="#DCEBF8"
+          strokeWidth={4.5}
+        />
+
+        {/* Left Bottom Swoosh */}
+        <Path
+          d="M 47.0 705.0 C 11.2 748.7 7.8 780.3 20.5 799.1 C 33.2 818.5 62.0 825.1 93.2 831.7 C 124.5 838.3 158.4 845.0 185.8 865.4 C 213.6 885.5 235.0 919.3 248.0 969.6 C 208.1 942.8 181.9 1003.1 162.0 1056.5 C 75.0 1023.0 -12.1 989.4 -99.2 955.9 C -90.0 928.6 -77.6 901.6 -63.2 864.9 C -46.6 827.9 -27.8 781.0 47.0 705.0 Z"
+          fill="#17234A"
+        />
+        <Path
+          d="M 43.0 706.0 C 7.2 749.7 3.8 781.3 16.5 800.1 C 29.2 819.5 58.0 826.1 89.2 832.7 C 120.5 839.3 154.4 846.0 181.8 866.4 C 209.6 886.5 231.0 920.3 244.0 970.6 C 204.1 943.8 177.9 1004.1 158.0 1057.5 C 71.0 1024.0 -16.1 990.4 -103.2 956.9 C -94.0 929.6 -81.6 902.6 -67.2 865.9 C -50.6 828.9 -31.8 782.0 43.0 706.0 Z"
+          stroke="#FFFFFF"
+          strokeWidth={2.5}
+          fill="#3A55C8"
+        />
+
+        {/* Right Bottom Swoosh */}
+        <Path
+          d="M 355.0 750.0 C 378.2 737.9 389.7 746.1 396.0 756.5 C 402.1 767.6 402.9 780.9 398.9 793.3 C 391.4 818.4 366.2 839.0 336.4 859.4 C 306.7 879.9 272.0 899.0 249.8 922.5 C 238.5 934.3 230.5 947.6 225.5 964.4 C 223.0 972.8 221.3 982.1 220.3 992.5 C 219.7 997.7 219.4 1003.1 219.2 1008.9 L 550 1089 L 550 750 Z"
+          fill="#17234A"
+        />
+        <Path
+          d="M 359.0 749.0 C 382.2 736.9 393.7 745.1 400.0 755.5 C 406.1 766.6 406.9 779.9 402.9 792.3 C 395.4 817.4 370.2 838.0 340.4 858.4 C 310.7 878.9 276.0 898.0 253.8 921.5 C 242.5 933.3 234.5 946.6 229.5 963.4 C 227.0 971.8 225.3 981.1 224.3 991.5 C 223.7 996.7 223.4 1002.1 223.2 1007.9 L 553 1086 L 553 749 Z"
+          stroke="#FFFFFF"
+          strokeWidth={2.5}
+          fill="#3A55C8"
+        />
+      </Svg>
+
+      {/* 3. Foreground Interactive UI */}
       <View
         style={{
           flex: 1,
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           alignItems: "center",
-          paddingBottom: bottomPadding,
+          paddingBottom: Math.max(insets.bottom + 16, height * 0.08),
         }}
       >
-        <Pressable
-          onPress={() => navigate("register")}
-          accessibilityRole="button"
-          accessibilityLabel="Create Account"
-          style={({ pressed }) => ({
-            width: buttonWidth,
-            height: 55,
-            borderRadius: 28,
-            backgroundColor: "#1D2A63",
-            justifyContent: "center",
+        {/* Center Branding Section */}
+        <View
+          style={{
             alignItems: "center",
-            opacity: pressed ? 0.85 : 1,
-            transform: [{ scale: pressed ? 0.98 : 1 }],
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 4,
-          })}
+            marginTop: Math.max(height * 0.52 - badgeSize * 0.55, insets.top + 200),
+          }}
         >
-          <Text
+          {/* Circular Badge with CURA Logo */}
+          <View
             style={{
-              color: "#FFFFFF",
-              fontSize: 17,
-              fontWeight: "700",
-              letterSpacing: 0.3,
+              width: badgeSize,
+              height: badgeSize,
+              borderRadius: badgeSize / 2,
+              backgroundColor: "#FFFFFF",
+              borderWidth: 5,
+              borderColor: "#C3DCF4",
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.22,
+              shadowRadius: 10,
+              elevation: 8,
             }}
           >
-            Create Account
-          </Text>
-        </Pressable>
+            <Image
+              source={require("../../assets/images/ribbon-shield.png")}
+              style={{ width: logoSize, height: logoSize }}
+              resizeMode="contain"
+            />
+          </View>
 
-        <Pressable
-          onPress={() => navigate("login")}
-          accessibilityRole="button"
-          accessibilityLabel="Sign In"
-          hitSlop={12}
-          style={({ pressed }) => ({
-            marginTop: 18,
-            paddingVertical: 8,
-            paddingHorizontal: 24,
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
+          {/* Typography */}
           <Text
             style={{
               color: "#FFFFFF",
-              fontSize: 17,
-              fontWeight: "700",
-              letterSpacing: 0.2,
+              fontSize: Math.min(46, width * 0.11),
+              fontWeight: "900",
+              letterSpacing: 2,
+              textAlign: "center",
+              marginTop: 12,
+              fontFamily: "Outfit",
             }}
           >
-            Sign In
+            CURA
           </Text>
-        </Pressable>
+
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: Math.min(20, width * 0.048),
+              fontWeight: "700",
+              textAlign: "center",
+              marginTop: 2,
+              letterSpacing: 0.4,
+              opacity: 0.95,
+            }}
+          >
+            University Clinic
+          </Text>
+        </View>
+
+        {/* Buttons Section */}
+        <View style={{ width: "100%", alignItems: "center" }}>
+          <Pressable
+            onPress={() => navigate("register")}
+            accessibilityRole="button"
+            accessibilityLabel="Create Account"
+            style={({ pressed }) => ({
+              width: buttonWidth,
+              height: 55,
+              borderRadius: 28,
+              backgroundColor: "#1D2A63",
+              justifyContent: "center",
+              alignItems: "center",
+              opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 5,
+            })}
+          >
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 17,
+                fontWeight: "700",
+                letterSpacing: 0.3,
+              }}
+            >
+              Create Account
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => navigate("login")}
+            accessibilityRole="button"
+            accessibilityLabel="Sign In"
+            hitSlop={12}
+            style={({ pressed }) => ({
+              marginTop: 18,
+              paddingVertical: 8,
+              paddingHorizontal: 24,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 17,
+                fontWeight: "700",
+                letterSpacing: 0.2,
+              }}
+            >
+              Sign In
+            </Text>
+          </Pressable>
+        </View>
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 
