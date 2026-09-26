@@ -220,18 +220,16 @@ export function WelcomeScreen({ navigate }: NavProps) {
               width: buttonWidth,
               height: 54,
               borderRadius: 27,
-              backgroundColor: "#13234D",
-              borderWidth: 1.5,
-              borderColor: "#4EA8DE",
+              backgroundColor: "#17234D",
               justifyContent: "center",
               alignItems: "center",
               opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
+              shadowOpacity: 0.25,
               shadowRadius: 8,
-              elevation: 5,
+              elevation: 4,
             })}
           >
             <Text
@@ -250,23 +248,12 @@ export function WelcomeScreen({ navigate }: NavProps) {
             onPress={() => navigate("login")}
             accessibilityRole="button"
             accessibilityLabel="Sign In"
+            hitSlop={12}
             style={({ pressed }) => ({
-              width: buttonWidth,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: "#13234D",
-              borderWidth: 1.5,
-              borderColor: "#4EA8DE",
-              justifyContent: "center",
-              alignItems: "center",
-              marginTop: 14,
-              opacity: pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 5,
+              marginTop: 22,
+              paddingVertical: 10,
+              paddingHorizontal: 24,
+              opacity: pressed ? 0.7 : 1,
             })}
           >
             <Text
