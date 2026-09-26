@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, useWindowDimensions, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Polyline, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import type { Screen } from "../types";
@@ -277,20 +277,17 @@ export function WelcomeScreen({ navigate }: NavProps) {
 
 export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
 
-  const mockGoogleSignIn = async () => {
-    setLoading(true);
-    if (loadUserData) {
-      await loadUserData("jdelacruz.student@ua.edu.ph"); // Using a sample email for mock
-    }
-    setLoading(false);
-    navigate("home");
-  };
+  const inputWidth = Math.min(324, width * 0.82);
+  const heroHeight = Math.round(height * 0.28);
+  const badgeSize = Math.min(124, Math.max(112, width * 0.30));
+  const logoImgSize = Math.round(badgeSize * 0.58);
 
   const handleLogin = async () => {
     setError("");
@@ -322,7 +319,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         }
         navigate("home");
       } else {
-        setError(loginData.detail || loginData.error || "Invalid email or password. Please try again.");
+        setError(loginData.detail || loginData.error || "Invalid username or password. Please try again.");
       }
     } catch (err: any) {
       console.warn("Login Network Error:", err);
@@ -333,114 +330,433 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   };
 
   return (
-    <View className="flex-1 bg-[#E4F4FB]">
-      {/* Top light banner */}
+    <View style={{ flex: 1, backgroundColor: "#101F42" }}>
+      {/* 1. UA Building & Statue Hero Header */}
       <View
-        className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: heroHeight + 35,
+          backgroundColor: "#FFFFFF",
+          overflow: "hidden",
+        }}
       >
-        <Pressable
-          onPress={goBack}
-          className="w-10 h-10 rounded-full bg-white items-center justify-center mb-5 shadow-sm"
-          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
-        >
-          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <Polyline points="15 18 9 12 15 6"/>
-          </Svg>
-        </Pressable>
+        <Image
+          source={require("../../assets/images/ua-hero.jpg")}
+          style={{
+            width: "100%",
+            height: "100%",
+            marginTop: Math.max(0, insets.top - 6),
+          }}
+          resizeMode="cover"
+        />
+      </View>
 
-        <View className="flex-row items-center gap-3 mb-4">
+      {/* 2. Vector Arch Divider & Decorative Accents */}
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 414 896"
+        preserveAspectRatio="none"
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      >
+        <Defs>
+          <SvgLinearGradient id="loginBodyGrad" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#14244E" />
+            <Stop offset="0.4" stopColor="#101F42" />
+            <Stop offset="1" stopColor="#0B1632" />
+          </SvgLinearGradient>
+        </Defs>
+
+        {/* Dark blue body covering below the arch curve */}
+        <Path
+          d="M -5 130 C 50 165, 120 220, 207 220 C 294 220, 364 165, 420 130 L 420 900 L -5 900 Z"
+          fill="url(#loginBodyGrad)"
+        />
+
+        {/* Soft light-cyan arch border curve */}
+        <Path
+          d="M -5 130 C 50 165, 120 220, 207 220 C 294 220, 364 165, 420 130"
+          fill="none"
+          stroke="#54B1EB"
+          strokeWidth={5}
+        />
+
+        {/* Crisp white arch border curve */}
+        <Path
+          d="M -5 130 C 50 165, 120 220, 207 220 C 294 220, 364 165, 420 130"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth={2.5}
+        />
+
+        {/* Left Bottom Swoosh */}
+        <Path
+          d="M -10 820 C 30 830, 80 855, 120 890 L -10 900 Z"
+          fill="#17234A"
+        />
+        <Path
+          d="M -20 810 C 25 825, 75 850, 135 885"
+          stroke="#FFFFFF"
+          strokeWidth={2.5}
+          fill="none"
+        />
+        <Path
+          d="M -20 820 C 30 835, 80 860, 140 895"
+          stroke="#38A2ED"
+          strokeWidth={3}
+          fill="none"
+          opacity={0.7}
+        />
+
+        {/* Bottom Right CURA Watermark */}
+        <Circle cx="390" cy="850" r="90" stroke="#182A54" strokeWidth="18" fill="none" opacity={0.65} />
+        <Circle cx="390" cy="850" r="62" stroke="#182A54" strokeWidth="6" fill="none" opacity={0.45} />
+        <Path
+          d="M 374 850 L 406 850 M 390 834 L 390 866"
+          stroke="#1B2F5C"
+          strokeWidth="16"
+          strokeLinecap="round"
+          opacity={0.6}
+        />
+      </Svg>
+
+      {/* 3. Top Back Button */}
+      <Pressable
+        onPress={goBack}
+        style={{
+          position: "absolute",
+          top: Math.max(insets.top, 16) + 6,
+          left: 18,
+          zIndex: 20,
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
+          justifyContent: "center",
+          alignItems: "center",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 4,
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
+        <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#101F42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <Polyline points="15 18 9 12 15 6" />
+        </Svg>
+      </Pressable>
+
+      {/* 4. Scrollable Form Content */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{
+            alignItems: "center",
+            paddingTop: heroHeight - badgeSize * 0.44,
+            paddingBottom: Math.max(insets.bottom + 20, 32),
+          }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Circular Badge with CURA Logo */}
           <View
-            className="w-12 h-12 rounded-[16px] bg-white items-center justify-center p-1.5"
             style={{
-              elevation: 4,
-              shadowColor: '#0284c7',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
+              width: badgeSize,
+              height: badgeSize,
+              borderRadius: badgeSize / 2,
+              backgroundColor: "#FFFFFF",
+              borderWidth: 4.5,
+              borderColor: "#54B1EB",
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.25,
               shadowRadius: 10,
+              elevation: 8,
             }}
           >
             <Image
               source={require("../../assets/images/cura-logo.png")}
-              style={{ width: "100%", height: "100%" }}
+              style={{ width: logoImgSize, height: logoImgSize }}
               resizeMode="contain"
             />
+            <Text
+              style={{
+                color: "#101F42",
+                fontSize: 15,
+                fontWeight: "900",
+                fontFamily: "Outfit",
+                letterSpacing: 1.5,
+                marginTop: 1,
+              }}
+            >
+              CURA
+            </Text>
           </View>
-          <Text className="text-[28px] font-black tracking-tight" style={{ color: "#0B2136", fontFamily: "Outfit" }}>CURA</Text>
-        </View>
-        <Text className="text-[28px] font-bold text-slate-800 mb-2" style={{ fontFamily: "Outfit" }}>Welcome back! 👋</Text>
-        <Text className="text-base text-slate-500 font-medium">Sign in to your patient account</Text>
-      </View>
 
-      {/* Form */}
-      <View className="flex-1 bg-[#F8FAFC] rounded-t-[40px] overflow-hidden" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.05, shadowRadius: 24 }}>
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
-        {error ? (
-          <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
-            <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>
-          </View>
-        ) : null}
+          {/* Typography */}
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 34,
+              fontWeight: "900",
+              letterSpacing: 2.5,
+              textAlign: "center",
+              marginTop: 10,
+              fontFamily: "Outfit",
+            }}
+          >
+            CURA
+          </Text>
 
-        <Input
-          label="Email address"
-          placeholder="you@university.edu"
-          value={email}
-          onChangeText={(val) => { setError(""); setEmail(val); }}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+          <Text
+            style={{
+              color: "#9CBEE2",
+              fontSize: 10.5,
+              fontWeight: "700",
+              letterSpacing: 1.8,
+              textAlign: "center",
+              marginTop: 2,
+            }}
+          >
+            YOUR WELL-BEING. OUR PRIORITY.
+          </Text>
 
-        <View className="flex-col gap-1.5">
-          <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</Text>
-          <View className="relative justify-center">
+          {/* Error Message */}
+          {error ? (
+            <View
+              style={{
+                width: inputWidth,
+                marginTop: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                backgroundColor: "rgba(244, 63, 94, 0.18)",
+                borderColor: "#F43F5E",
+                borderWidth: 1,
+                borderRadius: 18,
+              }}
+            >
+              <Text style={{ color: "#FECDD3", fontSize: 12, textAlign: "center" }}>
+                ⚠️ {error}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Input 1: Username or Student ID */}
+          <View
+            style={{
+              width: inputWidth,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: "#EAF1F8",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 18,
+              marginTop: 18,
+            }}
+          >
+            <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#101F42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <Circle cx="12" cy="7" r="4" />
+            </Svg>
             <TextInput
-              secureTextEntry={!showPass}
-              placeholder="••••••••"
-              placeholderTextColor="#CBD5E1"
+              value={email}
+              onChangeText={(val) => { setError(""); setEmail(val); }}
+              placeholder="Username or Student ID"
+              placeholderTextColor="#7E93AA"
+              autoCapitalize="none"
+              style={{
+                flex: 1,
+                fontSize: 14,
+                color: "#101F42",
+                paddingHorizontal: 12,
+                fontWeight: "500",
+              }}
+            />
+          </View>
+
+          {/* Input 2: Password */}
+          <View
+            style={{
+              width: inputWidth,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: "#EAF1F8",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 18,
+              marginTop: 12,
+            }}
+          >
+            <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#101F42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </Svg>
+            <TextInput
               value={password}
               onChangeText={(val) => { setError(""); setPassword(val); }}
-              className="w-full bg-white border border-sky-200 rounded-2xl px-4 py-3.5 text-sm text-slate-800 pr-12"
+              placeholder="Password"
+              placeholderTextColor="#7E93AA"
+              secureTextEntry={!showPass}
+              style={{
+                flex: 1,
+                fontSize: 14,
+                color: "#101F42",
+                paddingHorizontal: 12,
+                fontWeight: "500",
+              }}
             />
-            <Pressable onPress={() => setShowPass(!showPass)} className="absolute right-4 p-2">
-              <Svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><Circle cx="12" cy="12" r="3"/>
-              </Svg>
+            <Pressable onPress={() => setShowPass(!showPass)} hitSlop={8}>
+              {showPass ? (
+                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7E93AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <Circle cx="12" cy="12" r="3" />
+                </Svg>
+              ) : (
+                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7E93AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <Line x1="1" y1="1" x2="23" y2="23" />
+                </Svg>
+              )}
             </Pressable>
           </View>
-        </View>
 
-        <View className="items-end">
-          <Pressable onPress={() => navigate("forgot-password")} className="py-2">
-            <Text className="text-sm text-cura-500 font-semibold">Forgot password?</Text>
+          {/* Primary Action Button: LOG IN → */}
+          <Pressable
+            onPress={handleLogin}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Log In"
+            style={({ pressed }) => ({
+              width: inputWidth,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: "#38A2ED",
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 18,
+              opacity: pressed || loading ? 0.85 : 1,
+              shadowColor: "#38A2ED",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.35,
+              shadowRadius: 8,
+              elevation: 5,
+            })}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <>
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 15,
+                    fontWeight: "800",
+                    letterSpacing: 1.5,
+                  }}
+                >
+                  LOG IN
+                </Text>
+                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M5 12h14" />
+                  <Polyline points="12 5 19 12 12 19" />
+                </Svg>
+              </>
+            )}
           </Pressable>
-        </View>
 
-        <Button fullWidth onPress={handleLogin} loading={loading} className="mt-1">
-          Sign In
-        </Button>
+          {/* Divider: ── OR ── */}
+          <View
+            style={{
+              width: inputWidth,
+              flexDirection: "row",
+              alignItems: "center",
+              marginVertical: 16,
+            }}
+          >
+            <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255, 255, 255, 0.16)" }} />
+            <Text
+              style={{
+                color: "#7B98BC",
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                marginHorizontal: 14,
+              }}
+            >
+              OR
+            </Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255, 255, 255, 0.16)" }} />
+          </View>
 
-        <View className="flex-row items-center gap-3 my-1">
-          <View className="flex-1 h-px bg-sky-100" />
-          <Text className="text-xs text-slate-300 font-medium">or</Text>
-          <View className="flex-1 h-px bg-sky-100" />
-        </View>
-
-        <Button 
-          fullWidth 
-          variant="secondary" 
-          onPress={mockGoogleSignIn} 
-          className="mb-4"
-        >
-          <Text className="text-cura-500 font-bold text-sm">Continue with Google (Mock)</Text>
-        </Button>
-
-        <View className="flex-row justify-center items-center pb-8">
-          <Text className="text-sm text-slate-400">{"Don't have an account? "}</Text>
-          <Pressable onPress={() => navigate("register")}>
-            <Text className="text-sm text-cura-500 font-bold">Create one</Text>
+          {/* Secondary Action Button: CREATE ACCOUNT */}
+          <Pressable
+            onPress={() => navigate("register")}
+            accessibilityRole="button"
+            accessibilityLabel="Create Account"
+            style={({ pressed }) => ({
+              width: inputWidth,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: "transparent",
+              borderWidth: 1.5,
+              borderColor: "#4EA8DE",
+              justifyContent: "center",
+              alignItems: "center",
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 14,
+                fontWeight: "800",
+                letterSpacing: 1.2,
+              }}
+            >
+              CREATE ACCOUNT
+            </Text>
           </Pressable>
-        </View>
-      </ScrollView>
-      </View>
+
+          {/* Footer Tagline */}
+          <View style={{ marginTop: 28, alignItems: "center" }}>
+            <Text
+              style={{
+                color: "#5F7E9F",
+                fontSize: 10.5,
+                fontWeight: "600",
+                letterSpacing: 1.8,
+                textAlign: "center",
+              }}
+            >
+              BUILDING A HEALTHIER
+            </Text>
+            <Text
+              style={{
+                color: "#5F7E9F",
+                fontSize: 10.5,
+                fontWeight: "600",
+                letterSpacing: 1.8,
+                textAlign: "center",
+                marginTop: 2,
+              }}
+            >
+              TOMORROW, TOGETHER.
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
