@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, Pressable, RefreshControl, Modal, Platform, PermissionsAndroid } from "react-native";
+import { View, ScrollView, Text, Pressable, RefreshControl, Modal, Platform, PermissionsAndroid, Alert } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -7,6 +7,109 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import type { Screen, AppUser } from "../types";
+import { getManilaDate, getManilaTime, normalizeDate } from "../utils/philippineTime";
+
+function parseSingleTime(t: string): number | null {
+  const match = t.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const meridian = match[3] ? match[3].toLowerCase() : null;
+
+  if (meridian === "pm" && hours < 12) hours += 12;
+  if (meridian === "am" && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+}
+
+function parseTimeSlot(timeStr?: string): { startMinutes: number; endMinutes: number } {
+  if (!timeStr) return { startMinutes: 8 * 60, endMinutes: 17 * 60 };
+  const s = timeStr.trim();
+
+  if (/morning/i.test(s) || /8\s*am\s*-\s*12\s*pm/i.test(s)) {
+    return { startMinutes: 8 * 60, endMinutes: 12 * 60 };
+  }
+  if (/afternoon/i.test(s) || /1\s*pm\s*-\s*5\s*pm/i.test(s)) {
+    return { startMinutes: 13 * 60, endMinutes: 17 * 60 };
+  }
+
+  const rangeMatch = s.match(/(.+?)\s*(?:-|to)\s*(.+)/i);
+  if (rangeMatch) {
+    const startM = parseSingleTime(rangeMatch[1]);
+    const endM = parseSingleTime(rangeMatch[2]);
+    if (startM !== null && endM !== null) {
+      return { startMinutes: startM, endMinutes: endM };
+    }
+  }
+
+  const singleM = parseSingleTime(s);
+  if (singleM !== null) {
+    return { startMinutes: singleM, endMinutes: singleM + 60 };
+  }
+
+  return { startMinutes: 8 * 60, endMinutes: 17 * 60 };
+}
+
+function formatMinutes(m: number): string {
+  let h = Math.floor(m / 60);
+  const min = m % 60;
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${String(min).padStart(2, "0")} ${ampm}`;
+}
+
+export function getScheduleAccess(scheduledDateRaw?: string, scheduledTimeRaw?: string): { canJoin: boolean; reason: string } {
+  const normDate = normalizeDate(scheduledDateRaw);
+  const today = getManilaDate();
+
+  if (!normDate) {
+    return { canJoin: true, reason: "" };
+  }
+
+  const timeLabel = scheduledTimeRaw ? scheduledTimeRaw.trim() : "";
+
+  if (normDate > today) {
+    return {
+      canJoin: false,
+      reason: `Upcoming consultation. You can join on ${normDate}${timeLabel ? ` at ${timeLabel}` : ""}.`,
+    };
+  }
+
+  if (normDate < today) {
+    return {
+      canJoin: false,
+      reason: `Consultation date has passed (${normDate}).`,
+    };
+  }
+
+  // Today in Manila
+  const timeParts = getManilaTime().split(":").map(Number);
+  const nowMinutes = timeParts[0] * 60 + (timeParts[1] || 0);
+
+  const { startMinutes, endMinutes } = parseTimeSlot(timeLabel);
+  const earlyBuffer = 10;
+  const lateBuffer = 20;
+
+  if (nowMinutes < startMinutes - earlyBuffer) {
+    const minsWait = (startMinutes - earlyBuffer) - nowMinutes;
+    return {
+      canJoin: false,
+      reason: `Call opens at ${formatMinutes(startMinutes)}${minsWait > 0 && minsWait <= 60 ? ` (in ${minsWait} min${minsWait === 1 ? "" : "s"})` : ""}.`,
+    };
+  }
+
+  if (nowMinutes > endMinutes + lateBuffer) {
+    return {
+      canJoin: false,
+      reason: `Scheduled time slot (${timeLabel || `${formatMinutes(startMinutes)} - ${formatMinutes(endMinutes)}`}) has ended.`,
+    };
+  }
+
+  return {
+    canJoin: true,
+    reason: "Consultation is active now.",
+  };
+}
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -19,6 +122,12 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   const [activeTab, setActiveTab] = useState<"book" | "history">("book");
   const [activeCallRoom, setActiveCallRoom] = useState<string | null>(null);
+  const [, setTimeTick] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTimeTick(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Book Form State
   const [date, setDate] = useState("");
@@ -48,7 +157,11 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     return `CURA-Telemed-${cleanId}`;
   };
 
-  const handleJoinMeeting = async (rawUrl?: string, reqId?: string) => {
+  const handleJoinMeeting = async (rawUrl?: string, reqId?: string, access?: { canJoin: boolean; reason: string }) => {
+    if (access && !access.canJoin) {
+      Alert.alert("Consultation Locked", access.reason);
+      return;
+    }
     if (Platform.OS === 'android') {
       try {
         await PermissionsAndroid.requestMultiple([
@@ -63,7 +176,11 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     setActiveCallRoom(roomId);
   };
 
-  const handleOpenExternalBrowser = async (rawUrl?: string, reqId?: string) => {
+  const handleOpenExternalBrowser = async (rawUrl?: string, reqId?: string, access?: { canJoin: boolean; reason: string }) => {
+    if (access && !access.canJoin) {
+      Alert.alert("Consultation Locked", access.reason);
+      return;
+    }
     try {
       const roomId = getRoomId(rawUrl, reqId);
       const redirectUrl = Linking.createURL('telemedicine');
@@ -308,42 +425,83 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   "{req.reason}"
                 </Text>
 
-                {req.status === "Approved" && (
-                  <View className="bg-emerald-50 rounded-xl p-4 mt-2 border border-emerald-100">
-                    <Text className="text-xs font-bold text-emerald-800 mb-2">✅ CONSULTATION APPROVED</Text>
-                    <Text className="text-xs text-emerald-700 mb-1">
-                      <Text className="font-bold">Scheduled:</Text> {req.scheduled_date || req.preferred_date} at {req.scheduled_time || req.preferred_time}
-                    </Text>
-                    <Pressable
-                      className="bg-emerald-600 active:bg-emerald-700 rounded-xl py-3 px-4 mt-3 items-center justify-center shadow-sm"
-                      onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id)}
-                    >
-                      <Text className="text-white text-xs font-bold tracking-wider uppercase">
-                        🎥 Join Video Call (Recommended)
-                      </Text>
-                    </Pressable>
+                {req.status === "Approved" && (() => {
+                  const scheduledDate = req.scheduled_date || req.preferred_date;
+                  const scheduledTime = req.scheduled_time || req.preferred_time;
+                  const access = getScheduleAccess(scheduledDate, scheduledTime);
 
-                    <Pressable
-                      className="bg-slate-800 active:bg-slate-700 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
-                      onPress={() => handleJoinMeeting(req.meeting_link, req.id)}
-                    >
-                      <Text className="text-slate-300 text-xs font-semibold">
-                        📱 Join In-App (Modal WebView)
-                      </Text>
-                    </Pressable>
+                  return (
+                    <View className="bg-emerald-50 rounded-xl p-4 mt-2 border border-emerald-100">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-xs font-bold text-emerald-800">✅ CONSULTATION APPROVED</Text>
+                        {access.canJoin ? (
+                          <View className="flex-row items-center gap-1.5 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            <View className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <Text className="text-[10px] font-bold text-emerald-800 uppercase tracking-wide">Live Now</Text>
+                          </View>
+                        ) : (
+                          <View className="flex-row items-center gap-1 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                            <Text className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Locked</Text>
+                          </View>
+                        )}
+                      </View>
 
-                    {req.secondary_link ? (
-                      <Pressable
-                        className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs active:bg-emerald-50"
-                        onPress={() => Linking.openURL(req.secondary_link)}
-                      >
-                        <Text className="text-emerald-700 text-xs font-semibold">
-                          🌐 Join via Google Meet Backup
-                        </Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                )}
+                      <Text className="text-xs text-emerald-700 mb-1">
+                        <Text className="font-bold">Scheduled:</Text> {scheduledDate} at {scheduledTime}
+                      </Text>
+
+                      {!access.canJoin && (
+                        <View className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 my-2">
+                          <Text className="text-xs text-amber-900 font-medium">
+                            🔒 {access.reason}
+                          </Text>
+                        </View>
+                      )}
+
+                      {access.canJoin ? (
+                        <>
+                          <Pressable
+                            className="bg-emerald-600 active:bg-emerald-700 rounded-xl py-3 px-4 mt-2 items-center justify-center shadow-sm"
+                            onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id, access)}
+                          >
+                            <Text className="text-white text-xs font-bold tracking-wider uppercase">
+                              🎥 Join Video Call (Recommended)
+                            </Text>
+                          </Pressable>
+
+                          <Pressable
+                            className="bg-slate-800 active:bg-slate-700 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
+                            onPress={() => handleJoinMeeting(req.meeting_link, req.id, access)}
+                          >
+                            <Text className="text-slate-300 text-xs font-semibold">
+                              📱 Join In-App (Modal WebView)
+                            </Text>
+                          </Pressable>
+
+                          {req.secondary_link ? (
+                            <Pressable
+                              className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs active:bg-emerald-50"
+                              onPress={() => Linking.openURL(req.secondary_link)}
+                            >
+                              <Text className="text-emerald-700 text-xs font-semibold">
+                                🌐 Join via Google Meet Backup
+                              </Text>
+                            </Pressable>
+                          ) : null}
+                        </>
+                      ) : (
+                        <Pressable
+                          className="bg-slate-200/80 rounded-xl py-3 px-4 mt-2 items-center justify-center border border-slate-300"
+                          onPress={() => Alert.alert("Consultation Locked", access.reason)}
+                        >
+                          <Text className="text-slate-500 text-xs font-bold tracking-wide uppercase">
+                            🔒 Video Call Locked Until Scheduled Time
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  );
+                })()}
 
                 {req.status === "Rejected" && (
                   <View className="bg-rose-50 rounded-xl p-4 mt-2 border border-rose-100">
