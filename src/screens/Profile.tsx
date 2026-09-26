@@ -97,7 +97,7 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
 
         <View className="flex-row items-center gap-4">
           <View className="relative">
-            <AvatarBadge image={mascot.id === "pulse" ? require("../../assets/images/cura-logo.png") : undefined} emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={66} />
+            <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={66} />
             <Pressable
               className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center border-2 border-white"
               style={{ backgroundColor: "#0B2136", elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8 }}
@@ -141,11 +141,7 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
               className="flex-1 bg-white rounded-[32px] px-3 py-4 items-center active:opacity-90"
               style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
             >
-              {s.icon === "🩺" ? (
-                <Image source={require("../../assets/images/cura-logo.png")} style={{ width: 20, height: 20, marginBottom: 4 }} resizeMode="contain" />
-              ) : (
-                <Text className="text-base mb-1">{s.icon}</Text>
-              )}
+              <Text className="text-base mb-1">{s.icon}</Text>
               <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>{s.value}</Text>
               <Text className="text-[10px] text-slate-400 font-medium">{s.label}</Text>
             </Pressable>

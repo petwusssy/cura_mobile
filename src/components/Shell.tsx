@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef } from "react";
-import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Animated, Easing, Image } from "react-native";
+import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Animated, Easing } from "react-native";
 import Svg, { Path, Circle, Rect, Polyline, Line } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -243,13 +243,12 @@ export function Header({ title, onBack, right }: HeaderProps) {
 
 // ── Avatar badge ─────────────────────────────────────────────────────────────
 
-interface AvatarProps { emoji?: string; image?: any; color?: string; bg?: string; size?: number }
+interface AvatarProps { emoji: string; color: string; bg: string; size?: number }
 
-export function AvatarBadge({ emoji, image, color = "#1B4FD8", bg = "#EFF6FF", size = 40 }: AvatarProps) {
-  const isStethoscope = emoji === "🩺" || (!emoji && !image);
+export function AvatarBadge({ emoji, color, bg, size = 40 }: AvatarProps) {
   return (
     <View
-      className="items-center justify-center rounded-full overflow-hidden"
+      className="items-center justify-center rounded-full"
       style={{
         width: size, height: size,
         backgroundColor: bg,
@@ -262,13 +261,7 @@ export function AvatarBadge({ emoji, image, color = "#1B4FD8", bg = "#EFF6FF", s
         elevation: 4
       }}
     >
-      {image ? (
-        <Image source={image} style={{ width: size * 0.72, height: size * 0.72 }} resizeMode="contain" />
-      ) : isStethoscope ? (
-        <Image source={require("../../assets/images/cura-logo.png")} style={{ width: size * 0.72, height: size * 0.72 }} resizeMode="contain" />
-      ) : (
-        <Text style={{ fontSize: size * 0.48 }}>{emoji}</Text>
-      )}
+      <Text style={{ fontSize: size * 0.48 }}>{emoji}</Text>
     </View>
   );
 }
@@ -459,15 +452,7 @@ export function SectionHeader({ title, action, onAction }: { title: string; acti
 export function EmptyState({ emoji, title, message }: { emoji: string; title: string; message: string }) {
   return (
     <View className="flex-col items-center justify-center py-14 px-6 gap-3">
-      {emoji === "🩺" ? (
-        <Image
-          source={require("../../assets/images/cura-logo.png")}
-          style={{ width: 64, height: 64 }}
-          resizeMode="contain"
-        />
-      ) : (
-        <Text className="text-5xl text-center">{emoji}</Text>
-      )}
+      <Text className="text-5xl text-center">{emoji}</Text>
       <Text className="text-base font-bold text-white text-center">{title}</Text>
       <Text className="text-sm text-white/70 text-center max-w-[200px]">{message}</Text>
     </View>

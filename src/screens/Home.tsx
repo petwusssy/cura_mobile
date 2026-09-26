@@ -200,7 +200,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         {/* 1. Header Section */}
         <View className="px-6 flex-row items-center justify-between mb-6 mt-4">
           <View className="flex-row items-center gap-3">
-            <AvatarBadge image={require("../../assets/images/cura-logo.png")} color="#1B4FD8" bg="#FFFFFF" size={48} />
+            <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={48} />
             <View>
               <Text className="text-white text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
                 Hi, {(user.displayName || user.firstName || "Patient").toUpperCase()}
