@@ -110,29 +110,6 @@ export function WelcomeScreen({ navigate }: NavProps) {
           strokeWidth={4.5}
         />
 
-        {/* Left Bottom Swoosh */}
-        <Path
-          d="M 47.0 705.0 C 11.2 748.7 7.8 780.3 20.5 799.1 C 33.2 818.5 62.0 825.1 93.2 831.7 C 124.5 838.3 158.4 845.0 185.8 865.4 C 213.6 885.5 235.0 919.3 248.0 969.6 C 208.1 942.8 181.9 1003.1 162.0 1056.5 C 75.0 1023.0 -12.1 989.4 -99.2 955.9 C -90.0 928.6 -77.6 901.6 -63.2 864.9 C -46.6 827.9 -27.8 781.0 47.0 705.0 Z"
-          fill="#17234A"
-        />
-        <Path
-          d="M 43.0 706.0 C 7.2 749.7 3.8 781.3 16.5 800.1 C 29.2 819.5 58.0 826.1 89.2 832.7 C 120.5 839.3 154.4 846.0 181.8 866.4 C 209.6 886.5 231.0 920.3 244.0 970.6 C 204.1 943.8 177.9 1004.1 158.0 1057.5 C 71.0 1024.0 -16.1 990.4 -103.2 956.9 C -94.0 929.6 -81.6 902.6 -67.2 865.9 C -50.6 828.9 -31.8 782.0 43.0 706.0 Z"
-          stroke="#FFFFFF"
-          strokeWidth={2.5}
-          fill="#3A55C8"
-        />
-
-        {/* Right Bottom Swoosh */}
-        <Path
-          d="M 355.0 750.0 C 378.2 737.9 389.7 746.1 396.0 756.5 C 402.1 767.6 402.9 780.9 398.9 793.3 C 391.4 818.4 366.2 839.0 336.4 859.4 C 306.7 879.9 272.0 899.0 249.8 922.5 C 238.5 934.3 230.5 947.6 225.5 964.4 C 223.0 972.8 221.3 982.1 220.3 992.5 C 219.7 997.7 219.4 1003.1 219.2 1008.9 L 550 1089 L 550 750 Z"
-          fill="#17234A"
-        />
-        <Path
-          d="M 359.0 749.0 C 382.2 736.9 393.7 745.1 400.0 755.5 C 406.1 766.6 406.9 779.9 402.9 792.3 C 395.4 817.4 370.2 838.0 340.4 858.4 C 310.7 878.9 276.0 898.0 253.8 921.5 C 242.5 933.3 234.5 946.6 229.5 963.4 C 227.0 971.8 225.3 981.1 224.3 991.5 C 223.7 996.7 223.4 1002.1 223.2 1007.9 L 553 1086 L 553 749 Z"
-          stroke="#FFFFFF"
-          strokeWidth={2.5}
-          fill="#3A55C8"
-        />
       </Svg>
 
       {/* 3. Foreground Interactive UI */}
@@ -220,7 +197,9 @@ export function WelcomeScreen({ navigate }: NavProps) {
               width: buttonWidth,
               height: 54,
               borderRadius: 27,
-              backgroundColor: "#17234D",
+              backgroundColor: "#13234D",
+              borderWidth: 1.5,
+              borderColor: "#4EA8DE",
               justifyContent: "center",
               alignItems: "center",
               opacity: pressed ? 0.85 : 1,
@@ -248,12 +227,23 @@ export function WelcomeScreen({ navigate }: NavProps) {
             onPress={() => navigate("login")}
             accessibilityRole="button"
             accessibilityLabel="Sign In"
-            hitSlop={12}
             style={({ pressed }) => ({
-              marginTop: 22,
-              paddingVertical: 10,
-              paddingHorizontal: 24,
-              opacity: pressed ? 0.7 : 1,
+              width: buttonWidth,
+              height: 54,
+              borderRadius: 27,
+              backgroundColor: "#13234D",
+              borderWidth: 1.5,
+              borderColor: "#4EA8DE",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 14,
+              opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 4,
             })}
           >
             <Text
