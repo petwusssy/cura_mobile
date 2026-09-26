@@ -41,7 +41,11 @@ export function DocumentsScreen({ navigate, goBack, params, certificates }: Prop
               className="flex-1 items-center gap-1 py-3 relative"
             >
               <View className="relative">
-                <Text className="text-lg">{t.icon}</Text>
+                {t.icon === "🩺" ? (
+                  <Image source={require("../../assets/images/cura-logo.png")} style={{ width: 18, height: 18 }} resizeMode="contain" />
+                ) : (
+                  <Text className="text-lg">{t.icon}</Text>
+                )}
                 <View
                   className="absolute -top-1 -right-2 rounded-full items-center justify-center"
                   style={{ backgroundColor: tab === t.id ? "#0B2136" : "#CBD5E1", width: 16, height: 16 }}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Line } from "react-native-svg";
 import type { Screen } from "../types";
@@ -44,9 +44,12 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
               activeTab === "consultations" ? "bg-white" : "bg-transparent"
             }`}
           >
-            <Text className={`text-xs font-bold ${activeTab === "consultations" ? "text-[#0B2136]" : "text-white/80"}`}>
-              🩺 Consultation ({consultationList.length})
-            </Text>
+            <View className="flex-row items-center gap-1.5">
+              <Image source={require("../../assets/images/cura-logo.png")} style={{ width: 14, height: 14 }} resizeMode="contain" />
+              <Text className={`text-xs font-bold ${activeTab === "consultations" ? "text-[#0B2136]" : "text-white/80"}`}>
+                Consultation ({consultationList.length})
+              </Text>
+            </View>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("non-consultations")}
@@ -70,7 +73,11 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
               className="flex-row items-center gap-1.5 rounded-full px-3 py-2 border border-white"
               style={{ backgroundColor: chip.bg, elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 }}
             >
-              <Text className="text-xs">{chip.icon}</Text>
+              {chip.icon === "🩺" ? (
+                <Image source={require("../../assets/images/cura-logo.png")} style={{ width: 14, height: 14 }} resizeMode="contain" />
+              ) : (
+                <Text className="text-xs">{chip.icon}</Text>
+              )}
               <Text className="text-xs font-bold" style={{ color: chip.color }}>{chip.label}</Text>
             </View>
           ))}

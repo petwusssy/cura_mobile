@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   View, Text, TextInput, Pressable, ScrollView, Animated,
-  KeyboardAvoidingView, Platform, Modal
+  KeyboardAvoidingView, Platform, Modal, Image
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -837,7 +837,11 @@ export function AvatarScreen({ navigate, user, setUser, goBack }: NavProps) {
                   transform: [{ scale: selected === m.id ? 1.05 : 1 }]
                 }}
               >
-                <Text className="text-3xl">{m.emoji}</Text>
+                {m.emoji === "🩺" ? (
+                  <Image source={require("../../assets/images/cura-logo.png")} style={{ width: 32, height: 32 }} resizeMode="contain" />
+                ) : (
+                  <Text className="text-3xl">{m.emoji}</Text>
+                )}
               </Pressable>
             ))}
           </View>
