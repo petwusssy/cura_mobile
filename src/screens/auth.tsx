@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Image, ImageBackground, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline, Circle } from "react-native-svg";
@@ -46,44 +46,82 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
 
 export function WelcomeScreen({ navigate }: NavProps) {
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+
+  const bottomPadding = Math.max(insets.bottom + 20, height * 0.10);
+  const buttonWidth = Math.min(300, width * 0.72);
+
   return (
-    <LinearGradient
-      colors={['#E4F4FB', '#F0F9FF', '#FFFFFF']}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      className="flex-1"
+    <ImageBackground
+      source={require("../../assets/images/auth-bg.png")}
+      style={{ flex: 1, width: "100%", height: "100%" }}
+      resizeMode="cover"
     >
-      {/* Hero content */}
-      <View className="flex-1 items-center justify-center px-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-        {/* Standalone Logo */}
-        <View className="items-center justify-center mb-6">
-          <Image
-            source={require("../../assets/images/cura-logo.png")}
-            style={{ width: 220, height: 220 }}
-            resizeMode="contain"
-            fadeDuration={0}
-          />
-        </View>
-
-        <Text className="text-base font-black tracking-[0.25em] uppercase text-center" style={{ color: '#0B2136', fontFamily: 'Outfit' }}>
-          University Clinic
-        </Text>
-      </View>
-
-      {/* CTA */}
-      <View className="px-6 flex-col gap-3" style={{ paddingBottom: Math.max(insets.bottom, 32) + 16 }}>
-        <Button fullWidth variant="primary" onPress={() => navigate("register")}>
-          Create Account
-        </Button>
-        <Button
-          fullWidth
-          variant="outline"
-          onPress={() => navigate("login")}
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "flex-end",
+          alignItems: "center",
+          paddingBottom: bottomPadding,
+        }}
+      >
+        <Pressable
+          onPress={() => navigate("register")}
+          accessibilityRole="button"
+          accessibilityLabel="Create Account"
+          style={({ pressed }) => ({
+            width: buttonWidth,
+            height: 55,
+            borderRadius: 28,
+            backgroundColor: "#1D2A63",
+            justifyContent: "center",
+            alignItems: "center",
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
+          })}
         >
-          Sign In
-        </Button>
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 17,
+              fontWeight: "700",
+              letterSpacing: 0.3,
+            }}
+          >
+            Create Account
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => navigate("login")}
+          accessibilityRole="button"
+          accessibilityLabel="Sign In"
+          hitSlop={12}
+          style={({ pressed }) => ({
+            marginTop: 18,
+            paddingVertical: 8,
+            paddingHorizontal: 24,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 17,
+              fontWeight: "700",
+              letterSpacing: 0.2,
+            }}
+          >
+            Sign In
+          </Text>
+        </Pressable>
       </View>
-    </LinearGradient>
+    </ImageBackground>
   );
 }
 
