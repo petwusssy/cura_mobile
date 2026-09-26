@@ -69,22 +69,14 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       const redirectUrl = Linking.createURL('telemedicine');
       const targetUrl = `https://cura-bice.vercel.app/call/${roomId}?role=patient&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
-      try {
-        const res = await WebBrowser.openAuthSessionAsync(targetUrl, redirectUrl);
-        if (res.type === 'success' || res.type === 'dismiss') {
-          fetchRequests(true);
-          return;
-        }
-      } catch {
-        await WebBrowser.openBrowserAsync(targetUrl, {
-          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-          toolbarColor: '#0B2136',
-          secondaryToolbarColor: '#0B2136',
-          controlsColor: '#FFFFFF',
-          showTitle: false,
-          enableBarCollapsing: false,
-        });
+      // Open in real external browser (Chrome / Safari) so WebRTC microphone and camera work natively
+      const supported = await Linking.canOpenURL(targetUrl);
+      if (supported) {
+        await Linking.openURL(targetUrl);
+      } else {
+        await WebBrowser.openBrowserAsync(targetUrl);
       }
+      fetchRequests(true);
     } catch (err) {
       console.warn("Could not open in-app call browser:", err);
     }
