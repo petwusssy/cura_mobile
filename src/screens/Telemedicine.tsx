@@ -389,7 +389,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 onPress={() => setActiveCallRoom(null)}
                 className="bg-rose-600 active:bg-rose-700 px-3 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
               >
-                <Text className="text-white text-xs font-bold uppercase tracking-wider">✕ Exit</Text>
+                <Text className="text-white text-xs font-bold uppercase tracking-wider">✕ Leave</Text>
               </Pressable>
             </View>
           </View>
