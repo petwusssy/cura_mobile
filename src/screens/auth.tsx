@@ -49,8 +49,8 @@ export function WelcomeScreen({ navigate }: NavProps) {
   const { width, height } = useWindowDimensions();
 
   // Proportional sizing based on reference design
-  const badgeSize = Math.min(186, Math.max(160, width * 0.44));
-  const logoSize = Math.round(badgeSize * 0.72);
+  const badgeSize = Math.min(196, Math.max(168, width * 0.46));
+  const logoSize = Math.round(badgeSize * 0.86);
   const buttonWidth = Math.min(300, width * 0.74);
 
   return (
@@ -139,16 +139,14 @@ export function WelcomeScreen({ navigate }: NavProps) {
       <View
         style={{
           flex: 1,
-          justifyContent: "space-between",
           alignItems: "center",
-          paddingBottom: Math.max(insets.bottom + 16, height * 0.08),
         }}
       >
         {/* Center Branding Section */}
         <View
           style={{
             alignItems: "center",
-            marginTop: Math.max(height * 0.52 - badgeSize * 0.55, insets.top + 200),
+            marginTop: Math.max(height * 0.51 - badgeSize * 0.52, insets.top + 190),
           }}
         >
           {/* Circular Badge with CURA Logo */}
@@ -206,17 +204,25 @@ export function WelcomeScreen({ navigate }: NavProps) {
           </Text>
         </View>
 
-        {/* Buttons Section */}
-        <View style={{ width: "100%", alignItems: "center" }}>
+        {/* Buttons Section - Shifted upward to remove the huge gap */}
+        <View
+          style={{
+            width: "100%",
+            alignItems: "center",
+            marginTop: Math.min(46, Math.max(28, height * 0.045)),
+          }}
+        >
           <Pressable
             onPress={() => navigate("register")}
             accessibilityRole="button"
             accessibilityLabel="Create Account"
             style={({ pressed }) => ({
               width: buttonWidth,
-              height: 55,
-              borderRadius: 28,
-              backgroundColor: "#1D2A63",
+              height: 54,
+              borderRadius: 27,
+              backgroundColor: "#13234D",
+              borderWidth: 1.5,
+              borderColor: "#4EA8DE",
               justifyContent: "center",
               alignItems: "center",
               opacity: pressed ? 0.85 : 1,
@@ -231,9 +237,9 @@ export function WelcomeScreen({ navigate }: NavProps) {
             <Text
               style={{
                 color: "#FFFFFF",
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: "700",
-                letterSpacing: 0.3,
+                letterSpacing: 0.6,
               }}
             >
               Create Account
@@ -246,7 +252,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
             accessibilityLabel="Sign In"
             hitSlop={12}
             style={({ pressed }) => ({
-              marginTop: 18,
+              marginTop: 22,
               paddingVertical: 8,
               paddingHorizontal: 24,
               opacity: pressed ? 0.7 : 1,
