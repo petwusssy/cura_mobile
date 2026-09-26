@@ -195,14 +195,9 @@ export function WelcomeScreen({ navigate }: NavProps) {
             accessibilityLabel="Create Account"
             style={({ pressed }) => ({
               width: buttonWidth,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: "#13234D",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.18)",
-              justifyContent: "center",
-              alignItems: "center",
-              opacity: pressed ? 0.85 : 1,
+              height: 56,
+              borderRadius: 28,
+              opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
@@ -211,16 +206,29 @@ export function WelcomeScreen({ navigate }: NavProps) {
               elevation: 4,
             })}
           >
-            <Text
+            <LinearGradient
+              colors={["#0D153E", "#2A4487", "#658CDC"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
               style={{
-                color: "#FFFFFF",
-                fontSize: 16,
-                fontWeight: "700",
-                letterSpacing: 0.6,
+                width: "100%",
+                height: "100%",
+                borderRadius: 28,
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              Create Account
-            </Text>
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 17,
+                  fontWeight: "700",
+                  letterSpacing: 0.4,
+                }}
+              >
+                Create Account
+              </Text>
+            </LinearGradient>
           </Pressable>
 
           <Pressable
@@ -229,31 +237,41 @@ export function WelcomeScreen({ navigate }: NavProps) {
             accessibilityLabel="Sign In"
             style={({ pressed }) => ({
               width: buttonWidth,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: "#C3DCF4",
-              justifyContent: "center",
-              alignItems: "center",
-              marginTop: 14,
-              opacity: pressed ? 0.85 : 1,
+              height: 56,
+              borderRadius: 28,
+              marginTop: 16,
+              opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.18,
+              shadowOpacity: 0.25,
               shadowRadius: 8,
               elevation: 4,
             })}
           >
-            <Text
+            <LinearGradient
+              colors={["#2968EE", "#487FE7", "#6E98ED"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
               style={{
-                color: "#172454",
-                fontSize: 16,
-                fontWeight: "700",
-                letterSpacing: 0.6,
+                width: "100%",
+                height: "100%",
+                borderRadius: 28,
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              Sign In
-            </Text>
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 17,
+                  fontWeight: "700",
+                  letterSpacing: 0.4,
+                }}
+              >
+                Sign In
+              </Text>
+            </LinearGradient>
           </Pressable>
         </View>
       </View>
