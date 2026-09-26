@@ -198,8 +198,8 @@ export function WelcomeScreen({ navigate }: NavProps) {
               height: 54,
               borderRadius: 27,
               backgroundColor: "#13234D",
-              borderWidth: 1.5,
-              borderColor: "#4EA8DE",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.18)",
               justifyContent: "center",
               alignItems: "center",
               opacity: pressed ? 0.85 : 1,
@@ -231,9 +231,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
               width: buttonWidth,
               height: 54,
               borderRadius: 27,
-              backgroundColor: "#13234D",
-              borderWidth: 1.5,
-              borderColor: "#4EA8DE",
+              backgroundColor: "#C3DCF4",
               justifyContent: "center",
               alignItems: "center",
               marginTop: 14,
@@ -241,14 +239,14 @@ export function WelcomeScreen({ navigate }: NavProps) {
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.25,
+              shadowOpacity: 0.18,
               shadowRadius: 8,
               elevation: 4,
             })}
           >
             <Text
               style={{
-                color: "#FFFFFF",
+                color: "#172454",
                 fontSize: 16,
                 fontWeight: "700",
                 letterSpacing: 0.6,
