@@ -157,19 +157,26 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
   };
 
   const cardWidth = Math.min(340, width * 0.88);
+  const bottomHeight = 220 + Math.max(insets.bottom, 14);
+
+  // Statue framing: 1024x683 (ratio 1.5). Center statue, frame head right above card, hands inside card, fountain below.
+  const bgWidth = Math.max(width * 1.85, 720);
+  const bgHeight = bgWidth / 1.5;
+  const bgLeft = (width - bgWidth) / 2;
+  const bgTop = Math.max(insets.top + 18, 36);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#061A3A" }}>
-      {/* 1. Actual Campus Statue Background Image - Centered on Mary Statue */}
+    <View style={{ flex: 1, backgroundColor: "#0284C7" }}>
+      {/* 1. Actual Campus Statue Background Image - Centered and Proportioned */}
       <View style={StyleSheet.absoluteFill}>
         <Image
           source={require("../../assets/images/ua-statue-bg.jpg")}
           style={{
             position: "absolute",
-            top: -height * 0.14,
-            left: -width * 0.35,
-            width: width * 1.7,
-            height: height * 1.25,
+            top: bgTop,
+            left: bgLeft,
+            width: bgWidth,
+            height: bgHeight,
           }}
           resizeMode="cover"
         />
@@ -178,11 +185,19 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
         <LinearGradient
           colors={[
             "#0284C7",
-            "rgba(2, 132, 199, 0.45)",
+            "rgba(2, 132, 199, 0.75)",
+            "rgba(2, 132, 199, 0.25)",
             "transparent",
-            "rgba(6, 26, 58, 0.45)",
           ]}
-          locations={[0, 0.16, 0.45, 1]}
+          locations={[0, 0.14, 0.28, 0.52]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+
+        {/* 3. Subtle bottom vignette for depth */}
+        <LinearGradient
+          colors={["transparent", "rgba(6, 26, 58, 0.35)", "rgba(6, 26, 58, 0.8)"]}
+          locations={[0.55, 0.78, 1]}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />
@@ -238,7 +253,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
           <View
             style={{
               alignItems: "center",
-              paddingTop: Math.max(insets.top + 16, 36),
+              justifyContent: "center",
+              paddingTop: Math.max(insets.top + 14, 38),
               paddingBottom: 4,
             }}
           >
@@ -262,7 +278,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   letterSpacing: 2,
                   marginLeft: 4,
                   fontFamily: "Outfit",
-                  textShadowColor: "rgba(34, 211, 238, 0.85)",
+                  textShadowColor: "rgba(34, 211, 238, 0.9)",
                   textShadowOffset: { width: 0, height: 0 },
                   textShadowRadius: 18,
                 }}
@@ -276,7 +292,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
           <View
             style={{
               paddingHorizontal: 20,
-              paddingVertical: 12,
+              paddingVertical: 10,
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -285,17 +301,17 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
               style={[
                 {
                   width: cardWidth,
-                  borderRadius: 30,
+                  borderRadius: 28,
                   borderWidth: 1.5,
-                  borderColor: "rgba(255, 255, 255, 0.55)",
-                  backgroundColor: "rgba(255, 255, 255, 0.16)",
+                  borderColor: "rgba(255, 255, 255, 0.58)",
+                  backgroundColor: "rgba(255, 255, 255, 0.18)",
                   paddingHorizontal: 20,
-                  paddingTop: 24,
-                  paddingBottom: 24,
+                  paddingTop: 22,
+                  paddingBottom: 22,
                   shadowColor: "#38BDF8",
                   shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: 0.35,
-                  shadowRadius: 20,
+                  shadowOpacity: 0.45,
+                  shadowRadius: 18,
                   elevation: 8,
                   overflow: "hidden",
                 },
@@ -306,7 +322,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
             >
               {/* Subtle glass reflection highlight */}
               <LinearGradient
-                colors={["rgba(255, 255, 255, 0.22)", "rgba(255, 255, 255, 0.05)"]}
+                colors={["rgba(255, 255, 255, 0.24)", "rgba(255, 255, 255, 0.05)"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={StyleSheet.absoluteFill}
@@ -336,8 +352,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   height: 50,
                   borderRadius: 16,
                   borderWidth: 1.5,
-                  borderColor: "rgba(255, 255, 255, 0.6)",
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  borderColor: "rgba(255, 255, 255, 0.65)",
+                  backgroundColor: "rgba(255, 255, 255, 0.22)",
                   flexDirection: "row",
                   alignItems: "center",
                   paddingHorizontal: 14,
@@ -371,8 +387,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   height: 50,
                   borderRadius: 16,
                   borderWidth: 1.5,
-                  borderColor: "rgba(255, 255, 255, 0.6)",
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  borderColor: "rgba(255, 255, 255, 0.65)",
+                  backgroundColor: "rgba(255, 255, 255, 0.22)",
                   flexDirection: "row",
                   alignItems: "center",
                   paddingHorizontal: 14,
@@ -432,13 +448,15 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 </View>
               ) : null}
 
-              {/* Prominent Login Button Directly Below Password - Pill Shape */}
+              {/* Prominent Login Button Directly Below Password - Full-Width Pill Shape */}
               <Pressable
                 onPress={handleLogin}
                 disabled={loading}
                 accessibilityRole="button"
                 accessibilityLabel="Login"
                 style={({ pressed }) => ({
+                  width: "100%",
+                  alignSelf: "stretch",
                   height: 52,
                   borderRadius: 26,
                   backgroundColor: pressed ? "#0062D6" : "#007AFF",
@@ -446,10 +464,10 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   borderColor: "rgba(255, 255, 255, 0.55)",
                   justifyContent: "center",
                   alignItems: "center",
-                  marginTop: 18,
+                  marginTop: 16,
                   shadowColor: "#007AFF",
                   shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: 0.6,
+                  shadowOpacity: 0.65,
                   shadowRadius: 14,
                   elevation: 6,
                   transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -474,12 +492,12 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
           </View>
 
           {/* Bottom Blue Curved University Clinic Section */}
-          <View style={{ width: "100%", marginTop: 16 }}>
+          <View style={{ width: "100%", marginTop: 12 }}>
             <View style={{ width: "100%", position: "relative", overflow: "hidden" }}>
               <Svg
                 width={width}
-                height={260}
-                viewBox={`0 0 ${width} 260`}
+                height={bottomHeight}
+                viewBox={`0 0 ${width} ${bottomHeight}`}
                 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
               >
                 <Defs>
@@ -491,15 +509,15 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 </Defs>
                 {/* Curved Dome Body spanning exact screen width */}
                 <Path
-                  d={`M 0 52 Q ${width / 2} -4 ${width} 52 L ${width} 260 L 0 260 Z`}
+                  d={`M 0 46 Q ${width / 2} -4 ${width} 46 L ${width} ${bottomHeight} L 0 ${bottomHeight} Z`}
                   fill="url(#clinicBottomGrad)"
                 />
                 {/* Glowing Top Cyan Border */}
                 <Path
-                  d={`M 0 52 Q ${width / 2} -4 ${width} 52`}
+                  d={`M 0 46 Q ${width / 2} -4 ${width} 46`}
                   fill="none"
                   stroke="#38BDF8"
-                  strokeWidth={3}
+                  strokeWidth={2.5}
                 />
               </Svg>
 
@@ -507,8 +525,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 style={{
                   width: "100%",
                   alignItems: "center",
-                  paddingTop: 42,
-                  paddingBottom: Math.max(insets.bottom + 18, 26),
+                  paddingTop: 36,
+                  paddingBottom: Math.max(insets.bottom + 16, 22),
                   paddingHorizontal: 20,
                 }}
               >
@@ -528,7 +546,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   <Text
                     style={{
                       color: "#FFFFFF",
-                      fontSize: 23,
+                      fontSize: 22,
                       fontWeight: "800",
                       letterSpacing: 0.5,
                       marginLeft: 10,
@@ -543,32 +561,32 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 <Text
                   style={{
                     color: "rgba(255, 255, 255, 0.92)",
-                    fontSize: 14.5,
-                    lineHeight: 20,
+                    fontSize: 14,
+                    lineHeight: 19,
                     fontWeight: "500",
                     textAlign: "center",
-                    maxWidth: 310,
+                    maxWidth: 300,
                     marginTop: 8,
                   }}
                 >
                   Your personal health companion for smarter, simpler campus care.
                 </Text>
 
-                {/* Create Account Button - Pill shape without stretching LinearGradient */}
+                {/* Create Account Button - Clean secondary frosted pill */}
                 <Pressable
                   onPress={() => navigate("register")}
                   accessibilityRole="button"
                   accessibilityLabel="Create Account"
                   style={({ pressed }) => ({
                     width: Math.min(290, width * 0.78),
-                    height: 52,
-                    borderRadius: 26,
+                    height: 50,
+                    borderRadius: 25,
                     backgroundColor: pressed ? "rgba(255, 255, 255, 0.28)" : "rgba(255, 255, 255, 0.14)",
                     borderWidth: 1.5,
                     borderColor: "rgba(255, 255, 255, 0.55)",
                     justifyContent: "center",
                     alignItems: "center",
-                    marginTop: 18,
+                    marginTop: 16,
                     shadowColor: "#38BDF8",
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.35,
