@@ -97,7 +97,7 @@ function EyeOffIcon() {
 
 export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack }: NavProps) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -160,24 +160,33 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
 
   return (
     <View style={{ flex: 1, backgroundColor: "#061A3A" }}>
-      {/* 1. Actual Campus Statue Background Image */}
-      <Image
-        source={require("../../assets/images/ua-statue-bg.jpg")}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      />
+      {/* 1. Actual Campus Statue Background Image - Centered on Mary Statue */}
+      <View style={StyleSheet.absoluteFill}>
+        <Image
+          source={require("../../assets/images/ua-statue-bg.jpg")}
+          style={{
+            position: "absolute",
+            top: -height * 0.14,
+            left: -width * 0.35,
+            width: width * 1.7,
+            height: height * 1.25,
+          }}
+          resizeMode="cover"
+        />
 
-      {/* 2. Top Sky-Blue Glow & Subtle Ambient Vignette */}
-      <LinearGradient
-        colors={[
-          "rgba(2, 132, 199, 0.45)",
-          "rgba(10, 30, 60, 0.12)",
-          "rgba(6, 26, 58, 0.4)",
-        ]}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
+        {/* 2. Top Sky-Blue Glow & Atmosphere Gradient */}
+        <LinearGradient
+          colors={[
+            "#0284C7",
+            "rgba(2, 132, 199, 0.45)",
+            "transparent",
+            "rgba(6, 26, 58, 0.45)",
+          ]}
+          locations={[0, 0.16, 0.45, 1]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      </View>
 
       {/* Subtle Back Button (only shown if navigated from another screen) */}
       {canGoBack && goBack ? (
@@ -229,8 +238,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
           <View
             style={{
               alignItems: "center",
-              paddingTop: Math.max(insets.top + 16, 32),
-              paddingBottom: 8,
+              paddingTop: Math.max(insets.top + 16, 36),
+              paddingBottom: 4,
             }}
           >
             <View
@@ -242,18 +251,18 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
             >
               <Image
                 source={require("../../assets/images/cura-c-shield.png")}
-                style={{ width: 50, height: 50 }}
+                style={{ width: 52, height: 52 }}
                 resizeMode="contain"
               />
               <Text
                 style={{
-                  fontSize: 46,
+                  fontSize: 48,
                   fontWeight: "900",
                   color: "#67E8F9",
-                  letterSpacing: 1.5,
-                  marginLeft: 3,
+                  letterSpacing: 2,
+                  marginLeft: 4,
                   fontFamily: "Outfit",
-                  textShadowColor: "rgba(34, 211, 238, 0.8)",
+                  textShadowColor: "rgba(34, 211, 238, 0.85)",
                   textShadowOffset: { width: 0, height: 0 },
                   textShadowRadius: 18,
                 }}
@@ -423,20 +432,22 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 </View>
               ) : null}
 
-              {/* Prominent Login Button Directly Below Password */}
+              {/* Prominent Login Button Directly Below Password - Pill Shape */}
               <Pressable
                 onPress={handleLogin}
                 disabled={loading}
                 accessibilityRole="button"
                 accessibilityLabel="Login"
                 style={({ pressed }) => ({
-                  height: 50,
-                  borderRadius: 20,
-                  overflow: "hidden",
-                  marginTop: 16,
-                  borderWidth: 1,
-                  borderColor: "rgba(255, 255, 255, 0.5)",
-                  shadowColor: "#007FFF",
+                  height: 52,
+                  borderRadius: 26,
+                  backgroundColor: pressed ? "#0062D6" : "#007AFF",
+                  borderWidth: 1.5,
+                  borderColor: "rgba(255, 255, 255, 0.55)",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginTop: 18,
+                  shadowColor: "#007AFF",
                   shadowOffset: { width: 0, height: 6 },
                   shadowOpacity: 0.6,
                   shadowRadius: 14,
@@ -444,71 +455,51 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                 })}
               >
-                {({ pressed }) => (
-                  <LinearGradient
-                    colors={
-                      pressed
-                        ? ["#006FE6", "#0047BA"]
-                        : ["#0086FF", "#0055D4"]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text
                     style={{
-                      flex: 1,
-                      width: "100%",
-                      height: "100%",
-                      justifyContent: "center",
-                      alignItems: "center",
+                      color: "#FFFFFF",
+                      fontSize: 18,
+                      fontWeight: "800",
+                      letterSpacing: 0.5,
                     }}
                   >
-                    {loading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <Text
-                        style={{
-                          color: "#FFFFFF",
-                          fontSize: 18,
-                          fontWeight: "800",
-                          letterSpacing: 0.5,
-                        }}
-                      >
-                        Login  →
-                      </Text>
-                    )}
-                  </LinearGradient>
+                    Login  →
+                  </Text>
                 )}
               </Pressable>
             </View>
           </View>
 
           {/* Bottom Blue Curved University Clinic Section */}
-          <View style={{ width: "100%", alignItems: "center" }}>
-            <View style={{ width: "100%", position: "relative" }}>
+          <View style={{ width: "100%", marginTop: 16 }}>
+            <View style={{ width: "100%", position: "relative", overflow: "hidden" }}>
               <Svg
-                width="100%"
-                height="100%"
-                viewBox="0 0 400 240"
-                preserveAspectRatio="none"
-                style={StyleSheet.absoluteFill}
+                width={width}
+                height={260}
+                viewBox={`0 0 ${width} 260`}
+                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
               >
                 <Defs>
                   <SvgLinearGradient id="clinicBottomGrad" x1="0" y1="0" x2="0" y2="1">
                     <Stop offset="0" stopColor="#0B4B9A" />
-                    <Stop offset="0.5" stopColor="#073B80" />
+                    <Stop offset="0.45" stopColor="#073B80" />
                     <Stop offset="1" stopColor="#04275E" />
                   </SvgLinearGradient>
                 </Defs>
-                {/* Curved Dome Body */}
+                {/* Curved Dome Body spanning exact screen width */}
                 <Path
-                  d="M 0 45 Q 200 -5 400 45 L 400 240 L 0 240 Z"
+                  d={`M 0 52 Q ${width / 2} -4 ${width} 52 L ${width} 260 L 0 260 Z`}
                   fill="url(#clinicBottomGrad)"
                 />
                 {/* Glowing Top Cyan Border */}
                 <Path
-                  d="M 0 45 Q 200 -5 400 45"
+                  d={`M 0 52 Q ${width / 2} -4 ${width} 52`}
                   fill="none"
                   stroke="#38BDF8"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                 />
               </Svg>
 
@@ -516,8 +507,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 style={{
                   width: "100%",
                   alignItems: "center",
-                  paddingTop: 36,
-                  paddingBottom: Math.max(insets.bottom + 16, 24),
+                  paddingTop: 42,
+                  paddingBottom: Math.max(insets.bottom + 18, 26),
                   paddingHorizontal: 20,
                 }}
               >
@@ -531,13 +522,13 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 >
                   <Image
                     source={require("../../assets/images/ua-assumption-logo.png")}
-                    style={{ width: 42, height: 42 }}
+                    style={{ width: 44, height: 44 }}
                     resizeMode="contain"
                   />
                   <Text
                     style={{
                       color: "#FFFFFF",
-                      fontSize: 22,
+                      fontSize: 23,
                       fontWeight: "800",
                       letterSpacing: 0.5,
                       marginLeft: 10,
@@ -552,7 +543,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 <Text
                   style={{
                     color: "rgba(255, 255, 255, 0.92)",
-                    fontSize: 14,
+                    fontSize: 14.5,
                     lineHeight: 20,
                     fontWeight: "500",
                     textAlign: "center",
@@ -563,58 +554,39 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   Your personal health companion for smarter, simpler campus care.
                 </Text>
 
-                {/* Create Account Button */}
+                {/* Create Account Button - Pill shape without stretching LinearGradient */}
                 <Pressable
                   onPress={() => navigate("register")}
                   accessibilityRole="button"
                   accessibilityLabel="Create Account"
                   style={({ pressed }) => ({
-                    width: "100%",
-                    maxWidth: 290,
-                    height: 50,
-                    borderRadius: 22,
-                    overflow: "hidden",
+                    width: Math.min(290, width * 0.78),
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: pressed ? "rgba(255, 255, 255, 0.28)" : "rgba(255, 255, 255, 0.14)",
                     borderWidth: 1.5,
                     borderColor: "rgba(255, 255, 255, 0.55)",
-                    backgroundColor: pressed ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.12)",
-                    marginTop: 16,
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginTop: 18,
                     shadowColor: "#38BDF8",
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.35,
                     shadowRadius: 10,
-                    elevation: 3,
+                    elevation: 4,
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
                   })}
                 >
-                  {({ pressed }) => (
-                    <LinearGradient
-                      colors={
-                        pressed
-                          ? ["rgba(255, 255, 255, 0.28)", "rgba(255, 255, 255, 0.12)"]
-                          : ["rgba(255, 255, 255, 0.18)", "rgba(255, 255, 255, 0.05)"]
-                      }
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 0, y: 1 }}
-                      style={{
-                        flex: 1,
-                        width: "100%",
-                        height: "100%",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "#FFFFFF",
-                          fontSize: 18,
-                          fontWeight: "800",
-                          letterSpacing: 0.5,
-                        }}
-                      >
-                        Create Account
-                      </Text>
-                    </LinearGradient>
-                  )}
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontSize: 18,
+                      fontWeight: "800",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Create Account
+                  </Text>
                 </Pressable>
               </View>
             </View>
