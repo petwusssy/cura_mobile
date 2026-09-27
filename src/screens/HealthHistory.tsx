@@ -5,6 +5,7 @@ import Svg, { Circle, Line } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, VitalItem, Header, EmptyState } from "../components/Shell";
 import { CONSULTATIONS } from "../data";
+import { formatTime12, formatTimeRange12 } from "../utils/philippineTime";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -112,7 +113,7 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
                       <Badge variant={badge.variant}>{badge.label}</Badge>
                     </View>
                     <View className="flex-row items-center gap-3 flex-wrap mt-1">
-                      <Text className="text-xs text-slate-400">⏱ {c.timeIn} – {c.timeOut || "Ongoing"}</Text>
+                      <Text className="text-xs text-slate-400">⏱ {formatTimeRange12(c.timeIn, c.timeOut, "Ongoing")}</Text>
                       {c.followUp && (
                         <Text className="text-xs text-amber-600 font-medium">
                           📅 Follow-up {c.followUp}
@@ -186,8 +187,8 @@ export function HealthDetailScreen({ navigate: _navigate, goBack, params, consul
             <Text className="text-white/70 text-xs mb-4">{consult.doctorName} {consult.assistingNurse ? `· ${consult.assistingNurse}` : ''}</Text>
             <View className="flex-row gap-5">
               {[
-                { label: "Time In", val: consult.timeIn },
-                { label: "Time Out", val: consult.timeOut || "Ongoing" },
+                { label: "Time In", val: formatTime12(consult.timeIn) },
+                { label: "Time Out", val: formatTime12(consult.timeOut) || "Ongoing" },
                 ...(consult.followUp ? [{ label: "Follow-up", val: consult.followUp }] : []),
               ].map((item, i, arr) => (
                 <View key={item.label} className={`flex-row gap-4 ${i < arr.length - 1 ? "border-r border-white/20 pr-5" : ""}`}>

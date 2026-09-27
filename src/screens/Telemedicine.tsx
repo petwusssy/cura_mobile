@@ -7,7 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import type { Screen, AppUser } from "../types";
-import { getManilaDate, getManilaTime, normalizeDate } from "../utils/philippineTime";
+import { getManilaDate, getManilaTime, normalizeDate, formatTime12 } from "../utils/philippineTime";
 
 function parseSingleTime(t: string): number | null {
   const match = t.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
@@ -416,7 +416,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 <View className="flex-row justify-between items-start mb-3">
                   <View>
                     <Text className="text-sm font-bold text-slate-800 mb-1">{req.preferred_date}</Text>
-                    <Text className="text-xs text-slate-500">{req.preferred_time}</Text>
+                    <Text className="text-xs text-slate-500">{formatTime12(req.preferred_time)}</Text>
                   </View>
                   {renderStatusBadge(req.status)}
                 </View>
@@ -447,7 +447,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       </View>
 
                       <Text className="text-xs text-emerald-700 mb-1">
-                        <Text className="font-bold">Scheduled:</Text> {scheduledDate} at {scheduledTime}
+                        <Text className="font-bold">Scheduled:</Text> {scheduledDate} at {formatTime12(scheduledTime)}
                       </Text>
 
                       {!access.canJoin && (

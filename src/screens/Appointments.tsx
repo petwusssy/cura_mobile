@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Screen, AppUser } from "../types";
+import { formatTime12 } from "../utils/philippineTime";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -239,7 +240,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 <View className="flex-row justify-between items-start mb-3">
                   <View>
                     <Text className="text-sm font-bold text-slate-800 mb-1">{req.preferred_date}</Text>
-                    <Text className="text-xs text-slate-500">{req.preferred_time}</Text>
+                    <Text className="text-xs text-slate-500">{formatTime12(req.preferred_time)}</Text>
                   </View>
                   {renderStatusBadge(req.status)}
                 </View>
@@ -252,7 +253,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                   <View className="bg-emerald-50 rounded-xl p-4 mt-2 border border-emerald-100">
                     <Text className="text-xs font-bold text-emerald-800 mb-2">✅ APPOINTMENT APPROVED</Text>
                     <Text className="text-xs text-emerald-700 mb-1">
-                      <Text className="font-bold">Scheduled:</Text> {req.scheduled_date || req.preferred_date} at {req.scheduled_time || req.preferred_time}
+                      <Text className="font-bold">Scheduled:</Text> {req.scheduled_date || req.preferred_date} at {formatTime12(req.scheduled_time || req.preferred_time)}
                     </Text>
                   </View>
                 )}

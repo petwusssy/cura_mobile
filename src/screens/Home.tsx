@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
 import { Card, SectionHeader, Badge, AvatarBadge, Header } from "../components/Shell";
 import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT, MASCOTS } from "../data";
-import { getManilaHour, formatManilaDateTime } from "../utils/philippineTime";
+import { getManilaHour, formatManilaDateTime, formatTime12 } from "../utils/philippineTime";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -375,7 +375,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 <Text className="text-xs text-slate-400 mt-0.5">{latestConsult.complaint}</Text>
               </View>
               <View className="items-end gap-1">
-                <Text className="text-xs font-bold text-slate-800">{latestConsult.timeIn}</Text>
+                <Text className="text-xs font-bold text-slate-800">{formatTime12(latestConsult.timeIn)}</Text>
                 <Text className="text-[10px] font-semibold text-slate-400">
                   {new Date(latestConsult.date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "Asia/Manila" })}
                 </Text>

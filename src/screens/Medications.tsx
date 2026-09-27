@@ -5,6 +5,7 @@ import Svg, { Polyline } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, Header } from "../components/Shell";
 import { MEDICATIONS } from "../data";
+import { formatTime12 } from "../utils/philippineTime";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -138,7 +139,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                     </View>
                     <View>
                       <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time given</Text>
-                      <Text className="text-xs text-slate-600 mt-0.5">{med.timeGiven}</Text>
+                      <Text className="text-xs text-slate-600 mt-0.5">{formatTime12(med.timeGiven)}</Text>
                     </View>
                     {med.status === "due-now" && (
                       <LinearGradient
