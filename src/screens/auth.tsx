@@ -78,8 +78,14 @@ export function WelcomeScreen({ navigate }: NavProps) {
         />
         <View
           style={{
-            ...StyleSheet.absoluteFillObject,
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             backgroundColor: "rgba(8, 35, 80, 0.66)",
+            zIndex: 10,
+            elevation: 10,
           }}
           pointerEvents="none"
         />
