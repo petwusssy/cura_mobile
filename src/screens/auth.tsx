@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
@@ -152,7 +151,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
         <View
           style={{
             alignItems: "center",
-            marginTop: Math.max(height * 0.51 - badgeSize * 0.52, insets.top + 190),
+            marginTop: Math.max(height * 0.49 - badgeSize * 0.52, insets.top + 160),
           }}
         >
           {/* Circular Badge with CURA Logo */}
@@ -210,12 +209,13 @@ export function WelcomeScreen({ navigate }: NavProps) {
           </Text>
         </View>
 
-        {/* Buttons Section - Shifted upward to remove the huge gap */}
+        {/* Buttons Section */}
         <View
           style={{
             width: "100%",
             alignItems: "center",
-            marginTop: Math.min(46, Math.max(28, height * 0.045)),
+            marginTop: Math.min(38, Math.max(20, height * 0.038)),
+            paddingBottom: Math.max(16, insets.bottom + 8),
           }}
         >
           <Pressable
@@ -228,7 +228,8 @@ export function WelcomeScreen({ navigate }: NavProps) {
               borderRadius: 9999,
               overflow: "hidden",
               borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.35)",
+              borderColor: "rgba(255, 255, 255, 0.4)",
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.12)",
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
@@ -237,29 +238,35 @@ export function WelcomeScreen({ navigate }: NavProps) {
               elevation: 3,
             })}
           >
-            <BlurView
-              intensity={35}
-              tint="light"
-              style={{
-                flex: 1,
-                width: "100%",
-                height: "100%",
-                backgroundColor: "rgba(255, 255, 255, 0.12)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Text
+            {({ pressed }) => (
+              <LinearGradient
+                colors={
+                  pressed
+                    ? ["rgba(255, 255, 255, 0.26)", "rgba(255, 255, 255, 0.14)"]
+                    : ["rgba(255, 255, 255, 0.18)", "rgba(255, 255, 255, 0.06)"]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
                 style={{
-                  color: "#FFFFFF",
-                  fontSize: 18,
-                  fontWeight: "700",
-                  letterSpacing: 0.6,
+                  flex: 1,
+                  width: "100%",
+                  height: "100%",
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                Create Account
-              </Text>
-            </BlurView>
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 18,
+                    fontWeight: "700",
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  Create Account
+                </Text>
+              </LinearGradient>
+            )}
           </Pressable>
 
           <Pressable
@@ -272,7 +279,8 @@ export function WelcomeScreen({ navigate }: NavProps) {
               borderRadius: 9999,
               overflow: "hidden",
               borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.35)",
+              borderColor: "rgba(255, 255, 255, 0.4)",
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.12)",
               marginTop: 14,
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
@@ -282,29 +290,35 @@ export function WelcomeScreen({ navigate }: NavProps) {
               elevation: 3,
             })}
           >
-            <BlurView
-              intensity={35}
-              tint="light"
-              style={{
-                flex: 1,
-                width: "100%",
-                height: "100%",
-                backgroundColor: "rgba(255, 255, 255, 0.12)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Text
+            {({ pressed }) => (
+              <LinearGradient
+                colors={
+                  pressed
+                    ? ["rgba(255, 255, 255, 0.26)", "rgba(255, 255, 255, 0.14)"]
+                    : ["rgba(255, 255, 255, 0.18)", "rgba(255, 255, 255, 0.06)"]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
                 style={{
-                  color: "#FFFFFF",
-                  fontSize: 18,
-                  fontWeight: "700",
-                  letterSpacing: 0.6,
+                  flex: 1,
+                  width: "100%",
+                  height: "100%",
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                Sign In
-              </Text>
-            </BlurView>
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 18,
+                    fontWeight: "700",
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  Sign In
+                </Text>
+              </LinearGradient>
+            )}
           </Pressable>
         </View>
       </View>
