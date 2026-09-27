@@ -115,14 +115,29 @@ export function WelcomeScreen({ navigate }: NavProps) {
           fill="url(#blueGrad)"
         />
 
-        {/* Soft light-cyan arch border curve */}
+        {/* White arch border curve */}
         <Path
           d="M -5 266 C 31.4 328.1 65.7 390.7 100.3 430.1 C 134.9 470.9 169.7 488.5 204.8 490.3 C 239.9 490.0 275.1 473.8 310.7 433.1 C 346.3 393.7 382.2 329.8 420 266"
           fill="none"
-          stroke="#DCEBF8"
+          stroke="#FFFFFF"
           strokeWidth={4.5}
         />
 
+        {/* Yellow arch curve */}
+        <Path
+          d="M -5 271.5 C 31.4 333.6 65.7 396.2 100.3 435.6 C 134.9 476.4 169.7 494.0 204.8 495.8 C 239.9 495.5 275.1 479.3 310.7 438.6 C 346.3 399.2 382.2 335.3 420 271.5"
+          fill="none"
+          stroke="#FBBF24"
+          strokeWidth={4.5}
+        />
+
+        {/* Red arch curve */}
+        <Path
+          d="M -5 277.0 C 31.4 339.1 65.7 401.7 100.3 441.1 C 134.9 481.9 169.7 499.5 204.8 501.3 C 239.9 501.0 275.1 484.8 310.7 444.1 C 346.3 404.7 382.2 340.8 420 277.0"
+          fill="none"
+          stroke="#EF4444"
+          strokeWidth={4.5}
+        />
       </Svg>
 
       {/* 3. Foreground Interactive UI */}
