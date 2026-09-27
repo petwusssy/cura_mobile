@@ -484,7 +484,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
             </View>
           </View>
 
-          {/* Bottom Blue Curved University Clinic Section */}
+          {/* Bottom Blue Curved University Clinic Section - Exact Reference Match */}
           <View style={{ width: "100%", marginTop: 8 }}>
             <View style={{ width: "100%", minHeight: bottomHeight, position: "relative", overflow: "hidden" }}>
               <Svg
@@ -495,22 +495,22 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
               >
                 <Defs>
                   <SvgLinearGradient id="clinicBottomGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor="#0D6EFD" />
-                    <Stop offset="0.38" stopColor="#0B5ED7" />
-                    <Stop offset="1" stopColor="#0047BA" />
+                    <Stop offset="0" stopColor="#08438B" />
+                    <Stop offset="0.38" stopColor="#053578" />
+                    <Stop offset="1" stopColor="#02275E" />
                   </SvgLinearGradient>
                 </Defs>
-                {/* Curved Dome Body spanning exact screen width with rich royal blue gradient */}
+                {/* Curved Dome Body with exact reference arch profile */}
                 <Path
-                  d={`M 0 44 Q ${width / 2} -8 ${width} 44 L ${width} ${bottomHeight} L 0 ${bottomHeight} Z`}
+                  d={`M 0 52 C ${width * 0.25} 0, ${width * 0.75} 0, ${width} 52 L ${width} ${bottomHeight} L 0 ${bottomHeight} Z`}
                   fill="url(#clinicBottomGrad)"
                 />
-                {/* Glowing Top Cyan Border */}
+                {/* Glowing Top Cyan Border Rim */}
                 <Path
-                  d={`M 0 44 Q ${width / 2} -8 ${width} 44`}
+                  d={`M 0 52 C ${width * 0.25} 0, ${width * 0.75} 0, ${width} 52`}
                   fill="none"
                   stroke="#38BDF8"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                 />
               </Svg>
 
@@ -518,8 +518,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 style={{
                   width: "100%",
                   alignItems: "center",
-                  paddingTop: 34,
-                  paddingBottom: Math.max(insets.bottom + 14, 20),
+                  paddingTop: 36,
+                  paddingBottom: Math.max(insets.bottom + 16, 22),
                   paddingHorizontal: 20,
                 }}
               >
@@ -533,16 +533,16 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                 >
                   <Image
                     source={require("../../assets/images/ua-assumption-logo.png")}
-                    style={{ width: 44, height: 44 }}
+                    style={{ width: 48, height: 48 }}
                     resizeMode="contain"
                   />
                   <Text
                     style={{
                       color: "#FFFFFF",
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: "800",
                       letterSpacing: 0.5,
-                      marginLeft: 10,
+                      marginLeft: 12,
                       fontFamily: "Outfit",
                     }}
                   >
@@ -550,53 +550,68 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack
                   </Text>
                 </View>
 
-                {/* Subtitle */}
+                {/* Subtitle / Tagline */}
                 <Text
                   style={{
-                    color: "rgba(255, 255, 255, 0.95)",
-                    fontSize: 14,
-                    lineHeight: 19,
+                    color: "#FFFFFF",
+                    fontSize: 15,
+                    lineHeight: 22,
                     fontWeight: "500",
                     textAlign: "center",
                     maxWidth: 320,
-                    marginTop: 8,
+                    marginTop: 10,
                   }}
                 >
-                  Your personal health companion for smarter, simpler campus care.
+                  Your personal health companion for{"\n"}smarter, simpler campus care.
                 </Text>
 
-                {/* Create Account Button - Clean secondary frosted pill */}
+                {/* Create Account Button - Vibrant Blue Pill with Cyan Glow Border */}
                 <Pressable
                   onPress={() => navigate("register")}
                   accessibilityRole="button"
                   accessibilityLabel="Create Account"
                   style={({ pressed }) => ({
-                    width: Math.min(290, width * 0.78),
-                    height: 50,
-                    borderRadius: 25,
-                    backgroundColor: pressed ? "rgba(255, 255, 255, 0.28)" : "rgba(255, 255, 255, 0.16)",
-                    borderWidth: 1.5,
-                    borderColor: "rgba(255, 255, 255, 0.65)",
+                    width: Math.min(295, width * 0.78),
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: pressed ? "#033B85" : "#0548A2",
+                    borderWidth: 2,
+                    borderColor: "#38BDF8",
                     justifyContent: "center",
                     alignItems: "center",
-                    marginTop: 16,
+                    marginTop: 18,
                     shadowColor: "#38BDF8",
                     shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 10,
-                    elevation: 4,
+                    shadowOpacity: 0.5,
+                    shadowRadius: 12,
+                    elevation: 6,
                     transform: [{ scale: pressed ? 0.98 : 1 }],
+                    overflow: "hidden",
+                    position: "relative",
                   })}
                 >
+                  {/* Subtle top edge specular highlight */}
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 1,
+                      left: 24,
+                      right: 24,
+                      height: 1.5,
+                      backgroundColor: "rgba(255, 255, 255, 0.4)",
+                      borderRadius: 1,
+                    }}
+                    pointerEvents="none"
+                  />
                   <Text
                     style={{
                       color: "#FFFFFF",
-                      fontSize: 18,
+                      fontSize: 19,
                       fontWeight: "800",
                       letterSpacing: 0.5,
                     }}
                   >
-                    Create Account
+                    Create  Account
                   </Text>
                 </Pressable>
               </View>
