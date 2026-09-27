@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
@@ -225,11 +226,9 @@ export function WelcomeScreen({ navigate }: NavProps) {
               width: buttonWidth,
               height: 56,
               borderRadius: 9999,
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.12)",
-              borderWidth: 1.5,
-              borderColor: "rgba(255, 255, 255, 0.45)",
-              justifyContent: "center",
-              alignItems: "center",
+              overflow: "hidden",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.35)",
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
@@ -238,16 +237,29 @@ export function WelcomeScreen({ navigate }: NavProps) {
               elevation: 3,
             })}
           >
-            <Text
+            <BlurView
+              intensity={35}
+              tint="light"
               style={{
-                color: "#FFFFFF",
-                fontSize: 18,
-                fontWeight: "700",
-                letterSpacing: 0.6,
+                flex: 1,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "rgba(255, 255, 255, 0.12)",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              Create Account
-            </Text>
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 18,
+                  fontWeight: "700",
+                  letterSpacing: 0.6,
+                }}
+              >
+                Create Account
+              </Text>
+            </BlurView>
           </Pressable>
 
           <Pressable
@@ -258,11 +270,9 @@ export function WelcomeScreen({ navigate }: NavProps) {
               width: buttonWidth,
               height: 56,
               borderRadius: 9999,
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.12)",
-              borderWidth: 1.5,
-              borderColor: "rgba(255, 255, 255, 0.45)",
-              justifyContent: "center",
-              alignItems: "center",
+              overflow: "hidden",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.35)",
               marginTop: 14,
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
@@ -272,16 +282,29 @@ export function WelcomeScreen({ navigate }: NavProps) {
               elevation: 3,
             })}
           >
-            <Text
+            <BlurView
+              intensity={35}
+              tint="light"
               style={{
-                color: "#FFFFFF",
-                fontSize: 18,
-                fontWeight: "700",
-                letterSpacing: 0.6,
+                flex: 1,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "rgba(255, 255, 255, 0.12)",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              Sign In
-            </Text>
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 18,
+                  fontWeight: "700",
+                  letterSpacing: 0.6,
+                }}
+              >
+                Sign In
+              </Text>
+            </BlurView>
           </Pressable>
         </View>
       </View>
