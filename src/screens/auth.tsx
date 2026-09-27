@@ -76,9 +76,11 @@ export function WelcomeScreen({ navigate }: NavProps) {
           }}
           resizeMode="cover"
         />
-        <LinearGradient
-          colors={["rgba(23, 36, 84, 0.4)", "rgba(46, 79, 152, 0.35)", "rgba(23, 36, 84, 0.55)"]}
-          style={StyleSheet.absoluteFillObject}
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: "rgba(8, 35, 80, 0.66)",
+          }}
           pointerEvents="none"
         />
       </View>
