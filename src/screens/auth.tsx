@@ -19,6 +19,7 @@ interface NavProps {
   goBack: () => void;
   setUser?: (val: any) => void;
   loadUserData?: (email: string) => Promise<void>;
+  canGoBack?: boolean;
 }
 
 async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 2, delayMs = 1500): Promise<Response> {
@@ -42,288 +43,10 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
   throw lastErr || new Error("Network request failed");
 }
 
-// ── Welcome ──────────────────────────────────────────────────────────────────
+// ── Welcome / Landing ────────────────────────────────────────────────────────
 
-export function WelcomeScreen({ navigate }: NavProps) {
-  const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-
-  // Proportional sizing based on reference design
-  const badgeSize = Math.min(196, Math.max(168, width * 0.46));
-  const logoSize = Math.round(badgeSize * 0.86);
-  const buttonWidth = Math.min(300, width * 0.74);
-
-  return (
-    <View style={{ flex: 1, backgroundColor: "#172454" }}>
-      {/* 1. High-Resolution UA Facade & Statue Hero Header */}
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: height * 0.52,
-          backgroundColor: "#FFFFFF",
-          overflow: "hidden",
-        }}
-      >
-        <Image
-          source={require("../../assets/images/ua-hero.jpg")}
-          style={{
-            width: "100%",
-            height: "100%",
-            marginTop: Math.max(0, insets.top - 6),
-          }}
-          resizeMode="cover"
-        />
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(8, 35, 80, 0.66)",
-            zIndex: 10,
-            elevation: 10,
-          }}
-          pointerEvents="none"
-        />
-      </View>
-
-      {/* 2. Vector Arch Divider & Decorative Swooshes */}
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 414 896"
-        preserveAspectRatio="none"
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      >
-        <Defs>
-          <SvgLinearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#4A75BC" />
-            <Stop offset="0.35" stopColor="#2E4F98" />
-            <Stop offset="0.7" stopColor="#1E3372" />
-            <Stop offset="1" stopColor="#172454" />
-          </SvgLinearGradient>
-        </Defs>
-
-        {/* Blue background body covering from curve down to bottom */}
-        <Path
-          d="M -5 266 C 31.4 328.1 65.7 390.7 100.3 430.1 C 134.9 470.9 169.7 488.5 204.8 490.3 C 239.9 490.0 275.1 473.8 310.7 433.1 C 346.3 393.7 382.2 329.8 420 266 L 420 900 L -5 900 Z"
-          fill="url(#blueGrad)"
-        />
-
-        {/* White arch border curve */}
-        <Path
-          d="M -5 266 C 31.4 328.1 65.7 390.7 100.3 430.1 C 134.9 470.9 169.7 488.5 204.8 490.3 C 239.9 490.0 275.1 473.8 310.7 433.1 C 346.3 393.7 382.2 329.8 420 266"
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth={4.5}
-        />
-
-        {/* Yellow arch curve */}
-        <Path
-          d="M -5 271.5 C 31.4 333.6 65.7 396.2 100.3 435.6 C 134.9 476.4 169.7 494.0 204.8 495.8 C 239.9 495.5 275.1 479.3 310.7 438.6 C 346.3 399.2 382.2 335.3 420 271.5"
-          fill="none"
-          stroke="#FBBF24"
-          strokeWidth={4.5}
-        />
-
-        {/* Red arch curve */}
-        <Path
-          d="M -5 277.0 C 31.4 339.1 65.7 401.7 100.3 441.1 C 134.9 481.9 169.7 499.5 204.8 501.3 C 239.9 501.0 275.1 484.8 310.7 444.1 C 346.3 404.7 382.2 340.8 420 277.0"
-          fill="none"
-          stroke="#EF4444"
-          strokeWidth={4.5}
-        />
-      </Svg>
-
-      {/* 3. Foreground Interactive UI */}
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-        }}
-      >
-        {/* Center Branding Section */}
-        <View
-          style={{
-            alignItems: "center",
-            marginTop: Math.max(height * 0.49 - badgeSize * 0.52, insets.top + 160),
-          }}
-        >
-          {/* Circular Badge with CURA Logo */}
-          <View
-            style={{
-              width: badgeSize,
-              height: badgeSize,
-              borderRadius: badgeSize / 2,
-              backgroundColor: "#FFFFFF",
-              borderWidth: 5,
-              borderColor: "#C3DCF4",
-              justifyContent: "center",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.22,
-              shadowRadius: 10,
-              elevation: 8,
-            }}
-          >
-            <Image
-              source={require("../../assets/images/ribbon-shield.png")}
-              style={{ width: logoSize, height: logoSize }}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* Typography */}
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: Math.min(52, width * 0.125),
-              fontWeight: "900",
-              letterSpacing: 2,
-              textAlign: "center",
-              marginTop: 12,
-              fontFamily: "Outfit",
-            }}
-          >
-            CURA
-          </Text>
-
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: Math.min(23, width * 0.055),
-              fontWeight: "700",
-              textAlign: "center",
-              marginTop: 2,
-              letterSpacing: 0.4,
-              opacity: 0.95,
-            }}
-          >
-            University Clinic
-          </Text>
-        </View>
-
-        {/* Buttons Section */}
-        <View
-          style={{
-            width: "100%",
-            alignItems: "center",
-            marginTop: Math.min(38, Math.max(20, height * 0.038)),
-            paddingBottom: Math.max(16, insets.bottom + 8),
-          }}
-        >
-          <Pressable
-            onPress={() => navigate("register")}
-            accessibilityRole="button"
-            accessibilityLabel="Create Account"
-            style={({ pressed }) => ({
-              width: buttonWidth,
-              height: 56,
-              borderRadius: 9999,
-              overflow: "hidden",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.4)",
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.12)",
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 8,
-              elevation: 3,
-            })}
-          >
-            {({ pressed }) => (
-              <LinearGradient
-                colors={
-                  pressed
-                    ? ["rgba(255, 255, 255, 0.26)", "rgba(255, 255, 255, 0.14)"]
-                    : ["rgba(255, 255, 255, 0.18)", "rgba(255, 255, 255, 0.06)"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: "#FFFFFF",
-                    fontSize: 18,
-                    fontWeight: "700",
-                    letterSpacing: 0.6,
-                  }}
-                >
-                  Create Account
-                </Text>
-              </LinearGradient>
-            )}
-          </Pressable>
-
-          <Pressable
-            onPress={() => navigate("login")}
-            accessibilityRole="button"
-            accessibilityLabel="Sign In"
-            style={({ pressed }) => ({
-              width: buttonWidth,
-              height: 56,
-              borderRadius: 9999,
-              overflow: "hidden",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.4)",
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.12)",
-              marginTop: 14,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 8,
-              elevation: 3,
-            })}
-          >
-            {({ pressed }) => (
-              <LinearGradient
-                colors={
-                  pressed
-                    ? ["rgba(255, 255, 255, 0.26)", "rgba(255, 255, 255, 0.14)"]
-                    : ["rgba(255, 255, 255, 0.18)", "rgba(255, 255, 255, 0.06)"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: "#FFFFFF",
-                    fontSize: 18,
-                    fontWeight: "700",
-                    letterSpacing: 0.6,
-                  }}
-                >
-                  Sign In
-                </Text>
-              </LinearGradient>
-            )}
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
+export function WelcomeScreen(props: NavProps) {
+  return <LoginScreen {...props} />;
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
@@ -372,7 +95,7 @@ function EyeOffIcon() {
   );
 }
 
-export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
+export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack }: NavProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [username, setUsername] = useState("");
@@ -456,8 +179,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         pointerEvents="none"
       />
 
-      {/* Subtle Back Button */}
-      {goBack ? (
+      {/* Subtle Back Button (only shown if navigated from another screen) */}
+      {canGoBack && goBack ? (
         <Pressable
           onPress={goBack}
           hitSlop={12}

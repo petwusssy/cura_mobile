@@ -315,8 +315,8 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     if (!splashDone) return <SplashScreen onDone={handleSplashDone} />;
 
     switch (current.screen) {
-      case "welcome":       return <WelcomeScreen navigate={navigate} goBack={goBack} />;
-      case "login":         return <LoginScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
+      case "welcome":       return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} canGoBack={stack.length > 1} />;
+      case "login":         return <LoginScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} canGoBack={stack.length > 1} />;
       case "register":      return <RegisterScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
       case "forgot-password": return <ForgotPasswordScreen navigate={navigate} goBack={goBack} />;
 
@@ -338,7 +338,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "request-med-cert": return <RequestMedCertScreen navigate={navigate} goBack={goBack} user={user} />;
       case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
 
-      default: return <WelcomeScreen navigate={navigate} goBack={goBack} />;
+      default: return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} canGoBack={stack.length > 1} />;
     }
   };
 
