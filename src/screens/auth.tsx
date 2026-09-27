@@ -76,6 +76,11 @@ export function WelcomeScreen({ navigate }: NavProps) {
           }}
           resizeMode="cover"
         />
+        <LinearGradient
+          colors={["rgba(23, 36, 84, 0.4)", "rgba(46, 79, 152, 0.35)", "rgba(23, 36, 84, 0.55)"]}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
       </View>
 
       {/* 2. Vector Arch Divider & Decorative Swooshes */}
@@ -155,7 +160,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
           <Text
             style={{
               color: "#FFFFFF",
-              fontSize: Math.min(46, width * 0.11),
+              fontSize: Math.min(52, width * 0.125),
               fontWeight: "900",
               letterSpacing: 2,
               textAlign: "center",
@@ -169,7 +174,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
           <Text
             style={{
               color: "#FFFFFF",
-              fontSize: Math.min(20, width * 0.048),
+              fontSize: Math.min(23, width * 0.055),
               fontWeight: "700",
               textAlign: "center",
               marginTop: 2,
@@ -195,26 +200,25 @@ export function WelcomeScreen({ navigate }: NavProps) {
             accessibilityLabel="Create Account"
             style={({ pressed }) => ({
               width: buttonWidth,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: "#13234D",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.18)",
+              height: 56,
+              borderRadius: 9999,
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.12)",
+              borderWidth: 1.5,
+              borderColor: "rgba(255, 255, 255, 0.45)",
               justifyContent: "center",
               alignItems: "center",
-              opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.25,
+              shadowOpacity: 0.15,
               shadowRadius: 8,
-              elevation: 4,
+              elevation: 3,
             })}
           >
             <Text
               style={{
                 color: "#FFFFFF",
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: "700",
                 letterSpacing: 0.6,
               }}
@@ -229,25 +233,26 @@ export function WelcomeScreen({ navigate }: NavProps) {
             accessibilityLabel="Sign In"
             style={({ pressed }) => ({
               width: buttonWidth,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: "#C3DCF4",
+              height: 56,
+              borderRadius: 9999,
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.12)",
+              borderWidth: 1.5,
+              borderColor: "rgba(255, 255, 255, 0.45)",
               justifyContent: "center",
               alignItems: "center",
               marginTop: 14,
-              opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.18,
+              shadowOpacity: 0.15,
               shadowRadius: 8,
-              elevation: 4,
+              elevation: 3,
             })}
           >
             <Text
               style={{
-                color: "#172454",
-                fontSize: 16,
+                color: "#FFFFFF",
+                fontSize: 18,
                 fontWeight: "700",
                 letterSpacing: 0.6,
               }}
