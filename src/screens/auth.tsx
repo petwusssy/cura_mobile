@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, useWindowDimensions, ActivityIndicator, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Image, ImageBackground, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Polyline, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Svg, { Path, Polyline, Circle } from "react-native-svg";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import type { Screen } from "../types";
@@ -19,7 +19,6 @@ interface NavProps {
   goBack: () => void;
   setUser?: (val: any) => void;
   loadUserData?: (email: string) => Promise<void>;
-  canGoBack?: boolean;
 }
 
 async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 2, delayMs = 1500): Promise<Response> {
@@ -43,582 +42,257 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
   throw lastErr || new Error("Network request failed");
 }
 
-// ── Welcome / Landing ────────────────────────────────────────────────────────
+// ── Welcome ──────────────────────────────────────────────────────────────────
 
-export function WelcomeScreen(props: NavProps) {
-  return <LoginScreen {...props} />;
+export function WelcomeScreen({ navigate }: NavProps) {
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+
+  const bottomPadding = Math.max(insets.bottom + 20, height * 0.10);
+  const buttonWidth = Math.min(300, width * 0.72);
+
+  return (
+    <ImageBackground
+      source={require("../../assets/images/auth-bg.png")}
+      style={{ flex: 1, width: "100%", height: "100%" }}
+      resizeMode="cover"
+    >
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "flex-end",
+          alignItems: "center",
+          paddingBottom: bottomPadding,
+        }}
+      >
+        <Pressable
+          onPress={() => navigate("register")}
+          accessibilityRole="button"
+          accessibilityLabel="Create Account"
+          style={({ pressed }) => ({
+            width: buttonWidth,
+            height: 55,
+            borderRadius: 28,
+            backgroundColor: "#1D2A63",
+            justifyContent: "center",
+            alignItems: "center",
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
+          })}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 17,
+              fontWeight: "700",
+              letterSpacing: 0.3,
+            }}
+          >
+            Create Account
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => navigate("login")}
+          accessibilityRole="button"
+          accessibilityLabel="Sign In"
+          hitSlop={12}
+          style={({ pressed }) => ({
+            marginTop: 18,
+            paddingVertical: 8,
+            paddingHorizontal: 24,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 17,
+              fontWeight: "700",
+              letterSpacing: 0.2,
+            }}
+          >
+            Sign In
+          </Text>
+        </Pressable>
+      </View>
+    </ImageBackground>
+  );
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
-function UserIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
-        fill="#FFFFFF"
-      />
-      <Path
-        d="M12.0002 14.5C6.99016 14.5 2.73016 17.86 2.08016 22.5C2.04016 22.78 2.26016 23 2.54016 23H21.4602C21.7402 23 21.9602 22.78 21.9202 22.5C21.2702 17.86 17.0102 14.5 12.0002 14.5Z"
-        fill="#FFFFFF"
-      />
-    </Svg>
-  );
-}
-
-function LockIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M17 11V7C17 4.24 14.76 2 12 2C9.24 2 7 4.24 7 7V11C5.9 11 5 11.9 5 13V20C5 21.1 5.9 22 7 22H17C18.1 22 19 21.1 19 20V13C19 11.9 18.1 11 17 11ZM9 7C9 5.34 10.34 4 12 4C13.66 4 15 5.34 15 7V11H9V7ZM12 18C10.9 18 10 17.1 10 16C10 14.9 10.9 14 12 14C13.1 14 14 14.9 14 16C14 17.1 13.1 18 12 18Z"
-        fill="#FFFFFF"
-      />
-    </Svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <Circle cx="12" cy="12" r="3" />
-    </Svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <Path d="M1 1L23 23" />
-    </Svg>
-  );
-}
-
-export function LoginScreen({ navigate, goBack, setUser, loadUserData, canGoBack }: NavProps) {
+export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
 
+  const mockGoogleSignIn = async () => {
+    setLoading(true);
+    if (loadUserData) {
+      await loadUserData("jdelacruz.student@ua.edu.ph"); // Using a sample email for mock
+    }
+    setLoading(false);
+    navigate("home");
+  };
+
   const handleLogin = async () => {
     setError("");
-    if (!username.trim() || !password) {
-      setError("Please fill in both username and password.");
-      return;
-    }
+    if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
       const loginRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/login/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), password: password }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email.trim(), password: password }),
       });
-
+      
       const resText = await loginRes.text();
       let loginData: any = {};
-      try {
-        loginData = resText ? JSON.parse(resText) : {};
-      } catch {}
-
+      try { loginData = resText ? JSON.parse(resText) : {}; } catch {}
+      
       if (loginRes.ok) {
-        const userEmail = loginData.user?.email || username.trim();
-        const userName = (loginData.user?.name || userEmail.split("@")[0]).toUpperCase();
-
+        const userEmail = loginData.user?.email || email.trim();
+        const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
+        
         if (setUser) {
-          setUser((prev: any) => ({
-            ...prev,
-            email: userEmail,
-            firstName: userName,
-            displayName: userName,
-            lastName: "",
-            accessToken: loginData.access,
-          }));
+          setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
         }
         if (loginData.access) {
-          AsyncStorage.setItem("@cura_access_token", loginData.access).catch(() => {});
+          AsyncStorage.setItem('@cura_access_token', loginData.access).catch(() => {});
         }
         if (loadUserData) {
           loadUserData(userEmail);
         }
         navigate("home");
       } else {
-        setError(loginData.detail || loginData.error || "Invalid username or password. Please try again.");
+        setError(loginData.detail || loginData.error || "Invalid email or password. Please try again.");
       }
     } catch (err: any) {
       console.warn("Login Network Error:", err);
-      setError("Network error. Please check your connection or try again.");
+      setError("Network error. Please check your connection or try again in a few seconds.");
     } finally {
       setLoading(false);
     }
   };
 
-  const cardWidth = Math.min(335, width * 0.88);
-  const bottomHeight = 225 + Math.max(insets.bottom, 16);
-
-  // Statue framing: 1024x683 (ratio 1.5).
-  // Height covers screen depth so campus photo extends behind bottom curve with no dark gaps.
-  const bgHeight = Math.max(height * 0.94, 750);
-  const bgWidth = bgHeight * 1.5;
-  const bgLeft = (width - bgWidth) / 2;
-  const bgTop = Math.max(insets.top + 6, 24);
-
   return (
-    <View style={{ flex: 1, backgroundColor: "#0284C7" }}>
-      {/* 1. Actual Campus Statue Background Image - Extends behind bottom dome */}
-      <View style={StyleSheet.absoluteFill}>
-        <Image
-          source={require("../../assets/images/ua-statue-bg.jpg")}
-          style={{
-            position: "absolute",
-            top: bgTop,
-            left: bgLeft,
-            width: bgWidth,
-            height: bgHeight,
-          }}
-          resizeMode="cover"
-        />
-
-        {/* 2. Top Sky-Blue Glow & Atmosphere Gradient (Clean daylight sky) */}
-        <LinearGradient
-          colors={[
-            "#0284C7",
-            "rgba(2, 132, 199, 0.72)",
-            "rgba(56, 189, 248, 0.22)",
-            "transparent",
-          ]}
-          locations={[0, 0.12, 0.26, 0.46]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-      </View>
-
-      {/* Subtle Back Button (only shown if navigated from another screen) */}
-      {canGoBack && goBack ? (
+    <View className="flex-1 bg-[#E4F4FB]">
+      {/* Top light banner */}
+      <View
+        className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
+      >
         <Pressable
           onPress={goBack}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          style={{
-            position: "absolute",
-            top: Math.max(insets.top + 8, 20),
-            left: 16,
-            zIndex: 30,
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            backgroundColor: "rgba(255, 255, 255, 0.22)",
-            borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.4)",
-            alignItems: "center",
-            justifyContent: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 6,
-            elevation: 3,
-          }}
+          className="w-10 h-10 rounded-full bg-white items-center justify-center mb-5 shadow-sm"
+          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
         >
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <Polyline points="15 18 9 12 15 6" />
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <Polyline points="15 18 9 12 15 6"/>
           </Svg>
         </Pressable>
-      ) : null}
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={{
-            minHeight: "100%",
-            justifyContent: "space-between",
-          }}
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Top CURA Brand Logo */}
+        <View className="flex-row items-center gap-3 mb-4">
           <View
+            className="w-12 h-12 rounded-[16px] bg-white items-center justify-center p-1.5"
             style={{
-              alignItems: "center",
-              justifyContent: "center",
-              paddingTop: Math.max(insets.top + 10, 32),
-              paddingBottom: 4,
+              elevation: 4,
+              shadowColor: '#0284c7',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
             }}
           >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/cura-c-shield.png")}
-                style={{ width: 54, height: 54 }}
-                resizeMode="contain"
-              />
-              <Text
-                style={{
-                  fontSize: 48,
-                  fontWeight: "900",
-                  color: "#67E8F9",
-                  letterSpacing: 2,
-                  marginLeft: 4,
-                  fontFamily: "Outfit",
-                  textShadowColor: "rgba(34, 211, 238, 0.95)",
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 18,
-                }}
-              >
-                URA
-              </Text>
-            </View>
+            <Image
+              source={require("../../assets/images/cura-logo.png")}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="contain"
+            />
           </View>
+          <Text className="text-[28px] font-black tracking-tight" style={{ color: "#0B2136", fontFamily: "Outfit" }}>CURA</Text>
+        </View>
+        <Text className="text-[28px] font-bold text-slate-800 mb-2" style={{ fontFamily: "Outfit" }}>Welcome back! 👋</Text>
+        <Text className="text-base text-slate-500 font-medium">Sign in to your patient account</Text>
+      </View>
 
-          {/* Middle: Glassmorphism Login Panel */}
-          <View
-            style={{
-              paddingHorizontal: 20,
-              paddingVertical: 8,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <View
-              style={[
-                {
-                  width: cardWidth,
-                  borderRadius: 28,
-                  borderWidth: 1.5,
-                  borderColor: "rgba(255, 255, 255, 0.65)",
-                  backgroundColor: "rgba(255, 255, 255, 0.18)",
-                  paddingHorizontal: 20,
-                  paddingTop: 22,
-                  paddingBottom: 22,
-                  shadowColor: "#38BDF8",
-                  shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: 0.45,
-                  shadowRadius: 18,
-                  elevation: 8,
-                  overflow: "hidden",
-                },
-                Platform.OS === "web"
-                  ? ({ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } as any)
-                  : null,
-              ]}
-            >
-              {/* Subtle glass reflection highlight */}
-              <LinearGradient
-                colors={["rgba(255, 255, 255, 0.24)", "rgba(255, 255, 255, 0.05)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-
-              <Text
-                style={{
-                  fontSize: 28,
-                  fontWeight: "900",
-                  color: "#FFFFFF",
-                  letterSpacing: 2,
-                  textAlign: "center",
-                  fontFamily: "Outfit",
-                  marginBottom: 16,
-                  textShadowColor: "rgba(0, 0, 0, 0.35)",
-                  textShadowOffset: { width: 0, height: 2 },
-                  textShadowRadius: 6,
-                }}
-              >
-                LOGIN
-              </Text>
-
-              {/* Username Input */}
-              <View
-                style={{
-                  height: 50,
-                  borderRadius: 16,
-                  borderWidth: 1.5,
-                  borderColor: "rgba(255, 255, 255, 0.68)",
-                  backgroundColor: "rgba(255, 255, 255, 0.22)",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 14,
-                }}
-              >
-                <UserIcon />
-                <TextInput
-                  value={username}
-                  onChangeText={(val) => {
-                    setError("");
-                    setUsername(val);
-                  }}
-                  placeholder="Username"
-                  placeholderTextColor="rgba(255, 255, 255, 0.75)"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={{
-                    flex: 1,
-                    color: "#FFFFFF",
-                    fontSize: 16,
-                    fontWeight: "500",
-                    marginLeft: 10,
-                    paddingVertical: 0,
-                  }}
-                />
-              </View>
-
-              {/* Password Input */}
-              <View
-                style={{
-                  height: 50,
-                  borderRadius: 16,
-                  borderWidth: 1.5,
-                  borderColor: "rgba(255, 255, 255, 0.68)",
-                  backgroundColor: "rgba(255, 255, 255, 0.22)",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 14,
-                  marginTop: 12,
-                }}
-              >
-                <LockIcon />
-                <TextInput
-                  value={password}
-                  onChangeText={(val) => {
-                    setError("");
-                    setPassword(val);
-                  }}
-                  placeholder="Password"
-                  placeholderTextColor="rgba(255, 255, 255, 0.75)"
-                  secureTextEntry={!showPass}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={{
-                    flex: 1,
-                    color: "#FFFFFF",
-                    fontSize: 16,
-                    fontWeight: "500",
-                    marginLeft: 10,
-                    paddingVertical: 0,
-                  }}
-                />
-                <Pressable
-                  onPress={() => setShowPass(!showPass)}
-                  hitSlop={8}
-                  style={{ padding: 4 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={showPass ? "Hide password" : "Show password"}
-                >
-                  {showPass ? <EyeIcon /> : <EyeOffIcon />}
-                </Pressable>
-              </View>
-
-              {/* Error Message */}
-              {error ? (
-                <View
-                  style={{
-                    backgroundColor: "rgba(239, 68, 68, 0.35)",
-                    borderColor: "rgba(255, 255, 255, 0.5)",
-                    borderWidth: 1,
-                    borderRadius: 12,
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    marginTop: 12,
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600", flex: 1 }}>
-                    ⚠️ {error}
-                  </Text>
-                </View>
-              ) : null}
-
-              {/* Prominent Login Button Directly Below Password - Full-Width Pill Shape */}
-              <Pressable
-                onPress={handleLogin}
-                disabled={loading}
-                accessibilityRole="button"
-                accessibilityLabel="Login"
-                style={({ pressed }) => ({
-                  width: "100%",
-                  alignSelf: "stretch",
-                  height: 52,
-                  borderRadius: 26,
-                  backgroundColor: pressed ? "#0062D6" : "#007AFF",
-                  borderWidth: 1.5,
-                  borderColor: "rgba(255, 255, 255, 0.55)",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginTop: 16,
-                  shadowColor: "#007AFF",
-                  shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: 0.65,
-                  shadowRadius: 14,
-                  elevation: 6,
-                  transform: [{ scale: pressed ? 0.98 : 1 }],
-                })}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text
-                    style={{
-                      color: "#FFFFFF",
-                      fontSize: 18,
-                      fontWeight: "800",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    Login  →
-                  </Text>
-                )}
-              </Pressable>
-            </View>
+      {/* Form */}
+      <View className="flex-1 bg-[#F8FAFC] rounded-t-[40px] overflow-hidden" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.05, shadowRadius: 24 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
+        {error ? (
+          <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
+            <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>
           </View>
+        ) : null}
 
-          {/* Bottom Blue Curved University Clinic Section - Exact Reference Match */}
-          <View style={{ width: "100%", marginTop: 8 }}>
-            <View style={{ width: "100%", minHeight: bottomHeight, position: "relative", overflow: "hidden" }}>
-              <Svg
-                width={width}
-                height={bottomHeight}
-                viewBox={`0 0 ${width} ${bottomHeight}`}
-                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-              >
-                <Defs>
-                  <SvgLinearGradient id="clinicBottomGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor="#08438B" />
-                    <Stop offset="0.38" stopColor="#053578" />
-                    <Stop offset="1" stopColor="#02275E" />
-                  </SvgLinearGradient>
-                </Defs>
-                {/* Curved Dome Body with exact reference arch profile */}
-                <Path
-                  d={`M 0 52 C ${width * 0.25} 0, ${width * 0.75} 0, ${width} 52 L ${width} ${bottomHeight} L 0 ${bottomHeight} Z`}
-                  fill="url(#clinicBottomGrad)"
-                />
-                {/* Glowing Top Cyan Border Rim */}
-                <Path
-                  d={`M 0 52 C ${width * 0.25} 0, ${width * 0.75} 0, ${width} 52`}
-                  fill="none"
-                  stroke="#38BDF8"
-                  strokeWidth={3}
-                />
+        <Input
+          label="Email address"
+          placeholder="you@university.edu"
+          value={email}
+          onChangeText={(val) => { setError(""); setEmail(val); }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+        <View className="flex-col gap-1.5">
+          <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</Text>
+          <View className="relative justify-center">
+            <TextInput
+              secureTextEntry={!showPass}
+              placeholder="••••••••"
+              placeholderTextColor="#CBD5E1"
+              value={password}
+              onChangeText={(val) => { setError(""); setPassword(val); }}
+              className="w-full bg-white border border-sky-200 rounded-2xl px-4 py-3.5 text-sm text-slate-800 pr-12"
+            />
+            <Pressable onPress={() => setShowPass(!showPass)} className="absolute right-4 p-2">
+              <Svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><Circle cx="12" cy="12" r="3"/>
               </Svg>
-
-              <View
-                style={{
-                  width: "100%",
-                  alignItems: "center",
-                  paddingTop: 36,
-                  paddingBottom: Math.max(insets.bottom + 16, 22),
-                  paddingHorizontal: 20,
-                }}
-              >
-                {/* University of the Assumption logo + University Clinic */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Image
-                    source={require("../../assets/images/ua-assumption-logo.png")}
-                    style={{ width: 48, height: 48 }}
-                    resizeMode="contain"
-                  />
-                  <Text
-                    style={{
-                      color: "#FFFFFF",
-                      fontSize: 24,
-                      fontWeight: "800",
-                      letterSpacing: 0.5,
-                      marginLeft: 12,
-                      fontFamily: "Outfit",
-                    }}
-                  >
-                    University Clinic
-                  </Text>
-                </View>
-
-                {/* Subtitle / Tagline */}
-                <Text
-                  style={{
-                    color: "#FFFFFF",
-                    fontSize: 15,
-                    lineHeight: 22,
-                    fontWeight: "500",
-                    textAlign: "center",
-                    maxWidth: 320,
-                    marginTop: 10,
-                  }}
-                >
-                  Your personal health companion for{"\n"}smarter, simpler campus care.
-                </Text>
-
-                {/* Create Account Button - Vibrant Blue Pill with Cyan Glow Border */}
-                <Pressable
-                  onPress={() => navigate("register")}
-                  accessibilityRole="button"
-                  accessibilityLabel="Create Account"
-                  style={({ pressed }) => ({
-                    width: Math.min(295, width * 0.78),
-                    height: 52,
-                    borderRadius: 26,
-                    backgroundColor: pressed ? "#033B85" : "#0548A2",
-                    borderWidth: 2,
-                    borderColor: "#38BDF8",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginTop: 18,
-                    shadowColor: "#38BDF8",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.5,
-                    shadowRadius: 12,
-                    elevation: 6,
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
-                    overflow: "hidden",
-                    position: "relative",
-                  })}
-                >
-                  {/* Subtle top edge specular highlight */}
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 1,
-                      left: 24,
-                      right: 24,
-                      height: 1.5,
-                      backgroundColor: "rgba(255, 255, 255, 0.4)",
-                      borderRadius: 1,
-                    }}
-                    pointerEvents="none"
-                  />
-                  <Text
-                    style={{
-                      color: "#FFFFFF",
-                      fontSize: 19,
-                      fontWeight: "800",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    Create  Account
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
+            </Pressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+
+        <View className="items-end">
+          <Pressable onPress={() => navigate("forgot-password")} className="py-2">
+            <Text className="text-sm text-cura-500 font-semibold">Forgot password?</Text>
+          </Pressable>
+        </View>
+
+        <Button fullWidth onPress={handleLogin} loading={loading} className="mt-1">
+          Sign In
+        </Button>
+
+        <View className="flex-row items-center gap-3 my-1">
+          <View className="flex-1 h-px bg-sky-100" />
+          <Text className="text-xs text-slate-300 font-medium">or</Text>
+          <View className="flex-1 h-px bg-sky-100" />
+        </View>
+
+        <Button 
+          fullWidth 
+          variant="secondary" 
+          onPress={mockGoogleSignIn} 
+          className="mb-4"
+        >
+          <Text className="text-cura-500 font-bold text-sm">Continue with Google (Mock)</Text>
+        </Button>
+
+        <View className="flex-row justify-center items-center pb-8">
+          <Text className="text-sm text-slate-400">{"Don't have an account? "}</Text>
+          <Pressable onPress={() => navigate("register")}>
+            <Text className="text-sm text-cura-500 font-bold">Create one</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+      </View>
     </View>
   );
 }
