@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Image, ImageBackground, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline, Circle } from "react-native-svg";
@@ -42,48 +42,294 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
   throw lastErr || new Error("Network request failed");
 }
 
+// ── Welcome Screen Icons ──────────────────────────────────────────────────────
+
+function PersonIcon({ color = "#FFFFFF", size = 24 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+        fill={color}
+      />
+      <Path
+        d="M12 14.5C6.99 14.5 2.73 17.86 2.08 22.5C2.04 22.78 2.26 23 2.54 23H21.46C21.74 23 21.96 22.78 21.92 22.5C21.27 17.86 17.01 14.5 12 14.5Z"
+        fill={color}
+      />
+    </Svg>
+  );
+}
+
+function PencilIcon({ color = "#0B3C8A", size = 24 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+      <Path d="M15 5l4 4" />
+    </Svg>
+  );
+}
+
+function ArrowRightIcon({ color = "#FFFFFF", size = 24 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 12h14" />
+      <Path d="M13 6l6 6-6 6" />
+    </Svg>
+  );
+}
+
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
 export function WelcomeScreen({ navigate }: NavProps) {
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+
+  // Responsive calculations
+  const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 155);
+  const wordmarkSize = width < 380 || height < 700 ? 52 : 62;
+  const taglineSize = width < 380 ? 15 : 17;
+
   return (
-    <LinearGradient
-      colors={['#E4F4FB', '#F0F9FF', '#FFFFFF']}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      className="flex-1"
-    >
-      {/* Hero content */}
-      <View className="flex-1 items-center justify-center px-8" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-        {/* Standalone Logo */}
-        <View className="items-center justify-center mb-6">
+    <View style={{ flex: 1, backgroundColor: "#0B2136" }}>
+      {/* 1) Background Building Image */}
+      <ImageBackground
+        source={require("../../assets/images/auth-bg.png")}
+        style={{ flex: 1, width: "100%", height: "100%" }}
+        resizeMode="cover"
+      >
+        {/* Navy-Blue Gradient Overlay */}
+        <LinearGradient
+          colors={["rgba(15, 45, 110, 0.55)", "rgba(10, 35, 95, 0.78)"]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+
+        {/* 2) Header (Top-left) */}
+        <View
+          style={{
+            paddingTop: Math.max(insets.top, 20) + 12,
+            paddingHorizontal: 24,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Image
+            source={require("../../assets/images/ua-seal.png")}
+            style={{ width: 52, height: 52, borderRadius: 26 }}
+            resizeMode="contain"
+          />
+          <View
+            style={{
+              width: 1,
+              height: 42,
+              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              marginHorizontal: 14,
+            }}
+          />
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 22,
+              fontWeight: "500",
+              letterSpacing: 0.5,
+              fontFamily: "Outfit",
+            }}
+          >
+            University Clinic
+          </Text>
+        </View>
+
+        {/* 3) Hero (Center) */}
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 24,
+          }}
+        >
+          {/* CURA Shield Logo Icon */}
           <Image
             source={require("../../assets/images/cura-logo.png")}
-            style={{ width: 220, height: 220 }}
+            style={{ width: logoSize, height: logoSize }}
             resizeMode="contain"
             fadeDuration={0}
           />
+
+          {/* CURA Wordmark (CU in #4FC3F7, RA in #FFFFFF) */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+            <Text
+              style={{
+                color: "#4FC3F7",
+                fontSize: wordmarkSize,
+                fontWeight: "800",
+                letterSpacing: 1.5,
+                fontFamily: "Outfit",
+              }}
+            >
+              CU
+            </Text>
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: wordmarkSize,
+                fontWeight: "800",
+                letterSpacing: 1.5,
+                fontFamily: "Outfit",
+              }}
+            >
+              RA
+            </Text>
+          </View>
+
+          {/* Tagline */}
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: taglineSize,
+              lineHeight: taglineSize + 8,
+              fontWeight: "500",
+              textAlign: "center",
+              maxWidth: width * 0.78,
+              marginTop: 12,
+              textShadowColor: "rgba(0, 0, 0, 0.35)",
+              textShadowOffset: { width: 0, height: 2 },
+              textShadowRadius: 4,
+            }}
+          >
+            Your personal health companion for smarter, simpler campus care.
+          </Text>
         </View>
 
-        <Text className="text-base font-black tracking-[0.25em] uppercase text-center" style={{ color: '#0B2136', fontFamily: 'Outfit' }}>
-          University Clinic
-        </Text>
-      </View>
-
-      {/* CTA */}
-      <View className="px-6 flex-col gap-3" style={{ paddingBottom: Math.max(insets.bottom, 32) + 16 }}>
-        <Button fullWidth variant="primary" onPress={() => navigate("register")}>
-          Create Account
-        </Button>
-        <Button
-          fullWidth
-          variant="outline"
-          onPress={() => navigate("login")}
+        {/* 4) Bottom Sheet */}
+        <View
+          style={{
+            backgroundColor: "#F8FAFD",
+            borderTopLeftRadius: 48,
+            borderTopRightRadius: 48,
+            paddingTop: 32,
+            paddingHorizontal: 28,
+            paddingBottom: Math.max(insets.bottom, 20) + 12,
+            elevation: 8,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -6 },
+            shadowOpacity: 0.12,
+            shadowRadius: 16,
+          }}
         >
-          Sign In
-        </Button>
-      </View>
-    </LinearGradient>
+          {/* Primary: Sign In Button */}
+          <Pressable
+            onPress={() => navigate("login")}
+            accessibilityRole="button"
+            accessibilityLabel="Sign In"
+            style={({ pressed }) => ({
+              width: "100%",
+              height: 60,
+              borderRadius: 30,
+              backgroundColor: "#0B3C8A",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 24,
+              opacity: pressed ? 0.9 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+              shadowColor: "#0B3C8A",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 4,
+            })}
+          >
+            <PersonIcon color="#FFFFFF" size={24} />
+            <View
+              style={{
+                width: 1,
+                height: 28,
+                backgroundColor: "rgba(255, 255, 255, 0.4)",
+                marginHorizontal: 16,
+              }}
+            />
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 20,
+                fontWeight: "600",
+                fontFamily: "Outfit",
+              }}
+            >
+              Sign In
+            </Text>
+            <View style={{ flex: 1 }} />
+            <ArrowRightIcon color="#FFFFFF" size={22} />
+          </Pressable>
+
+          {/* Secondary: Create Account Button */}
+          <Pressable
+            onPress={() => navigate("register")}
+            accessibilityRole="button"
+            accessibilityLabel="Create Account"
+            style={({ pressed }) => ({
+              width: "100%",
+              height: 60,
+              borderRadius: 30,
+              backgroundColor: pressed ? "#EEF3FB" : "#FFFFFF",
+              borderWidth: 1.5,
+              borderColor: "#0B3C8A",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 24,
+              marginTop: 16,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            })}
+          >
+            <PencilIcon color="#0B3C8A" size={24} />
+            <View
+              style={{
+                width: 1,
+                height: 28,
+                backgroundColor: "rgba(11, 60, 138, 0.3)",
+                marginHorizontal: 16,
+              }}
+            />
+            <Text
+              style={{
+                color: "#0B3C8A",
+                fontSize: 20,
+                fontWeight: "600",
+                fontFamily: "Outfit",
+              }}
+            >
+              Create Account
+            </Text>
+            <View style={{ flex: 1 }} />
+            <ArrowRightIcon color="#0B3C8A" size={22} />
+          </Pressable>
+
+          {/* Footer */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 24,
+            }}
+          >
+            <View style={{ width: 40, height: 1, backgroundColor: "#B8C4D9" }} />
+            <Text
+              style={{
+                marginHorizontal: 12,
+                fontSize: 13,
+                color: "#5B6B8C",
+                fontWeight: "500",
+                fontFamily: "Outfit",
+              }}
+            >
+              University of the Assumption
+            </Text>
+            <View style={{ width: 40, height: 1, backgroundColor: "#B8C4D9" }} />
+          </View>
+        </View>
+      </ImageBackground>
+    </View>
   );
 }
 
