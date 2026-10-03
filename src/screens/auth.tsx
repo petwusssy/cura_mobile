@@ -27,7 +27,7 @@ import AnimatedReanimated, {
   withTiming,
   Easing as ReanimatedEasing,
 } from "react-native-reanimated";
-import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Rect } from "react-native-svg";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from 'expo-web-browser';
@@ -169,34 +169,6 @@ function EyeIcon({ open, color = "#FFFFFF", size = 18 }: { open: boolean; color?
   );
 }
 
-function CalendarIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-      <Line x1="16" x2="16" y1="2" y2="6" />
-      <Line x1="8" x2="8" y1="2" y2="6" />
-      <Line x1="3" x2="21" y1="10" y2="10" />
-    </Svg>
-  );
-}
-
-function PhoneIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </Svg>
-  );
-}
-
-function LocationIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-      <Circle cx="12" cy="10" r="3" />
-    </Svg>
-  );
-}
-
 // ── Glassmorphism Input Component ────────────────────────────────────────────
 
 interface GlassInputProps {
@@ -235,7 +207,7 @@ const GlassInput = memo(
     const [isSecured, setIsSecured] = useState(secureTextEntry);
 
     return (
-      <View style={{ marginBottom: 10 }}>
+      <View style={{ marginBottom: 12 }}>
         <View
           style={{
             flexDirection: "row",
@@ -309,424 +281,6 @@ const GlassInput = memo(
   })
 );
 
-// ── Create Account Wizard Step Types & Components ──────────────────────────
-
-interface WizardFormData {
-  category: "Student" | "Employee" | "Outsider";
-  idNumber: string;
-  fullName: string;
-  birthday: string;
-  gender: "Male" | "Female";
-  contactNumber: string;
-  email: string;
-  address: string;
-  emergencyName: string;
-  emergencyNo: string;
-  username: string;
-  password: string;
-  confirmPassword: string;
-}
-
-const initialWizardForm: WizardFormData = {
-  category: "Student",
-  idNumber: "",
-  fullName: "",
-  birthday: "",
-  gender: "Male",
-  contactNumber: "",
-  email: "",
-  address: "",
-  emergencyName: "",
-  emergencyNo: "",
-  username: "",
-  password: "",
-  confirmPassword: "",
-};
-
-function WizardStepDots({ step, total = 4 }: { step: number; total?: number }) {
-  return (
-    <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, marginBottom: 12 }}>
-      {Array.from({ length: total }).map((_, idx) => {
-        const isActive = idx + 1 === step;
-        const isPast = idx + 1 < step;
-        return (
-          <View
-            key={idx}
-            style={{
-              width: isActive ? 22 : 7,
-              height: 7,
-              borderRadius: 3.5,
-              backgroundColor: isActive
-                ? "#3B82F6"
-                : isPast
-                ? "rgba(96, 165, 250, 0.7)"
-                : "rgba(255, 255, 255, 0.28)",
-            }}
-          />
-        );
-      })}
-    </View>
-  );
-}
-
-const Step1Affiliation = memo(function Step1Affiliation({
-  category,
-  setCategory,
-  idNumber,
-  setIdNumber,
-  error,
-  idRef,
-}: {
-  category: "Student" | "Employee" | "Outsider";
-  setCategory: (c: "Student" | "Employee" | "Outsider") => void;
-  idNumber: string;
-  setIdNumber: (v: string) => void;
-  error?: string;
-  idRef: React.RefObject<TextInput | null>;
-}) {
-  return (
-    <View>
-      <Text style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: 13, fontWeight: "600", marginBottom: 8, fontFamily: "Outfit" }}>
-        Select your affiliation:
-      </Text>
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
-        {(["Student", "Employee", "Outsider"] as const).map((cat) => {
-          const isSelected = category === cat;
-          return (
-            <TouchableOpacity
-              key={cat}
-              onPress={() => setCategory(cat)}
-              activeOpacity={0.75}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: 12,
-                backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.15)",
-                borderWidth: 1.5,
-                borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: isSelected ? "#1E4FD8" : "transparent",
-                shadowOpacity: isSelected ? 0.35 : 0,
-                shadowRadius: 6,
-                elevation: isSelected ? 3 : 0,
-              }}
-            >
-              <Text
-                style={{
-                  color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
-                  fontWeight: isSelected ? "700" : "500",
-                  fontSize: 13.5,
-                  fontFamily: "Outfit",
-                }}
-              >
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {category !== "Outsider" ? (
-        <View>
-          <Text style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: 13, fontWeight: "600", marginBottom: 8, fontFamily: "Outfit" }}>
-            {category} ID Number:
-          </Text>
-          <GlassInput
-            ref={idRef}
-            icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-            placeholder={category === "Student" ? "Student ID (e.g. 2021-00123)" : "Employee ID Number"}
-            value={idNumber}
-            onChangeText={setIdNumber}
-            autoCapitalize="characters"
-            returnKeyType="done"
-            error={error}
-          />
-        </View>
-      ) : (
-        <View
-          style={{
-            backgroundColor: "rgba(255, 255, 255, 0.10)",
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.18)",
-            padding: 14,
-            marginTop: 4,
-          }}
-        >
-          <Text style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: 13, lineHeight: 18, fontFamily: "Outfit" }}>
-            Guest / Community member registration. No university ID is required.
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-});
-
-const Step2Personal = memo(function Step2Personal({
-  fullName,
-  setFullName,
-  birthday,
-  setBirthday,
-  gender,
-  setGender,
-  contactNumber,
-  setContactNumber,
-  errors,
-  nameRef,
-  bdayRef,
-  contactRef,
-}: {
-  fullName: string;
-  setFullName: (v: string) => void;
-  birthday: string;
-  setBirthday: (v: string) => void;
-  gender: "Male" | "Female";
-  setGender: (v: "Male" | "Female") => void;
-  contactNumber: string;
-  setContactNumber: (v: string) => void;
-  errors: Record<string, string>;
-  nameRef: React.RefObject<TextInput | null>;
-  bdayRef: React.RefObject<TextInput | null>;
-  contactRef: React.RefObject<TextInput | null>;
-}) {
-  return (
-    <View>
-      <GlassInput
-        ref={nameRef}
-        icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Full Name (e.g. Juan Dela Cruz)"
-        value={fullName}
-        onChangeText={setFullName}
-        autoCapitalize="words"
-        returnKeyType="next"
-        onSubmitEditing={() => bdayRef.current?.focus()}
-        blurOnSubmit={false}
-        error={errors.fullName}
-      />
-
-      <GlassInput
-        ref={bdayRef}
-        icon={<CalendarIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Birthday (MM/DD/YYYY)"
-        value={birthday}
-        onChangeText={setBirthday}
-        keyboardType="numeric"
-        returnKeyType="next"
-        onSubmitEditing={() => contactRef.current?.focus()}
-        blurOnSubmit={false}
-        error={errors.birthday}
-      />
-
-      {/* Sex (Male / Female chips) */}
-      <View style={{ marginBottom: 10 }}>
-        <Text style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: 13, fontWeight: "600", marginBottom: 6, fontFamily: "Outfit" }}>
-          Sex:
-        </Text>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          {(["Male", "Female"] as const).map((s) => {
-            const isSelected = gender === s;
-            return (
-              <TouchableOpacity
-                key={s}
-                onPress={() => setGender(s)}
-                activeOpacity={0.75}
-                style={{
-                  flex: 1,
-                  height: 42,
-                  borderRadius: 12,
-                  backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.15)",
-                  borderWidth: 1.5,
-                  borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
-                    fontWeight: isSelected ? "700" : "500",
-                    fontSize: 13.5,
-                    fontFamily: "Outfit",
-                  }}
-                >
-                  {s}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      <GlassInput
-        ref={contactRef}
-        icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Contact Number (e.g. 0912 345 6789)"
-        value={contactNumber}
-        onChangeText={setContactNumber}
-        keyboardType="phone-pad"
-        returnKeyType="done"
-        error={errors.contactNumber}
-      />
-    </View>
-  );
-});
-
-const Step3Contact = memo(function Step3Contact({
-  email,
-  setEmail,
-  address,
-  setAddress,
-  emergencyName,
-  setEmergencyName,
-  emergencyNo,
-  setEmergencyNo,
-  errors,
-  emailRef,
-  addressRef,
-  emergNameRef,
-  emergNoRef,
-}: {
-  email: string;
-  setEmail: (v: string) => void;
-  address: string;
-  setAddress: (v: string) => void;
-  emergencyName: string;
-  setEmergencyName: (v: string) => void;
-  emergencyNo: string;
-  setEmergencyNo: (v: string) => void;
-  errors: Record<string, string>;
-  emailRef: React.RefObject<TextInput | null>;
-  addressRef: React.RefObject<TextInput | null>;
-  emergNameRef: React.RefObject<TextInput | null>;
-  emergNoRef: React.RefObject<TextInput | null>;
-}) {
-  return (
-    <View>
-      <GlassInput
-        ref={emailRef}
-        icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Email address"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        returnKeyType="next"
-        onSubmitEditing={() => addressRef.current?.focus()}
-        blurOnSubmit={false}
-        error={errors.email}
-      />
-
-      <GlassInput
-        ref={addressRef}
-        icon={<LocationIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Home Address (City, Province)"
-        value={address}
-        onChangeText={setAddress}
-        autoCapitalize="words"
-        returnKeyType="next"
-        onSubmitEditing={() => emergNameRef.current?.focus()}
-        blurOnSubmit={false}
-        error={errors.address}
-      />
-
-      <GlassInput
-        ref={emergNameRef}
-        icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Emergency Contact Name"
-        value={emergencyName}
-        onChangeText={setEmergencyName}
-        autoCapitalize="words"
-        returnKeyType="next"
-        onSubmitEditing={() => emergNoRef.current?.focus()}
-        blurOnSubmit={false}
-        error={errors.emergencyName}
-      />
-
-      <GlassInput
-        ref={emergNoRef}
-        icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Emergency Contact No."
-        value={emergencyNo}
-        onChangeText={setEmergencyNo}
-        keyboardType="phone-pad"
-        returnKeyType="done"
-        error={errors.emergencyNo}
-      />
-    </View>
-  );
-});
-
-const Step4Security = memo(function Step4Security({
-  username,
-  setUsername,
-  password,
-  setPassword,
-  confirmPassword,
-  setConfirmPassword,
-  errors,
-  usernameRef,
-  passwordRef,
-  confirmPasswordRef,
-  onSubmit,
-}: {
-  username: string;
-  setUsername: (v: string) => void;
-  password: string;
-  setPassword: (v: string) => void;
-  confirmPassword: string;
-  setConfirmPassword: (v: string) => void;
-  errors: Record<string, string>;
-  usernameRef: React.RefObject<TextInput | null>;
-  passwordRef: React.RefObject<TextInput | null>;
-  confirmPasswordRef: React.RefObject<TextInput | null>;
-  onSubmit: () => void;
-}) {
-  return (
-    <View>
-      <GlassInput
-        ref={usernameRef}
-        icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-        returnKeyType="next"
-        onSubmitEditing={() => passwordRef.current?.focus()}
-        blurOnSubmit={false}
-        error={errors.username}
-      />
-
-      <GlassInput
-        ref={passwordRef}
-        icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Password (min 8 characters)"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        showPasswordToggle
-        returnKeyType="next"
-        onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-        blurOnSubmit={false}
-        error={errors.password}
-      />
-
-      <GlassInput
-        ref={confirmPasswordRef}
-        icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-        placeholder="Confirm Password"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-        showPasswordToggle
-        returnKeyType="done"
-        onSubmitEditing={onSubmit}
-        error={errors.confirmPassword}
-      />
-    </View>
-  );
-});
-
 // ── Standalone Glassmorphism Auth Modal ──────────────────────────────────────
 
 interface AuthModalProps {
@@ -744,19 +298,9 @@ const AuthModal = memo(function AuthModal({
   onSuccessSignIn,
   onSuccessRegister,
 }: AuthModalProps) {
-  const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
-  const maxAvailableHeight = Math.max(windowHeight - insets.top - insets.bottom - 24, 300);
-  const wizardHeight = Math.min(520, maxAvailableHeight);
-
   const [authMode, setAuthMode] = useState<"signin" | "create_account">(initialMode);
-  const [wizardStep, setWizardStep] = useState<number>(1);
-  const [wizardForm, setWizardForm] = useState<WizardFormData>(initialWizardForm);
-
   const animVal = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
-  const stepFadeAnim = useRef(new Animated.Value(1)).current;
-  const stepSlideAnim = useRef(new Animated.Value(0)).current;
 
   // Sign In Form State
   const [signInIdentifier, setSignInIdentifier] = useState("");
@@ -765,21 +309,21 @@ const AuthModal = memo(function AuthModal({
   const [signInLoading, setSignInLoading] = useState(false);
   const [signInGeneralError, setSignInGeneralError] = useState("");
 
-  // Create Account Errors & Loading
+  // Create Account Form State
+  const [fullName, setFullName] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
   const [regGeneralError, setRegGeneralError] = useState("");
 
   // Input refs for keyboard navigation
   const signInPasswordRef = useRef<TextInput>(null);
-  const idRef = useRef<TextInput>(null);
-  const nameRef = useRef<TextInput>(null);
-  const bdayRef = useRef<TextInput>(null);
-  const contactRef = useRef<TextInput>(null);
+  const idNumberRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
-  const addressRef = useRef<TextInput>(null);
-  const emergNameRef = useRef<TextInput>(null);
-  const emergNoRef = useRef<TextInput>(null);
   const usernameRef = useRef<TextInput>(null);
   const regPasswordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -791,16 +335,19 @@ const AuthModal = memo(function AuthModal({
   }, []);
 
   useEffect(() => {
+    console.log("[DEBUG] AuthModal MOUNT");
+    return () => console.log("[DEBUG] AuthModal UNMOUNT");
+  }, []);
+
+  useEffect(() => {
     if (visible) {
+      console.log("[DEBUG] Entrance animation START");
       setAuthMode(initialMode);
-      setWizardStep(1);
       setSignInErrors({});
       setSignInGeneralError("");
       setRegErrors({});
       setRegGeneralError("");
       contentFadeAnim.setValue(1);
-      stepFadeAnim.setValue(1);
-      stepSlideAnim.setValue(0);
       Animated.timing(animVal, {
         toValue: 1,
         duration: 250,
@@ -819,14 +366,8 @@ const AuthModal = memo(function AuthModal({
       useNativeDriver: true,
     }).start(() => {
       onClose();
-      setWizardStep(1);
-      setWizardForm(initialWizardForm);
-      setRegErrors({});
-      setRegGeneralError("");
-      stepFadeAnim.setValue(1);
-      stepSlideAnim.setValue(0);
     });
-  }, [animVal, onClose, stepFadeAnim, stepSlideAnim]);
+  }, [animVal, onClose]);
 
   const switchAuthMode = useCallback((newMode: "signin" | "create_account") => {
     triggerHaptic();
@@ -836,154 +377,12 @@ const AuthModal = memo(function AuthModal({
     ]).start();
     setTimeout(() => {
       setAuthMode(newMode);
-      setWizardStep(1);
       setSignInErrors({});
       setSignInGeneralError("");
       setRegErrors({});
       setRegGeneralError("");
-      stepFadeAnim.setValue(1);
-      stepSlideAnim.setValue(0);
     }, 110);
-  }, [triggerHaptic, contentFadeAnim, stepFadeAnim, stepSlideAnim]);
-
-  const updateFormField = useCallback((field: keyof WizardFormData, value: any) => {
-    setWizardForm((prev) => ({ ...prev, [field]: value }));
-    setRegErrors((prev) => {
-      if (prev[field]) {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      }
-      return prev;
-    });
-  }, []);
-
-  const validateStep = useCallback((step: number): boolean => {
-    const errs: Record<string, string> = {};
-    if (step === 1) {
-      if (wizardForm.category !== "Outsider" && !wizardForm.idNumber.trim()) {
-        errs.idNumber = `${wizardForm.category} ID number is required`;
-      }
-    } else if (step === 2) {
-      if (!wizardForm.fullName.trim()) {
-        errs.fullName = "Full name is required";
-      }
-      if (!wizardForm.birthday.trim()) {
-        errs.birthday = "Birthday is required";
-      }
-      if (!wizardForm.contactNumber.trim()) {
-        errs.contactNumber = "Contact number is required";
-      }
-    } else if (step === 3) {
-      if (!wizardForm.email.trim()) {
-        errs.email = "Email address is required";
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(wizardForm.email.trim())) {
-        errs.email = "Enter a valid email address";
-      }
-      if (!wizardForm.address.trim()) {
-        errs.address = "Home address is required";
-      }
-      if (!wizardForm.emergencyName.trim()) {
-        errs.emergencyName = "Emergency contact name is required";
-      }
-      if (!wizardForm.emergencyNo.trim()) {
-        errs.emergencyNo = "Emergency contact number is required";
-      }
-    } else if (step === 4) {
-      if (!wizardForm.username.trim()) {
-        errs.username = "Username is required";
-      }
-      if (!wizardForm.password) {
-        errs.password = "Password is required";
-      } else if (wizardForm.password.length < 8) {
-        errs.password = "At least 8 characters required";
-      }
-      if (wizardForm.password !== wizardForm.confirmPassword) {
-        errs.confirmPassword = "Passwords do not match";
-      }
-    }
-
-    setRegErrors(errs);
-    return Object.keys(errs).length === 0;
-  }, [wizardForm]);
-
-  const transitionStep = useCallback((targetStep: number, direction: "next" | "back") => {
-    triggerHaptic();
-    const exitX = direction === "next" ? -24 : 24;
-    const enterX = direction === "next" ? 24 : -24;
-
-    Animated.parallel([
-      Animated.timing(stepFadeAnim, { toValue: 0, duration: 90, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-      Animated.timing(stepSlideAnim, { toValue: exitX, duration: 90, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-    ]).start(() => {
-      setWizardStep(targetStep);
-      stepSlideAnim.setValue(enterX);
-      Animated.parallel([
-        Animated.timing(stepFadeAnim, { toValue: 1, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(stepSlideAnim, { toValue: 0, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]).start();
-    });
-  }, [triggerHaptic, stepFadeAnim, stepSlideAnim]);
-
-  const handleCreateAccount = useCallback(async () => {
-    setRegErrors({});
-    setRegGeneralError("");
-    setRegLoading(true);
-
-    try {
-      const regRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/register/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: wizardForm.email.trim(),
-          password: wizardForm.password,
-          username: wizardForm.username.trim(),
-          name: wizardForm.fullName.trim(),
-          id_number: wizardForm.idNumber.trim(),
-          category: wizardForm.category,
-          birthday: wizardForm.birthday.trim(),
-          gender: wizardForm.gender,
-          contact_number: wizardForm.contactNumber.trim(),
-          address: wizardForm.address.trim(),
-          emergency_contact_name: wizardForm.emergencyName.trim(),
-          emergency_contact_phone: wizardForm.emergencyNo.trim(),
-        }),
-      });
-      const resText = await regRes.text();
-      let regData: any = {};
-      try { regData = resText ? JSON.parse(resText) : {}; } catch {}
-
-      if (regRes.ok || regData.access) {
-        const userEmail = regData.user?.email || wizardForm.email.trim();
-        const userName = wizardForm.fullName.trim().toUpperCase() || (regData.user?.name || userEmail.split("@")[0]).toUpperCase();
-        onSuccessRegister(userEmail, userName, regData.access || "", wizardForm.idNumber.trim(), wizardForm.fullName.trim());
-      } else {
-        setRegGeneralError(regData.error || regData.detail || "Registration failed. Account may already exist.");
-      }
-    } catch (e) {
-      setRegGeneralError("Network error. Please try again.");
-    } finally {
-      setRegLoading(false);
-    }
-  }, [wizardForm, onSuccessRegister]);
-
-  const handleNext = useCallback(() => {
-    if (wizardStep < 4) {
-      if (validateStep(wizardStep)) {
-        transitionStep(wizardStep + 1, "next");
-      }
-    } else {
-      if (validateStep(4)) {
-        handleCreateAccount();
-      }
-    }
-  }, [wizardStep, validateStep, transitionStep, handleCreateAccount]);
-
-  const handleBack = useCallback(() => {
-    if (wizardStep > 1) {
-      transitionStep(wizardStep - 1, "back");
-    }
-  }, [wizardStep, transitionStep]);
+  }, [triggerHaptic, contentFadeAnim]);
 
   // Sign In Handler
   const handleSignIn = useCallback(async () => {
@@ -1022,16 +421,63 @@ const AuthModal = memo(function AuthModal({
     }
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
-  const getSubtitle = () => {
-    if (authMode === "signin") return "Sign in to your university clinic portal";
-    switch (wizardStep) {
-      case 1: return "Step 1 of 4: Affiliation";
-      case 2: return "Step 2 of 4: Personal Details";
-      case 3: return "Step 3 of 4: Contact & Address";
-      case 4: return "Step 4 of 4: Account Security";
-      default: return "Join the CURA clinic community";
+  // Create Account Handler
+  const handleCreateAccount = useCallback(async () => {
+    const errs: Record<string, string> = {};
+    if (!fullName.trim()) errs.fullName = "Full name is required";
+    if (!idNumber.trim()) errs.idNumber = "Student / Employee ID is required";
+    if (!email.trim()) {
+      errs.email = "Email address is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errs.email = "Enter a valid email address";
     }
-  };
+    if (!username.trim()) errs.username = "Username is required";
+    if (!password) {
+      errs.password = "Password is required";
+    } else if (password.length < 8) {
+      errs.password = "At least 8 characters required";
+    }
+    if (password !== confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+    setRegErrors({});
+    setRegGeneralError("");
+    setRegLoading(true);
+
+    try {
+      const regRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/register/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+          username: username.trim(),
+          name: fullName.trim(),
+          id_number: idNumber.trim(),
+        }),
+      });
+      const resText = await regRes.text();
+      let regData: any = {};
+      try { regData = resText ? JSON.parse(resText) : {}; } catch {}
+
+      if (regRes.ok || regData.access) {
+        const userEmail = regData.user?.email || email.trim();
+        const userName = fullName.trim().toUpperCase() || (regData.user?.name || userEmail.split("@")[0]).toUpperCase();
+        onSuccessRegister(userEmail, userName, regData.access || "", idNumber.trim(), fullName.trim());
+      } else {
+        setRegGeneralError(regData.error || regData.detail || "Registration failed. Account may already exist.");
+      }
+    } catch (e) {
+      setRegGeneralError("Network error. Please try again.");
+    } finally {
+      setRegLoading(false);
+    }
+  }, [fullName, idNumber, email, username, password, confirmPassword, onSuccessRegister]);
 
   return (
     <Modal
@@ -1069,22 +515,19 @@ const AuthModal = memo(function AuthModal({
             justifyContent: "center",
             alignItems: "center",
             paddingHorizontal: 24,
-            paddingTop: Math.max(insets.top + 12, 16),
-            paddingBottom: Math.max(insets.bottom + 12, 16),
           }}
           pointerEvents="box-none"
         >
-          {/* 3) Modal Card */}
+          {/* 3) Modal Card - plain Animated.View without touchable wrapper */}
           <Animated.View
             style={{
               width: "100%",
               maxWidth: 400,
-              height: authMode === "create_account" ? wizardHeight : undefined,
-              maxHeight: maxAvailableHeight,
+              maxHeight: "88%",
               borderRadius: 24,
               borderWidth: 1,
               borderColor: "rgba(255, 255, 255, 0.32)",
-              backgroundColor: "rgba(10, 24, 58, 0.94)",
+              backgroundColor: "rgba(10, 24, 58, 0.92)",
               overflow: "hidden",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 12 },
@@ -1124,55 +567,51 @@ const AuthModal = memo(function AuthModal({
               <CloseIcon color="#FFFFFF" size={15} />
             </TouchableOpacity>
 
-            {/* Fixed Header */}
-            <View style={{ paddingHorizontal: 22, paddingTop: 18, paddingBottom: 6 }}>
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontSize: 22,
-                  fontWeight: "700",
-                  fontFamily: "Outfit",
-                  letterSpacing: 0.3,
-                  paddingRight: 44,
-                  textShadowColor: "rgba(0, 0, 0, 0.35)",
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 3,
-                }}
-              >
-                {authMode === "signin" ? "Welcome Back" : "Create Account"}
-              </Text>
-              <Text
-                style={{
-                  color: "rgba(255, 255, 255, 0.85)",
-                  fontSize: 13.5,
-                  fontFamily: "Outfit",
-                  marginTop: 4,
-                  paddingRight: 44,
-                  textShadowColor: "rgba(0, 0, 0, 0.3)",
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}
-              >
-                {getSubtitle()}
-              </Text>
-            </View>
-
-            {/* Scrollable Form Body */}
+            {/* Form Body wrapped in single ScrollView with keyboardShouldPersistTaps="handled" */}
             <ScrollView
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
               showsVerticalScrollIndicator={false}
-              style={{ flex: 1 }}
               contentContainerStyle={{
-                paddingHorizontal: 22,
-                paddingTop: 8,
-                paddingBottom: 8,
+                flexGrow: 1,
+                paddingHorizontal: 24,
+                paddingTop: 24,
+                paddingBottom: 22,
               }}
             >
-              <Animated.View style={{ opacity: contentFadeAnim }}>
+              <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
                 {authMode === "signin" ? (
                   // Sign In Content
                   <View>
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 24,
+                        fontWeight: "700",
+                        fontFamily: "Outfit",
+                        letterSpacing: 0.3,
+                        textShadowColor: "rgba(0, 0, 0, 0.35)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 3,
+                      }}
+                    >
+                      Welcome Back
+                    </Text>
+                    <Text
+                      style={{
+                        color: "rgba(255, 255, 255, 0.85)",
+                        fontSize: 14,
+                        fontFamily: "Outfit",
+                        marginTop: 4,
+                        marginBottom: 20,
+                        textShadowColor: "rgba(0, 0, 0, 0.3)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      Sign in to your university clinic portal
+                    </Text>
+
                     {signInGeneralError ? (
                       <View
                         style={{
@@ -1182,7 +621,7 @@ const AuthModal = memo(function AuthModal({
                           borderRadius: 12,
                           paddingHorizontal: 12,
                           paddingVertical: 8,
-                          marginBottom: 10,
+                          marginBottom: 14,
                         }}
                       >
                         <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
@@ -1221,10 +660,113 @@ const AuthModal = memo(function AuthModal({
                       onSubmitEditing={handleSignIn}
                       error={signInErrors.password}
                     />
+
+                    <TouchableOpacity
+                      onPress={handleSignIn}
+                      disabled={signInLoading}
+                      activeOpacity={0.85}
+                      style={{
+                        width: "100%",
+                        height: 50,
+                        borderRadius: 14,
+                        backgroundColor: "#1E4FD8",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 8,
+                        shadowColor: "#1E4FD8",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 8,
+                        elevation: 4,
+                      }}
+                    >
+                      {signInLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text
+                          style={{
+                            color: "#FFFFFF",
+                            fontSize: 16,
+                            fontWeight: "700",
+                            fontFamily: "Outfit",
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          Sign In
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Switcher */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginTop: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "rgba(255, 255, 255, 0.85)",
+                          fontSize: 13.5,
+                          fontFamily: "Outfit",
+                          textShadowColor: "rgba(0, 0, 0, 0.3)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        No account?{" "}
+                      </Text>
+                      <TouchableOpacity onPress={() => switchAuthMode("create_account")} activeOpacity={0.7}>
+                        <Text
+                          style={{
+                            color: "#60A5FA",
+                            fontSize: 13.5,
+                            fontWeight: "700",
+                            fontFamily: "Outfit",
+                            textShadowColor: "rgba(0, 0, 0, 0.3)",
+                            textShadowOffset: { width: 0, height: 1 },
+                            textShadowRadius: 2,
+                          }}
+                        >
+                          Create one
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ) : (
-                  // Create Account Content with Slide/Fade
+                  // Create Account Content
                   <View>
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 24,
+                        fontWeight: "700",
+                        fontFamily: "Outfit",
+                        letterSpacing: 0.3,
+                        textShadowColor: "rgba(0, 0, 0, 0.35)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 3,
+                      }}
+                    >
+                      Create Account
+                    </Text>
+                    <Text
+                      style={{
+                        color: "rgba(255, 255, 255, 0.85)",
+                        fontSize: 14,
+                        fontFamily: "Outfit",
+                        marginTop: 4,
+                        marginBottom: 20,
+                        textShadowColor: "rgba(0, 0, 0, 0.3)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      Join the CURA clinic community
+                    </Text>
+
                     {regGeneralError ? (
                       <View
                         style={{
@@ -1234,7 +776,7 @@ const AuthModal = memo(function AuthModal({
                           borderRadius: 12,
                           paddingHorizontal: 12,
                           paddingVertical: 8,
-                          marginBottom: 10,
+                          marginBottom: 14,
                         }}
                       >
                         <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
@@ -1243,236 +785,152 @@ const AuthModal = memo(function AuthModal({
                       </View>
                     ) : null}
 
-                    <Animated.View
+                    <GlassInput
+                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Full Name (e.g. Juan Dela Cruz)"
+                      value={fullName}
+                      onChangeText={(t) => {
+                        setFullName(t);
+                        if (regErrors.fullName) setRegErrors((e) => ({ ...e, fullName: "" }));
+                      }}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                      onSubmitEditing={() => idNumberRef.current?.focus()}
+                      blurOnSubmit={false}
+                      error={regErrors.fullName}
+                    />
+
+                    <GlassInput
+                      ref={idNumberRef}
+                      icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Student / Employee ID"
+                      value={idNumber}
+                      onChangeText={(t) => {
+                        setIdNumber(t);
+                        if (regErrors.idNumber) setRegErrors((e) => ({ ...e, idNumber: "" }));
+                      }}
+                      returnKeyType="next"
+                      onSubmitEditing={() => emailRef.current?.focus()}
+                      blurOnSubmit={false}
+                      error={regErrors.idNumber}
+                    />
+
+                    <GlassInput
+                      ref={emailRef}
+                      icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Email address"
+                      value={email}
+                      onChangeText={(t) => {
+                        setEmail(t);
+                        if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
+                      }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      returnKeyType="next"
+                      onSubmitEditing={() => usernameRef.current?.focus()}
+                      blurOnSubmit={false}
+                      error={regErrors.email}
+                    />
+
+                    <GlassInput
+                      ref={usernameRef}
+                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Username"
+                      value={username}
+                      onChangeText={(t) => {
+                        setUsername(t);
+                        if (regErrors.username) setRegErrors((e) => ({ ...e, username: "" }));
+                      }}
+                      autoCapitalize="none"
+                      returnKeyType="next"
+                      onSubmitEditing={() => regPasswordRef.current?.focus()}
+                      blurOnSubmit={false}
+                      error={regErrors.username}
+                    />
+
+                    <GlassInput
+                      ref={regPasswordRef}
+                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Password (min 8 characters)"
+                      value={password}
+                      onChangeText={(t) => {
+                        setPassword(t);
+                        if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
+                      }}
+                      secureTextEntry
+                      showPasswordToggle
+                      returnKeyType="next"
+                      onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                      blurOnSubmit={false}
+                      error={regErrors.password}
+                    />
+
+                    <GlassInput
+                      ref={confirmPasswordRef}
+                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChangeText={(t) => {
+                        setConfirmPassword(t);
+                        if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
+                      }}
+                      secureTextEntry
+                      showPasswordToggle
+                      returnKeyType="done"
+                      onSubmitEditing={handleCreateAccount}
+                      error={regErrors.confirmPassword}
+                    />
+
+                    <TouchableOpacity
+                      onPress={handleCreateAccount}
+                      disabled={regLoading}
+                      activeOpacity={0.85}
                       style={{
-                        opacity: stepFadeAnim,
-                        transform: [{ translateX: stepSlideAnim }],
+                        width: "100%",
+                        height: 50,
+                        borderRadius: 14,
+                        backgroundColor: "#1E4FD8",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 8,
+                        shadowColor: "#1E4FD8",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 8,
+                        elevation: 4,
                       }}
                     >
-                      {wizardStep === 1 && (
-                        <Step1Affiliation
-                          category={wizardForm.category}
-                          setCategory={(cat) => updateFormField("category", cat)}
-                          idNumber={wizardForm.idNumber}
-                          setIdNumber={(val) => updateFormField("idNumber", val)}
-                          error={regErrors.idNumber}
-                          idRef={idRef}
-                        />
-                      )}
-                      {wizardStep === 2 && (
-                        <Step2Personal
-                          fullName={wizardForm.fullName}
-                          setFullName={(val) => updateFormField("fullName", val)}
-                          birthday={wizardForm.birthday}
-                          setBirthday={(val) => updateFormField("birthday", val)}
-                          gender={wizardForm.gender}
-                          setGender={(val) => updateFormField("gender", val)}
-                          contactNumber={wizardForm.contactNumber}
-                          setContactNumber={(val) => updateFormField("contactNumber", val)}
-                          errors={regErrors}
-                          nameRef={nameRef}
-                          bdayRef={bdayRef}
-                          contactRef={contactRef}
-                        />
-                      )}
-                      {wizardStep === 3 && (
-                        <Step3Contact
-                          email={wizardForm.email}
-                          setEmail={(val) => updateFormField("email", val)}
-                          address={wizardForm.address}
-                          setAddress={(val) => updateFormField("address", val)}
-                          emergencyName={wizardForm.emergencyName}
-                          setEmergencyName={(val) => updateFormField("emergencyName", val)}
-                          emergencyNo={wizardForm.emergencyNo}
-                          setEmergencyNo={(val) => updateFormField("emergencyNo", val)}
-                          errors={regErrors}
-                          emailRef={emailRef}
-                          addressRef={addressRef}
-                          emergNameRef={emergNameRef}
-                          emergNoRef={emergNoRef}
-                        />
-                      )}
-                      {wizardStep === 4 && (
-                        <Step4Security
-                          username={wizardForm.username}
-                          setUsername={(val) => updateFormField("username", val)}
-                          password={wizardForm.password}
-                          setPassword={(val) => updateFormField("password", val)}
-                          confirmPassword={wizardForm.confirmPassword}
-                          setConfirmPassword={(val) => updateFormField("confirmPassword", val)}
-                          errors={regErrors}
-                          usernameRef={usernameRef}
-                          passwordRef={regPasswordRef}
-                          confirmPasswordRef={confirmPasswordRef}
-                          onSubmit={handleNext}
-                        />
-                      )}
-                    </Animated.View>
-                  </View>
-                )}
-              </Animated.View>
-            </ScrollView>
-
-            {/* Pinned Footer outside ScrollView */}
-            <View
-              style={{
-                paddingHorizontal: 22,
-                paddingTop: 10,
-                paddingBottom: 18,
-                borderTopWidth: 1,
-                borderTopColor: "rgba(255, 255, 255, 0.12)",
-                backgroundColor: "rgba(10, 24, 58, 0.60)",
-              }}
-            >
-              {authMode === "signin" ? (
-                <>
-                  <TouchableOpacity
-                    onPress={handleSignIn}
-                    disabled={signInLoading}
-                    activeOpacity={0.85}
-                    style={{
-                      width: "100%",
-                      height: 48,
-                      borderRadius: 14,
-                      backgroundColor: "#1E4FD8",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      shadowColor: "#1E4FD8",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 8,
-                      elevation: 4,
-                    }}
-                  >
-                    {signInLoading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <Text
-                        style={{
-                          color: "#FFFFFF",
-                          fontSize: 16,
-                          fontWeight: "700",
-                          fontFamily: "Outfit",
-                          letterSpacing: 0.4,
-                        }}
-                      >
-                        Sign In
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-
-                  {/* Switcher */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginTop: 12,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: 13.5,
-                        fontFamily: "Outfit",
-                        textShadowColor: "rgba(0, 0, 0, 0.3)",
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 2,
-                      }}
-                    >
-                      No account?{" "}
-                    </Text>
-                    <TouchableOpacity onPress={() => switchAuthMode("create_account")} activeOpacity={0.7}>
-                      <Text
-                        style={{
-                          color: "#60A5FA",
-                          fontSize: 13.5,
-                          fontWeight: "700",
-                          fontFamily: "Outfit",
-                          textShadowColor: "rgba(0, 0, 0, 0.3)",
-                          textShadowOffset: { width: 0, height: 1 },
-                          textShadowRadius: 2,
-                        }}
-                      >
-                        Create one
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <>
-                  {/* Step dots */}
-                  <WizardStepDots step={wizardStep} total={4} />
-
-                  {/* Full-width blue Next / Get Started button */}
-                  <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={regLoading}
-                    activeOpacity={0.85}
-                    style={{
-                      width: "100%",
-                      height: 48,
-                      borderRadius: 14,
-                      backgroundColor: "#1E4FD8",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      shadowColor: "#1E4FD8",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 8,
-                      elevation: 4,
-                    }}
-                  >
-                    {regLoading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <Text
-                        style={{
-                          color: "#FFFFFF",
-                          fontSize: 16,
-                          fontWeight: "700",
-                          fontFamily: "Outfit",
-                          letterSpacing: 0.4,
-                        }}
-                      >
-                        {wizardStep === 4 ? "Get Started" : "Next"}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-
-                  {/* Bottom Row: Back button (if step > 1) & Sign In link */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: wizardStep > 1 ? "space-between" : "center",
-                      alignItems: "center",
-                      marginTop: 11,
-                    }}
-                  >
-                    {wizardStep > 1 ? (
-                      <TouchableOpacity
-                        onPress={handleBack}
-                        activeOpacity={0.7}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
+                      {regLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
                         <Text
                           style={{
-                            color: "#93C5FD",
-                            fontSize: 13.5,
-                            fontWeight: "600",
+                            color: "#FFFFFF",
+                            fontSize: 16,
+                            fontWeight: "700",
                             fontFamily: "Outfit",
+                            letterSpacing: 0.4,
                           }}
                         >
-                          ← Back
+                          Create Account
                         </Text>
-                      </TouchableOpacity>
-                    ) : null}
+                      )}
+                    </TouchableOpacity>
 
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    {/* Switcher */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginTop: 18,
+                        marginBottom: 4,
+                      }}
+                    >
                       <Text
                         style={{
-                          color: "rgba(255, 255, 255, 0.8)",
-                          fontSize: 13,
+                          color: "rgba(255, 255, 255, 0.85)",
+                          fontSize: 13.5,
                           fontFamily: "Outfit",
                           textShadowColor: "rgba(0, 0, 0, 0.3)",
                           textShadowOffset: { width: 0, height: 1 },
@@ -1485,7 +943,7 @@ const AuthModal = memo(function AuthModal({
                         <Text
                           style={{
                             color: "#60A5FA",
-                            fontSize: 13,
+                            fontSize: 13.5,
                             fontWeight: "700",
                             fontFamily: "Outfit",
                             textShadowColor: "rgba(0, 0, 0, 0.3)",
@@ -1498,9 +956,9 @@ const AuthModal = memo(function AuthModal({
                       </TouchableOpacity>
                     </View>
                   </View>
-                </>
-              )}
-            </View>
+                )}
+              </Animated.View>
+            </ScrollView>
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
@@ -1663,26 +1121,15 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
       <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>
         <WelcomeBackground bgBlurAnim={bgBlurAnim} />
 
-        {/* 2) Header & Hero - Faded out when modal is open */}
-        <Animated.View
-          pointerEvents={authMode !== null ? "none" : "auto"}
+        {/* 2) Header (Top-left) */}
+        <View
           style={{
-            flex: 1,
-            opacity: bgBlurAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 0],
-            }),
+            paddingTop: Math.max(insets.top, 20) + 8,
+            paddingHorizontal: 24,
+            flexDirection: "row",
+            alignItems: "center",
           }}
         >
-          {/* Header (Top-left) */}
-          <View
-            style={{
-              paddingTop: Math.max(insets.top, 20) + 8,
-              paddingHorizontal: 24,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
           <Image
             source={require("../../assets/images/ua-seal.png")}
             style={{ width: 48, height: 48, borderRadius: 24 }}
@@ -1770,7 +1217,6 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             Your personal health companion for smarter, simpler campus care.
           </Text>
         </View>
-        </Animated.View>
       </View>
 
       {/* 4) Bottom Sheet */}
