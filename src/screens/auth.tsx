@@ -198,7 +198,6 @@ const GlassInput = memo(
     },
     ref
   ) {
-    const [isFocused, setIsFocused] = useState(false);
     const [isSecured, setIsSecured] = useState(secureTextEntry);
 
     return (
@@ -209,17 +208,10 @@ const GlassInput = memo(
             alignItems: "center",
             height: 48,
             borderRadius: 12,
-            backgroundColor: isFocused
-              ? "rgba(255, 255, 255, 0.25)"
-              : "rgba(255, 255, 255, 0.15)",
+            backgroundColor: "rgba(255, 255, 255, 0.18)",
             borderWidth: 1.5,
-            borderColor: isFocused ? "#38BDF8" : "rgba(255, 255, 255, 0.28)",
+            borderColor: "rgba(255, 255, 255, 0.30)",
             paddingHorizontal: 14,
-            shadowColor: isFocused ? "#38BDF8" : "transparent",
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: isFocused ? 0.45 : 0,
-            shadowRadius: 8,
-            elevation: isFocused ? 3 : 0,
           }}
         >
           {icon ? <View style={{ marginRight: 10 }} pointerEvents="none">{icon}</View> : null}
@@ -230,8 +222,12 @@ const GlassInput = memo(
             placeholder={placeholder}
             placeholderTextColor="rgba(255, 255, 255, 0.62)"
             secureTextEntry={isSecured}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onFocus={() => {
+              console.log(`[DEBUG] Input "${placeholder}" FOCUS`);
+            }}
+            onBlur={() => {
+              console.log(`[DEBUG] Input "${placeholder}" BLUR`);
+            }}
             keyboardType={keyboardType}
             autoCapitalize={autoCapitalize}
             returnKeyType={returnKeyType}
@@ -333,7 +329,13 @@ const AuthModal = memo(function AuthModal({
   }, []);
 
   useEffect(() => {
+    console.log("[DEBUG] AuthModal MOUNT");
+    return () => console.log("[DEBUG] AuthModal UNMOUNT");
+  }, []);
+
+  useEffect(() => {
     if (visible) {
+      console.log("[DEBUG] Entrance animation START");
       setAuthMode(initialMode);
       setSignInErrors({});
       setSignInGeneralError("");
@@ -342,18 +344,18 @@ const AuthModal = memo(function AuthModal({
       contentFadeAnim.setValue(1);
       Animated.timing(animVal, {
         toValue: 1,
-        duration: 320,
+        duration: 250,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start();
     }
-  }, [visible, initialMode, animVal, contentFadeAnim]);
+  }, [visible]);
 
   const handleClose = useCallback(() => {
     Keyboard.dismiss();
     Animated.timing(animVal, {
       toValue: 0,
-      duration: 250,
+      duration: 200,
       easing: Easing.in(Easing.cubic),
       useNativeDriver: true,
     }).start(() => {
@@ -476,7 +478,6 @@ const AuthModal = memo(function AuthModal({
       visible={visible}
       transparent
       animationType="none"
-      statusBarTranslucent
       onRequestClose={handleClose}
     >
       <View style={{ flex: 1 }}>
@@ -492,7 +493,7 @@ const AuthModal = memo(function AuthModal({
             style={[
               StyleSheet.absoluteFill,
               {
-                backgroundColor: "rgba(3, 10, 26, 0.40)",
+                backgroundColor: "rgba(3, 10, 26, 0.50)",
                 opacity: animVal,
               },
             ]}
@@ -501,7 +502,7 @@ const AuthModal = memo(function AuthModal({
 
         {/* 2) Centered Modal inside KeyboardAvoidingView */}
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
           style={{
             flex: 1,
@@ -520,39 +521,19 @@ const AuthModal = memo(function AuthModal({
               borderRadius: 24,
               borderWidth: 1,
               borderColor: "rgba(255, 255, 255, 0.32)",
-              backgroundColor: "rgba(255, 255, 255, 0.20)",
+              backgroundColor: "rgba(10, 24, 58, 0.92)",
               overflow: "hidden",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 12 },
-              shadowOpacity: 0.32,
+              shadowOpacity: 0.35,
               shadowRadius: 24,
               elevation: 10,
               opacity: animVal,
-              transform: [
-                {
-                  scale: animVal.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.90, 1],
-                  }),
-                },
-                {
-                  translateY: animVal.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [24, 0],
-                  }),
-                },
-              ],
             }}
           >
-            {/* Decorative blur and gradient MUST HAVE pointerEvents="none" */}
-            <BlurView
-              intensity={50}
-              tint="light"
-              style={StyleSheet.absoluteFill}
-              pointerEvents="none"
-            />
+            {/* Decorative gradient with pointerEvents="none" */}
             <LinearGradient
-              colors={["rgba(255, 255, 255, 0.24)", "rgba(255, 255, 255, 0.08)"]}
+              colors={["rgba(255, 255, 255, 0.16)", "rgba(255, 255, 255, 0.04)"]}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
@@ -979,6 +960,40 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
+// ── Welcome Background ───────────────────────────────────────────────────────
+
+const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBlurAnim: Animated.Value }) {
+  return (
+    <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]} pointerEvents="none">
+      <Image
+        source={require("../../assets/images/auth-bg.png")}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+      <LinearGradient
+        colors={[
+          "rgba(20, 60, 140, 0.40)",
+          "rgba(12, 36, 88, 0.70)",
+          "rgba(8, 24, 60, 0.92)",
+        ]}
+        locations={[0, 0.5, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: "rgba(6, 18, 48, 0.60)",
+            opacity: bgBlurAnim,
+          },
+        ]}
+      />
+    </View>
+  );
+});
+
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
 export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
@@ -1071,52 +1086,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
     <View style={{ flex: 1, backgroundColor: "#08183C" }}>
       {/* 1) Top Section with Campus Background Photo */}
       <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-        <Image
-          source={require("../../assets/images/auth-bg.png")}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: "100%",
-            height: "100%",
-          }}
-          resizeMode="cover"
-        />
-
-        {/* Blue Gradient Overlay (dark navy at bottom, lighter blue at top) */}
-        <LinearGradient
-          colors={[
-            "rgba(20, 60, 140, 0.40)",
-            "rgba(12, 36, 88, 0.70)",
-            "rgba(8, 24, 60, 0.92)",
-          ]}
-          locations={[0, 0.5, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-          }}
-        />
-
-        {/* Animated Background Blur & Dark-Blue Tint on Modal Open */}
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              opacity: bgBlurAnim,
-            },
-          ]}
-          pointerEvents="none"
-        >
-          <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(6, 18, 48, 0.38)" }]} pointerEvents="none" />
-        </Animated.View>
+        <WelcomeBackground bgBlurAnim={bgBlurAnim} />
 
         {/* 2) Header (Top-left) */}
         <View
