@@ -21,6 +21,12 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
+import AnimatedReanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing as ReanimatedEasing,
+} from "react-native-reanimated";
 import Svg, { Path, Polyline, Circle, Rect } from "react-native-svg";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -1009,6 +1015,33 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(null);
   const bgBlurAnim = useRef(new Animated.Value(0)).current;
 
+  // Reanimated Bottom Sheet Slide Down / Up
+  const isModalOpen = authMode !== null;
+  const sheetProgress = useSharedValue(0);
+  const sheetHeightShared = useSharedValue(260);
+
+  useEffect(() => {
+    sheetProgress.value = withTiming(isModalOpen ? 1 : 0, {
+      duration: 300,
+      easing: ReanimatedEasing.inOut(ReanimatedEasing.cubic),
+    });
+  }, [isModalOpen, sheetProgress]);
+
+  const onSheetLayout = useCallback((e: any) => {
+    const h = e.nativeEvent?.layout?.height;
+    if (h && h > 0) {
+      sheetHeightShared.value = h;
+    }
+  }, [sheetHeightShared]);
+
+  const sheetAnimatedStyle = useAnimatedStyle(() => {
+    const targetDistance = sheetHeightShared.value + insets.bottom + 24;
+    return {
+      transform: [{ translateY: sheetProgress.value * targetDistance }],
+      opacity: 1 - sheetProgress.value,
+    };
+  });
+
   const triggerHaptic = useCallback(() => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1187,20 +1220,25 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
       </View>
 
       {/* 4) Bottom Sheet */}
-      <View
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
-          paddingTop: 28,
-          paddingHorizontal: 24,
-          paddingBottom: Math.max(insets.bottom, 20) + 8,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 16,
-          elevation: 8,
-        }}
+      <AnimatedReanimated.View
+        pointerEvents={isModalOpen ? "none" : "auto"}
+        onLayout={onSheetLayout}
+        style={[
+          {
+            backgroundColor: "#FFFFFF",
+            borderTopLeftRadius: 32,
+            borderTopRightRadius: 32,
+            paddingTop: 28,
+            paddingHorizontal: 24,
+            paddingBottom: Math.max(insets.bottom, 20) + 8,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 16,
+            elevation: 8,
+          },
+          sheetAnimatedStyle,
+        ]}
       >
         {/* Primary: Sign In Button */}
         <TouchableOpacity
@@ -1298,7 +1336,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             University of the Assumption
           </Text>
         </View>
-      </View>
+      </AnimatedReanimated.View>
 
       {/* 5) Standalone Animated Glassmorphism Auth Modal */}
       {authMode !== null && (
