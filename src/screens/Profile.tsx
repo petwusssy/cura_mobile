@@ -464,9 +464,15 @@ export function ProfileScreen({
       action: (
         <Pressable
           onPress={handleOpenMyInfoEdit}
-          className={`px-3 py-1 rounded-full ${infoCooldown.active ? "bg-amber-400/20" : "bg-white/20 active:bg-white/30"}`}
+          className="px-3 py-1 rounded-full active:opacity-80"
+          style={{
+            backgroundColor: infoCooldown.active ? "rgba(251, 191, 36, 0.2)" : "rgba(255, 255, 255, 0.2)",
+          }}
         >
-          <Text className={`text-[10px] font-bold ${infoCooldown.active ? "text-amber-200" : "text-white"}`}>
+          <Text
+            className="text-[10px] font-bold"
+            style={{ color: infoCooldown.active ? "#FDE68A" : "#FFFFFF" }}
+          >
             {infoCooldown.active ? `⏳ ${infoCooldown.days}d Cooldown` : "✏️ Edit Info"}
           </Text>
         </Pressable>
@@ -658,7 +664,7 @@ export function ProfileScreen({
           </Pressable>
 
           <View className="items-center flex-col gap-1.5 mt-6 mb-4">
-            <View className="w-9 h-9 rounded-xl bg-white items-center justify-center p-1.5 shadow-sm" style={{ elevation: 2 }}>
+            <View className="w-9 h-9 rounded-xl bg-white items-center justify-center p-1.5" style={{ elevation: 2 }}>
               <Image
                 source={require("../../assets/images/cura-logo.png")}
                 style={{ width: "100%", height: "100%" }}
@@ -733,9 +739,16 @@ export function ProfileScreen({
                         <Pressable
                           key={sc}
                           onPress={() => setFormStudentCategory(sc)}
-                          className={`px-3 py-1.5 rounded-full border ${formStudentCategory === sc ? "bg-sky-500 border-sky-500" : "bg-slate-50 border-slate-200"}`}
+                          className="px-3 py-1.5 rounded-full border"
+                          style={{
+                            backgroundColor: formStudentCategory === sc ? "#0EA5E9" : "#F8FAFC",
+                            borderColor: formStudentCategory === sc ? "#0EA5E9" : "#E2E8F0",
+                          }}
                         >
-                          <Text className={`text-xs font-bold ${formStudentCategory === sc ? "text-white" : "text-slate-600"}`}>
+                          <Text
+                            className="text-xs font-bold"
+                            style={{ color: formStudentCategory === sc ? "#FFFFFF" : "#475569" }}
+                          >
                             {sc}
                           </Text>
                         </Pressable>
@@ -956,18 +969,26 @@ export function ProfileScreen({
               </View>
 
               <Text className="text-xs font-bold text-slate-600 mb-2">Select Your Clinic Mascot</Text>
-              <View className="flex-row flex-wrap gap-2.5 mb-4">
+              <View className="flex-row flex-wrap justify-between gap-y-3 mb-4">
                 {MASCOTS.map((m) => {
                   const isSelected = selectedMascotId === m.id;
                   return (
                     <Pressable
                       key={m.id}
                       onPress={() => setSelectedMascotId(m.id)}
-                      className={`p-3 rounded-2xl items-center border-2 ${isSelected ? "border-[#0EA5E9] bg-sky-50 shadow-sm" : "border-slate-100 bg-slate-50"}`}
-                      style={{ width: "22%" }}
+                      className="w-[23%] p-2.5 rounded-2xl items-center justify-center border-2"
+                      style={{
+                        backgroundColor: isSelected ? m.bg : "#F8FAFC",
+                        borderColor: isSelected ? m.color : "#E2E8F0",
+                        transform: [{ scale: isSelected ? 1.05 : 1 }],
+                      }}
                     >
                       <Text className="text-2xl mb-1">{m.emoji}</Text>
-                      <Text className={`text-[10px] font-bold text-center ${isSelected ? "text-sky-800" : "text-slate-600"}`} numberOfLines={1}>
+                      <Text
+                        className="text-[10px] font-bold text-center"
+                        style={{ color: isSelected ? m.color : "#475569" }}
+                        numberOfLines={1}
+                      >
                         {m.name}
                       </Text>
                     </Pressable>
@@ -1103,7 +1124,16 @@ export function ProfileScreen({
       {/* ========================================================================= */}
       <Modal visible={showAboutModal} transparent animationType="fade" onRequestClose={() => setShowAboutModal(false)}>
         <View className="flex-1 justify-center items-center bg-black/60 px-5">
-          <View className="bg-white rounded-[32px] p-6 w-full max-h-[80%] shadow-xl">
+          <View
+            className="bg-white rounded-[32px] p-6 w-full max-h-[80%]"
+            style={{
+              elevation: 8,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+            }}
+          >
             <View className="items-center mb-4">
               <View className="w-14 h-14 rounded-2xl bg-sky-50 items-center justify-center mb-2 p-2">
                 <Image
