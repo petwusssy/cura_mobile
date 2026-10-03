@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Image, ImageBackground, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, Pressable, TouchableOpacity, TextInput, Image, ImageBackground, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Polyline, Circle } from "react-native-svg";
@@ -44,7 +44,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
 
 // ── Welcome Screen Icons ──────────────────────────────────────────────────────
 
-function PersonIcon({ color = "#FFFFFF", size = 24 }: { color?: string; size?: number }) {
+function PersonIcon({ color = "#FFFFFF", size = 20 }: { color?: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -59,7 +59,7 @@ function PersonIcon({ color = "#FFFFFF", size = 24 }: { color?: string; size?: n
   );
 }
 
-function PencilIcon({ color = "#0B3C8A", size = 24 }: { color?: string; size?: number }) {
+function PencilIcon({ color = "#1E4FD8", size = 20 }: { color?: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
@@ -68,9 +68,9 @@ function PencilIcon({ color = "#0B3C8A", size = 24 }: { color?: string; size?: n
   );
 }
 
-function ArrowRightIcon({ color = "#FFFFFF", size = 24 }: { color?: string; size?: number }) {
+function ArrowRightIcon({ color = "#FFFFFF", size = 20 }: { color?: string; size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M5 12h14" />
       <Path d="M13 6l6 6-6 6" />
     </Svg>
@@ -84,30 +84,51 @@ export function WelcomeScreen({ navigate }: NavProps) {
   const { width, height } = useWindowDimensions();
 
   // Responsive calculations
-  const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 155);
-  const wordmarkSize = width < 380 || height < 700 ? 52 : 62;
-  const taglineSize = width < 380 ? 15 : 17;
+  const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
+  const wordmarkSize = width < 380 || height < 700 ? 50 : 60;
+  const taglineSize = width < 380 ? 14 : 16;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0B2136" }}>
-      {/* 1) Background Building Image */}
-      <ImageBackground
-        source={require("../../assets/images/auth-bg.png")}
-        style={{ flex: 1, width: "100%", height: "100%" }}
-        resizeMode="cover"
-      >
-        {/* Navy-Blue Gradient Overlay */}
+    <View style={{ flex: 1, backgroundColor: "#08183C" }}>
+      {/* 1) Top Section with Campus Background Photo */}
+      <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+        <Image
+          source={require("../../assets/images/auth-bg.png")}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: "100%",
+            height: "100%",
+          }}
+          resizeMode="cover"
+        />
+
+        {/* Blue Gradient Overlay (dark navy at bottom, lighter blue at top) */}
         <LinearGradient
-          colors={["rgba(15, 45, 110, 0.55)", "rgba(10, 35, 95, 0.78)"]}
+          colors={[
+            "rgba(20, 60, 140, 0.40)",
+            "rgba(12, 36, 88, 0.70)",
+            "rgba(8, 24, 60, 0.92)",
+          ]}
+          locations={[0, 0.5, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
         />
 
         {/* 2) Header (Top-left) */}
         <View
           style={{
-            paddingTop: Math.max(insets.top, 20) + 12,
+            paddingTop: Math.max(insets.top, 20) + 8,
             paddingHorizontal: 24,
             flexDirection: "row",
             alignItems: "center",
@@ -115,13 +136,13 @@ export function WelcomeScreen({ navigate }: NavProps) {
         >
           <Image
             source={require("../../assets/images/ua-seal.png")}
-            style={{ width: 52, height: 52, borderRadius: 26 }}
+            style={{ width: 48, height: 48, borderRadius: 24 }}
             resizeMode="contain"
           />
           <View
             style={{
               width: 1,
-              height: 42,
+              height: 38,
               backgroundColor: "rgba(255, 255, 255, 0.7)",
               marginHorizontal: 14,
             }}
@@ -200,135 +221,121 @@ export function WelcomeScreen({ navigate }: NavProps) {
             Your personal health companion for smarter, simpler campus care.
           </Text>
         </View>
+      </View>
 
-        {/* 4) Bottom Sheet */}
-        <View
+      {/* 4) Bottom Sheet */}
+      <View
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderTopLeftRadius: 32,
+          borderTopRightRadius: 32,
+          paddingTop: 28,
+          paddingHorizontal: 24,
+          paddingBottom: Math.max(insets.bottom, 20) + 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 16,
+          elevation: 8,
+        }}
+      >
+        {/* Primary: Sign In Button */}
+        <TouchableOpacity
+          onPress={() => navigate("login")}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Sign In"
           style={{
-            backgroundColor: "#F8FAFD",
-            borderTopLeftRadius: 48,
-            borderTopRightRadius: 48,
-            paddingTop: 32,
-            paddingHorizontal: 28,
-            paddingBottom: Math.max(insets.bottom, 20) + 12,
-            elevation: 8,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: -6 },
-            shadowOpacity: 0.12,
-            shadowRadius: 16,
+            width: "100%",
+            height: 54,
+            borderRadius: 16,
+            backgroundColor: "#1E4FD8",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 20,
+            shadowColor: "#1E4FD8",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.28,
+            shadowRadius: 8,
+            elevation: 4,
           }}
         >
-          {/* Primary: Sign In Button */}
-          <Pressable
-            onPress={() => navigate("login")}
-            accessibilityRole="button"
-            accessibilityLabel="Sign In"
-            style={({ pressed }) => ({
-              width: "100%",
-              height: 60,
-              borderRadius: 30,
-              backgroundColor: "#0B3C8A",
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: 24,
-              opacity: pressed ? 0.9 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-              shadowColor: "#0B3C8A",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.25,
-              shadowRadius: 8,
-              elevation: 4,
-            })}
-          >
-            <PersonIcon color="#FFFFFF" size={24} />
-            <View
-              style={{
-                width: 1,
-                height: 28,
-                backgroundColor: "rgba(255, 255, 255, 0.4)",
-                marginHorizontal: 16,
-              }}
-            />
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <PersonIcon color="#FFFFFF" size={20} />
             <Text
               style={{
+                marginLeft: 12,
                 color: "#FFFFFF",
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: "600",
                 fontFamily: "Outfit",
               }}
             >
               Sign In
             </Text>
-            <View style={{ flex: 1 }} />
-            <ArrowRightIcon color="#FFFFFF" size={22} />
-          </Pressable>
+          </View>
+          <ArrowRightIcon color="#FFFFFF" size={20} />
+        </TouchableOpacity>
 
-          {/* Secondary: Create Account Button */}
-          <Pressable
-            onPress={() => navigate("register")}
-            accessibilityRole="button"
-            accessibilityLabel="Create Account"
-            style={({ pressed }) => ({
-              width: "100%",
-              height: 60,
-              borderRadius: 30,
-              backgroundColor: pressed ? "#EEF3FB" : "#FFFFFF",
-              borderWidth: 1.5,
-              borderColor: "#0B3C8A",
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: 24,
-              marginTop: 16,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-            })}
-          >
-            <PencilIcon color="#0B3C8A" size={24} />
-            <View
-              style={{
-                width: 1,
-                height: 28,
-                backgroundColor: "rgba(11, 60, 138, 0.3)",
-                marginHorizontal: 16,
-              }}
-            />
+        {/* Secondary: Create Account Button */}
+        <TouchableOpacity
+          onPress={() => navigate("register")}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Create Account"
+          style={{
+            width: "100%",
+            height: 54,
+            borderRadius: 16,
+            backgroundColor: "#FFFFFF",
+            borderWidth: 1.5,
+            borderColor: "#1E4FD8",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 20,
+            marginTop: 14,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <PencilIcon color="#1E4FD8" size={20} />
             <Text
               style={{
-                color: "#0B3C8A",
-                fontSize: 20,
+                marginLeft: 12,
+                color: "#1E4FD8",
+                fontSize: 16,
                 fontWeight: "600",
                 fontFamily: "Outfit",
               }}
             >
               Create Account
             </Text>
-            <View style={{ flex: 1 }} />
-            <ArrowRightIcon color="#0B3C8A" size={22} />
-          </Pressable>
+          </View>
+          <ArrowRightIcon color="#1E4FD8" size={20} />
+        </TouchableOpacity>
 
-          {/* Footer */}
-          <View
+        {/* Footer */}
+        <View
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 20,
+          }}
+        >
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              marginTop: 24,
+              fontSize: 13,
+              color: "#64748B",
+              fontWeight: "500",
+              fontFamily: "Outfit",
+              textAlign: "center",
             }}
           >
-            <View style={{ width: 40, height: 1, backgroundColor: "#B8C4D9" }} />
-            <Text
-              style={{
-                marginHorizontal: 12,
-                fontSize: 13,
-                color: "#5B6B8C",
-                fontWeight: "500",
-                fontFamily: "Outfit",
-              }}
-            >
-              University of the Assumption
-            </Text>
-            <View style={{ width: 40, height: 1, backgroundColor: "#B8C4D9" }} />
-          </View>
+            University of the Assumption
+          </Text>
         </View>
-      </ImageBackground>
+      </View>
     </View>
   );
 }
