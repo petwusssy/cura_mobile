@@ -207,7 +207,7 @@ const GlassInput = memo(
     const [isSecured, setIsSecured] = useState(secureTextEntry);
 
     return (
-      <View style={{ marginBottom: 12 }}>
+      <View style={{ marginBottom: 10 }}>
         <View
           style={{
             flexDirection: "row",
@@ -298,6 +298,10 @@ const AuthModal = memo(function AuthModal({
   onSuccessSignIn,
   onSuccessRegister,
 }: AuthModalProps) {
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const maxCardHeight = Math.max(windowHeight - insets.top - insets.bottom - 24, 280);
+
   const [authMode, setAuthMode] = useState<"signin" | "create_account">(initialMode);
   const animVal = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
@@ -515,19 +519,21 @@ const AuthModal = memo(function AuthModal({
             justifyContent: "center",
             alignItems: "center",
             paddingHorizontal: 24,
+            paddingTop: Math.max(insets.top + 12, 16),
+            paddingBottom: Math.max(insets.bottom + 12, 16),
           }}
           pointerEvents="box-none"
         >
-          {/* 3) Modal Card - plain Animated.View without touchable wrapper */}
+          {/* 3) Modal Card */}
           <Animated.View
             style={{
               width: "100%",
               maxWidth: 400,
-              maxHeight: "88%",
+              maxHeight: maxCardHeight,
               borderRadius: 24,
               borderWidth: 1,
               borderColor: "rgba(255, 255, 255, 0.32)",
-              backgroundColor: "rgba(10, 24, 58, 0.92)",
+              backgroundColor: "rgba(10, 24, 58, 0.94)",
               overflow: "hidden",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 12 },
@@ -567,29 +573,30 @@ const AuthModal = memo(function AuthModal({
               <CloseIcon color="#FFFFFF" size={15} />
             </TouchableOpacity>
 
-            {/* Form Body wrapped in single ScrollView with keyboardShouldPersistTaps="handled" */}
+            {/* Scrollable Form Body (Header + Fields) */}
             <ScrollView
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
               showsVerticalScrollIndicator={false}
+              style={{ flexShrink: 1 }}
               contentContainerStyle={{
-                flexGrow: 1,
-                paddingHorizontal: 24,
-                paddingTop: 24,
-                paddingBottom: 22,
+                paddingHorizontal: 22,
+                paddingTop: 18,
+                paddingBottom: 8,
               }}
             >
-              <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
+              <Animated.View style={{ opacity: contentFadeAnim }}>
                 {authMode === "signin" ? (
                   // Sign In Content
                   <View>
                     <Text
                       style={{
                         color: "#FFFFFF",
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: "700",
                         fontFamily: "Outfit",
                         letterSpacing: 0.3,
+                        paddingRight: 44,
                         textShadowColor: "rgba(0, 0, 0, 0.35)",
                         textShadowOffset: { width: 0, height: 1 },
                         textShadowRadius: 3,
@@ -600,10 +607,11 @@ const AuthModal = memo(function AuthModal({
                     <Text
                       style={{
                         color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: 14,
+                        fontSize: 13.5,
                         fontFamily: "Outfit",
                         marginTop: 4,
-                        marginBottom: 20,
+                        marginBottom: 14,
+                        paddingRight: 36,
                         textShadowColor: "rgba(0, 0, 0, 0.3)",
                         textShadowOffset: { width: 0, height: 1 },
                         textShadowRadius: 2,
@@ -621,7 +629,7 @@ const AuthModal = memo(function AuthModal({
                           borderRadius: 12,
                           paddingHorizontal: 12,
                           paddingVertical: 8,
-                          marginBottom: 14,
+                          marginBottom: 10,
                         }}
                       >
                         <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
@@ -660,80 +668,6 @@ const AuthModal = memo(function AuthModal({
                       onSubmitEditing={handleSignIn}
                       error={signInErrors.password}
                     />
-
-                    <TouchableOpacity
-                      onPress={handleSignIn}
-                      disabled={signInLoading}
-                      activeOpacity={0.85}
-                      style={{
-                        width: "100%",
-                        height: 50,
-                        borderRadius: 14,
-                        backgroundColor: "#1E4FD8",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 8,
-                        shadowColor: "#1E4FD8",
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.35,
-                        shadowRadius: 8,
-                        elevation: 4,
-                      }}
-                    >
-                      {signInLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <Text
-                          style={{
-                            color: "#FFFFFF",
-                            fontSize: 16,
-                            fontWeight: "700",
-                            fontFamily: "Outfit",
-                            letterSpacing: 0.4,
-                          }}
-                        >
-                          Sign In
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-
-                    {/* Switcher */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        marginTop: 18,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "rgba(255, 255, 255, 0.85)",
-                          fontSize: 13.5,
-                          fontFamily: "Outfit",
-                          textShadowColor: "rgba(0, 0, 0, 0.3)",
-                          textShadowOffset: { width: 0, height: 1 },
-                          textShadowRadius: 2,
-                        }}
-                      >
-                        No account?{" "}
-                      </Text>
-                      <TouchableOpacity onPress={() => switchAuthMode("create_account")} activeOpacity={0.7}>
-                        <Text
-                          style={{
-                            color: "#60A5FA",
-                            fontSize: 13.5,
-                            fontWeight: "700",
-                            fontFamily: "Outfit",
-                            textShadowColor: "rgba(0, 0, 0, 0.3)",
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 2,
-                          }}
-                        >
-                          Create one
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
                   </View>
                 ) : (
                   // Create Account Content
@@ -741,10 +675,11 @@ const AuthModal = memo(function AuthModal({
                     <Text
                       style={{
                         color: "#FFFFFF",
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: "700",
                         fontFamily: "Outfit",
                         letterSpacing: 0.3,
+                        paddingRight: 44,
                         textShadowColor: "rgba(0, 0, 0, 0.35)",
                         textShadowOffset: { width: 0, height: 1 },
                         textShadowRadius: 3,
@@ -755,10 +690,11 @@ const AuthModal = memo(function AuthModal({
                     <Text
                       style={{
                         color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: 14,
+                        fontSize: 13.5,
                         fontFamily: "Outfit",
                         marginTop: 4,
-                        marginBottom: 20,
+                        marginBottom: 14,
+                        paddingRight: 36,
                         textShadowColor: "rgba(0, 0, 0, 0.3)",
                         textShadowOffset: { width: 0, height: 1 },
                         textShadowRadius: 2,
@@ -776,7 +712,7 @@ const AuthModal = memo(function AuthModal({
                           borderRadius: 12,
                           paddingHorizontal: 12,
                           paddingVertical: 8,
-                          marginBottom: 14,
+                          marginBottom: 10,
                         }}
                       >
                         <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
@@ -880,85 +816,175 @@ const AuthModal = memo(function AuthModal({
                       onSubmitEditing={handleCreateAccount}
                       error={regErrors.confirmPassword}
                     />
+                  </View>
+                )}
+              </Animated.View>
+            </ScrollView>
 
-                    <TouchableOpacity
-                      onPress={handleCreateAccount}
-                      disabled={regLoading}
-                      activeOpacity={0.85}
-                      style={{
-                        width: "100%",
-                        height: 50,
-                        borderRadius: 14,
-                        backgroundColor: "#1E4FD8",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 8,
-                        shadowColor: "#1E4FD8",
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.35,
-                        shadowRadius: 8,
-                        elevation: 4,
-                      }}
-                    >
-                      {regLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <Text
-                          style={{
-                            color: "#FFFFFF",
-                            fontSize: 16,
-                            fontWeight: "700",
-                            fontFamily: "Outfit",
-                            letterSpacing: 0.4,
-                          }}
-                        >
-                          Create Account
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-
-                    {/* Switcher */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        marginTop: 18,
-                        marginBottom: 4,
-                      }}
-                    >
+            {/* Pinned Footer outside ScrollView (Always visible & reachable) */}
+            <Animated.View
+              style={{
+                opacity: contentFadeAnim,
+                paddingHorizontal: 22,
+                paddingTop: 10,
+                paddingBottom: 18,
+                borderTopWidth: 1,
+                borderTopColor: "rgba(255, 255, 255, 0.12)",
+                backgroundColor: "rgba(10, 24, 58, 0.60)",
+              }}
+            >
+              {authMode === "signin" ? (
+                <>
+                  <TouchableOpacity
+                    onPress={handleSignIn}
+                    disabled={signInLoading}
+                    activeOpacity={0.85}
+                    style={{
+                      width: "100%",
+                      height: 48,
+                      borderRadius: 14,
+                      backgroundColor: "#1E4FD8",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      shadowColor: "#1E4FD8",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 8,
+                      elevation: 4,
+                    }}
+                  >
+                    {signInLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
                       <Text
                         style={{
-                          color: "rgba(255, 255, 255, 0.85)",
+                          color: "#FFFFFF",
+                          fontSize: 16,
+                          fontWeight: "700",
+                          fontFamily: "Outfit",
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        Sign In
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Switcher */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginTop: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "rgba(255, 255, 255, 0.85)",
+                        fontSize: 13.5,
+                        fontFamily: "Outfit",
+                        textShadowColor: "rgba(0, 0, 0, 0.3)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      No account?{" "}
+                    </Text>
+                    <TouchableOpacity onPress={() => switchAuthMode("create_account")} activeOpacity={0.7}>
+                      <Text
+                        style={{
+                          color: "#60A5FA",
                           fontSize: 13.5,
+                          fontWeight: "700",
                           fontFamily: "Outfit",
                           textShadowColor: "rgba(0, 0, 0, 0.3)",
                           textShadowOffset: { width: 0, height: 1 },
                           textShadowRadius: 2,
                         }}
                       >
-                        Already have an account?{" "}
+                        Create one
                       </Text>
-                      <TouchableOpacity onPress={() => switchAuthMode("signin")} activeOpacity={0.7}>
-                        <Text
-                          style={{
-                            color: "#60A5FA",
-                            fontSize: 13.5,
-                            fontWeight: "700",
-                            fontFamily: "Outfit",
-                            textShadowColor: "rgba(0, 0, 0, 0.3)",
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 2,
-                          }}
-                        >
-                          Sign In
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                    </TouchableOpacity>
                   </View>
-                )}
-              </Animated.View>
-            </ScrollView>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    onPress={handleCreateAccount}
+                    disabled={regLoading}
+                    activeOpacity={0.85}
+                    style={{
+                      width: "100%",
+                      height: 48,
+                      borderRadius: 14,
+                      backgroundColor: "#1E4FD8",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      shadowColor: "#1E4FD8",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 8,
+                      elevation: 4,
+                    }}
+                  >
+                    {regLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text
+                        style={{
+                          color: "#FFFFFF",
+                          fontSize: 16,
+                          fontWeight: "700",
+                          fontFamily: "Outfit",
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        Create Account
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Switcher */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginTop: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "rgba(255, 255, 255, 0.85)",
+                        fontSize: 13.5,
+                        fontFamily: "Outfit",
+                        textShadowColor: "rgba(0, 0, 0, 0.3)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      Already have an account?{" "}
+                    </Text>
+                    <TouchableOpacity onPress={() => switchAuthMode("signin")} activeOpacity={0.7}>
+                      <Text
+                        style={{
+                          color: "#60A5FA",
+                          fontSize: 13.5,
+                          fontWeight: "700",
+                          fontFamily: "Outfit",
+                          textShadowColor: "rgba(0, 0, 0, 0.3)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        Sign In
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </Animated.View>
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
@@ -1121,15 +1147,26 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
       <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>
         <WelcomeBackground bgBlurAnim={bgBlurAnim} />
 
-        {/* 2) Header (Top-left) */}
-        <View
+        {/* 2) Header & Hero - Faded out when modal is open */}
+        <Animated.View
+          pointerEvents={authMode !== null ? "none" : "auto"}
           style={{
-            paddingTop: Math.max(insets.top, 20) + 8,
-            paddingHorizontal: 24,
-            flexDirection: "row",
-            alignItems: "center",
+            flex: 1,
+            opacity: bgBlurAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 0],
+            }),
           }}
         >
+          {/* Header (Top-left) */}
+          <View
+            style={{
+              paddingTop: Math.max(insets.top, 20) + 8,
+              paddingHorizontal: 24,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
           <Image
             source={require("../../assets/images/ua-seal.png")}
             style={{ width: 48, height: 48, borderRadius: 24 }}
@@ -1217,6 +1254,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             Your personal health companion for smarter, simpler campus care.
           </Text>
         </View>
+        </Animated.View>
       </View>
 
       {/* 4) Bottom Sheet */}
