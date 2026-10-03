@@ -336,7 +336,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "prescription-detail": return <PrescriptionDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
       case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "request-med-cert": return <RequestMedCertScreen navigate={navigate} goBack={goBack} user={user} />;
-      case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
+      case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} setUser={setUser} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
 
       default: return <WelcomeScreen navigate={navigate} goBack={goBack} />;
     }

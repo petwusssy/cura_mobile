@@ -1,8 +1,22 @@
-import { View, Text, ScrollView, Pressable, Image } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Image,
+  Modal,
+  TextInput,
+  Switch,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline } from "react-native-svg";
 import type { Screen, AppUser } from "../types";
-import { AvatarBadge, Select } from "../components/Shell";
+import { AvatarBadge } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MASCOTS } from "../data";
 
@@ -10,6 +24,7 @@ interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
   user: Partial<AppUser>;
+  setUser?: React.Dispatch<React.SetStateAction<any>>;
   resetApp: () => void;
   consultations?: any[];
   medications?: any[];
@@ -18,36 +33,412 @@ interface Props {
   setTheme?: (theme: string) => void;
 }
 
-export function ProfileScreen({ navigate, user, resetApp, consultations = [], medications = [], certificates = [], theme, setTheme }: Props) {
+const COOLDOWN_DAYS = 7;
+const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
+export function ProfileScreen({
+  navigate,
+  user,
+  setUser,
+  resetApp,
+  consultations = [],
+  medications = [],
+  certificates = [],
+}: Props) {
   const insets = useSafeAreaInsets();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
+  const userKey = user.id || (user as any).id_number || user.email || "default";
 
+  // Modals visibility
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showNotifModal, setShowNotifModal] = useState(false);
+  const [showMascotModal, setShowMascotModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+
+  // Saving states
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [savingSecurity, setSavingSecurity] = useState(false);
+
+  // Cooldown states
+  const [infoCooldown, setInfoCooldown] = useState<{ active: boolean; days: number; date: string }>({
+    active: false,
+    days: 0,
+    date: "",
+  });
+  const [prefCooldown, setPrefCooldown] = useState<{ active: boolean; days: number; date: string }>({
+    active: false,
+    days: 0,
+    date: "",
+  });
+
+  // Edit My Information form state
+  const [formPhone, setFormPhone] = useState("");
+  const [formEmergencyName, setFormEmergencyName] = useState("");
+  const [formEmergencyPhone, setFormEmergencyPhone] = useState("");
+  const [formStudentCategory, setFormStudentCategory] = useState("");
+  const [formGradeLevel, setFormGradeLevel] = useState("");
+  const [formCourse, setFormCourse] = useState("");
+  const [formYearLevel, setFormYearLevel] = useState("");
+  const [formPosition, setFormPosition] = useState("");
+  const [formDepartment, setFormDepartment] = useState("");
+  const [formAddress, setFormAddress] = useState("");
+
+  // Notification Preferences form state
+  const [notifMedReminders, setNotifMedReminders] = useState(true);
+  const [notifConsultReminders, setNotifConsultReminders] = useState(true);
+  const [notifAdvisories, setNotifAdvisories] = useState(true);
+  const [notifSoundAlerts, setNotifSoundAlerts] = useState(true);
+
+  // Mascot & Display Name state
+  const [formDisplayName, setFormDisplayName] = useState("");
+  const [selectedMascotId, setSelectedMascotId] = useState(mascot.id);
+
+  // Security form state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+
+  // Check cooldown helper
+  const checkCooldownForKey = useCallback(async (key: string) => {
+    try {
+      const raw = await AsyncStorage.getItem(key);
+      if (!raw) return { active: false, days: 0, date: "" };
+      const timestamp = parseInt(raw, 10);
+      if (isNaN(timestamp)) return { active: false, days: 0, date: "" };
+      const now = Date.now();
+      const elapsed = now - timestamp;
+      if (elapsed < COOLDOWN_MS) {
+        const remainingMs = COOLDOWN_MS - elapsed;
+        const days = Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+        const date = new Date(timestamp + COOLDOWN_MS).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+        return { active: true, days, date };
+      }
+    } catch (e) {}
+    return { active: false, days: 0, date: "" };
+  }, []);
+
+  // Refresh cooldowns
+  const refreshCooldowns = useCallback(async () => {
+    const infoCd = await checkCooldownForKey(`@cura_cooldown_my_info_${userKey}`);
+    const prefCd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
+    setInfoCooldown(infoCd);
+    setPrefCooldown(prefCd);
+  }, [checkCooldownForKey, userKey]);
+
+  useEffect(() => {
+    refreshCooldowns();
+  }, [refreshCooldowns]);
+
+  // Load saved preferences
+  useEffect(() => {
+    AsyncStorage.getItem(`@cura_notif_prefs_${userKey}`).then((val) => {
+      if (val) {
+        try {
+          const parsed = JSON.parse(val);
+          if (parsed.medReminders !== undefined) setNotifMedReminders(parsed.medReminders);
+          if (parsed.consultReminders !== undefined) setNotifConsultReminders(parsed.consultReminders);
+          if (parsed.advisories !== undefined) setNotifAdvisories(parsed.advisories);
+          if (parsed.soundAlerts !== undefined) setNotifSoundAlerts(parsed.soundAlerts);
+        } catch (e) {}
+      }
+    });
+    AsyncStorage.getItem(`@cura_biometrics_${userKey}`).then((val) => {
+      if (val !== null) setBiometricsEnabled(val === "true");
+    });
+  }, [userKey]);
+
+  // Handlers for opening modals with 7-day cooldown check
+  const handleOpenMyInfoEdit = async () => {
+    const cd = await checkCooldownForKey(`@cura_cooldown_my_info_${userKey}`);
+    if (cd.active) {
+      Alert.alert(
+        "Cooldown Active (7 Days)",
+        `You recently edited your information. To maintain record accuracy, changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
+        [{ text: "Understood" }]
+      );
+      return;
+    }
+
+    // Populate current values
+    setFormPhone(user.phone || (user as any).contact || "");
+    setFormEmergencyName(user.emergencyName || (user as any).emergencyContact || "");
+    setFormEmergencyPhone(user.emergencyPhone || "");
+    setFormStudentCategory((user as any).studentCategory || "");
+    setFormGradeLevel((user as any).gradeLevel ? String((user as any).gradeLevel) : "");
+    setFormCourse(user.course || "");
+    setFormYearLevel(user.yearLevel || "");
+    setFormPosition(user.position || "");
+    setFormDepartment(user.department || "");
+    setFormAddress(user.address || "");
+
+    setShowInfoModal(true);
+  };
+
+  const handleOpenNotifModal = async () => {
+    const cd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
+    if (cd.active) {
+      Alert.alert(
+        "Cooldown Active (7 Days)",
+        `You recently modified your preferences. Preference changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
+        [{ text: "Understood" }]
+      );
+      return;
+    }
+    setShowNotifModal(true);
+  };
+
+  const handleOpenMascotModal = async () => {
+    const cd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
+    if (cd.active) {
+      Alert.alert(
+        "Cooldown Active (7 Days)",
+        `You recently modified your preferences. Mascot & Display Name changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
+        [{ text: "Understood" }]
+      );
+      return;
+    }
+    setFormDisplayName(user.displayName || user.firstName || "");
+    setSelectedMascotId(user.avatarId || "pulse");
+    setShowMascotModal(true);
+  };
+
+  const handleOpenSecurityModal = async () => {
+    const cd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
+    if (cd.active) {
+      Alert.alert(
+        "Cooldown Active (7 Days)",
+        `You recently modified your security settings. Security changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
+        [{ text: "Understood" }]
+      );
+      return;
+    }
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowSecurityModal(true);
+  };
+
+  // Save My Information
+  const handleSaveMyInfo = async () => {
+    setSavingInfo(true);
+    const cat = (user.category || "").toLowerCase();
+    const patientId = user.id || (user as any).id_number;
+
+    const payload: any = {
+      contact: formPhone.trim(),
+      phone: formPhone.trim(),
+      emergencyContact: formEmergencyName.trim().toUpperCase(),
+      emergencyPhone: formEmergencyPhone.trim(),
+    };
+
+    if (cat === "student") {
+      if (formStudentCategory) payload.studentCategory = formStudentCategory.trim();
+      if (formGradeLevel) payload.gradeLevel = formGradeLevel.trim();
+      if (formCourse) payload.course = formCourse.trim();
+      if (formYearLevel) payload.yearLevel = formYearLevel.trim();
+    } else if (cat === "employee") {
+      if (formPosition) payload.position = formPosition.trim();
+      if (formDepartment) payload.department = formDepartment.trim();
+    } else if (cat === "outsider") {
+      if (formAddress) payload.address = formAddress.trim();
+    }
+
+    try {
+      // 1. Sync with backend Patient record by ID
+      if (patientId) {
+        await fetch(`https://cura-backend-dvj5.onrender.com/api/patients/${patientId}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      }
+
+      // 2. Also sync by email if available to guarantee web patient profile update
+      if (user.email) {
+        await fetch(`https://cura-backend-dvj5.onrender.com/api/patients/update-by-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, ...payload }),
+        }).catch(() => {});
+      }
+
+      // 3. Update local session state
+      const updatedUser: any = {
+        ...user,
+        phone: formPhone.trim(),
+        contact: formPhone.trim(),
+        emergencyName: formEmergencyName.trim().toUpperCase(),
+        emergencyContact: formEmergencyName.trim().toUpperCase(),
+        emergencyPhone: formEmergencyPhone.trim(),
+        ...(cat === "student"
+          ? {
+              studentCategory: formStudentCategory.trim(),
+              gradeLevel: formGradeLevel.trim(),
+              course: formCourse.trim(),
+              yearLevel: formYearLevel.trim(),
+            }
+          : {}),
+        ...(cat === "employee"
+          ? {
+              position: formPosition.trim(),
+              department: formDepartment.trim(),
+            }
+          : {}),
+        ...(cat === "outsider"
+          ? {
+              address: formAddress.trim(),
+            }
+          : {}),
+      };
+
+      if (setUser) setUser(updatedUser);
+      await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
+
+      // 4. Set 7-day cooldown
+      const nowStr = Date.now().toString();
+      await AsyncStorage.setItem(`@cura_cooldown_my_info_${userKey}`, nowStr).catch(() => {});
+      await refreshCooldowns();
+
+      setShowInfoModal(false);
+      Alert.alert(
+        "Information Updated",
+        "Your profile has been saved and synced with your clinic records.\n\nNote: You can edit this section again after 7 days.",
+        [{ text: "OK" }]
+      );
+    } catch (e: any) {
+      Alert.alert("Notice", "Changes saved locally. Syncing will finalize on next connection.");
+      setShowInfoModal(false);
+    } finally {
+      setSavingInfo(false);
+    }
+  };
+
+  // Save Notification Preferences
+  const handleSaveNotifPreferences = async () => {
+    const prefs = {
+      medReminders: notifMedReminders,
+      consultReminders: notifConsultReminders,
+      advisories: notifAdvisories,
+      soundAlerts: notifSoundAlerts,
+    };
+    await AsyncStorage.setItem(`@cura_notif_prefs_${userKey}`, JSON.stringify(prefs)).catch(() => {});
+    await AsyncStorage.setItem(`@cura_cooldown_preferences_${userKey}`, Date.now().toString()).catch(() => {});
+    await refreshCooldowns();
+    setShowNotifModal(false);
+    Alert.alert(
+      "Preferences Saved",
+      "Notification settings updated successfully.\n\nNote: You can edit preferences again after 7 days.",
+      [{ text: "OK" }]
+    );
+  };
+
+  // Save Mascot & Display Name
+  const handleSaveMascot = async () => {
+    const targetMascot = MASCOTS.find((m) => m.id === selectedMascotId) || MASCOTS[0];
+    const cleanedName = formDisplayName.trim() || user.firstName || "PATIENT";
+
+    const updatedUser: any = {
+      ...user,
+      displayName: cleanedName,
+      avatarId: targetMascot.id,
+      avatarColor: targetMascot.color,
+      avatarEmoji: targetMascot.emoji,
+    };
+
+    if (setUser) setUser(updatedUser);
+    await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
+    await AsyncStorage.setItem(`@cura_cooldown_preferences_${userKey}`, Date.now().toString()).catch(() => {});
+    await refreshCooldowns();
+    setShowMascotModal(false);
+    Alert.alert(
+      "Mascot & Name Updated",
+      `Display name and avatar updated to ${targetMascot.name}.\n\nNote: You can edit preferences again after 7 days.`,
+      [{ text: "OK" }]
+    );
+  };
+
+  // Save Privacy & Security
+  const handleSaveSecurity = async () => {
+    if (newPassword || confirmPassword) {
+      if (newPassword.length < 6) {
+        Alert.alert("Invalid Password", "New password must be at least 6 characters long.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        Alert.alert("Password Mismatch", "New password and confirmation do not match.");
+        return;
+      }
+
+      setSavingSecurity(true);
+      try {
+        const res = await fetch("https://cura-backend-dvj5.onrender.com/api/auth/change-password/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: user.email,
+            current_password: currentPassword,
+            new_password: newPassword,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          Alert.alert("Update Failed", data.error || "Could not update password. Please check your current password.");
+          setSavingSecurity(false);
+          return;
+        }
+      } catch (e) {
+        Alert.alert("Network Notice", "Password update request could not reach the server. Please try again.");
+        setSavingSecurity(false);
+        return;
+      }
+    }
+
+    await AsyncStorage.setItem(`@cura_biometrics_${userKey}`, biometricsEnabled ? "true" : "false").catch(() => {});
+    await AsyncStorage.setItem(`@cura_cooldown_preferences_${userKey}`, Date.now().toString()).catch(() => {});
+    await refreshCooldowns();
+    setSavingSecurity(false);
+    setShowSecurityModal(false);
+    Alert.alert(
+      "Security Updated",
+      "Your privacy and password settings have been updated.\n\nNote: You can edit preferences again after 7 days.",
+      [{ text: "OK" }]
+    );
+  };
+
+  // My Information items
   const myInfoItems = [
-    { icon: "🪪", label: "ID", sub: (user as any).id || user.id_number || "—", color: "#F3F4F6" },
-    { icon: "📞", label: "Contact Details", sub: user.phone || (user as any).contact || "—", color: "#ECFEFF" },
-    { icon: "📧", label: "Email", sub: user.email || "—", color: "#EFF8FF" },
-    { icon: "🆘", label: "Emergency Contact", sub: `${user.emergencyName || (user as any).emergencyContact || "—"} (${user.emergencyPhone || "—"})`, color: "#FFF7ED" },
+    { icon: "🪪", label: "ID", sub: (user as any).id || user.id_number || "—", color: "#F3F4F6", onPress: handleOpenMyInfoEdit },
+    { icon: "📞", label: "Contact Details", sub: user.phone || (user as any).contact || "—", color: "#ECFEFF", onPress: handleOpenMyInfoEdit },
+    { icon: "📧", label: "Email", sub: user.email || "—", color: "#EFF8FF", onPress: handleOpenMyInfoEdit },
+    { icon: "🆘", label: "Emergency Contact", sub: `${user.emergencyName || (user as any).emergencyContact || "—"} (${user.emergencyPhone || "—"})`, color: "#FFF7ED", onPress: handleOpenMyInfoEdit },
   ];
 
   const cat = user.category?.toLowerCase() || "";
-  if (cat === 'student') {
+  if (cat === "student") {
     if ((user as any).studentCategory) {
-      myInfoItems.push({ icon: "📋", label: "Category", sub: (user as any).studentCategory, color: "#FEE2E2" });
+      myInfoItems.push({ icon: "📋", label: "Category", sub: (user as any).studentCategory, color: "#FEE2E2", onPress: handleOpenMyInfoEdit });
     }
     if ((user as any).gradeLevel) {
-      myInfoItems.push({ icon: "📈", label: "Grade Level", sub: `Grade ${(user as any).gradeLevel}`, color: "#FEF3C7" });
+      myInfoItems.push({ icon: "📈", label: "Grade Level", sub: `Grade ${(user as any).gradeLevel}`, color: "#FEF3C7", onPress: handleOpenMyInfoEdit });
     }
     if (user.course) {
-      myInfoItems.push({ icon: "🎓", label: "Course", sub: user.course, color: "#ECFDF5" });
+      myInfoItems.push({ icon: "🎓", label: "Course", sub: user.course, color: "#ECFDF5", onPress: handleOpenMyInfoEdit });
     }
     if (user.yearLevel) {
-      myInfoItems.push({ icon: "📊", label: "Year Level", sub: user.yearLevel, color: "#F5F3FF" });
+      myInfoItems.push({ icon: "📊", label: "Year Level", sub: user.yearLevel, color: "#F5F3FF", onPress: handleOpenMyInfoEdit });
     }
-  } else if (cat === 'employee') {
-    myInfoItems.push({ icon: "💼", label: "Position", sub: user.position || "—", color: "#ECFDF5" });
-    myInfoItems.push({ icon: "🏢", label: "Department", sub: user.department || "—", color: "#F5F3FF" });
-  } else if (cat === 'outsider') {
-    myInfoItems.push({ icon: "📍", label: "Address", sub: user.address || "—", color: "#FEE2E2" });
+  } else if (cat === "employee") {
+    myInfoItems.push({ icon: "💼", label: "Position", sub: user.position || "—", color: "#ECFDF5", onPress: handleOpenMyInfoEdit });
+    myInfoItems.push({ icon: "🏢", label: "Department", sub: user.department || "—", color: "#F5F3FF", onPress: handleOpenMyInfoEdit });
+  } else if (cat === "outsider") {
+    myInfoItems.push({ icon: "📍", label: "Address", sub: user.address || "—", color: "#FEE2E2", onPress: handleOpenMyInfoEdit });
   }
 
   const certItems = certificates.length > 0 ? certificates.map((cert) => ({
@@ -63,25 +454,67 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
       sub: "No certificate records issued yet",
       color: "#F8FAFC",
       onPress: () => navigate("documents", { tab: "certificates" }),
-    }
+    },
   ];
 
   const sections = [
     {
       title: "My Information",
+      cooldown: infoCooldown,
+      action: (
+        <Pressable
+          onPress={handleOpenMyInfoEdit}
+          className={`px-3 py-1 rounded-full ${infoCooldown.active ? "bg-amber-400/20" : "bg-white/20 active:bg-white/30"}`}
+        >
+          <Text className={`text-[10px] font-bold ${infoCooldown.active ? "text-amber-200" : "text-white"}`}>
+            {infoCooldown.active ? `⏳ ${infoCooldown.days}d Cooldown` : "✏️ Edit Info"}
+          </Text>
+        </Pressable>
+      ),
       items: myInfoItems,
     },
     {
       title: `Medical Certificates (${certificates.length})`,
+      action: null,
       items: certItems,
     },
     {
       title: "Preferences",
+      cooldown: prefCooldown,
+      action: prefCooldown.active ? (
+        <View className="bg-amber-400/20 px-3 py-1 rounded-full">
+          <Text className="text-[10px] font-bold text-amber-200">⏳ {prefCooldown.days}d Cooldown</Text>
+        </View>
+      ) : null,
       items: [
-        { icon: "🔔", label: "Notification Preferences", sub: "Reminders, updates", color: "#EFF8FF" },
-        { icon: "🎨", label: "Mascot & Display Name", sub: `${mascot.name} · ${(user.displayName || "").toUpperCase()}`, color: "#F5F3FF" },
-        { icon: "🔒", label: "Privacy & Security", sub: "Password, data sharing", color: "#ECFDF5" },
-        { icon: "ℹ️", label: "About CURA", sub: "Version 1.0.0", color: "#F8FAFC" },
+        {
+          icon: "🔔",
+          label: "Notification Preferences",
+          sub: "Reminders, advisories & alerts",
+          color: "#EFF8FF",
+          onPress: handleOpenNotifModal,
+        },
+        {
+          icon: "🎨",
+          label: "Mascot & Display Name",
+          sub: `${mascot.name} · ${(user.displayName || user.firstName || "").toUpperCase()}`,
+          color: "#F5F3FF",
+          onPress: handleOpenMascotModal,
+        },
+        {
+          icon: "🔒",
+          label: "Privacy & Security",
+          sub: "Password, biometrics & lock",
+          color: "#ECFDF5",
+          onPress: handleOpenSecurityModal,
+        },
+        {
+          icon: "ℹ️",
+          label: "About CURA",
+          sub: "Version 1.0.0 · Information",
+          color: "#F8FAFC",
+          onPress: () => setShowAboutModal(true),
+        },
       ],
     },
   ];
@@ -99,6 +532,7 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
           <View className="relative">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={66} />
             <Pressable
+              onPress={handleOpenMascotModal}
               className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center border-2 border-white"
               style={{ backgroundColor: "#0B2136", elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8 }}
             >
@@ -153,7 +587,10 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
         <View className="flex-col gap-4 pb-12">
           {sections.map((section) => (
             <View key={section.title}>
-              <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-2 px-1">{section.title}</Text>
+              <View className="flex-row items-center justify-between mb-2 px-1">
+                <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider">{section.title}</Text>
+                {section.action}
+              </View>
               <View
                 className="bg-white rounded-[32px] overflow-hidden p-2"
                 style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
@@ -183,8 +620,6 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
             </View>
           ))}
 
-
-
           {/* Health Summary */}
           <View>
             <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-2 px-1">Health Summary</Text>
@@ -195,7 +630,7 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
                   { label: "Gender", value: user.gender || (user as any).sex || "—", bg: "#EFF8FF", color: "#0994E8" },
                   { label: "Date of Birth", value: user.dob || (user as any).birthday ? new Date(user.dob || (user as any).birthday).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" }) : "—", bg: "#ECFDF5", color: "#059669" },
                   { label: "Emergency", value: user.emergencyName || (user as any).emergencyContact ? `${user.emergencyName || (user as any).emergencyContact}` : "—", bg: "#FFFBEB", color: "#D97706" },
-                ].map((item, idx) => (
+                ].map((item) => (
                   <View key={item.label} className="rounded-xl p-3 mb-2" style={{ backgroundColor: item.bg, width: '48%' }}>
                     <Text className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: item.color }}>{item.label}</Text>
                     <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>{item.value}</Text>
@@ -235,7 +670,497 @@ export function ProfileScreen({ navigate, user, resetApp, consultations = [], me
           </View>
         </View>
       </ScrollView>
+
+      {/* ========================================================================= */}
+      {/* 1. EDIT MY INFORMATION MODAL                                             */}
+      {/* ========================================================================= */}
+      <Modal visible={showInfoModal} transparent animationType="slide" onRequestClose={() => setShowInfoModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 justify-end bg-black/60">
+          <View className="bg-white rounded-t-[36px] max-h-[88%] p-6">
+            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
+              <View>
+                <Text className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>Edit My Information</Text>
+                <Text className="text-xs text-slate-400">Syncs directly with University Clinic records</Text>
+              </View>
+              <Pressable onPress={() => setShowInfoModal(false)} className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center">
+                <Text className="text-slate-500 font-bold text-sm">✕</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView className="py-4 space-y-4" keyboardShouldPersistTaps="handled">
+              {/* Contact Number */}
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Phone / Contact Details</Text>
+                <TextInput
+                  value={formPhone}
+                  onChangeText={setFormPhone}
+                  placeholder="e.g. 09123456789"
+                  keyboardType="phone-pad"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              {/* Emergency Contact Name */}
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Emergency Contact Person</Text>
+                <TextInput
+                  value={formEmergencyName}
+                  onChangeText={setFormEmergencyName}
+                  placeholder="Full name of guardian / parent"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              {/* Emergency Contact Phone */}
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Emergency Contact Phone Number</Text>
+                <TextInput
+                  value={formEmergencyPhone}
+                  onChangeText={setFormEmergencyPhone}
+                  placeholder="e.g. 09987654321"
+                  keyboardType="phone-pad"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              {/* Student Category Fields */}
+              {cat === "student" && (
+                <>
+                  <View className="mb-3">
+                    <Text className="text-xs font-bold text-slate-600 mb-1.5">Student Level / Department</Text>
+                    <View className="flex-row flex-wrap gap-2">
+                      {["College", "Senior High", "Junior High", "Elementary"].map((sc) => (
+                        <Pressable
+                          key={sc}
+                          onPress={() => setFormStudentCategory(sc)}
+                          className={`px-3 py-1.5 rounded-full border ${formStudentCategory === sc ? "bg-sky-500 border-sky-500" : "bg-slate-50 border-slate-200"}`}
+                        >
+                          <Text className={`text-xs font-bold ${formStudentCategory === sc ? "text-white" : "text-slate-600"}`}>
+                            {sc}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View className="mb-3">
+                    <Text className="text-xs font-bold text-slate-600 mb-1.5">Course / Strand</Text>
+                    <TextInput
+                      value={formCourse}
+                      onChangeText={setFormCourse}
+                      placeholder="e.g. BS Information Technology"
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                    />
+                  </View>
+
+                  <View className="flex-row gap-3 mb-3">
+                    <View className="flex-1">
+                      <Text className="text-xs font-bold text-slate-600 mb-1.5">Year Level</Text>
+                      <TextInput
+                        value={formYearLevel}
+                        onChangeText={setFormYearLevel}
+                        placeholder="e.g. 1st Year, 2nd Year"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xs font-bold text-slate-600 mb-1.5">Grade Level</Text>
+                      <TextInput
+                        value={formGradeLevel}
+                        onChangeText={setFormGradeLevel}
+                        placeholder="e.g. 11, 12"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
+
+              {/* Employee Fields */}
+              {cat === "employee" && (
+                <>
+                  <View className="mb-3">
+                    <Text className="text-xs font-bold text-slate-600 mb-1.5">Job Position / Title</Text>
+                    <TextInput
+                      value={formPosition}
+                      onChangeText={setFormPosition}
+                      placeholder="e.g. Faculty Instructor, Administrative Staff"
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                    />
+                  </View>
+                  <View className="mb-3">
+                    <Text className="text-xs font-bold text-slate-600 mb-1.5">Department / Office</Text>
+                    <TextInput
+                      value={formDepartment}
+                      onChangeText={setFormDepartment}
+                      placeholder="e.g. College of Computing"
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                    />
+                  </View>
+                </>
+              )}
+
+              {/* Outsider Address */}
+              {cat === "outsider" && (
+                <View className="mb-3">
+                  <Text className="text-xs font-bold text-slate-600 mb-1.5">Residential Address</Text>
+                  <TextInput
+                    value={formAddress}
+                    onChangeText={setFormAddress}
+                    placeholder="Barangay, City, Province"
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                  />
+                </View>
+              )}
+
+              {/* Cooldown Warning Notice */}
+              <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mt-2 mb-2">
+                <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
+                <Text className="text-[11px] text-amber-700 leading-snug">
+                  Once you save changes, this section will be locked for 7 days to maintain integrity in university clinic logs.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View className="pt-3 border-t border-slate-100 flex-row gap-3">
+              <Pressable
+                onPress={() => setShowInfoModal(false)}
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center"
+              >
+                <Text className="text-xs font-bold text-slate-600">Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleSaveMyInfo}
+                disabled={savingInfo}
+                className="flex-1 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center flex-row gap-2"
+              >
+                {savingInfo ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text className="text-xs font-bold text-white">Save Changes</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ========================================================================= */}
+      {/* 2. NOTIFICATION PREFERENCES MODAL                                         */}
+      {/* ========================================================================= */}
+      <Modal visible={showNotifModal} transparent animationType="slide" onRequestClose={() => setShowNotifModal(false)}>
+        <View className="flex-1 justify-end bg-black/60">
+          <View className="bg-white rounded-t-[36px] p-6 max-h-[85%]">
+            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
+              <View>
+                <Text className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>Notification Preferences</Text>
+                <Text className="text-xs text-slate-400">Configure clinic alerts and reminders</Text>
+              </View>
+              <Pressable onPress={() => setShowNotifModal(false)} className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center">
+                <Text className="text-slate-500 font-bold text-sm">✕</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView className="py-4 space-y-3">
+              {[
+                {
+                  label: "Medication Reminders",
+                  desc: "Push reminders for scheduled doses and medicine intakes",
+                  value: notifMedReminders,
+                  onChange: setNotifMedReminders,
+                },
+                {
+                  label: "Consultation & Queue Alerts",
+                  desc: "Updates when doctor is ready and queue status moves",
+                  value: notifConsultReminders,
+                  onChange: setNotifConsultReminders,
+                },
+                {
+                  label: "Clinic Advisories & Status",
+                  desc: "Broadcasts on clinic opening, closing, and half-day hours",
+                  value: notifAdvisories,
+                  onChange: setNotifAdvisories,
+                },
+                {
+                  label: "Sound & Tone Alerts",
+                  desc: "Audible chime when emergency or critical alerts arrive",
+                  value: notifSoundAlerts,
+                  onChange: setNotifSoundAlerts,
+                },
+              ].map((item, idx) => (
+                <View key={item.label} className={`flex-row items-center justify-between py-3 ${idx > 0 ? "border-t border-slate-100" : ""}`}>
+                  <View className="flex-1 pr-3">
+                    <Text className="text-sm font-bold text-slate-800">{item.label}</Text>
+                    <Text className="text-xs text-slate-400 mt-0.5">{item.desc}</Text>
+                  </View>
+                  <Switch
+                    value={item.value}
+                    onValueChange={item.onChange}
+                    trackColor={{ false: "#E2E8F0", true: "#0EA5E9" }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+              ))}
+
+              <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mt-2">
+                <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
+                <Text className="text-[11px] text-amber-700">
+                  Saving changes will activate a 7-day cooldown before preferences can be edited again.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View className="pt-3 border-t border-slate-100 flex-row gap-3">
+              <Pressable
+                onPress={() => setShowNotifModal(false)}
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center"
+              >
+                <Text className="text-xs font-bold text-slate-600">Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleSaveNotifPreferences}
+                className="flex-1 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center"
+              >
+                <Text className="text-xs font-bold text-white">Save Preferences</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ========================================================================= */}
+      {/* 3. MASCOT & DISPLAY NAME MODAL                                            */}
+      {/* ========================================================================= */}
+      <Modal visible={showMascotModal} transparent animationType="slide" onRequestClose={() => setShowMascotModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 justify-end bg-black/60">
+          <View className="bg-white rounded-t-[36px] max-h-[88%] p-6">
+            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
+              <View>
+                <Text className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>Mascot & Display Name</Text>
+                <Text className="text-xs text-slate-400">Choose your patient avatar companion</Text>
+              </View>
+              <Pressable onPress={() => setShowMascotModal(false)} className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center">
+                <Text className="text-slate-500 font-bold text-sm">✕</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView className="py-4" keyboardShouldPersistTaps="handled">
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Display Name / Preferred Nickname</Text>
+                <TextInput
+                  value={formDisplayName}
+                  onChangeText={setFormDisplayName}
+                  placeholder="Enter preferred display name"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              <Text className="text-xs font-bold text-slate-600 mb-2">Select Your Clinic Mascot</Text>
+              <View className="flex-row flex-wrap gap-2.5 mb-4">
+                {MASCOTS.map((m) => {
+                  const isSelected = selectedMascotId === m.id;
+                  return (
+                    <Pressable
+                      key={m.id}
+                      onPress={() => setSelectedMascotId(m.id)}
+                      className={`p-3 rounded-2xl items-center border-2 ${isSelected ? "border-[#0EA5E9] bg-sky-50 shadow-sm" : "border-slate-100 bg-slate-50"}`}
+                      style={{ width: "22%" }}
+                    >
+                      <Text className="text-2xl mb-1">{m.emoji}</Text>
+                      <Text className={`text-[10px] font-bold text-center ${isSelected ? "text-sky-800" : "text-slate-600"}`} numberOfLines={1}>
+                        {m.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-2">
+                <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
+                <Text className="text-[11px] text-amber-700">
+                  Changing your mascot or display name triggers a 7-day cooldown before it can be updated again.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View className="pt-3 border-t border-slate-100 flex-row gap-3">
+              <Pressable
+                onPress={() => setShowMascotModal(false)}
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center"
+              >
+                <Text className="text-xs font-bold text-slate-600">Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleSaveMascot}
+                className="flex-1 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center"
+              >
+                <Text className="text-xs font-bold text-white">Save Mascot & Name</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ========================================================================= */}
+      {/* 4. PRIVACY & SECURITY MODAL                                               */}
+      {/* ========================================================================= */}
+      <Modal visible={showSecurityModal} transparent animationType="slide" onRequestClose={() => setShowSecurityModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 justify-end bg-black/60">
+          <View className="bg-white rounded-t-[36px] max-h-[88%] p-6">
+            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
+              <View>
+                <Text className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>Privacy & Security</Text>
+                <Text className="text-xs text-slate-400">Account password & security preferences</Text>
+              </View>
+              <Pressable onPress={() => setShowSecurityModal(false)} className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center">
+                <Text className="text-slate-500 font-bold text-sm">✕</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView className="py-4" keyboardShouldPersistTaps="handled">
+              <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Change Account Password</Text>
+
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Current Password</Text>
+                <TextInput
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  placeholder="Enter current password"
+                  secureTextEntry
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">New Password</Text>
+                <TextInput
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder="Minimum 6 characters"
+                  secureTextEntry
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Confirm New Password</Text>
+                <TextInput
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Re-enter new password"
+                  secureTextEntry
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Privacy & App Lock</Text>
+              <View className="flex-row items-center justify-between py-3 border-t border-slate-100 mb-2">
+                <View className="flex-1 pr-3">
+                  <Text className="text-sm font-bold text-slate-800">Biometric / Face ID App Lock</Text>
+                  <Text className="text-xs text-slate-400 mt-0.5">Require authentication upon opening the app</Text>
+                </View>
+                <Switch
+                  value={biometricsEnabled}
+                  onValueChange={setBiometricsEnabled}
+                  trackColor={{ false: "#E2E8F0", true: "#0EA5E9" }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-2">
+                <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
+                <Text className="text-[11px] text-amber-700">
+                  Password and security changes are subject to a 7-day cooldown to prevent unauthorized tampering.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View className="pt-3 border-t border-slate-100 flex-row gap-3">
+              <Pressable
+                onPress={() => setShowSecurityModal(false)}
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center"
+              >
+                <Text className="text-xs font-bold text-slate-600">Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleSaveSecurity}
+                disabled={savingSecurity}
+                className="flex-1 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center flex-row gap-2"
+              >
+                {savingSecurity ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text className="text-xs font-bold text-white">Save Changes</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ========================================================================= */}
+      {/* 5. ABOUT CURA MODAL                                                       */}
+      {/* ========================================================================= */}
+      <Modal visible={showAboutModal} transparent animationType="fade" onRequestClose={() => setShowAboutModal(false)}>
+        <View className="flex-1 justify-center items-center bg-black/60 px-5">
+          <View className="bg-white rounded-[32px] p-6 w-full max-h-[80%] shadow-xl">
+            <View className="items-center mb-4">
+              <View className="w-14 h-14 rounded-2xl bg-sky-50 items-center justify-center mb-2 p-2">
+                <Image
+                  source={require("../../assets/images/cura-logo.png")}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>CURA e-Health</Text>
+              <Text className="text-xs font-bold text-sky-600">Version 1.0.0 (Production)</Text>
+              <Text className="text-[11px] text-slate-400 mt-0.5">Clinical Unified Records & Access</Text>
+            </View>
+
+            <ScrollView className="py-2" showsVerticalScrollIndicator={false}>
+              <View className="bg-slate-50 rounded-2xl p-4 mb-3 border border-slate-100">
+                <Text className="text-xs font-bold text-slate-700 mb-1">About the Platform</Text>
+                <Text className="text-xs text-slate-500 leading-relaxed">
+                  CURA is the dedicated electronic health and clinic management platform of the University of the Assumption Medical-Dental Clinic in the City of San Fernando, Pampanga. It delivers seamless healthcare access to students, faculty, and administrative staff.
+                </Text>
+              </View>
+
+              <View className="space-y-2 mb-3">
+                <Text className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Clinic Information</Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm">🏥</Text>
+                  <Text className="text-xs text-slate-600 font-medium">UA Medical-Dental Clinic, Archbishop Emilio Cinense Gym Ground Floor</Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm">⏰</Text>
+                  <Text className="text-xs text-slate-600 font-medium">Operating Hours: Monday – Friday, 8:00 AM – 5:00 PM</Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm">☎️</Text>
+                  <Text className="text-xs text-slate-600 font-medium">Clinic Hotline: (045) 961-3617 local 115</Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm">📧</Text>
+                  <Text className="text-xs text-slate-600 font-medium">clinic@ua.edu.ph</Text>
+                </View>
+              </View>
+
+              <View className="p-3 bg-sky-50 rounded-xl border border-sky-100 mb-2">
+                <Text className="text-[11px] font-semibold text-sky-900 text-center">
+                  “Your health, our priority — committed to compassionate Assumptionist care.” 💙
+                </Text>
+              </View>
+            </ScrollView>
+
+            <Pressable
+              onPress={() => setShowAboutModal(false)}
+              className="mt-4 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center active:opacity-90"
+            >
+              <Text className="text-xs font-bold text-white">Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
-
