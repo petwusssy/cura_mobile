@@ -1,8 +1,27 @@
-import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TouchableOpacity, TextInput, Image, ImageBackground, useWindowDimensions } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  ImageBackground,
+  useWindowDimensions,
+  Animated,
+  Easing,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Polyline, Circle } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Rect } from "react-native-svg";
+import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import type { Screen } from "../types";
@@ -77,9 +96,173 @@ function ArrowRightIcon({ color = "#FFFFFF", size = 20 }: { color?: string; size
   );
 }
 
+function CloseIcon({ color = "#FFFFFF", size = 16 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M18 6L6 18M6 6l12 12" />
+    </Svg>
+  );
+}
+
+function UserIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <Circle cx="12" cy="7" r="4" />
+    </Svg>
+  );
+}
+
+function MailIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Rect width="20" height="16" x="2" y="4" rx="2" />
+      <Path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </Svg>
+  );
+}
+
+function LockIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </Svg>
+  );
+}
+
+function IdCardIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Rect width="20" height="14" x="2" y="5" rx="2" />
+      <Path d="M6 10h4" />
+      <Path d="M6 14h8" />
+      <Path d="M16 10h2" />
+    </Svg>
+  );
+}
+
+function EyeIcon({ open, color = "#FFFFFF", size = 18 }: { open: boolean; color?: string; size?: number }) {
+  if (open) {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+        <Circle cx="12" cy="12" r="3" />
+      </Svg>
+    );
+  }
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+      <Path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+      <Path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+      <Path d="M2 2l20 20" />
+    </Svg>
+  );
+}
+
+// ── Glassmorphism Input Component ────────────────────────────────────────────
+
+interface GlassInputProps {
+  icon?: React.ReactNode;
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  secureTextEntry?: boolean;
+  showPasswordToggle?: boolean;
+  error?: string;
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+}
+
+function GlassInput({
+  icon,
+  placeholder,
+  value,
+  onChangeText,
+  secureTextEntry = false,
+  showPasswordToggle = false,
+  error,
+  keyboardType = "default",
+  autoCapitalize = "none",
+}: GlassInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isSecured, setIsSecured] = useState(secureTextEntry);
+
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          height: 48,
+          borderRadius: 12,
+          backgroundColor: isFocused
+            ? "rgba(255, 255, 255, 0.25)"
+            : "rgba(255, 255, 255, 0.15)",
+          borderWidth: isFocused ? 1.5 : 1,
+          borderColor: isFocused ? "#38BDF8" : "rgba(255, 255, 255, 0.28)",
+          paddingHorizontal: 14,
+          shadowColor: isFocused ? "#38BDF8" : "transparent",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: isFocused ? 0.45 : 0,
+          shadowRadius: 8,
+          elevation: isFocused ? 3 : 0,
+        }}
+      >
+        {icon ? <View style={{ marginRight: 10 }}>{icon}</View> : null}
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="rgba(255, 255, 255, 0.62)"
+          secureTextEntry={isSecured}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          style={{
+            flex: 1,
+            color: "#FFFFFF",
+            fontSize: 14.5,
+            fontFamily: "Outfit",
+            paddingVertical: 0,
+          }}
+        />
+        {showPasswordToggle ? (
+          <TouchableOpacity
+            onPress={() => setIsSecured((prev) => !prev)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={{ marginLeft: 8 }}
+          >
+            <EyeIcon open={!isSecured} color="rgba(255, 255, 255, 0.85)" size={18} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      {error ? (
+        <Text
+          style={{
+            color: "#FCA5A5",
+            fontSize: 12,
+            fontFamily: "Outfit",
+            marginTop: 4,
+            marginLeft: 4,
+            textShadowColor: "rgba(0, 0, 0, 0.4)",
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 2,
+          }}
+        >
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
-export function WelcomeScreen({ navigate }: NavProps) {
+export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
@@ -87,6 +270,209 @@ export function WelcomeScreen({ navigate }: NavProps) {
   const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
   const wordmarkSize = width < 380 || height < 700 ? 50 : 60;
   const taglineSize = width < 380 ? 14 : 16;
+
+  // Modal State & Animations
+  const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(null);
+  const animVal = useRef(new Animated.Value(0)).current;
+  const contentFadeAnim = useRef(new Animated.Value(1)).current;
+
+  // Sign In Form State
+  const [signInIdentifier, setSignInIdentifier] = useState("");
+  const [signInPassword, setSignInPassword] = useState("");
+  const [signInErrors, setSignInErrors] = useState<Record<string, string>>({});
+  const [signInLoading, setSignInLoading] = useState(false);
+  const [signInGeneralError, setSignInGeneralError] = useState("");
+
+  // Create Account Form State
+  const [fullName, setFullName] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [regErrors, setRegErrors] = useState<Record<string, string>>({});
+  const [regLoading, setRegLoading] = useState(false);
+  const [regGeneralError, setRegGeneralError] = useState("");
+
+  const triggerHaptic = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+  };
+
+  const openAuthModal = (mode: "signin" | "create_account") => {
+    triggerHaptic();
+    setSignInErrors({});
+    setSignInGeneralError("");
+    setRegErrors({});
+    setRegGeneralError("");
+    setAuthMode(mode);
+    contentFadeAnim.setValue(1);
+    Animated.timing(animVal, {
+      toValue: 1,
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeAuthModal = () => {
+    Animated.timing(animVal, {
+      toValue: 0,
+      duration: 260,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      setAuthMode(null);
+    });
+  };
+
+  const switchAuthMode = (newMode: "signin" | "create_account") => {
+    triggerHaptic();
+    Animated.sequence([
+      Animated.timing(contentFadeAnim, { toValue: 0, duration: 110, useNativeDriver: true }),
+      Animated.timing(contentFadeAnim, { toValue: 1, duration: 170, useNativeDriver: true }),
+    ]).start();
+    setTimeout(() => {
+      setAuthMode(newMode);
+      setSignInErrors({});
+      setSignInGeneralError("");
+      setRegErrors({});
+      setRegGeneralError("");
+    }, 110);
+  };
+
+  // Sign In Handler
+  const handleSignIn = async () => {
+    const errs: Record<string, string> = {};
+    if (!signInIdentifier.trim()) errs.identifier = "Username or email is required";
+    if (!signInPassword) errs.password = "Password is required";
+    if (Object.keys(errs).length > 0) {
+      setSignInErrors(errs);
+      return;
+    }
+    setSignInErrors({});
+    setSignInGeneralError("");
+    setSignInLoading(true);
+
+    try {
+      const loginRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: signInIdentifier.trim(), password: signInPassword }),
+      });
+      const resText = await loginRes.text();
+      let loginData: any = {};
+      try { loginData = resText ? JSON.parse(resText) : {}; } catch {}
+
+      if (loginRes.ok) {
+        const userEmail = loginData.user?.email || signInIdentifier.trim();
+        const userName = (loginData.user?.name || userEmail.split("@")[0]).toUpperCase();
+        if (setUser) {
+          setUser((prev: any) => ({
+            ...prev,
+            email: userEmail,
+            firstName: userName,
+            displayName: userName,
+            lastName: "",
+            accessToken: loginData.access,
+          }));
+        }
+        if (loginData.access) {
+          AsyncStorage.setItem("@cura_access_token", loginData.access).catch(() => {});
+        }
+        if (loadUserData) {
+          loadUserData(userEmail);
+        }
+        closeAuthModal();
+        navigate("home");
+      } else {
+        setSignInGeneralError(loginData.detail || loginData.error || "Invalid username/email or password.");
+      }
+    } catch (e) {
+      setSignInGeneralError("Network error. Please check your connection.");
+    } finally {
+      setSignInLoading(false);
+    }
+  };
+
+  // Create Account Handler
+  const handleCreateAccount = async () => {
+    const errs: Record<string, string> = {};
+    if (!fullName.trim()) errs.fullName = "Full name is required";
+    if (!idNumber.trim()) errs.idNumber = "Student / Employee ID is required";
+    if (!email.trim()) {
+      errs.email = "Email address is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errs.email = "Enter a valid email address";
+    }
+    if (!username.trim()) errs.username = "Username is required";
+    if (!password) {
+      errs.password = "Password is required";
+    } else if (password.length < 8) {
+      errs.password = "At least 8 characters required";
+    }
+    if (password !== confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+    setRegErrors({});
+    setRegGeneralError("");
+    setRegLoading(true);
+
+    try {
+      const regRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/register/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+          username: username.trim(),
+          name: fullName.trim(),
+          id_number: idNumber.trim(),
+        }),
+      });
+      const resText = await regRes.text();
+      let regData: any = {};
+      try { regData = resText ? JSON.parse(resText) : {}; } catch {}
+
+      if (regRes.ok || regData.access) {
+        const userEmail = regData.user?.email || email.trim();
+        const userName = fullName.trim().toUpperCase() || (regData.user?.name || userEmail.split("@")[0]).toUpperCase();
+        if (setUser) {
+          setUser((prev: any) => ({
+            ...prev,
+            id: idNumber.trim(),
+            id_number: idNumber.trim(),
+            email: userEmail,
+            name: fullName.trim(),
+            firstName: userName,
+            displayName: userName,
+            lastName: "",
+            accessToken: regData.access,
+          }));
+        }
+        if (regData.access) {
+          AsyncStorage.setItem("@cura_access_token", regData.access).catch(() => {});
+        }
+        if (loadUserData) {
+          loadUserData(userEmail);
+        }
+        closeAuthModal();
+        navigate("onboard-personal");
+      } else {
+        setRegGeneralError(regData.error || regData.detail || "Registration failed. Account may already exist.");
+      }
+    } catch (e) {
+      setRegGeneralError("Network error. Please try again.");
+    } finally {
+      setRegLoading(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#08183C" }}>
@@ -124,6 +510,20 @@ export function WelcomeScreen({ navigate }: NavProps) {
             bottom: 0,
           }}
         />
+
+        {/* Animated Background Blur & Dark-Blue Tint on Modal Open */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              opacity: animVal,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(6, 18, 48, 0.38)" }]} />
+        </Animated.View>
 
         {/* 2) Header (Top-left) */}
         <View
@@ -241,7 +641,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
       >
         {/* Primary: Sign In Button */}
         <TouchableOpacity
-          onPress={() => navigate("login")}
+          onPress={() => openAuthModal("signin")}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Sign In"
@@ -280,7 +680,7 @@ export function WelcomeScreen({ navigate }: NavProps) {
 
         {/* Secondary: Create Account Button */}
         <TouchableOpacity
-          onPress={() => navigate("register")}
+          onPress={() => openAuthModal("create_account")}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Create Account"
@@ -336,6 +736,476 @@ export function WelcomeScreen({ navigate }: NavProps) {
           </Text>
         </View>
       </View>
+
+      {/* 5) Animated Glassmorphism Auth Modal */}
+      {authMode !== null && (
+        <View style={[StyleSheet.absoluteFill, { zIndex: 100 }]} pointerEvents="box-none">
+          {/* Backdrop (Tap outside to close) */}
+          <TouchableWithoutFeedback onPress={closeAuthModal}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: "rgba(3, 10, 26, 0.32)",
+                  opacity: animVal,
+                },
+              ]}
+            />
+          </TouchableWithoutFeedback>
+
+          {/* Centered Modal inside KeyboardAvoidingView */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 24,
+            }}
+            pointerEvents="box-none"
+          >
+            <Animated.View
+              style={{
+                width: "100%",
+                maxWidth: 400,
+                maxHeight: height * 0.82,
+                borderRadius: 24,
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.32)",
+                backgroundColor: "rgba(255, 255, 255, 0.20)",
+                overflow: "hidden",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.32,
+                shadowRadius: 24,
+                elevation: 10,
+                opacity: animVal,
+                transform: [
+                  {
+                    scale: animVal.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.90, 1],
+                    }),
+                  },
+                  {
+                    translateY: animVal.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [24, 0],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <BlurView intensity={50} tint="light" style={StyleSheet.absoluteFill} />
+              <LinearGradient
+                colors={["rgba(255, 255, 255, 0.24)", "rgba(255, 255, 255, 0.08)"]}
+                style={StyleSheet.absoluteFill}
+              />
+
+              {/* Close Button X */}
+              <TouchableOpacity
+                onPress={closeAuthModal}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  zIndex: 20,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: "rgba(255, 255, 255, 0.22)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255, 255, 255, 0.35)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CloseIcon color="#FFFFFF" size={15} />
+              </TouchableOpacity>
+
+              {/* Modal Body with cross-fade */}
+              <Animated.View style={{ flexShrink: 1, opacity: contentFadeAnim, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 22 }}>
+                {authMode === "signin" ? (
+                  // Sign In Content
+                  <View>
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 24,
+                        fontWeight: "700",
+                        fontFamily: "Outfit",
+                        letterSpacing: 0.3,
+                        textShadowColor: "rgba(0, 0, 0, 0.35)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 3,
+                      }}
+                    >
+                      Welcome Back
+                    </Text>
+                    <Text
+                      style={{
+                        color: "rgba(255, 255, 255, 0.85)",
+                        fontSize: 14,
+                        fontFamily: "Outfit",
+                        marginTop: 4,
+                        marginBottom: 20,
+                        textShadowColor: "rgba(0, 0, 0, 0.3)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      Sign in to your university clinic portal
+                    </Text>
+
+                    {signInGeneralError ? (
+                      <View
+                        style={{
+                          backgroundColor: "rgba(239, 68, 68, 0.25)",
+                          borderWidth: 1,
+                          borderColor: "rgba(248, 113, 113, 0.5)",
+                          borderRadius: 12,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          marginBottom: 14,
+                        }}
+                      >
+                        <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
+                          {signInGeneralError}
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    <GlassInput
+                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Username or Email"
+                      value={signInIdentifier}
+                      onChangeText={(t) => {
+                        setSignInIdentifier(t);
+                        if (signInErrors.identifier) setSignInErrors((e) => ({ ...e, identifier: "" }));
+                      }}
+                      error={signInErrors.identifier}
+                    />
+
+                    <GlassInput
+                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Password"
+                      value={signInPassword}
+                      onChangeText={(t) => {
+                        setSignInPassword(t);
+                        if (signInErrors.password) setSignInErrors((e) => ({ ...e, password: "" }));
+                      }}
+                      secureTextEntry
+                      showPasswordToggle
+                      error={signInErrors.password}
+                    />
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        closeAuthModal();
+                        navigate("forgot-password");
+                      }}
+                      activeOpacity={0.7}
+                      style={{ alignSelf: "flex-end", marginTop: 2, marginBottom: 18 }}
+                    >
+                      <Text
+                        style={{
+                          color: "#93C5FD",
+                          fontSize: 13,
+                          fontWeight: "600",
+                          fontFamily: "Outfit",
+                          textShadowColor: "rgba(0, 0, 0, 0.3)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        Forgot password?
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={handleSignIn}
+                      disabled={signInLoading}
+                      activeOpacity={0.85}
+                      style={{
+                        width: "100%",
+                        height: 50,
+                        borderRadius: 14,
+                        backgroundColor: "#1E4FD8",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: "#1E4FD8",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 8,
+                        elevation: 4,
+                      }}
+                    >
+                      {signInLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text
+                          style={{
+                            color: "#FFFFFF",
+                            fontSize: 16,
+                            fontWeight: "700",
+                            fontFamily: "Outfit",
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          Sign In
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Switcher */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginTop: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "rgba(255, 255, 255, 0.85)",
+                          fontSize: 13.5,
+                          fontFamily: "Outfit",
+                          textShadowColor: "rgba(0, 0, 0, 0.3)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        No account?{" "}
+                      </Text>
+                      <TouchableOpacity onPress={() => switchAuthMode("create_account")} activeOpacity={0.7}>
+                        <Text
+                          style={{
+                            color: "#60A5FA",
+                            fontSize: 13.5,
+                            fontWeight: "700",
+                            fontFamily: "Outfit",
+                            textShadowColor: "rgba(0, 0, 0, 0.3)",
+                            textShadowOffset: { width: 0, height: 1 },
+                            textShadowRadius: 2,
+                          }}
+                        >
+                          Create one
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  // Create Account Content (Scrollable)
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 6 }}
+                    keyboardShouldPersistTaps="handled"
+                    style={{ maxHeight: height * 0.70 }}
+                  >
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 24,
+                        fontWeight: "700",
+                        fontFamily: "Outfit",
+                        letterSpacing: 0.3,
+                        textShadowColor: "rgba(0, 0, 0, 0.35)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 3,
+                      }}
+                    >
+                      Create Account
+                    </Text>
+                    <Text
+                      style={{
+                        color: "rgba(255, 255, 255, 0.85)",
+                        fontSize: 14,
+                        fontFamily: "Outfit",
+                        marginTop: 4,
+                        marginBottom: 18,
+                        textShadowColor: "rgba(0, 0, 0, 0.3)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      Register for your campus clinic profile
+                    </Text>
+
+                    {regGeneralError ? (
+                      <View
+                        style={{
+                          backgroundColor: "rgba(239, 68, 68, 0.25)",
+                          borderWidth: 1,
+                          borderColor: "rgba(248, 113, 113, 0.5)",
+                          borderRadius: 12,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          marginBottom: 14,
+                        }}
+                      >
+                        <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
+                          {regGeneralError}
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    <GlassInput
+                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Full Name (e.g. Juan Dela Cruz)"
+                      value={fullName}
+                      onChangeText={(t) => {
+                        setFullName(t);
+                        if (regErrors.fullName) setRegErrors((e) => ({ ...e, fullName: "" }));
+                      }}
+                      autoCapitalize="words"
+                      error={regErrors.fullName}
+                    />
+
+                    <GlassInput
+                      icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Student / Employee ID"
+                      value={idNumber}
+                      onChangeText={(t) => {
+                        setIdNumber(t);
+                        if (regErrors.idNumber) setRegErrors((e) => ({ ...e, idNumber: "" }));
+                      }}
+                      error={regErrors.idNumber}
+                    />
+
+                    <GlassInput
+                      icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Email address"
+                      value={email}
+                      onChangeText={(t) => {
+                        setEmail(t);
+                        if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
+                      }}
+                      keyboardType="email-address"
+                      error={regErrors.email}
+                    />
+
+                    <GlassInput
+                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Username"
+                      value={username}
+                      onChangeText={(t) => {
+                        setUsername(t);
+                        if (regErrors.username) setRegErrors((e) => ({ ...e, username: "" }));
+                      }}
+                      error={regErrors.username}
+                    />
+
+                    <GlassInput
+                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Password (min 8 characters)"
+                      value={password}
+                      onChangeText={(t) => {
+                        setPassword(t);
+                        if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
+                      }}
+                      secureTextEntry
+                      showPasswordToggle
+                      error={regErrors.password}
+                    />
+
+                    <GlassInput
+                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChangeText={(t) => {
+                        setConfirmPassword(t);
+                        if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
+                      }}
+                      secureTextEntry
+                      showPasswordToggle
+                      error={regErrors.confirmPassword}
+                    />
+
+                    <TouchableOpacity
+                      onPress={handleCreateAccount}
+                      disabled={regLoading}
+                      activeOpacity={0.85}
+                      style={{
+                        width: "100%",
+                        height: 50,
+                        borderRadius: 14,
+                        backgroundColor: "#1E4FD8",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 8,
+                        shadowColor: "#1E4FD8",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 8,
+                        elevation: 4,
+                      }}
+                    >
+                      {regLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text
+                          style={{
+                            color: "#FFFFFF",
+                            fontSize: 16,
+                            fontWeight: "700",
+                            fontFamily: "Outfit",
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          Create Account
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Switcher */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginTop: 18,
+                        marginBottom: 4,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "rgba(255, 255, 255, 0.85)",
+                          fontSize: 13.5,
+                          fontFamily: "Outfit",
+                          textShadowColor: "rgba(0, 0, 0, 0.3)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        Already have an account?{" "}
+                      </Text>
+                      <TouchableOpacity onPress={() => switchAuthMode("signin")} activeOpacity={0.7}>
+                        <Text
+                          style={{
+                            color: "#60A5FA",
+                            fontSize: 13.5,
+                            fontWeight: "700",
+                            fontFamily: "Outfit",
+                            textShadowColor: "rgba(0, 0, 0, 0.3)",
+                            textShadowOffset: { width: 0, height: 1 },
+                            textShadowRadius: 2,
+                          }}
+                        >
+                          Sign In
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </ScrollView>
+                )}
+              </Animated.View>
+            </Animated.View>
+          </KeyboardAvoidingView>
+        </View>
+      )}
     </View>
   );
 }
