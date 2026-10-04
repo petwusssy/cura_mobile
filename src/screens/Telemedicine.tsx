@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, Pressable, RefreshControl, Modal, Platform, PermissionsAndroid, Alert } from "react-native";
+import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, PermissionsAndroid, Alert } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
-import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
+import { Header, Button, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -334,67 +334,175 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-          <View className="mb-6">
-            <Text className="text-sm text-white/80 mb-2">
-              Request an online video consultation. The clinic will review your request and provide a meeting link if approved.
-            </Text>
+          {/* Info Banner */}
+          <View
+            className="bg-white/10 rounded-[28px] p-4 flex-row items-center gap-3.5 border border-white/10 mb-6"
+            style={{ elevation: 1 }}
+          >
+            <View className="w-11 h-11 rounded-2xl bg-white/15 items-center justify-center">
+              <Text className="text-xl">📹</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-bold text-white mb-0.5" style={{ fontFamily: "Outfit" }}>
+                Online Video Consultation
+              </Text>
+              <Text className="text-xs text-white/70 leading-relaxed">
+                Request an online video consultation. The clinic will review your request and provide a meeting link if approved.
+              </Text>
+            </View>
           </View>
 
           <View className="flex-col gap-6">
+            {/* Preferred Date */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Preferred Date</Text>
-              <Pressable onPress={() => setShowDatePicker(true)}>
-                <View pointerEvents="none">
-                  <Input
-                    label=""
-                    placeholder="YYYY-MM-DD"
-                    value={date}
-                    editable={false}
-                  />
+              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+                Preferred Date
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.75}
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
+                style={{
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                }}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
+                    <Text className="text-base">📅</Text>
+                  </View>
+                  <Text className={`text-sm ${date ? "text-slate-800 font-bold" : "text-slate-400 font-medium"}`}>
+                    {date
+                      ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "Select consultation date..."}
+                  </Text>
                 </View>
-              </Pressable>
+                <View className="px-3 py-1 rounded-full bg-slate-100">
+                  <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
+                </View>
+              </TouchableOpacity>
               {showDatePicker && (
                 <DateTimePicker
-                  value={date ? new Date(date) : new Date()}
+                  value={date ? new Date(date + "T00:00:00") : new Date()}
                   mode="date"
                   display="default"
-                  onValueChange={onDateChange}
-                  onDismiss={() => setShowDatePicker(false)}
+                  minimumDate={new Date()}
+                  onChange={onDateChange}
                 />
               )}
             </View>
 
-            <Select
-              label="Preferred Time"
-              value={time}
-              onValueChange={setTime}
-              options={[
-                { label: "Morning (8AM - 12PM)", value: "Morning (8AM - 12PM)" },
-                { label: "Afternoon (1PM - 5PM)", value: "Afternoon (1PM - 5PM)" },
-              ]}
-            />
-
+            {/* Preferred Time */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Reason for Consult</Text>
-              <Input
-                label=""
-                placeholder="Describe what you are feeling..."
-                value={reason}
-                onChangeText={setReason}
-                multiline
-                numberOfLines={4}
-                style={{ minHeight: 100, textAlignVertical: 'top' }}
-              />
+              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+                Preferred Time
+              </Text>
+              <View className="flex-row gap-3">
+                {[
+                  {
+                    label: "Morning",
+                    timeRange: "8:00 AM - 12:00 PM",
+                    icon: "🌅",
+                    value: "Morning (8AM - 12PM)",
+                  },
+                  {
+                    label: "Afternoon",
+                    timeRange: "1:00 PM - 5:00 PM",
+                    icon: "☀️",
+                    value: "Afternoon (1PM - 5PM)",
+                  },
+                ].map((slot) => {
+                  const isSelected = time === slot.value;
+                  return (
+                    <TouchableOpacity
+                      key={slot.value}
+                      onPress={() => setTime(slot.value)}
+                      activeOpacity={0.75}
+                      className="flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden"
+                      style={{
+                        backgroundColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.12)",
+                        borderColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.18)",
+                        borderWidth: isSelected ? 2 : 1,
+                        elevation: isSelected ? 3 : 0,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: isSelected ? 0.1 : 0,
+                        shadowRadius: 6,
+                      }}
+                    >
+                      {isSelected && (
+                        <View className="absolute top-0 left-0 right-0 h-1 bg-sky-500" />
+                      )}
+                      <Text className="text-xl mb-1">{slot.icon}</Text>
+                      <Text
+                        className="text-sm font-black"
+                        style={{
+                          color: isSelected ? "#0B2136" : "#FFFFFF",
+                          fontFamily: "Outfit",
+                        }}
+                      >
+                        {slot.label}
+                      </Text>
+                      <Text
+                        className="text-[10px] font-semibold mt-0.5"
+                        style={{
+                          color: isSelected ? "#64748B" : "rgba(255, 255, 255, 0.7)",
+                        }}
+                      >
+                        {slot.timeRange}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
+            {/* Reason for Consult */}
+            <View className="flex-col gap-1.5">
+              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+                Reason for Consult
+              </Text>
+              <View
+                className="bg-white rounded-[24px] px-4 py-3.5"
+                style={{
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                }}
+              >
+                <TextInput
+                  placeholder="Describe what you are feeling..."
+                  placeholderTextColor="#94A3B8"
+                  value={reason}
+                  onChangeText={setReason}
+                  multiline
+                  numberOfLines={4}
+                  className="text-sm text-slate-800 leading-relaxed"
+                  style={{ minHeight: 85, textAlignVertical: "top" }}
+                />
+              </View>
+            </View>
+
+            {/* Submit Button */}
             <View className="mt-8">
               <Button
+                variant="white"
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
                 disabled={!date.trim() || !reason.trim()}
               >
-                Submit Request
+                📹 Submit Request
               </Button>
             </View>
           </View>
