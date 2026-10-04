@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, Pressable, RefreshControl } from "react-native";
+import { View, ScrollView, Text, TextInput, Pressable, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
+import { Header, Button, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Screen, AppUser } from "../types";
 import { formatTime12 } from "../utils/philippineTime";
@@ -146,82 +146,225 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
+          {/* Info Banner */}
+          <View
+            className="bg-white/10 rounded-[28px] p-4 flex-row items-center gap-3.5 border border-white/10 mb-6"
+            style={{ elevation: 1 }}
+          >
+            <View className="w-11 h-11 rounded-2xl bg-white/15 items-center justify-center">
+              <Text className="text-xl">🏥</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-bold text-white mb-0.5" style={{ fontFamily: "Outfit" }}>
+                In-Person Clinic Visit
+              </Text>
+              <Text className="text-xs text-white/70 leading-relaxed">
+                Schedule an in-person appointment at the clinic. Your request will be reviewed for confirmation.
+              </Text>
+            </View>
+          </View>
 
-        <View className="mb-6">
-          <Text className="text-sm text-white/80 mb-2">
-            Schedule an in-person visit at our clinic by filling out the details below.
-          </Text>
-        </View>
+          <View className="flex-col gap-6">
+            {/* Type of Visit */}
+            <View className="flex-col gap-1.5">
+              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+                Type of Visit
+              </Text>
+              <View className="flex-row gap-2.5">
+                {[
+                  { label: "Medical", icon: "🩺", value: "medical" },
+                  { label: "Dental", icon: "🦷", value: "dental" },
+                  { label: "Clearance", icon: "📋", value: "clearance" },
+                ].map((item) => {
+                  const isSelected = visitType === item.value;
+                  return (
+                    <Pressable
+                      key={item.value}
+                      onPress={() => setVisitType(item.value)}
+                      className={`flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden ${
+                        isSelected
+                          ? "bg-white border-2 border-white shadow-md"
+                          : "bg-white/10 border border-white/15"
+                      }`}
+                      style={({ pressed }) => ({
+                        elevation: isSelected ? 3 : 0,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: isSelected ? 0.08 : 0,
+                        shadowRadius: 6,
+                        opacity: pressed ? 0.85 : 1,
+                      })}
+                    >
+                      {isSelected && (
+                        <View className="absolute top-0 left-0 right-0 h-1 bg-cura-500" />
+                      )}
+                      <Text className="text-lg mb-1">{item.icon}</Text>
+                      <Text
+                        className={`text-xs font-bold ${
+                          isSelected ? "text-[#0B2136]" : "text-white"
+                        }`}
+                        style={{ fontFamily: "Outfit" }}
+                      >
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
 
-        <View className="flex-col gap-6">
-          <Select
-            label="Type of Visit"
-            value={visitType}
-            onValueChange={setVisitType}
-            options={[
-              { label: "Medical", value: "medical" },
-              { label: "Dental", value: "dental" },
-              { label: "Clearance", value: "clearance" },
-            ]}
-          />
+            {/* Preferred Date */}
+            <View className="flex-col gap-1.5">
+              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+                Preferred Date
+              </Text>
+              <Pressable
+                onPress={() => setShowDatePicker(true)}
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
+                style={({ pressed }) => ({
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  opacity: pressed ? 0.85 : 1,
+                })}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
+                    <Text className="text-base">📅</Text>
+                  </View>
+                  <Text className={`text-sm ${date ? "text-slate-800 font-bold" : "text-slate-400 font-medium"}`}>
+                    {date
+                      ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "Select appointment date..."}
+                  </Text>
+                </View>
+                <View className="px-3 py-1 rounded-full bg-slate-100">
+                  <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
+                </View>
+              </Pressable>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date ? new Date(date + "T00:00:00") : new Date()}
+                  mode="date"
+                  display="default"
+                  minimumDate={new Date()}
+                  onChange={onDateChange}
+                />
+              )}
+            </View>
 
-          <View className="flex-col gap-1.5">
-            <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Preferred Date</Text>
-            <Pressable onPress={() => setShowDatePicker(true)}>
-              <View pointerEvents="none">
-                <Input
-                  label=""
-                  placeholder="YYYY-MM-DD"
-                  value={date}
-                  editable={false}
+            {/* Preferred Time */}
+            <View className="flex-col gap-1.5">
+              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+                Preferred Time
+              </Text>
+              <View className="flex-row gap-3">
+                {[
+                  {
+                    label: "Morning",
+                    timeRange: "8:00 AM - 12:00 PM",
+                    icon: "🌅",
+                    value: "morning",
+                  },
+                  {
+                    label: "Afternoon",
+                    timeRange: "1:00 PM - 5:00 PM",
+                    icon: "☀️",
+                    value: "afternoon",
+                  },
+                ].map((slot) => {
+                  const isSelected = time === slot.value;
+                  return (
+                    <Pressable
+                      key={slot.value}
+                      onPress={() => setTime(slot.value)}
+                      className={`flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden ${
+                        isSelected
+                          ? "bg-white border-2 border-white shadow-md"
+                          : "bg-white/10 border border-white/15"
+                      }`}
+                      style={({ pressed }) => ({
+                        elevation: isSelected ? 3 : 0,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: isSelected ? 0.1 : 0,
+                        shadowRadius: 6,
+                        opacity: pressed ? 0.85 : 1,
+                      })}
+                    >
+                      {isSelected && (
+                        <View className="absolute top-0 left-0 right-0 h-1 bg-cura-500" />
+                      )}
+                      <Text className="text-xl mb-1">{slot.icon}</Text>
+                      <Text
+                        className={`text-sm font-black ${
+                          isSelected ? "text-[#0B2136]" : "text-white"
+                        }`}
+                        style={{ fontFamily: "Outfit" }}
+                      >
+                        {slot.label}
+                      </Text>
+                      <Text
+                        className={`text-[10px] font-semibold mt-0.5 ${
+                          isSelected ? "text-slate-500" : "text-white/70"
+                        }`}
+                      >
+                        {slot.timeRange}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Reason for Visit */}
+            <View className="flex-col gap-1.5">
+              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+                Reason for Visit
+              </Text>
+              <View
+                className="bg-white rounded-[24px] px-4 py-3.5"
+                style={{
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                }}
+              >
+                <TextInput
+                  placeholder="Briefly describe your symptoms or reason for visit..."
+                  placeholderTextColor="#94A3B8"
+                  value={reason}
+                  onChangeText={setReason}
+                  multiline
+                  numberOfLines={4}
+                  className="text-sm text-slate-800 leading-relaxed"
+                  style={{ minHeight: 85, textAlignVertical: "top" }}
                 />
               </View>
-            </Pressable>
-            {showDatePicker && (
-              <DateTimePicker
-                value={date ? new Date(date) : new Date()}
-                mode="date"
-                display="default"
-                onValueChange={onDateChange}
-                onDismiss={() => setShowDatePicker(false)}
-              />
-            )}
-          </View>
+            </View>
 
-          <Select
-            label="Preferred Time"
-            value={time}
-            onValueChange={setTime}
-            options={[
-              { label: "Morning (8AM - 12PM)", value: "morning" },
-              { label: "Afternoon (1PM - 5PM)", value: "afternoon" },
-            ]}
-          />
-
-          <View className="flex-col gap-1.5">
-            <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Reason for Visit</Text>
-            <Input
-              label=""
-              placeholder="Briefly describe why you are visiting..."
-              value={reason}
-              onChangeText={setReason}
-              multiline
-              numberOfLines={3}
-              style={{ minHeight: 80, textAlignVertical: 'top' }}
-            />
+            {/* Submit Button */}
+            <View className="mt-8">
+              <Button
+                variant="white"
+                fullWidth
+                onPress={handleSubmit}
+                loading={isSubmitting}
+                disabled={!date.trim() || !reason.trim()}
+              >
+                📅 Request Appointment
+              </Button>
+            </View>
           </View>
-
-          <View className="mt-8">
-            <Button
-              fullWidth
-              onPress={handleSubmit}
-              loading={isSubmitting}
-              disabled={!date.trim() || !reason.trim()}
-            >
-              Request Appointment
-            </Button>
-          </View>
-        </View>
         </ScrollView>
       ) : (
         <ScrollView
