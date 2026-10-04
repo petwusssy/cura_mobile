@@ -346,8 +346,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               { label: "Certs", icon: "📄", bg: "#FFFBEB", screen: "documents" as Screen },
             ].map((c) => (
               <Pressable key={c.label} onPress={() => c.action ? c.action() : navigate(c.screen)} className="items-center gap-2">
-                <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: c.bg, opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 }}>
-                  <Text className="text-2xl">{c.icon}</Text>
+                <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: c.bg, opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 }}>
+                  <Text className="text-3xl">{c.icon}</Text>
                 </View>
                 <Text className="text-xs font-semibold text-white/80">{c.label}</Text>
               </Pressable>
