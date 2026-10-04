@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, TextInput, Pressable, RefreshControl } from "react-native";
+import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -178,36 +178,36 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 ].map((item) => {
                   const isSelected = visitType === item.value;
                   return (
-                    <Pressable
+                    <TouchableOpacity
                       key={item.value}
                       onPress={() => setVisitType(item.value)}
-                      className={`flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden ${
-                        isSelected
-                          ? "bg-white border-2 border-white shadow-md"
-                          : "bg-white/10 border border-white/15"
-                      }`}
-                      style={({ pressed }) => ({
+                      activeOpacity={0.75}
+                      className="flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden"
+                      style={{
+                        backgroundColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.12)",
+                        borderColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.18)",
+                        borderWidth: isSelected ? 2 : 1,
                         elevation: isSelected ? 3 : 0,
                         shadowColor: "#000",
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: isSelected ? 0.08 : 0,
                         shadowRadius: 6,
-                        opacity: pressed ? 0.85 : 1,
-                      })}
+                      }}
                     >
                       {isSelected && (
-                        <View className="absolute top-0 left-0 right-0 h-1 bg-cura-500" />
+                        <View className="absolute top-0 left-0 right-0 h-1 bg-sky-500" />
                       )}
                       <Text className="text-lg mb-1">{item.icon}</Text>
                       <Text
-                        className={`text-xs font-bold ${
-                          isSelected ? "text-[#0B2136]" : "text-white"
-                        }`}
-                        style={{ fontFamily: "Outfit" }}
+                        className="text-xs font-bold"
+                        style={{
+                          color: isSelected ? "#0B2136" : "#FFFFFF",
+                          fontFamily: "Outfit",
+                        }}
                       >
                         {item.label}
                       </Text>
-                    </Pressable>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -218,17 +218,17 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
               <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
                 Preferred Date
               </Text>
-              <Pressable
+              <TouchableOpacity
                 onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.75}
                 className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
-                style={({ pressed }) => ({
+                style={{
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.05,
                   shadowRadius: 8,
-                  opacity: pressed ? 0.85 : 1,
-                })}
+                }}
               >
                 <View className="flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
@@ -248,7 +248,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 <View className="px-3 py-1 rounded-full bg-slate-100">
                   <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
                 </View>
-              </Pressable>
+              </TouchableOpacity>
               {showDatePicker && (
                 <DateTimePicker
                   value={date ? new Date(date + "T00:00:00") : new Date()}
@@ -282,43 +282,44 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 ].map((slot) => {
                   const isSelected = time === slot.value;
                   return (
-                    <Pressable
+                    <TouchableOpacity
                       key={slot.value}
                       onPress={() => setTime(slot.value)}
-                      className={`flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden ${
-                        isSelected
-                          ? "bg-white border-2 border-white shadow-md"
-                          : "bg-white/10 border border-white/15"
-                      }`}
-                      style={({ pressed }) => ({
+                      activeOpacity={0.75}
+                      className="flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden"
+                      style={{
+                        backgroundColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.12)",
+                        borderColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.18)",
+                        borderWidth: isSelected ? 2 : 1,
                         elevation: isSelected ? 3 : 0,
                         shadowColor: "#000",
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: isSelected ? 0.1 : 0,
                         shadowRadius: 6,
-                        opacity: pressed ? 0.85 : 1,
-                      })}
+                      }}
                     >
                       {isSelected && (
-                        <View className="absolute top-0 left-0 right-0 h-1 bg-cura-500" />
+                        <View className="absolute top-0 left-0 right-0 h-1 bg-sky-500" />
                       )}
                       <Text className="text-xl mb-1">{slot.icon}</Text>
                       <Text
-                        className={`text-sm font-black ${
-                          isSelected ? "text-[#0B2136]" : "text-white"
-                        }`}
-                        style={{ fontFamily: "Outfit" }}
+                        className="text-sm font-black"
+                        style={{
+                          color: isSelected ? "#0B2136" : "#FFFFFF",
+                          fontFamily: "Outfit",
+                        }}
                       >
                         {slot.label}
                       </Text>
                       <Text
-                        className={`text-[10px] font-semibold mt-0.5 ${
-                          isSelected ? "text-slate-500" : "text-white/70"
-                        }`}
+                        className="text-[10px] font-semibold mt-0.5"
+                        style={{
+                          color: isSelected ? "#64748B" : "rgba(255, 255, 255, 0.7)",
+                        }}
                       >
                         {slot.timeRange}
                       </Text>
-                    </Pressable>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
