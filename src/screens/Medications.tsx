@@ -13,7 +13,7 @@ interface Props {
   medications?: any[];
 }
 
-type Filter = "all" | "active" | "taken" | "missed";
+type Filter = "all" | "active" | "due-now" | "upcoming" | "taken" | "missed";
 
 const statusConfig = {
   "due-now": { badge: "warning" as const, label: "Due Now",  dot: "#F59E0B", bg: "#FFFBEB", icon: "⚠️" },
@@ -29,62 +29,108 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
   const activeMeds = medications.length > 0 ? medications : MEDICATIONS;
 
   const filtered = activeMeds.filter((m) => {
-    if (filter === "active")  return m.status === "due-now" || m.status === "upcoming";
-    if (filter === "taken")   return m.status === "taken";
-    if (filter === "missed")  return m.status === "missed";
+    if (filter === "active")   return m.status === "due-now" || m.status === "upcoming";
+    if (filter === "due-now")  return m.status === "due-now";
+    if (filter === "upcoming") return m.status === "upcoming";
+    if (filter === "taken")    return m.status === "taken";
+    if (filter === "missed")   return m.status === "missed";
     return true;
   });
+
+  const statusItems = (["due-now", "upcoming", "taken", "missed"] as const).map((s) => ({
+    id: s,
+    ...statusConfig[s],
+    count: activeMeds.filter((m) => m.status === s).length,
+  }));
+
+  const tabCounts = {
+    all: activeMeds.length,
+    active: activeMeds.filter((m) => m.status === "due-now" || m.status === "upcoming").length,
+    taken: activeMeds.filter((m) => m.status === "taken").length,
+    missed: activeMeds.filter((m) => m.status === "missed").length,
+  };
 
   return (
     <View className="flex-1 bg-transparent">
       <Header title="Medications" onBack={goBack} />
 
-      {/* Status overview */}
-      <View className="bg-white border-b border-sky-100 px-4 py-3">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2.5">
-          {(["due-now", "upcoming", "taken", "missed"] as const).map((s) => {
-            const count = MEDICATIONS.filter((m) => m.status === s).length;
-            const cfg = statusConfig[s];
+      {/* Status overview and Filter controls */}
+      <View className="px-4 pt-1 pb-3">
+        {/* Status metric cards */}
+        <View className="flex-row gap-2">
+          {statusItems.map((s) => {
+            const isSelected = filter === s.id;
             return (
-              <View
-                key={s}
-                className="flex-row items-center gap-2 px-4 py-2 rounded-full mr-2.5"
-                style={{ backgroundColor: cfg.bg }}
+              <Pressable
+                key={s.id}
+                onPress={() => setFilter(isSelected ? "all" : s.id)}
+                className={`flex-1 bg-white rounded-2xl pt-2.5 pb-2 px-1 items-center relative overflow-hidden active:opacity-90 ${
+                  isSelected ? "border-2 border-[#0B2136]" : "border border-slate-100"
+                }`}
+                style={{
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 6,
+                }}
               >
-                <Text className="text-sm">{cfg.icon}</Text>
-                <Text className="text-xs font-bold text-slate-700">{cfg.label}</Text>
-                <View className="rounded-full w-4 h-4 items-center justify-center" style={{ backgroundColor: cfg.dot }}>
-                  <Text className="text-white font-extrabold" style={{ fontSize: 9 }}>{count}</Text>
+                <View className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: s.dot }} />
+                <View className="flex-row items-center gap-1 mt-0.5">
+                  <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.dot }} />
+                  <Text className="text-[10px] font-bold text-slate-500" numberOfLines={1}>
+                    {s.label}
+                  </Text>
                 </View>
-              </View>
+                <Text className="text-xl font-black text-[#0B2136] mt-0.5" style={{ fontFamily: "Outfit" }}>
+                  {s.count}
+                </Text>
+              </Pressable>
             );
           })}
-        </ScrollView>
+        </View>
+
+        {/* Filter segmented tabs */}
+        <View className="flex-row bg-white/10 rounded-full p-1 border border-white/10 mt-2.5">
+          {(["all", "active", "taken", "missed"] as const).map((f) => {
+            const isSelected = filter === f;
+            return (
+              <Pressable
+                key={f}
+                onPress={() => setFilter(f)}
+                className={`flex-1 py-2 rounded-full items-center justify-center flex-row gap-1.5 ${
+                  isSelected ? "bg-white" : "bg-transparent active:bg-white/5"
+                }`}
+                style={isSelected ? {
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 4,
+                  elevation: 2,
+                } : {}}
+              >
+                <Text className={`text-xs font-bold capitalize ${isSelected ? "text-[#0B2136]" : "text-white/80"}`}>
+                  {f}
+                </Text>
+                <View
+                  className={`rounded-full px-1.5 py-0.5 items-center justify-center ${
+                    isSelected ? "bg-slate-100" : "bg-white/15"
+                  }`}
+                >
+                  <Text
+                    className={`font-black ${isSelected ? "text-[#0B2136]" : "text-white"}`}
+                    style={{ fontSize: 9 }}
+                  >
+                    {tabCounts[f]}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
-      {/* Filter tabs */}
-      <View className="flex-row gap-2 px-4 py-3 bg-white border-b border-sky-50">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
-          {(["all","active","taken","missed"] as Filter[]).map((f) => (
-            <Pressable
-              key={f}
-              onPress={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-full mr-2 ${
-                filter === f
-                  ? "bg-cura-500"
-                  : "bg-sky-50 border border-sky-100"
-              }`}
-              style={filter === f ? { elevation: 2, shadowColor: '#BAE6FD', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.5, shadowRadius: 2 } : {}}
-            >
-              <Text className={`text-xs font-bold capitalize ${filter === f ? "text-white" : "text-slate-500"}`}>
-                {f}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 8, paddingBottom: 120 }}>
         <View className="flex-col gap-3 pb-8">
           {filtered.length === 0 && (
             <View className="items-center justify-center py-14 gap-3">
