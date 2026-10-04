@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, ScrollView, Text, TextInput, Pressable, RefreshControl, Modal, Platform, PermissionsAndroid, Alert } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
-import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
+import { Header, Button, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -360,14 +360,15 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
               </Text>
               <Pressable
                 onPress={() => setShowDatePicker(true)}
-                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between active:opacity-90"
-                style={{
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
+                style={({ pressed }) => ({
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.05,
                   shadowRadius: 8,
-                }}
+                  opacity: pressed ? 0.85 : 1,
+                })}
               >
                 <View className="flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
@@ -424,22 +425,19 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                     <Pressable
                       key={slot.value}
                       onPress={() => setTime(slot.value)}
-                      className={`flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden active:opacity-90 ${
+                      className={`flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden ${
                         isSelected
                           ? "bg-white border-2 border-white shadow-md"
                           : "bg-white/10 border border-white/15"
                       }`}
-                      style={
-                        isSelected
-                          ? {
-                              elevation: 3,
-                              shadowColor: "#000",
-                              shadowOffset: { width: 0, height: 2 },
-                              shadowOpacity: 0.1,
-                              shadowRadius: 6,
-                            }
-                          : {}
-                      }
+                      style={({ pressed }) => ({
+                        elevation: isSelected ? 3 : 0,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: isSelected ? 0.1 : 0,
+                        shadowRadius: 6,
+                        opacity: pressed ? 0.85 : 1,
+                      })}
                     >
                       {isSelected && (
                         <View className="absolute top-0 left-0 right-0 h-1 bg-cura-500" />
@@ -570,7 +568,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       {access.canJoin ? (
                         <>
                           <Pressable
-                            className="bg-emerald-600 active:bg-emerald-700 rounded-xl py-3 px-4 mt-2 items-center justify-center shadow-sm"
+                            className="bg-emerald-600 rounded-xl py-3 px-4 mt-2 items-center justify-center shadow-sm"
+                            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
                             onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id, access)}
                           >
                             <Text className="text-white text-xs font-bold tracking-wider uppercase">
@@ -579,7 +578,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                           </Pressable>
 
                           <Pressable
-                            className="bg-slate-800 active:bg-slate-700 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
+                            className="bg-slate-800 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
+                            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
                             onPress={() => handleJoinMeeting(req.meeting_link, req.id, access)}
                           >
                             <Text className="text-slate-300 text-xs font-semibold">
@@ -589,7 +589,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
                           {req.secondary_link ? (
                             <Pressable
-                              className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs active:bg-emerald-50"
+                              className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
+                              style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
                               onPress={() => Linking.openURL(req.secondary_link)}
                             >
                               <Text className="text-emerald-700 text-xs font-semibold">
@@ -601,6 +602,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       ) : (
                         <Pressable
                           className="bg-slate-200/80 rounded-xl py-3 px-4 mt-2 items-center justify-center border border-slate-300"
+                          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
                           onPress={() => Alert.alert("Consultation Locked", access.reason)}
                         >
                           <Text className="text-slate-500 text-xs font-bold tracking-wide uppercase">
@@ -648,13 +650,15 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   setActiveCallRoom(null);
                   if (room) handleOpenExternalBrowser(undefined, room);
                 }}
-                className="bg-slate-700 active:bg-slate-600 px-2.5 py-1.5 rounded-lg flex-row items-center"
+                className="bg-slate-700 px-2.5 py-1.5 rounded-lg flex-row items-center"
+                style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
               >
                 <Text className="text-emerald-300 text-[11px] font-bold">🌐 Switch to Chrome</Text>
               </Pressable>
               <Pressable
                 onPress={() => setActiveCallRoom(null)}
-                className="bg-rose-600 active:bg-rose-700 px-3 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
+                className="bg-rose-600 px-3 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
+                style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
               >
                 <Text className="text-white text-xs font-bold uppercase tracking-wider">✕ Leave</Text>
               </Pressable>
