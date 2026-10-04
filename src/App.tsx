@@ -179,17 +179,30 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         setConsultations(userConsultations);
 
         // Extract medications from treatments
+        const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
+        let intakedIds = new Set<string>();
+        if (intakedStored) {
+          try {
+            const parsed = JSON.parse(intakedStored);
+            if (Array.isArray(parsed)) intakedIds = new Set(parsed);
+          } catch {}
+        }
+
         const extractedMedications = userConsultations.flatMap((c: any) => 
-          (c.treatments || []).map((t: any) => ({
-            id: t.id || Math.random().toString(),
-            name: t.medicineName,
-            dose: `${t.quantity} ${t.unit}`,
-            instructions: t.remarks || "No instructions",
-            timeGiven: `${c.date} ${t.timeGiven}`,
-            nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
-            status: "taken",
-            consultationId: c.id
-          }))
+          (c.treatments || []).map((t: any, idx: number) => {
+            const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
+            const isIntaked = intakedIds.has(medId);
+            return {
+              id: medId,
+              name: t.medicineName,
+              dose: `${t.quantity} ${t.unit}`,
+              instructions: t.remarks || "No instructions",
+              timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
+              nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
+              status: isIntaked ? "intaked" : "next-intake",
+              consultationId: c.id
+            };
+          })
         );
         setMedications(extractedMedications);
 
@@ -209,11 +222,52 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const current = stack[stack.length - 1];
 
-  // Refresh certificates whenever user views documents or profile screen
+  // Refresh certificates and consultations whenever user views documents, profile, or medications screen
   useEffect(() => {
     const pId = user?.id || (user as any)?.id_number;
     const uName = ((user as any)?.name || '').trim().toUpperCase();
-    if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents')) {
+    if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents' || current?.screen === 'medications')) {
+      if (current?.screen === 'medications' || current?.screen === 'profile') {
+        safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/consultations/`)
+          .then(async (allConsultations) => {
+            if (Array.isArray(allConsultations)) {
+              const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === pId);
+              const userConsultationsMap = new Map();
+              userConsultationsRaw.forEach((c: any) => userConsultationsMap.set(c.id, c));
+              const userConsultations = Array.from(userConsultationsMap.values());
+              setConsultations(userConsultations);
+
+              const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
+              let intakedIds = new Set<string>();
+              if (intakedStored) {
+                try {
+                  const parsed = JSON.parse(intakedStored);
+                  if (Array.isArray(parsed)) intakedIds = new Set(parsed);
+                } catch {}
+              }
+
+              const extracted = userConsultations.flatMap((c: any) =>
+                (c.treatments || []).map((t: any, idx: number) => {
+                  const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
+                  const isIntaked = intakedIds.has(medId);
+                  return {
+                    id: medId,
+                    name: t.medicineName,
+                    dose: `${t.quantity} ${t.unit}`,
+                    instructions: t.remarks || "No instructions",
+                    timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
+                    nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
+                    status: isIntaked ? "intaked" : "next-intake",
+                    consultationId: c.id
+                  };
+                })
+              );
+              setMedications(extracted);
+            }
+          })
+          .catch(() => {});
+      }
+
       safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/certificates/`)
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {
@@ -311,6 +365,21 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
+  const handleIntakeMedication = useCallback((id: string) => {
+    setMedications(prev => prev.map(m => m.id === id ? { ...m, status: "intaked" } : m));
+    AsyncStorage.getItem('@cura_intaked_meds').then(data => {
+      let set = new Set<string>();
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) set = new Set(parsed);
+        } catch {}
+      }
+      set.add(id);
+      AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...set])).catch(() => {});
+    }).catch(() => {});
+  }, []);
+
   const renderScreen = () => {
     if (!splashDone) return <SplashScreen onDone={handleSplashDone} />;
 
@@ -331,7 +400,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
       case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
       case "health-detail":  return <HealthDetailScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
-      case "medications":    return <MedicationsScreen navigate={navigate} goBack={goBack} medications={medications} />;
+      case "medications":    return <MedicationsScreen navigate={navigate} goBack={goBack} medications={medications} onIntake={handleIntakeMedication} />;
       case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "prescription-detail": return <PrescriptionDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
       case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;

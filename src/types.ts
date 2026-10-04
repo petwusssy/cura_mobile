@@ -95,7 +95,7 @@ export interface Medication {
   instructions: string;
   timeGiven: string;
   nextDose: string | null;
-  status: "upcoming" | "due-now" | "taken" | "missed";
+  status: "upcoming" | "due-now" | "taken" | "missed" | "next-intake" | "intaked";
   consultationId: string;
 }
 

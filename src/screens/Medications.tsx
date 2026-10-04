@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Polyline } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, Header } from "../components/Shell";
@@ -11,43 +11,171 @@ interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
   medications?: any[];
+  onIntake?: (id: string) => void;
 }
 
-type Filter = "all" | "active" | "due-now" | "upcoming" | "taken" | "missed";
+type Filter = "all" | "to-intake" | "intaked";
 
-const statusConfig = {
-  "due-now": { badge: "warning" as const, label: "Due Now",  dot: "#F59E0B", bg: "#FFFBEB", icon: "⚠️" },
-  upcoming:  { badge: "info" as const,    label: "Upcoming", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
-  taken:     { badge: "success" as const, label: "Taken",    dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
-  missed:    { badge: "error" as const,   label: "Missed",   dot: "#F43F5E", bg: "#FFF1F2", icon: "❌" },
+const statusConfig: Record<string, { badge: "success" | "warning" | "error" | "info" | "neutral"; label: string; dot: string; bg: string; icon: string }> = {
+  "next-intake": { badge: "info",    label: "Next Intake", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "to-intake":   { badge: "info",    label: "Next Intake", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "intaked":     { badge: "success", label: "Intaked",     dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
+  "due-now":     { badge: "warning", label: "Due Now",     dot: "#F59E0B", bg: "#FFFBEB", icon: "⚠️" },
+  "upcoming":    { badge: "info",    label: "Next Intake", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "taken":       { badge: "success", label: "Intaked",     dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
+  "missed":      { badge: "error",   label: "Missed",      dot: "#F43F5E", bg: "#FFF1F2", icon: "❌" },
 };
 
-export function MedicationsScreen({ navigate: _navigate, goBack, medications = [] }: Props) {
+export function MedicationsScreen({ navigate: _navigate, goBack, medications = [], onIntake }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [localIntakedIds, setLocalIntakedIds] = useState<Set<string>>(() => new Set());
 
-  const activeMeds = medications.length > 0 ? medications : MEDICATIONS;
+  useEffect(() => {
+    AsyncStorage.getItem('@cura_intaked_meds')
+      .then((data) => {
+        if (data) {
+          try {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+              setLocalIntakedIds(new Set(parsed));
+            }
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  const filtered = activeMeds.filter((m) => {
-    if (filter === "active")   return m.status === "due-now" || m.status === "upcoming";
-    if (filter === "due-now")  return m.status === "due-now";
-    if (filter === "upcoming") return m.status === "upcoming";
-    if (filter === "taken")    return m.status === "taken";
-    if (filter === "missed")   return m.status === "missed";
-    return true;
-  });
+  const handleIntake = useCallback((id: string) => {
+    setLocalIntakedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...next])).catch(() => {});
+      return next;
+    });
+    onIntake?.(id);
+  }, [onIntake]);
 
-  const statusItems = (["due-now", "upcoming", "taken", "missed"] as const).map((s) => ({
-    id: s,
-    ...statusConfig[s],
-    count: activeMeds.filter((m) => m.status === s).length,
-  }));
+  // Normalize incoming list and sync with intaked state
+  const normalizedMeds = useMemo(() => {
+    const rawList = medications.length > 0 ? medications : MEDICATIONS;
+    return rawList.map((m) => {
+      const isMarkedIntaked = localIntakedIds.has(m.id);
+      const isAlreadyIntaked = m.status === "intaked" || m.status === "taken";
+      const status = (isMarkedIntaked || isAlreadyIntaked) ? "intaked" : "next-intake";
+      return {
+        ...m,
+        status,
+      };
+    });
+  }, [medications, localIntakedIds]);
+
+  const toTakeList = useMemo(() => {
+    return normalizedMeds.filter((m) => m.status !== "intaked");
+  }, [normalizedMeds]);
+
+  const intakedList = useMemo(() => {
+    return normalizedMeds.filter((m) => m.status === "intaked");
+  }, [normalizedMeds]);
+
+  const statusItems = [
+    { id: "to-intake" as const, label: "To Intake", count: toTakeList.length, dot: "#0994E8" },
+    { id: "intaked" as const,   label: "Intaked",   count: intakedList.length, dot: "#10B981" },
+    { id: "all" as const,       label: "Total Meds", count: normalizedMeds.length, dot: "#0B2136" },
+  ];
 
   const tabCounts = {
-    all: activeMeds.length,
-    active: activeMeds.filter((m) => m.status === "due-now" || m.status === "upcoming").length,
-    taken: activeMeds.filter((m) => m.status === "taken").length,
-    missed: activeMeds.filter((m) => m.status === "missed").length,
+    all: normalizedMeds.length,
+    "to-intake": toTakeList.length,
+    intaked: intakedList.length,
+  };
+
+  const renderMedCard = (med: any, isToIntakeSection: boolean) => {
+    const cfg = statusConfig[med.status] || (isToIntakeSection ? statusConfig["next-intake"] : statusConfig["intaked"]);
+    const isExpanded = expanded === med.id;
+
+    return (
+      <Card key={med.id} onPress={() => setExpanded(isExpanded ? null : med.id)} className="relative overflow-hidden mb-3">
+        {/* Status accent line */}
+        <View className="absolute top-0 left-0 w-1.5 h-full rounded-l-full z-10" style={{ backgroundColor: cfg.dot }} />
+        
+        <View className="flex-row items-start gap-3 pl-2">
+          <View
+            className="w-11 h-11 rounded-xl items-center justify-center"
+            style={{ backgroundColor: cfg.bg }}
+          >
+            <Text className="text-xl">💊</Text>
+          </View>
+          <View className="flex-1">
+            <View className="flex-row items-center justify-between gap-2 mb-0.5">
+              <Text className="text-base font-black text-[#0B2136] flex-1" numberOfLines={1}>{med.name}</Text>
+              <Badge variant={cfg.badge}>{cfg.label}</Badge>
+            </View>
+            <Text className="text-xs text-slate-400">{med.dose}</Text>
+            {med.nextDose && med.status !== "intaked" && med.status !== "taken" && (
+              <Text className="text-xs font-semibold mt-0.5" style={{ color: cfg.dot }}>
+                Next: {formatTime12(med.nextDose)}
+              </Text>
+            )}
+          </View>
+          <View className="mt-1" style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }}>
+            <Svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            >
+              <Polyline points="6 9 12 15 18 9"/>
+            </Svg>
+          </View>
+        </View>
+
+        {isExpanded && (
+          <View className="mt-3 pt-3 border-t border-sky-100 flex-col gap-2.5 pl-2">
+            {med.instructions ? (
+              <View>
+                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions / Remarks</Text>
+                <Text className="text-xs text-slate-600 leading-relaxed mt-0.5">{med.instructions}</Text>
+              </View>
+            ) : null}
+            {med.timeGiven ? (
+              <View>
+                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Given</Text>
+                <Text className="text-xs text-slate-600 mt-0.5">{formatTime12(med.timeGiven)}</Text>
+              </View>
+            ) : null}
+            {med.nextDose ? (
+              <View>
+                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next Intake</Text>
+                <Text className="text-xs font-bold text-[#0994E8] mt-0.5">{formatTime12(med.nextDose)}</Text>
+              </View>
+            ) : null}
+            {!isToIntakeSection && (
+              <View className="mt-1 bg-emerald-50 border border-emerald-200/60 rounded-xl py-2 px-3 items-center">
+                <Text className="text-xs font-bold text-emerald-700">✓ Completed / Intaked</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Intake button for To Intake section */}
+        {isToIntakeSection && (
+          <View className="mt-3 pt-2.5 border-t border-slate-100 pl-2">
+            <Pressable
+              onPress={() => handleIntake(med.id)}
+              className="w-full bg-emerald-600 active:bg-emerald-700 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 shadow-sm"
+              style={{
+                elevation: 2,
+                shadowColor: "#059669",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+              }}
+            >
+              <Text className="text-xs font-bold text-white tracking-wide">✓ Intake</Text>
+            </Pressable>
+          </View>
+        )}
+      </Card>
+    );
   };
 
   return (
@@ -92,8 +220,9 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
 
         {/* Filter segmented tabs */}
         <View className="flex-row bg-white/10 rounded-full p-1 border border-white/10 mt-2.5">
-          {(["all", "active", "taken", "missed"] as const).map((f) => {
+          {(["all", "to-intake", "intaked"] as const).map((f) => {
             const isSelected = filter === f;
+            const tabLabel = f === "all" ? "All" : f === "to-intake" ? "To Intake" : "Intaked";
             return (
               <Pressable
                 key={f}
@@ -109,8 +238,8 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                   elevation: 2,
                 } : {}}
               >
-                <Text className={`text-xs font-bold capitalize ${isSelected ? "text-[#0B2136]" : "text-white/80"}`}>
-                  {f}
+                <Text className={`text-xs font-bold ${isSelected ? "text-[#0B2136]" : "text-white/80"}`}>
+                  {tabLabel}
                 </Text>
                 <View
                   className={`rounded-full px-1.5 py-0.5 items-center justify-center ${
@@ -131,80 +260,59 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       </View>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 8, paddingBottom: 120 }}>
-        <View className="flex-col gap-3 pb-8">
-          {filtered.length === 0 && (
-            <View className="items-center justify-center py-14 gap-3">
-              <Text className="text-4xl">💊</Text>
-              <Text className="text-sm font-medium text-slate-400">No medications in this category</Text>
-            </View>
-          )}
-
-          {filtered.map((med) => {
-            const cfg = statusConfig[med.status as keyof typeof statusConfig] || statusConfig["upcoming"];
-            const isExpanded = expanded === med.id;
-
-            return (
-              <Card key={med.id} onPress={() => setExpanded(isExpanded ? null : med.id)} className="relative overflow-hidden">
-                {/* Status accent line */}
-                <View className="absolute top-0 left-0 w-1.5 h-full rounded-l-full z-10" style={{ backgroundColor: cfg.dot }} />
-                
-                <View className="flex-row items-start gap-3 pl-2">
-                  <View
-                    className="w-11 h-11 rounded-xl items-center justify-center"
-                    style={{ backgroundColor: cfg.bg }}
-                  >
-                    <Text className="text-xl">💊</Text>
-                  </View>
-                  <View className="flex-1">
-                    <View className="flex-row items-center justify-between gap-2 mb-0.5">
-                      <Text className="text-base font-black text-[#0B2136] flex-1" numberOfLines={1}>{med.name}</Text>
-                      <Badge variant={cfg.badge}>{cfg.label}</Badge>
-                    </View>
-                    <Text className="text-xs text-slate-400">{med.dose}</Text>
-                    {med.nextDose && med.status !== "taken" && med.status !== "missed" && (
-                      <Text className="text-xs font-semibold mt-0.5" style={{ color: cfg.dot }}>
-                        Next: {med.nextDose}
-                      </Text>
-                    )}
-                  </View>
-                  <View className="mt-1" style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }}>
-                    <Svg
-                      width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                    >
-                      <Polyline points="6 9 12 15 18 9"/>
-                    </Svg>
-                  </View>
+        {/* Section 1: TO INTAKE */}
+        {(filter === "all" || filter === "to-intake") && (
+          <View className="mb-5">
+            <View className="flex-row items-center justify-between mb-3 px-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-base font-black text-white" style={{ fontFamily: "Outfit" }}>
+                  To Intake
+                </Text>
+                <View className="bg-sky-500/25 border border-sky-400/40 rounded-full px-2 py-0.5">
+                  <Text className="text-[11px] font-bold text-sky-200">{toTakeList.length}</Text>
                 </View>
+              </View>
+              <Text className="text-xs text-white/50">Pending medications</Text>
+            </View>
 
-                {isExpanded && (
-                  <View className="mt-3 pt-3 border-t border-sky-100 flex-col gap-3 pl-2">
-                    <View>
-                      <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions</Text>
-                      <Text className="text-xs text-slate-600 leading-relaxed mt-0.5">{med.instructions}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time given</Text>
-                      <Text className="text-xs text-slate-600 mt-0.5">{formatTime12(med.timeGiven)}</Text>
-                    </View>
-                    {med.status === "due-now" && (
-                      <LinearGradient
-                        colors={['#0994E8', '#06B6D4']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        className="rounded-xl overflow-hidden"
-                      >
-                        <Pressable className="w-full py-3 items-center">
-                          <Text className="text-xs font-bold text-white">✓ Mark as Taken</Text>
-                        </Pressable>
-                      </LinearGradient>
-                    )}
-                  </View>
-                )}
-              </Card>
-            );
-          })}
-        </View>
+            {toTakeList.length === 0 ? (
+              <View className="bg-white/10 rounded-2xl p-5 items-center justify-center border border-white/10 mb-2">
+                <Text className="text-2xl mb-1">🎉</Text>
+                <Text className="text-sm font-bold text-white">No medications to intake</Text>
+                <Text className="text-xs text-white/60 text-center mt-0.5">All scheduled medication intakes are completed.</Text>
+              </View>
+            ) : (
+              toTakeList.map((med) => renderMedCard(med, true))
+            )}
+          </View>
+        )}
+
+        {/* Section 2: INTAKED */}
+        {(filter === "all" || filter === "intaked") && (
+          <View className="mb-6">
+            <View className="flex-row items-center justify-between mb-3 mt-3 px-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-base font-black text-white" style={{ fontFamily: "Outfit" }}>
+                  Intaked
+                </Text>
+                <View className="bg-emerald-500/25 border border-emerald-400/40 rounded-full px-2 py-0.5">
+                  <Text className="text-[11px] font-bold text-emerald-200">{intakedList.length}</Text>
+                </View>
+              </View>
+              <Text className="text-xs text-white/50">Completed</Text>
+            </View>
+
+            {intakedList.length === 0 ? (
+              <View className="bg-white/10 rounded-2xl p-5 items-center justify-center border border-white/10">
+                <Text className="text-2xl mb-1">💊</Text>
+                <Text className="text-sm font-bold text-white">No intaked medications yet</Text>
+                <Text className="text-xs text-white/60 text-center mt-0.5">Medications you mark as intaked will appear here.</Text>
+              </View>
+            ) : (
+              intakedList.map((med) => renderMedCard(med, false))
+            )}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
