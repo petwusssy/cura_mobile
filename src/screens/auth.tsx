@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo, forwardRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo, forwardRef } from "react";
 import {
   View,
   Text,
@@ -32,7 +32,15 @@ import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import type { Screen } from "../types";
+import type { Screen, AppUser, PatientCategory } from "../types";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import {
+  PH_REGIONS,
+  getProvincesByRegion,
+  getCitiesByProvince,
+  getBarangaysByCity,
+} from "../constants/phLocations";
+import { MASCOTS } from "../data";
 import { useAlert } from "../components/AlertProvider";
 import { Button, Input } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -169,9 +177,62 @@ function EyeIcon({ open, color = "#FFFFFF", size = 18 }: { open: boolean; color?
   );
 }
 
+// ── Additional Glass Icons ───────────────────────────────────────────────────
+
+function PhoneIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </Svg>
+  );
+}
+
+function CalendarIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+      <Path d="M16 2v4M8 2v4M3 10h18" />
+    </Svg>
+  );
+}
+
+function MapPinIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <Circle cx="12" cy="10" r="3" />
+    </Svg>
+  );
+}
+
+function ChevronLeftIcon({ color = "#FFFFFF", size = 18 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <Polyline points="15 18 9 12 15 6" />
+    </Svg>
+  );
+}
+
+function ChevronDownIcon({ color = "#FFFFFF", size = 16 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Polyline points="6 9 12 15 18 9" />
+    </Svg>
+  );
+}
+
+function CheckIcon({ color = "#FFFFFF", size = 16 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <Polyline points="20 6 9 17 4 12" />
+    </Svg>
+  );
+}
+
 // ── Glassmorphism Input Component ────────────────────────────────────────────
 
 interface GlassInputProps {
+  label?: string;
   icon?: React.ReactNode;
   placeholder: string;
   value: string;
@@ -184,11 +245,13 @@ interface GlassInputProps {
   returnKeyType?: "done" | "go" | "next" | "search" | "send";
   onSubmitEditing?: () => void;
   blurOnSubmit?: boolean;
+  maxLength?: number;
 }
 
 const GlassInput = memo(
   forwardRef<TextInput, GlassInputProps>(function GlassInput(
     {
+      label,
       icon,
       placeholder,
       value,
@@ -201,6 +264,7 @@ const GlassInput = memo(
       returnKeyType,
       onSubmitEditing,
       blurOnSubmit = false,
+      maxLength,
     },
     ref
   ) {
@@ -208,6 +272,21 @@ const GlassInput = memo(
 
     return (
       <View style={{ marginBottom: 12 }}>
+        {label ? (
+          <Text
+            style={{
+              color: "rgba(255, 255, 255, 0.75)",
+              fontSize: 11.5,
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: 0.6,
+              fontFamily: "Outfit",
+              marginBottom: 5,
+            }}
+          >
+            {label}
+          </Text>
+        ) : null}
         <View
           style={{
             flexDirection: "row",
@@ -216,7 +295,7 @@ const GlassInput = memo(
             borderRadius: 12,
             backgroundColor: "rgba(255, 255, 255, 0.18)",
             borderWidth: 1.5,
-            borderColor: "rgba(255, 255, 255, 0.30)",
+            borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
             paddingHorizontal: 14,
           }}
         >
@@ -228,22 +307,17 @@ const GlassInput = memo(
             placeholder={placeholder}
             placeholderTextColor="rgba(255, 255, 255, 0.62)"
             secureTextEntry={isSecured}
-            onFocus={() => {
-              console.log(`[DEBUG] Input "${placeholder}" FOCUS`);
-            }}
-            onBlur={() => {
-              console.log(`[DEBUG] Input "${placeholder}" BLUR`);
-            }}
             keyboardType={keyboardType}
             autoCapitalize={autoCapitalize}
             returnKeyType={returnKeyType}
             onSubmitEditing={onSubmitEditing}
             blurOnSubmit={blurOnSubmit}
+            maxLength={maxLength}
             editable={true}
             style={{
               flex: 1,
               color: "#FFFFFF",
-              fontSize: 14.5,
+              fontSize: 14,
               fontFamily: "Outfit",
               paddingVertical: 0,
               height: "100%",
@@ -281,6 +355,494 @@ const GlassInput = memo(
   })
 );
 
+// ── Glass DatePicker Field ───────────────────────────────────────────────────
+
+function GlassDatePickerField({
+  label,
+  value,
+  onChange,
+  error,
+  placeholder = "Select Birthday",
+}: {
+  label: string;
+  value: string;
+  onChange: (dateStr: string) => void;
+  error?: string;
+  placeholder?: string;
+}) {
+  const [showPicker, setShowPicker] = useState(false);
+  const [tempDate, setTempDate] = useState<Date>(() => {
+    if (value) {
+      const p = new Date(value);
+      if (!isNaN(p.getTime())) return p;
+    }
+    return new Date(2000, 0, 1);
+  });
+
+  const handleAndroidChange = (event: any, selectedDate?: Date) => {
+    setShowPicker(false);
+    if (event.type !== "dismissed" && selectedDate) {
+      const y = selectedDate.getFullYear();
+      const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const d = String(selectedDate.getDate()).padStart(2, "0");
+      onChange(`${y}-${m}-${d}`);
+    }
+  };
+
+  const handleIOSDone = () => {
+    setShowPicker(false);
+    const y = tempDate.getFullYear();
+    const m = String(tempDate.getMonth() + 1).padStart(2, "0");
+    const d = String(tempDate.getDate()).padStart(2, "0");
+    onChange(`${y}-${m}-${d}`);
+  };
+
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text
+        style={{
+          color: "rgba(255, 255, 255, 0.75)",
+          fontSize: 11.5,
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: 0.6,
+          fontFamily: "Outfit",
+          marginBottom: 5,
+        }}
+      >
+        {label}
+      </Text>
+      <TouchableOpacity
+        onPress={() => setShowPicker(true)}
+        activeOpacity={0.75}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: 48,
+          borderRadius: 12,
+          backgroundColor: "rgba(255, 255, 255, 0.18)",
+          borderWidth: 1.5,
+          borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
+          paddingHorizontal: 14,
+        }}
+      >
+        <Text
+          style={{
+            color: value ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)",
+            fontSize: 14,
+            fontWeight: "500",
+            fontFamily: "Outfit",
+          }}
+        >
+          {value || placeholder}
+        </Text>
+        <CalendarIcon color="rgba(255, 255, 255, 0.85)" size={18} />
+      </TouchableOpacity>
+
+      {error ? (
+        <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginTop: 4, marginLeft: 4 }}>
+          {error}
+        </Text>
+      ) : null}
+
+      {Platform.OS === "android" && showPicker && (
+        <DateTimePicker
+          value={value ? new Date(value) : new Date(2000, 0, 1)}
+          mode="date"
+          display="default"
+          maximumDate={new Date()}
+          onChange={handleAndroidChange}
+        />
+      )}
+
+      {Platform.OS === "ios" && (
+        <Modal visible={showPicker} transparent animationType="fade" onRequestClose={() => setShowPicker(false)}>
+          <View style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.70)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+            <View style={{ width: "100%", maxWidth: 380, backgroundColor: "rgba(10, 24, 58, 0.96)", borderRadius: 24, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.3)", padding: 20 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "700", fontFamily: "Outfit" }}>Select Birthday</Text>
+                <TouchableOpacity onPress={handleIOSDone} style={{ backgroundColor: "#1E4FD8", paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700", fontFamily: "Outfit" }}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={tempDate}
+                mode="date"
+                display="spinner"
+                themeVariant="dark"
+                maximumDate={new Date()}
+                onChange={(_, d) => {
+                  if (d) setTempDate(d);
+                }}
+                style={{ height: 180, width: "100%" }}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
+    </View>
+  );
+}
+
+// ── Glass Location Modal Picker ──────────────────────────────────────────────
+
+function GlassLocationModalPicker({
+  visible,
+  title,
+  options,
+  selected,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  options: { label: string; value: string }[];
+  selected: string;
+  onSelect: (item: { label: string; value: string }) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return options;
+    const query = search.toLowerCase().trim();
+    return options.filter((o) => o.label.toLowerCase().includes(query));
+  }, [options, search]);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.70)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            maxHeight: "80%",
+            borderRadius: 24,
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.30)",
+            backgroundColor: "rgba(10, 24, 58, 0.96)",
+            overflow: "hidden",
+            paddingTop: 18,
+            paddingBottom: 16,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: 0.4,
+            shadowRadius: 24,
+            elevation: 12,
+          }}
+        >
+          {/* Header */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.12)" }}>
+            <View>
+              <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700", fontFamily: "Outfit" }}>{title}</Text>
+              <Text style={{ color: "rgba(255, 255, 255, 0.6)", fontSize: 11, fontFamily: "Outfit" }}>{options.length} options available</Text>
+            </View>
+            <TouchableOpacity onPress={() => { setSearch(""); onClose(); }} style={{ backgroundColor: "rgba(255, 255, 255, 0.15)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Outfit" }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Search Box */}
+          <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255, 255, 255, 0.12)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.20)", paddingHorizontal: 12, height: 42 }}>
+              <Text style={{ marginRight: 8, fontSize: 13 }}>🔍</Text>
+              <TextInput
+                placeholder="Search..."
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={search}
+                onChangeText={setSearch}
+                style={{ flex: 1, color: "#FFFFFF", fontSize: 13.5, fontFamily: "Outfit", paddingVertical: 0 }}
+                autoCorrect={false}
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch("")} style={{ padding: 4 }}>
+                  <Text style={{ color: "rgba(255, 255, 255, 0.6)", fontSize: 12 }}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Options List */}
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12 }}>
+            {filtered.map((item: any) => {
+              const isSel = item.value === selected || item.label === selected;
+              return (
+                <TouchableOpacity
+                  key={item.value}
+                  onPress={() => {
+                    onSelect(item);
+                    setSearch("");
+                    onClose();
+                  }}
+                  activeOpacity={0.7}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 12,
+                    paddingHorizontal: 14,
+                    borderRadius: 12,
+                    marginTop: 6,
+                    backgroundColor: isSel ? "rgba(30, 79, 216, 0.55)" : "rgba(255, 255, 255, 0.08)",
+                    borderWidth: 1,
+                    borderColor: isSel ? "#60A5FA" : "rgba(255, 255, 255, 0.12)",
+                  }}
+                >
+                  <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: isSel ? "700" : "500", fontFamily: "Outfit", flex: 1, paddingRight: 8 }} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                  {isSel && <CheckIcon color="#FFFFFF" size={16} />}
+                </TouchableOpacity>
+              );
+            })}
+            {filtered.length === 0 && (
+              <View style={{ paddingVertical: 24, alignItems: "center" }}>
+                <Text style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: 13, fontFamily: "Outfit" }}>No matches found</Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ── Glass Select Row (Dropdown trigger) ───────────────────────────────────────
+
+function GlassSelectRow({
+  label,
+  value,
+  placeholder,
+  onPress,
+  error,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onPress: () => void;
+  error?: string;
+}) {
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text
+        style={{
+          color: "rgba(255, 255, 255, 0.75)",
+          fontSize: 11.5,
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: 0.6,
+          fontFamily: "Outfit",
+          marginBottom: 5,
+        }}
+      >
+        {label}
+      </Text>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.75}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: 48,
+          borderRadius: 12,
+          backgroundColor: "rgba(255, 255, 255, 0.18)",
+          borderWidth: 1.5,
+          borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
+          paddingHorizontal: 14,
+        }}
+      >
+        <Text
+          numberOfLines={1}
+          style={{
+            flex: 1,
+            color: value ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)",
+            fontSize: 14,
+            fontWeight: "500",
+            fontFamily: "Outfit",
+            paddingRight: 8,
+          }}
+        >
+          {value || placeholder}
+        </Text>
+        <ChevronDownIcon color="rgba(255, 255, 255, 0.7)" size={16} />
+      </TouchableOpacity>
+      {error ? (
+        <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginTop: 4, marginLeft: 4 }}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+// ── Glass Sex Chips ──────────────────────────────────────────────────────────
+
+function GlassSexChips({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  error?: string;
+}) {
+  const options = ["Female", "Male", "Other"];
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text
+        style={{
+          color: "rgba(255, 255, 255, 0.75)",
+          fontSize: 11.5,
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: 0.6,
+          fontFamily: "Outfit",
+          marginBottom: 6,
+        }}
+      >
+        Sex
+      </Text>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {options.map((opt) => {
+          const isSelected = value === opt;
+          return (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => onChange(opt)}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.14)",
+                borderWidth: 1.5,
+                borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
+                shadowColor: isSelected ? "#1E4FD8" : "transparent",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isSelected ? 0.35 : 0,
+                shadowRadius: 6,
+                elevation: isSelected ? 3 : 0,
+              }}
+            >
+              <Text
+                style={{
+                  color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
+                  fontSize: 13.5,
+                  fontWeight: isSelected ? "700" : "500",
+                  fontFamily: "Outfit",
+                }}
+              >
+                {opt}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+      {error ? (
+        <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginTop: 4, marginLeft: 4 }}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+// ── Glass Step Header with 4 Progress Bars + Back Button ─────────────────────
+
+function GlassStepHeader({
+  step,
+  total = 4,
+  title,
+  subtitle,
+  onBack,
+}: {
+  step: number;
+  total?: number;
+  title: string;
+  subtitle: string;
+  onBack?: () => void;
+}) {
+  return (
+    <View style={{ marginBottom: 14 }}>
+      {/* Progress Bars Row + Optional Back Button */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12, paddingRight: 40 }}>
+        {step > 1 && onBack ? (
+          <TouchableOpacity
+            onPress={onBack}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 15,
+              backgroundColor: "rgba(255, 255, 255, 0.16)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.28)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ChevronLeftIcon color="#FFFFFF" size={16} />
+          </TouchableOpacity>
+        ) : null}
+
+        <View style={{ flex: 1, flexDirection: "row", gap: 5 }}>
+          {Array.from({ length: total }).map((_, i) => {
+            const isActive = i + 1 <= step;
+            return (
+              <View
+                key={i}
+                style={{
+                  height: 4,
+                  flex: 1,
+                  borderRadius: 2,
+                  backgroundColor: isActive ? "#38BDF8" : "rgba(255, 255, 255, 0.20)",
+                  shadowColor: isActive ? "#38BDF8" : "transparent",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: isActive ? 0.6 : 0,
+                  shadowRadius: 3,
+                }}
+              />
+            );
+          })}
+        </View>
+      </View>
+
+      <Text
+        style={{
+          color: "#FFFFFF",
+          fontSize: 22,
+          fontWeight: "700",
+          fontFamily: "Outfit",
+          letterSpacing: 0.3,
+          textShadowColor: "rgba(0, 0, 0, 0.35)",
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 3,
+        }}
+      >
+        {title}
+      </Text>
+      <Text
+        style={{
+          color: "rgba(255, 255, 255, 0.82)",
+          fontSize: 13,
+          fontFamily: "Outfit",
+          marginTop: 3,
+          textShadowColor: "rgba(0, 0, 0, 0.3)",
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 2,
+        }}
+      >
+        {subtitle}
+      </Text>
+    </View>
+  );
+}
+
 // ── Standalone Glassmorphism Auth Modal ──────────────────────────────────────
 
 interface AuthModalProps {
@@ -288,7 +850,14 @@ interface AuthModalProps {
   initialMode: "signin" | "create_account";
   onClose: () => void;
   onSuccessSignIn: (userEmail: string, userName: string, accessToken: string) => void;
-  onSuccessRegister: (userEmail: string, userName: string, accessToken: string, idNumber: string, fullName: string) => void;
+  onSuccessRegister: (
+    userEmail: string,
+    userName: string,
+    accessToken: string,
+    idNumber: string,
+    fullName: string,
+    finalUser?: any
+  ) => void;
 }
 
 const AuthModal = memo(function AuthModal({
@@ -298,6 +867,7 @@ const AuthModal = memo(function AuthModal({
   onSuccessSignIn,
   onSuccessRegister,
 }: AuthModalProps) {
+  const { showAlert } = useAlert();
   const [authMode, setAuthMode] = useState<"signin" | "create_account">(initialMode);
   const animVal = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
@@ -309,16 +879,82 @@ const AuthModal = memo(function AuthModal({
   const [signInLoading, setSignInLoading] = useState(false);
   const [signInGeneralError, setSignInGeneralError] = useState("");
 
-  // Create Account Form State
-  const [fullName, setFullName] = useState("");
-  const [idNumber, setIdNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // Create Account Multi-Step Shared State
+  const [createStep, setCreateStep] = useState<1 | 2 | 3 | 4>(1);
+  const stepFadeAnim = useRef(new Animated.Value(1)).current;
+  const stepSlideAnim = useRef(new Animated.Value(0)).current;
+
+  const [createForm, setCreateForm] = useState({
+    // Step 1: Account
+    fullName: "",
+    idNumber: "",
+    email: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
+    // Step 2: Personal Info
+    firstName: "",
+    lastName: "",
+    contact: "",
+    dob: "",
+    sex: "",
+    // Step 3: Address & Emergency Contact
+    regionCode: "03",
+    provinceCode: "0354",
+    cityCode: "035416",
+    barangay: "Dolores",
+    street: "",
+    address: "",
+    emergencyName: "",
+    emergencyPhone: "",
+    // Step 4: Avatar
+    avatarId: "",
+    displayName: "",
+  });
+
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
   const [regGeneralError, setRegGeneralError] = useState("");
+
+  // Location modal selector state
+  const [locationModalType, setLocationModalType] = useState<"region" | "province" | "city" | "barangay" | null>(null);
+
+  // Active items derived from PSGC
+  const currentRegion = useMemo(() => {
+    return PH_REGIONS.find((r: any) => r.region_code === createForm.regionCode) || PH_REGIONS[0];
+  }, [createForm.regionCode]);
+
+  const availableProvinces = useMemo(() => {
+    return getProvincesByRegion(createForm.regionCode);
+  }, [createForm.regionCode]);
+
+  const currentProvince = useMemo(() => {
+    return availableProvinces.find((p: any) => p.province_code === createForm.provinceCode) || availableProvinces[0];
+  }, [availableProvinces, createForm.provinceCode]);
+
+  const availableCities = useMemo(() => {
+    return getCitiesByProvince(createForm.provinceCode);
+  }, [createForm.provinceCode]);
+
+  const currentCity = useMemo(() => {
+    return availableCities.find((c: any) => c.city_code === createForm.cityCode) || availableCities[0];
+  }, [availableCities, createForm.cityCode]);
+
+  const availableBarangays = useMemo(() => {
+    return getBarangaysByCity(createForm.cityCode);
+  }, [createForm.cityCode]);
+
+  // Sync address preview string whenever location components change
+  useEffect(() => {
+    const parts: string[] = [];
+    if (createForm.street.trim()) parts.push(createForm.street.trim());
+    if (createForm.barangay.trim()) parts.push(`Brgy. ${createForm.barangay.trim()}`);
+    if (currentCity?.city_name) parts.push(currentCity.city_name);
+    if (currentProvince?.province_name) parts.push(currentProvince.province_name);
+    if (currentRegion?.region_name) parts.push(currentRegion.region_name);
+    const full = parts.join(", ");
+    setCreateForm((f) => ({ ...f, address: full }));
+  }, [createForm.street, createForm.barangay, currentCity, currentProvince, currentRegion]);
 
   // Input refs for keyboard navigation
   const signInPasswordRef = useRef<TextInput>(null);
@@ -335,18 +971,15 @@ const AuthModal = memo(function AuthModal({
   }, []);
 
   useEffect(() => {
-    console.log("[DEBUG] AuthModal MOUNT");
-    return () => console.log("[DEBUG] AuthModal UNMOUNT");
-  }, []);
-
-  useEffect(() => {
     if (visible) {
-      console.log("[DEBUG] Entrance animation START");
       setAuthMode(initialMode);
       setSignInErrors({});
       setSignInGeneralError("");
       setRegErrors({});
       setRegGeneralError("");
+      setCreateStep(1);
+      stepFadeAnim.setValue(1);
+      stepSlideAnim.setValue(0);
       contentFadeAnim.setValue(1);
       Animated.timing(animVal, {
         toValue: 1,
@@ -355,7 +988,7 @@ const AuthModal = memo(function AuthModal({
         useNativeDriver: true,
       }).start();
     }
-  }, [visible]);
+  }, [visible, initialMode]);
 
   const handleClose = useCallback(() => {
     Keyboard.dismiss();
@@ -381,8 +1014,28 @@ const AuthModal = memo(function AuthModal({
       setSignInGeneralError("");
       setRegErrors({});
       setRegGeneralError("");
+      setCreateStep(1);
     }, 110);
   }, [triggerHaptic, contentFadeAnim]);
+
+  // Step Transition Animator
+  const goToCreateStep = useCallback((targetStep: 1 | 2 | 3 | 4, direction: "next" | "back") => {
+    triggerHaptic();
+    Keyboard.dismiss();
+    Animated.parallel([
+      Animated.timing(stepFadeAnim, { toValue: 0, duration: 110, useNativeDriver: true }),
+      Animated.timing(stepSlideAnim, { toValue: direction === "next" ? -25 : 25, duration: 110, useNativeDriver: true }),
+    ]).start(() => {
+      setCreateStep(targetStep);
+      setRegErrors({});
+      setRegGeneralError("");
+      stepSlideAnim.setValue(direction === "next" ? 25 : -25);
+      Animated.parallel([
+        Animated.timing(stepFadeAnim, { toValue: 1, duration: 160, useNativeDriver: true }),
+        Animated.timing(stepSlideAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+      ]).start();
+    });
+  }, [triggerHaptic, stepFadeAnim, stepSlideAnim]);
 
   // Sign In Handler
   const handleSignIn = useCallback(async () => {
@@ -421,23 +1074,23 @@ const AuthModal = memo(function AuthModal({
     }
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
-  // Create Account Handler
-  const handleCreateAccount = useCallback(async () => {
+  // Step 1 Validation & Next
+  const handleStep1Next = useCallback(() => {
     const errs: Record<string, string> = {};
-    if (!fullName.trim()) errs.fullName = "Full name is required";
-    if (!idNumber.trim()) errs.idNumber = "Student / Employee ID is required";
-    if (!email.trim()) {
+    if (!createForm.fullName.trim()) errs.fullName = "Full name is required";
+    if (!createForm.idNumber.trim()) errs.idNumber = "Student / Employee ID is required";
+    if (!createForm.email.trim()) {
       errs.email = "Email address is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email.trim())) {
       errs.email = "Enter a valid email address";
     }
-    if (!username.trim()) errs.username = "Username is required";
-    if (!password) {
+    if (!createForm.username.trim()) errs.username = "Username is required";
+    if (!createForm.password) {
       errs.password = "Password is required";
-    } else if (password.length < 8) {
+    } else if (createForm.password.length < 8) {
       errs.password = "At least 8 characters required";
     }
-    if (password !== confirmPassword) {
+    if (createForm.password !== createForm.confirmPassword) {
       errs.confirmPassword = "Passwords do not match";
     }
 
@@ -445,39 +1098,208 @@ const AuthModal = memo(function AuthModal({
       setRegErrors(errs);
       return;
     }
+
+    // Auto-prefill first and last name from Full Name if empty
+    const parts = createForm.fullName.trim().split(/\s+/);
+    const autoFirst = parts[0] || "";
+    const autoLast = parts.slice(1).join(" ") || "";
+
+    setCreateForm((prev) => ({
+      ...prev,
+      firstName: prev.firstName || autoFirst,
+      lastName: prev.lastName || autoLast,
+    }));
+
+    goToCreateStep(2, "next");
+  }, [createForm, goToCreateStep]);
+
+  // Step 2 Validation & Next
+  const handleStep2Next = useCallback(() => {
+    const errs: Record<string, string> = {};
+    if (!createForm.firstName.trim()) errs.firstName = "First name is required";
+    if (!createForm.lastName.trim()) errs.lastName = "Last name is required";
+    const cleanedContact = createForm.contact.replace(/\D/g, "");
+    if (!cleanedContact) {
+      errs.contact = "Contact number is required";
+    } else if (!/^09\d{9}$/.test(cleanedContact)) {
+      errs.contact = "Must be valid PH mobile (09XXXXXXXXX)";
+    }
+    if (!createForm.dob) errs.dob = "Birthday is required";
+    if (!createForm.sex) errs.sex = "Please select sex";
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+
+    goToCreateStep(3, "next");
+  }, [createForm, goToCreateStep]);
+
+  // Step 3 Validation & Next
+  const handleStep3Next = useCallback(() => {
+    const errs: Record<string, string> = {};
+    if (!createForm.street.trim() || createForm.street.trim().length < 2) {
+      errs.street = "Please enter House No. / Street / Village (min 2 chars)";
+    }
+    if (!createForm.emergencyName.trim()) {
+      errs.emergencyName = "Emergency contact name is required";
+    }
+    const cleanedEm = createForm.emergencyPhone.replace(/\D/g, "");
+    if (!cleanedEm) {
+      errs.emergencyPhone = "Emergency contact number is required";
+    } else if (!/^09\d{9}$/.test(cleanedEm)) {
+      errs.emergencyPhone = "Must be valid PH mobile (09XXXXXXXXX)";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+
+    // Auto-prefill display name if not yet set
+    setCreateForm((prev) => ({
+      ...prev,
+      displayName: prev.displayName || (prev.username || prev.firstName).toUpperCase(),
+    }));
+
+    goToCreateStep(4, "next");
+  }, [createForm, goToCreateStep]);
+
+  // Step 4 Final Submit (Get Started)
+  const handleGetStarted = useCallback(async () => {
+    const errs: Record<string, string> = {};
+    if (!createForm.avatarId) errs.avatar = "Please select an avatar";
+    if (!createForm.displayName.trim()) errs.displayName = "Display name is required";
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+
     setRegErrors({});
     setRegGeneralError("");
     setRegLoading(true);
 
     try {
+      const lowerEmail = createForm.email.trim().toLowerCase();
+      let role = "Outsider";
+      if (lowerEmail.endsWith(".student@ua.edu.ph")) {
+        role = "Student";
+      } else if (lowerEmail.endsWith("@ua.edu.ph")) {
+        role = "Employee";
+      }
+
+      // Step A: Register API call
       const regRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-          username: username.trim(),
-          name: fullName.trim(),
-          id_number: idNumber.trim(),
+          email: createForm.email.trim(),
+          password: createForm.password,
+          username: createForm.username.trim(),
+          name: createForm.fullName.trim(),
+          id_number: createForm.idNumber.trim(),
+          role: role,
         }),
       });
+
       const resText = await regRes.text();
       let regData: any = {};
       try { regData = resText ? JSON.parse(resText) : {}; } catch {}
 
-      if (regRes.ok || regData.access) {
-        const userEmail = regData.user?.email || email.trim();
-        const userName = fullName.trim().toUpperCase() || (regData.user?.name || userEmail.split("@")[0]).toUpperCase();
-        onSuccessRegister(userEmail, userName, regData.access || "", idNumber.trim(), fullName.trim());
-      } else {
-        setRegGeneralError(regData.error || regData.detail || "Registration failed. Account may already exist.");
+      if (!regRes.ok && !regData.access) {
+        const msg = regData.error || regData.detail || "Registration failed. Account may already exist.";
+        setRegGeneralError(msg);
+        showAlert("Registration Failed", msg);
+        setRegLoading(false);
+        return;
       }
-    } catch (e) {
-      setRegGeneralError("Network error. Please try again.");
+
+      const token = regData.access || "";
+
+      // Calculate age
+      let age = 0;
+      if (createForm.dob) {
+        const bdate = new Date(createForm.dob);
+        if (!isNaN(bdate.getTime())) {
+          const now = new Date();
+          age = now.getFullYear() - bdate.getFullYear();
+          const m = now.getMonth() - bdate.getMonth();
+          if (m < 0 || (m === 0 && now.getDate() < bdate.getDate())) age--;
+        }
+      }
+
+      // Step B: Complete profile payload
+      const profilePayload = {
+        id: createForm.idNumber.trim(),
+        name: `${createForm.firstName} ${createForm.lastName}`.trim().toUpperCase() || createForm.fullName.trim().toUpperCase(),
+        category: role,
+        contact: createForm.contact.trim(),
+        birthday: createForm.dob,
+        age: Math.max(0, age),
+        sex: createForm.sex,
+        emergencyContact: createForm.emergencyName.trim().toUpperCase(),
+        emergencyPhone: createForm.emergencyPhone.trim(),
+        address: createForm.address.trim(),
+      };
+
+      if (token) {
+        await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/complete-profile/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify(profilePayload),
+        }).catch((err) => {
+          console.warn("Complete profile warning:", err);
+        });
+      }
+
+      // Step C: Build final AppUser object
+      const mascot = MASCOTS.find((m) => m.id === createForm.avatarId) || MASCOTS[0];
+      const finalUser: any = {
+        id: createForm.idNumber.trim(),
+        id_number: createForm.idNumber.trim(),
+        name: profilePayload.name,
+        firstName: createForm.firstName.trim().toUpperCase(),
+        lastName: createForm.lastName.trim().toUpperCase(),
+        displayName: createForm.displayName.trim().toUpperCase(),
+        email: createForm.email.trim(),
+        phone: createForm.contact.trim(),
+        dob: createForm.dob,
+        gender: createForm.sex,
+        category: role.toLowerCase() as PatientCategory,
+        avatarId: mascot.id,
+        avatarColor: mascot.color,
+        avatarEmoji: mascot.emoji,
+        address: createForm.address.trim(),
+        emergencyName: createForm.emergencyName.trim().toUpperCase(),
+        emergencyPhone: createForm.emergencyPhone.trim(),
+        accessToken: token,
+      };
+
+      await AsyncStorage.setItem("@cura_user_session", JSON.stringify(finalUser)).catch(() => {});
+      if (token) {
+        await AsyncStorage.setItem("@cura_access_token", token).catch(() => {});
+      }
+
+      onSuccessRegister(
+        createForm.email.trim(),
+        finalUser.displayName,
+        token,
+        createForm.idNumber.trim(),
+        finalUser.name,
+        finalUser
+      );
+    } catch (e: any) {
+      const msg = e?.message || "Network error. Please check your connection and try again.";
+      setRegGeneralError(msg);
+      showAlert("Error", msg);
     } finally {
       setRegLoading(false);
     }
-  }, [fullName, idNumber, email, username, password, confirmPassword, onSuccessRegister]);
+  }, [createForm, onSuccessRegister, showAlert]);
 
   return (
     <Modal
@@ -514,20 +1336,20 @@ const AuthModal = memo(function AuthModal({
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            paddingHorizontal: 24,
+            paddingHorizontal: 20,
           }}
           pointerEvents="box-none"
         >
-          {/* 3) Modal Card - plain Animated.View without touchable wrapper */}
+          {/* 3) Modal Card */}
           <Animated.View
             style={{
               width: "100%",
-              maxWidth: 400,
-              maxHeight: "88%",
+              maxWidth: 420,
+              maxHeight: "90%",
               borderRadius: 24,
               borderWidth: 1,
               borderColor: "rgba(255, 255, 255, 0.32)",
-              backgroundColor: "rgba(10, 24, 58, 0.92)",
+              backgroundColor: "rgba(10, 24, 58, 0.94)",
               overflow: "hidden",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 12 },
@@ -537,7 +1359,7 @@ const AuthModal = memo(function AuthModal({
               opacity: animVal,
             }}
           >
-            {/* Decorative gradient with pointerEvents="none" */}
+            {/* Decorative gradient */}
             <LinearGradient
               colors={["rgba(255, 255, 255, 0.16)", "rgba(255, 255, 255, 0.04)"]}
               style={StyleSheet.absoluteFill}
@@ -567,18 +1389,31 @@ const AuthModal = memo(function AuthModal({
               <CloseIcon color="#FFFFFF" size={15} />
             </TouchableOpacity>
 
-            {/* Form Body wrapped in single ScrollView with keyboardShouldPersistTaps="handled" */}
+            {/* Form Body inside ScrollView */}
             <ScrollView
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
                 flexGrow: 1,
-                paddingHorizontal: 24,
-                paddingTop: 24,
+                paddingHorizontal: 22,
+                paddingTop: 20,
                 paddingBottom: 22,
               }}
             >
+              {/* University Clinic Header + Logo inside Card */}
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12, paddingRight: 40 }}>
+                <Image
+                  source={require("../../assets/images/ua-seal.png")}
+                  style={{ width: 28, height: 28, borderRadius: 14 }}
+                  resizeMode="contain"
+                />
+                <View style={{ width: 1, height: 16, backgroundColor: "rgba(255, 255, 255, 0.4)", marginHorizontal: 8 }} />
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Outfit", letterSpacing: 0.3 }}>
+                  University Clinic
+                </Text>
+              </View>
+
               <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
                 {authMode === "signin" ? (
                   // Sign In Content
@@ -736,37 +1571,8 @@ const AuthModal = memo(function AuthModal({
                     </View>
                   </View>
                 ) : (
-                  // Create Account Content
+                  // Create Account Multi-Step Flow
                   <View>
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: 24,
-                        fontWeight: "700",
-                        fontFamily: "Outfit",
-                        letterSpacing: 0.3,
-                        textShadowColor: "rgba(0, 0, 0, 0.35)",
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 3,
-                      }}
-                    >
-                      Create Account
-                    </Text>
-                    <Text
-                      style={{
-                        color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: 14,
-                        fontFamily: "Outfit",
-                        marginTop: 4,
-                        marginBottom: 20,
-                        textShadowColor: "rgba(0, 0, 0, 0.3)",
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 2,
-                      }}
-                    >
-                      Join the CURA clinic community
-                    </Text>
-
                     {regGeneralError ? (
                       <View
                         style={{
@@ -776,7 +1582,7 @@ const AuthModal = memo(function AuthModal({
                           borderRadius: 12,
                           paddingHorizontal: 12,
                           paddingVertical: 8,
-                          marginBottom: 14,
+                          marginBottom: 12,
                         }}
                       >
                         <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
@@ -785,176 +1591,574 @@ const AuthModal = memo(function AuthModal({
                       </View>
                     ) : null}
 
-                    <GlassInput
-                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Full Name (e.g. Juan Dela Cruz)"
-                      value={fullName}
-                      onChangeText={(t) => {
-                        setFullName(t);
-                        if (regErrors.fullName) setRegErrors((e) => ({ ...e, fullName: "" }));
-                      }}
-                      autoCapitalize="words"
-                      returnKeyType="next"
-                      onSubmitEditing={() => idNumberRef.current?.focus()}
-                      blurOnSubmit={false}
-                      error={regErrors.fullName}
-                    />
-
-                    <GlassInput
-                      ref={idNumberRef}
-                      icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Student / Employee ID"
-                      value={idNumber}
-                      onChangeText={(t) => {
-                        setIdNumber(t);
-                        if (regErrors.idNumber) setRegErrors((e) => ({ ...e, idNumber: "" }));
-                      }}
-                      returnKeyType="next"
-                      onSubmitEditing={() => emailRef.current?.focus()}
-                      blurOnSubmit={false}
-                      error={regErrors.idNumber}
-                    />
-
-                    <GlassInput
-                      ref={emailRef}
-                      icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Email address"
-                      value={email}
-                      onChangeText={(t) => {
-                        setEmail(t);
-                        if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
-                      }}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      returnKeyType="next"
-                      onSubmitEditing={() => usernameRef.current?.focus()}
-                      blurOnSubmit={false}
-                      error={regErrors.email}
-                    />
-
-                    <GlassInput
-                      ref={usernameRef}
-                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Username"
-                      value={username}
-                      onChangeText={(t) => {
-                        setUsername(t);
-                        if (regErrors.username) setRegErrors((e) => ({ ...e, username: "" }));
-                      }}
-                      autoCapitalize="none"
-                      returnKeyType="next"
-                      onSubmitEditing={() => regPasswordRef.current?.focus()}
-                      blurOnSubmit={false}
-                      error={regErrors.username}
-                    />
-
-                    <GlassInput
-                      ref={regPasswordRef}
-                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Password (min 8 characters)"
-                      value={password}
-                      onChangeText={(t) => {
-                        setPassword(t);
-                        if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
-                      }}
-                      secureTextEntry
-                      showPasswordToggle
-                      returnKeyType="next"
-                      onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                      blurOnSubmit={false}
-                      error={regErrors.password}
-                    />
-
-                    <GlassInput
-                      ref={confirmPasswordRef}
-                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Confirm Password"
-                      value={confirmPassword}
-                      onChangeText={(t) => {
-                        setConfirmPassword(t);
-                        if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
-                      }}
-                      secureTextEntry
-                      showPasswordToggle
-                      returnKeyType="done"
-                      onSubmitEditing={handleCreateAccount}
-                      error={regErrors.confirmPassword}
-                    />
-
-                    <TouchableOpacity
-                      onPress={handleCreateAccount}
-                      disabled={regLoading}
-                      activeOpacity={0.85}
-                      style={{
-                        width: "100%",
-                        height: 50,
-                        borderRadius: 14,
-                        backgroundColor: "#1E4FD8",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 8,
-                        shadowColor: "#1E4FD8",
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.35,
-                        shadowRadius: 8,
-                        elevation: 4,
-                      }}
-                    >
-                      {regLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <Text
-                          style={{
-                            color: "#FFFFFF",
-                            fontSize: 16,
-                            fontWeight: "700",
-                            fontFamily: "Outfit",
-                            letterSpacing: 0.4,
-                          }}
-                        >
-                          Create Account
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-
-                    {/* Switcher */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        marginTop: 18,
-                        marginBottom: 4,
-                      }}
-                    >
-                      <Text
+                    {/* Step 1: Account */}
+                    {createStep === 1 && (
+                      <Animated.View
                         style={{
-                          color: "rgba(255, 255, 255, 0.85)",
-                          fontSize: 13.5,
-                          fontFamily: "Outfit",
-                          textShadowColor: "rgba(0, 0, 0, 0.3)",
-                          textShadowOffset: { width: 0, height: 1 },
-                          textShadowRadius: 2,
+                          opacity: stepFadeAnim,
+                          transform: [{ translateX: stepSlideAnim }],
                         }}
                       >
-                        Already have an account?{" "}
-                      </Text>
-                      <TouchableOpacity onPress={() => switchAuthMode("signin")} activeOpacity={0.7}>
-                        <Text
+                        <GlassStepHeader
+                          step={1}
+                          total={4}
+                          title="Create Account"
+                          subtitle="Step 1 of 4 • Account credentials"
+                        />
+
+                        <GlassInput
+                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Full Name (e.g. Juan Dela Cruz)"
+                          value={createForm.fullName}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, fullName: t }));
+                            if (regErrors.fullName) setRegErrors((e) => ({ ...e, fullName: "" }));
+                          }}
+                          autoCapitalize="words"
+                          returnKeyType="next"
+                          onSubmitEditing={() => idNumberRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.fullName}
+                        />
+
+                        <GlassInput
+                          ref={idNumberRef}
+                          icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Student / Employee ID"
+                          value={createForm.idNumber}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, idNumber: t }));
+                            if (regErrors.idNumber) setRegErrors((e) => ({ ...e, idNumber: "" }));
+                          }}
+                          returnKeyType="next"
+                          onSubmitEditing={() => emailRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.idNumber}
+                        />
+
+                        <GlassInput
+                          ref={emailRef}
+                          icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Email address"
+                          value={createForm.email}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, email: t }));
+                            if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
+                          }}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          returnKeyType="next"
+                          onSubmitEditing={() => usernameRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.email}
+                        />
+
+                        <GlassInput
+                          ref={usernameRef}
+                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Username"
+                          value={createForm.username}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, username: t }));
+                            if (regErrors.username) setRegErrors((e) => ({ ...e, username: "" }));
+                          }}
+                          autoCapitalize="none"
+                          returnKeyType="next"
+                          onSubmitEditing={() => regPasswordRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.username}
+                        />
+
+                        <GlassInput
+                          ref={regPasswordRef}
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Password (min 8 characters)"
+                          value={createForm.password}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, password: t }));
+                            if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
+                          }}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="next"
+                          onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.password}
+                        />
+
+                        <GlassInput
+                          ref={confirmPasswordRef}
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Confirm Password"
+                          value={createForm.confirmPassword}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, confirmPassword: t }));
+                            if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
+                          }}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="done"
+                          onSubmitEditing={handleStep1Next}
+                          error={regErrors.confirmPassword}
+                        />
+
+                        <TouchableOpacity
+                          onPress={handleStep1Next}
+                          activeOpacity={0.85}
                           style={{
-                            color: "#60A5FA",
-                            fontSize: 13.5,
-                            fontWeight: "700",
-                            fontFamily: "Outfit",
-                            textShadowColor: "rgba(0, 0, 0, 0.3)",
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 2,
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 8,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
                           }}
                         >
-                          Sign In
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 16,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              letterSpacing: 0.4,
+                            }}
+                          >
+                            Next →
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* Sign In Link (Only on step 1) */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            marginTop: 18,
+                            marginBottom: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "rgba(255, 255, 255, 0.85)",
+                              fontSize: 13.5,
+                              fontFamily: "Outfit",
+                              textShadowColor: "rgba(0, 0, 0, 0.3)",
+                              textShadowOffset: { width: 0, height: 1 },
+                              textShadowRadius: 2,
+                            }}
+                          >
+                            Already have an account?{" "}
+                          </Text>
+                          <TouchableOpacity onPress={() => switchAuthMode("signin")} activeOpacity={0.7}>
+                            <Text
+                              style={{
+                                color: "#60A5FA",
+                                fontSize: 13.5,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                textShadowColor: "rgba(0, 0, 0, 0.3)",
+                                textShadowOffset: { width: 0, height: 1 },
+                                textShadowRadius: 2,
+                              }}
+                            >
+                              Sign In
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </Animated.View>
+                    )}
+
+                    {/* Step 2: Personal Info */}
+                    {createStep === 2 && (
+                      <Animated.View
+                        style={{
+                          opacity: stepFadeAnim,
+                          transform: [{ translateX: stepSlideAnim }],
+                        }}
+                      >
+                        <GlassStepHeader
+                          step={2}
+                          total={4}
+                          title="Personal Info"
+                          subtitle="Step 2 of 4 • Tell us about yourself"
+                          onBack={() => goToCreateStep(1, "back")}
+                        />
+
+                        <View style={{ flexDirection: "row", gap: 10 }}>
+                          <View style={{ flex: 1 }}>
+                            <GlassInput
+                              label="First Name"
+                              placeholder="JUAN"
+                              value={createForm.firstName}
+                              autoCapitalize="characters"
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, firstName: t.toUpperCase() }));
+                                if (regErrors.firstName) setRegErrors((e) => ({ ...e, firstName: "" }));
+                              }}
+                              error={regErrors.firstName}
+                            />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <GlassInput
+                              label="Last Name"
+                              placeholder="DELA CRUZ"
+                              value={createForm.lastName}
+                              autoCapitalize="characters"
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, lastName: t.toUpperCase() }));
+                                if (regErrors.lastName) setRegErrors((e) => ({ ...e, lastName: "" }));
+                              }}
+                              error={regErrors.lastName}
+                            />
+                          </View>
+                        </View>
+
+                        <GlassInput
+                          label="Contact Number"
+                          icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="09XXXXXXXXX"
+                          value={createForm.contact}
+                          keyboardType="phone-pad"
+                          maxLength={11}
+                          onChangeText={(t) => {
+                            const num = t.replace(/\D/g, "");
+                            setCreateForm((f) => ({ ...f, contact: num }));
+                            if (regErrors.contact) setRegErrors((e) => ({ ...e, contact: "" }));
+                          }}
+                          error={regErrors.contact}
+                        />
+
+                        <GlassDatePickerField
+                          label="Birthday"
+                          value={createForm.dob}
+                          onChange={(d) => {
+                            setCreateForm((f) => ({ ...f, dob: d }));
+                            if (regErrors.dob) setRegErrors((e) => ({ ...e, dob: "" }));
+                          }}
+                          error={regErrors.dob}
+                        />
+
+                        <GlassSexChips
+                          value={createForm.sex}
+                          onChange={(val) => {
+                            setCreateForm((f) => ({ ...f, sex: val }));
+                            if (regErrors.sex) setRegErrors((e) => ({ ...e, sex: "" }));
+                          }}
+                          error={regErrors.sex}
+                        />
+
+                        <TouchableOpacity
+                          onPress={handleStep2Next}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 16,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              letterSpacing: 0.4,
+                            }}
+                          >
+                            Next →
+                          </Text>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    )}
+
+                    {/* Step 3: Address & Emergency Contact */}
+                    {createStep === 3 && (
+                      <Animated.View
+                        style={{
+                          opacity: stepFadeAnim,
+                          transform: [{ translateX: stepSlideAnim }],
+                        }}
+                      >
+                        <GlassStepHeader
+                          step={3}
+                          total={4}
+                          title="Address & Emergency"
+                          subtitle="Step 3 of 4 • Cascading PSGC & emergency"
+                          onBack={() => goToCreateStep(2, "back")}
+                        />
+
+                        <GlassSelectRow
+                          label="Region"
+                          value={currentRegion?.region_name || "Select Region"}
+                          placeholder="Select Region"
+                          onPress={() => setLocationModalType("region")}
+                        />
+
+                        <GlassSelectRow
+                          label="Province"
+                          value={currentProvince?.province_name || "Select Province"}
+                          placeholder="Select Province"
+                          onPress={() => setLocationModalType("province")}
+                        />
+
+                        <GlassSelectRow
+                          label="City / Municipality"
+                          value={currentCity?.city_name || "Select City / Municipality"}
+                          placeholder="Select City / Municipality"
+                          onPress={() => setLocationModalType("city")}
+                        />
+
+                        <GlassSelectRow
+                          label="Barangay"
+                          value={createForm.barangay || "Select Barangay"}
+                          placeholder="Select Barangay"
+                          onPress={() => setLocationModalType("barangay")}
+                        />
+
+                        <GlassInput
+                          label="House No. / Street / Village"
+                          icon={<MapPinIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="e.g. 123 MacArthur Hwy, Villa Angela"
+                          value={createForm.street}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, street: t }));
+                            if (regErrors.street) setRegErrors((e) => ({ ...e, street: "" }));
+                          }}
+                          error={regErrors.street}
+                        />
+
+                        {/* Live Address Preview Card */}
+                        <View
+                          style={{
+                            marginTop: 2,
+                            marginBottom: 14,
+                            padding: 12,
+                            borderRadius: 14,
+                            backgroundColor: "rgba(255, 255, 255, 0.10)",
+                            borderWidth: 1,
+                            borderColor: "rgba(255, 255, 255, 0.18)",
+                          }}
+                        >
+                          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                            <MapPinIcon color="#38BDF8" size={14} />
+                            <Text style={{ color: "#38BDF8", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6, fontFamily: "Outfit", marginLeft: 6 }}>
+                              Address Preview
+                            </Text>
+                          </View>
+                          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "500", fontFamily: "Outfit", lineHeight: 18 }}>
+                            {createForm.address || "Please select location and enter street"}
+                          </Text>
+                        </View>
+
+                        <GlassInput
+                          label="Emergency Contact Name"
+                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="NAME"
+                          value={createForm.emergencyName}
+                          autoCapitalize="characters"
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, emergencyName: t.toUpperCase() }));
+                            if (regErrors.emergencyName) setRegErrors((e) => ({ ...e, emergencyName: "" }));
+                          }}
+                          error={regErrors.emergencyName}
+                        />
+
+                        <GlassInput
+                          label="Emergency Contact No."
+                          icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="09XXXXXXXXX"
+                          value={createForm.emergencyPhone}
+                          keyboardType="phone-pad"
+                          maxLength={11}
+                          onChangeText={(t) => {
+                            const num = t.replace(/\D/g, "");
+                            setCreateForm((f) => ({ ...f, emergencyPhone: num }));
+                            if (regErrors.emergencyPhone) setRegErrors((e) => ({ ...e, emergencyPhone: "" }));
+                          }}
+                          error={regErrors.emergencyPhone}
+                        />
+
+                        <TouchableOpacity
+                          onPress={handleStep3Next}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 16,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              letterSpacing: 0.4,
+                            }}
+                          >
+                            Next →
+                          </Text>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    )}
+
+                    {/* Step 4: Choose Avatar */}
+                    {createStep === 4 && (
+                      <Animated.View
+                        style={{
+                          opacity: stepFadeAnim,
+                          transform: [{ translateX: stepSlideAnim }],
+                        }}
+                      >
+                        <GlassStepHeader
+                          step={4}
+                          total={4}
+                          title="Choose Avatar"
+                          subtitle="Step 4 of 4 • Select your companion"
+                          onBack={() => goToCreateStep(3, "back")}
+                        />
+
+                        <Text
+                          style={{
+                            color: "rgba(255, 255, 255, 0.75)",
+                            fontSize: 11.5,
+                            fontWeight: "700",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.6,
+                            fontFamily: "Outfit",
+                            marginBottom: 10,
+                          }}
+                        >
+                          Select Companion
                         </Text>
-                      </TouchableOpacity>
-                    </View>
+
+                        {/* 8 Avatar Grid */}
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 10, marginBottom: 16 }}>
+                          {MASCOTS.map((m) => {
+                            const isSel = createForm.avatarId === m.id;
+                            return (
+                              <TouchableOpacity
+                                key={m.id}
+                                onPress={() => {
+                                  triggerHaptic();
+                                  setCreateForm((f) => ({ ...f, avatarId: m.id }));
+                                  if (regErrors.avatar) setRegErrors((e) => ({ ...e, avatar: "" }));
+                                }}
+                                activeOpacity={0.8}
+                                style={{
+                                  width: "22%",
+                                  aspectRatio: 1,
+                                  borderRadius: 16,
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  backgroundColor: isSel ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.10)",
+                                  borderWidth: 2,
+                                  borderColor: isSel ? (m.color || "#38BDF8") : "rgba(255, 255, 255, 0.20)",
+                                  transform: [{ scale: isSel ? 1.06 : 1 }],
+                                  shadowColor: isSel ? m.color : "transparent",
+                                  shadowOffset: { width: 0, height: 4 },
+                                  shadowOpacity: isSel ? 0.45 : 0,
+                                  shadowRadius: 8,
+                                  elevation: isSel ? 4 : 0,
+                                }}
+                              >
+                                <Text style={{ fontSize: 28 }}>{m.emoji}</Text>
+                                <Text
+                                  style={{
+                                    fontSize: 9.5,
+                                    color: isSel ? "#FFFFFF" : "rgba(255, 255, 255, 0.7)",
+                                    fontWeight: isSel ? "700" : "500",
+                                    fontFamily: "Outfit",
+                                    marginTop: 2,
+                                  }}
+                                  numberOfLines={1}
+                                >
+                                  {m.name}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                        {regErrors.avatar ? (
+                          <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginBottom: 10, marginLeft: 4 }}>
+                            {regErrors.avatar}
+                          </Text>
+                        ) : null}
+
+                        <GlassInput
+                          label="Display Name"
+                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="What should we call you?"
+                          value={createForm.displayName}
+                          autoCapitalize="characters"
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, displayName: t.toUpperCase() }));
+                            if (regErrors.displayName) setRegErrors((e) => ({ ...e, displayName: "" }));
+                          }}
+                          error={regErrors.displayName}
+                        />
+
+                        <TouchableOpacity
+                          onPress={handleGetStarted}
+                          disabled={regLoading}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {regLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 16,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              Get Started 🎉
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      </Animated.View>
+                    )}
                   </View>
                 )}
               </Animated.View>
@@ -962,6 +2166,84 @@ const AuthModal = memo(function AuthModal({
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
+
+      {/* Cascading Location Picker Modals */}
+      <GlassLocationModalPicker
+        visible={locationModalType === "region"}
+        title="Select Region"
+        options={PH_REGIONS.map((r) => ({ label: r.region_name, value: r.region_code }))}
+        selected={createForm.regionCode}
+        onSelect={(item) => {
+          setCreateForm((f) => {
+            const provs = getProvincesByRegion(item.value);
+            const firstProv = provs[0]?.province_code || "";
+            const cities = getCitiesByProvince(firstProv);
+            const firstCity = cities[0]?.city_code || "";
+            const brgys = getBarangaysByCity(firstCity);
+            const firstBrgy = brgys[0] || "";
+            return {
+              ...f,
+              regionCode: item.value,
+              provinceCode: firstProv,
+              cityCode: firstCity,
+              barangay: firstBrgy,
+            };
+          });
+        }}
+        onClose={() => setLocationModalType(null)}
+      />
+
+      <GlassLocationModalPicker
+        visible={locationModalType === "province"}
+        title="Select Province"
+        options={availableProvinces.map((p: any) => ({ label: p.province_name, value: p.province_code }))}
+        selected={createForm.provinceCode}
+        onSelect={(item) => {
+          setCreateForm((f) => {
+            const cities = getCitiesByProvince(item.value);
+            const firstCity = cities[0]?.city_code || "";
+            const brgys = getBarangaysByCity(firstCity);
+            const firstBrgy = brgys[0] || "";
+            return {
+              ...f,
+              provinceCode: item.value,
+              cityCode: firstCity,
+              barangay: firstBrgy,
+            };
+          });
+        }}
+        onClose={() => setLocationModalType(null)}
+      />
+
+      <GlassLocationModalPicker
+        visible={locationModalType === "city"}
+        title="Select City / Municipality"
+        options={availableCities.map((c: any) => ({ label: c.city_name, value: c.city_code }))}
+        selected={createForm.cityCode}
+        onSelect={(item) => {
+          setCreateForm((f) => {
+            const brgys = getBarangaysByCity(item.value);
+            const firstBrgy = brgys[0] || "";
+            return {
+              ...f,
+              cityCode: item.value,
+              barangay: firstBrgy,
+            };
+          });
+        }}
+        onClose={() => setLocationModalType(null)}
+      />
+
+      <GlassLocationModalPicker
+        visible={locationModalType === "barangay"}
+        title="Select Barangay"
+        options={availableBarangays.map((b: any) => ({ label: b, value: b }))}
+        selected={createForm.barangay}
+        onSelect={(item) => {
+          setCreateForm((f) => ({ ...f, barangay: item.label }));
+        }}
+        onClose={() => setLocationModalType(null)}
+      />
     </Modal>
   );
 });
@@ -1091,19 +2373,23 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
     navigate("home");
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
-  const handleRegisterSuccess = useCallback((userEmail: string, userName: string, accessToken: string, idNumber: string, fullName: string) => {
+  const handleRegisterSuccess = useCallback((userEmail: string, userName: string, accessToken: string, idNumber: string, fullName: string, finalUser?: any) => {
     if (setUser) {
-      setUser((prev: any) => ({
-        ...prev,
-        id: idNumber,
-        id_number: idNumber,
-        email: userEmail,
-        name: fullName,
-        firstName: userName,
-        displayName: userName,
-        lastName: "",
-        accessToken,
-      }));
+      if (finalUser) {
+        setUser(finalUser);
+      } else {
+        setUser((prev: any) => ({
+          ...prev,
+          id: idNumber,
+          id_number: idNumber,
+          email: userEmail,
+          name: fullName,
+          firstName: userName,
+          displayName: userName,
+          lastName: "",
+          accessToken,
+        }));
+      }
     }
     if (accessToken) {
       AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
@@ -1112,7 +2398,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
       loadUserData(userEmail);
     }
     closeAuthModal();
-    navigate("onboard-personal");
+    navigate("home");
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   return (
@@ -1524,394 +2810,79 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   );
 }
 
-// ── Register ──────────────────────────────────────────────────────────────────
+// ── Register (Routes directly into Glass Auth Modal) ──────────────────────────
 
 export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
-  const { showAlert } = useAlert();
-  const insets = useSafeAreaInsets();
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 4 is OTP
-  const [form, setForm] = useState({ email: "", role: "outsider", password: "", confirm: "" });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [isLinking, setIsLinking] = useState(false);
+  const bgBlurAnim = useRef(new Animated.Value(1)).current;
 
-  const API_BASE = "https://cura-backend-dvj5.onrender.com/api/auth";
+  const handleClose = useCallback(() => {
+    goBack();
+  }, [goBack]);
 
-  const mockGoogleSignIn = async () => {
-    setLoading(true);
+  const handleSignInSuccess = useCallback((userEmail: string, userName: string, accessToken: string) => {
+    if (setUser) {
+      setUser((prev: any) => ({
+        ...prev,
+        email: userEmail,
+        firstName: userName,
+        displayName: userName,
+        lastName: "",
+        accessToken,
+      }));
+    }
+    if (accessToken) {
+      AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
+    }
     if (loadUserData) {
-      await loadUserData("jdelacruz.student@ua.edu.ph"); // Using a sample email for mock
+      loadUserData(userEmail);
     }
-    setLoading(false);
     navigate("home");
-  };
+  }, [setUser, loadUserData, navigate]);
 
-  const isUAEmail = (email: string) => email.toLowerCase().endsWith("@ua.edu.ph");
-
-  const handleNextStep1 = async () => {
-    const cleanEmail = form.email.trim();
-    if (!cleanEmail) {
-      setErrors({ email: "Email is required" });
-      return;
-    }
-    if (!/^[^@]+@[^@]+\.[^@]+$/.test(cleanEmail)) {
-      setErrors({ email: "Enter a valid email" });
-      return;
-    }
-    setErrors({});
-    
-    setLoading(true);
-    try {
-      const res = await fetchWithRetry(`${API_BASE}/check-email/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail }),
-      });
-      
-      const resText = await res.text();
-      let data: any = {};
-      try { data = resText ? JSON.parse(resText) : {}; } catch {}
-      
-      if (data.exists) {
-        if (data.claimed) {
-          showAlert("Error", "This account has already been claimed! Please use Sign In instead.");
-          setLoading(false);
-          return;
-        }
-        // Patient exists, trigger OTP
-        await fetchWithRetry(`${API_BASE}/request-otp/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanEmail })
-        }).catch(() => {});
-        setIsLinking(true);
-        setStep(4); // Go to OTP
+  const handleRegisterSuccess = useCallback((
+    userEmail: string,
+    userName: string,
+    accessToken: string,
+    idNumber: string,
+    fullName: string,
+    finalUser?: any
+  ) => {
+    if (setUser) {
+      if (finalUser) {
+        setUser(finalUser);
       } else {
-        // New patient, continue standard registration
-        setIsLinking(false);
-        setStep(3); // Skip straight to password (category inferred automatically)
-      }
-    } catch (err) {
-      console.warn("API Error:", err);
-      showAlert("Error", "Cannot connect to backend! Please make sure your backend is running.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const validateFinal = () => {
-    const e: Record<string, string> = {};
-    if (!form.password) e.password = "Password is required";
-    else if (form.password.length < 8) e.password = "At least 8 characters required";
-    if (form.password !== form.confirm) e.confirm = "Passwords do not match";
-    return e;
-  };
-
-  const handleVerifyOTP = async () => {
-    const cleanOtp = otp.trim();
-    const cleanEmail = form.email.trim();
-    if (cleanOtp.length !== 6) { setErrors({ otp: "Enter a 6-digit OTP" }); return; }
-    setLoading(true);
-    setErrors({});
-    try {
-      const res = await fetchWithRetry(`${API_BASE}/verify-otp/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
-      });
-      
-      if (res.ok) {
-        setStep(3); // OTP verified, go to set password
-      } else {
-        showAlert("Error", "Invalid OTP.");
-      }
-    } catch (err) {
-      console.warn("OTP Network Error:", err);
-      showAlert("Error", "Network Error: Could not verify OTP. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    const e = validateFinal();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    setLoading(true);
-    const cleanEmail = form.email.trim();
-
-    if (isLinking) {
-      try {
-        const res = await fetchWithRetry(`${API_BASE}/set-password/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanEmail, password: form.password }),
-        });
-        
-        const resText = await res.text();
-        let data: any = {};
-        try { data = resText ? JSON.parse(resText) : {}; } catch {}
-        
-        if (res.ok || data.error?.includes("Email not verified")) {
-          const userEmail = data.user?.email || cleanEmail;
-          const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
-          if (setUser) {
-            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access || data.refresh }));
-          }
-          if (loadUserData) {
-            await loadUserData(userEmail);
-          }
-          navigate("home");
-        } else {
-          throw new Error("Trigger Fallback Login");
-        }
-      } catch (err) {
-        console.warn("Set Password Error, attempting fallback login...");
-        try {
-          const loginRes = await fetchWithRetry(`${API_BASE}/login/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: cleanEmail, password: form.password }),
-          });
-          
-          const loginText = await loginRes.text();
-          let loginData: any = {};
-          try { loginData = loginText ? JSON.parse(loginText) : {}; } catch {}
-
-          if (loginRes.ok) {
-            const userEmail = loginData.user?.email || cleanEmail;
-            const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
-            if (setUser) {
-              setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
-            }
-            if (loadUserData) {
-              await loadUserData(userEmail);
-            }
-            navigate("home");
-          } else {
-            setErrors({ password: "Network error or account could not be claimed. Please check your connection." });
-          }
-        } catch (fallbackErr) {
-          console.warn("Fallback login failed:", fallbackErr);
-          setErrors({ password: "Network error. Please check your internet connection and try again." });
-        }
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      try {
-        const res = await fetchWithRetry(`${API_BASE}/register/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanEmail, password: form.password, role: form.role }),
-        });
-        
-        const resText = await res.text();
-        let data: any = {};
-        try { data = resText ? JSON.parse(resText) : {}; } catch {}
-
-        if (res.ok) {
-          const userEmail = data.user?.email || form.email;
-          const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
-          const token = data.access || data.token;
-          if (token) {
-            await AsyncStorage.setItem('@cura_access_token', token).catch(() => {});
-          }
-          if (setUser) {
-            setUser((prev: any) => ({
-              ...prev,
-              email: userEmail,
-              firstName: userName,
-              displayName: userName,
-              lastName: '',
-              category: (form.role || 'outsider').toLowerCase(),
-              accessToken: token
-            }));
-          }
-          if (loadUserData) {
-            await loadUserData(userEmail);
-          }
-          if (data.user?.is_new) {
-            navigate("onboard-personal");
-          } else {
-            navigate("home");
-          }
-        } else {
-          showAlert("Error", data.error || data.detail || "Failed to create account. Please try again.");
-        }
-      } catch (err) {
-        console.warn("Register Network Error:", err);
-        showAlert("Error", "Network Error: Could not create account. Please try again.");
-      } finally {
-        setLoading(false);
+        setUser((prev: any) => ({
+          ...prev,
+          id: idNumber,
+          id_number: idNumber,
+          email: userEmail,
+          name: fullName,
+          firstName: userName,
+          displayName: userName,
+          lastName: "",
+          accessToken,
+        }));
       }
     }
-  };
-
-  const strength = form.password.length >= 16 ? 3 : form.password.length >= 12 ? 2 : form.password.length >= 8 ? 1 : 0;
-  const strengthLabel = ["", "Fair", "Good", "Strong"][strength];
-  const strengthColor = ["", "#F59E0B", "#0994E8", "#10B981"][strength];
-  
-  const handleBack = () => {
-    if (step === 3) {
-      setStep(1);
-    } else {
-      goBack();
+    if (accessToken) {
+      AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
     }
-  };
+    if (loadUserData) {
+      loadUserData(userEmail);
+    }
+    navigate("home");
+  }, [setUser, loadUserData, navigate]);
 
   return (
-    <View className="flex-1 bg-[#E4F4FB]">
-      <View className="px-6 pb-6" style={{ paddingTop: Math.max(insets.top, 24) + 16 }}>
-        <Pressable
-          onPress={handleBack}
-          className="w-10 h-10 rounded-full bg-white items-center justify-center mb-5 shadow-sm"
-          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
-        >
-          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <Polyline points="15 18 9 12 15 6"/>
-          </Svg>
-        </Pressable>
-        <Text className="text-[28px] font-black text-slate-800 mb-2 tracking-tight" style={{ fontFamily: "Outfit" }}>
-          {step === 1 ? "Create your account ✨" : step === 4 ? "Verify your email 📬" : "Almost done 🔒"}
-        </Text>
-        <Text className="text-base font-medium text-slate-500">
-          {step === 1 ? "Join CURA — University Clinic Patient Portal" : step === 4 ? "An account with this email already exists. Enter the OTP sent to your email to claim it." : "Secure your account with a password"}
-        </Text>
-      </View>
-
-      <View className="flex-1 bg-[#F8FAFC] rounded-t-[40px] overflow-hidden" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.05, shadowRadius: 24 }}>
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
-          {step === 1 && (
-          <View className="gap-4">
-            <Input
-              label="Email address"
-              placeholder="you@domain.com or you@ua.edu.ph"
-              value={form.email}
-              error={errors.email}
-              onChangeText={(val) => setForm((f) => ({ ...f, email: val }))}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <Button fullWidth onPress={handleNextStep1} loading={loading} className="mt-2">
-              Continue
-            </Button>
-
-            <View className="flex-row items-center gap-3 my-2">
-              <View className="flex-1 h-px bg-sky-100" />
-              <Text className="text-xs text-slate-300 font-medium">or</Text>
-              <View className="flex-1 h-px bg-sky-100" />
-            </View>
-
-            <Button fullWidth variant="secondary" onPress={mockGoogleSignIn}>
-               <Text className="text-cura-500 font-bold">Continue with Google (Mock)</Text>
-            </Button>
-
-            <View className="flex-row justify-center items-center py-4">
-              <Text className="text-sm text-slate-400">Already registered? </Text>
-              <Pressable onPress={() => navigate("login")}>
-                <Text className="text-sm text-cura-500 font-bold">Sign in</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-
-        {step === 4 && (
-          <View className="gap-6">
-            <View className="bg-sky-50 rounded-xl p-4 border border-sky-100 flex-row gap-3">
-              <Text className="text-2xl">ℹ️</Text>
-              <View className="flex-1">
-                <Text className="text-sm font-bold text-sky-900 mb-1">Account Found</Text>
-                <Text className="text-xs text-sky-700 leading-relaxed">
-                  We found an existing patient record for <Text className="font-bold">{form.email}</Text>. 
-                  Check your terminal/console for the MOCK OTP.
-                </Text>
-              </View>
-            </View>
-
-            <Input
-              label="6-Digit OTP"
-              placeholder="000000"
-              value={otp}
-              error={errors.otp}
-              onChangeText={setOtp}
-              keyboardType="number-pad"
-              maxLength={6}
-            />
-
-            <Button fullWidth onPress={handleVerifyOTP} loading={loading}>
-              Verify OTP
-            </Button>
-          </View>
-        )}
-
-        {step === 3 && (
-          <View className="gap-4">
-            <View className="mb-2 bg-sky-50 p-3 rounded-xl border border-sky-100 flex-row items-center gap-3">
-               <Text className="text-2xl">👋</Text>
-               <View>
-                 <Text className="text-xs text-slate-500 font-medium">
-                   {isLinking ? "Claiming Account" : "Registering Account"}
-                 </Text>
-                 <Text className="text-sm font-bold text-sky-900">{form.email}</Text>
-               </View>
-            </View>
-
-            <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</Text>
-              <View className="relative justify-center">
-                <TextInput
-                  secureTextEntry={!showPass}
-                  placeholder="Min. 8 characters"
-                  placeholderTextColor="#CBD5E1"
-                  value={form.password}
-                  onChangeText={(val) => setForm((f) => ({ ...f, password: val }))}
-                  className={`w-full bg-white border rounded-2xl px-4 py-3.5 text-sm text-slate-800 pr-12 ${errors.password ? "border-rose-300 bg-rose-50" : "border-sky-200"}`}
-                />
-                <Pressable onPress={() => setShowPass(!showPass)} className="absolute right-4 p-2">
-                  <Svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><Circle cx="12" cy="12" r="3"/></Svg>
-                </Pressable>
-              </View>
-              {errors.password ? <Text className="text-xs text-rose-500">{errors.password}</Text> : null}
-              {form.password.length > 0 && (
-                <View className="flex-row items-center gap-2 mt-0.5">
-                  <View className="flex-row gap-1 flex-1">
-                    {[1,2,3].map((i) => (
-                      <View key={i} className="flex-1 h-1.5 rounded-full"
-                        style={{ backgroundColor: strength >= i ? strengthColor : "#E0F2FE" }} />
-                    ))}
-                  </View>
-                  <Text className="text-[11px] font-semibold" style={{ color: strengthColor }}>{strengthLabel}</Text>
-                </View>
-              )}
-            </View>
-
-            <Input
-              label="Confirm password"
-              placeholder="Repeat password"
-              value={form.confirm}
-              error={errors.confirm}
-              onChangeText={(val) => setForm((f) => ({ ...f, confirm: val }))}
-              secureTextEntry={!showPass}
-            />
-
-            <View className="bg-sky-50 rounded-xl p-3 border border-sky-100 mt-2">
-              <Text className="text-xs text-slate-400 leading-relaxed">
-                By creating an account, you agree to CURA's{" "}
-                <Text className="text-cura-500 font-semibold">Privacy Policy</Text> and{" "}
-                <Text className="text-cura-500 font-semibold">Terms of Use</Text>.
-              </Text>
-            </View>
-
-            <Button fullWidth onPress={handleSubmit} loading={loading} className="mt-1">
-              {isLinking ? "Claim Account & Sign In" : "Create Account"}
-            </Button>
-          </View>
-        )}
-        </ScrollView>
-      </View>
+    <View style={{ flex: 1, backgroundColor: "#08183C" }}>
+      <WelcomeBackground bgBlurAnim={bgBlurAnim} />
+      <AuthModal
+        visible={true}
+        initialMode="create_account"
+        onClose={handleClose}
+        onSuccessSignIn={handleSignInSuccess}
+        onSuccessRegister={handleRegisterSuccess}
+      />
     </View>
   );
 }

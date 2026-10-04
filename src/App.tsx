@@ -16,13 +16,6 @@ cssInterop(LinearGradient, { className: "style" });
 // Auth
 import { WelcomeScreen, LoginScreen, RegisterScreen, ForgotPasswordScreen } from "./screens/auth";
 
-// Onboarding
-import {
-  PersonalInfoScreen,
-  AcademicInfoScreen,
-  AvatarScreen,
-  ProfileCompleteScreen,
-} from "./screens/onboarding";
 
 // Main app
 import { HomeScreen, NotificationsScreen } from "./screens/Home";
@@ -320,10 +313,6 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "register":      return <RegisterScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
       case "forgot-password": return <ForgotPasswordScreen navigate={navigate} goBack={goBack} />;
 
-      case "onboard-personal": return <PersonalInfoScreen {...navProps} />;
-      case "onboard-academic": return <AcademicInfoScreen {...navProps} />;
-      case "onboard-avatar":   return <AvatarScreen {...navProps} />;
-      case "onboard-complete": return <ProfileCompleteScreen {...navProps} />;
 
       case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} />;
       case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} />;
