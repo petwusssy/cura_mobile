@@ -10,7 +10,6 @@ import { SplashScreen } from "./screens/Splash";
 import { AlertProvider, useAlert } from "./components/AlertProvider";
 import { cssInterop } from "nativewind";
 import { LinearGradient } from "expo-linear-gradient";
-import { getManilaDate, getManilaTime, normalizeDate } from "./utils/philippineTime";
 
 cssInterop(LinearGradient, { className: "style" });
 
@@ -91,142 +90,6 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
   return null;
 }
 
-function buildMedicationsList(userConsultations: any[], takenMap: Record<string, any> = {}) {
-  const today = getManilaDate();
-  const [currHStr, currMStr] = getManilaTime().split(':');
-  const currH = parseInt(currHStr, 10);
-  const currM = parseInt(currMStr, 10);
-  const currMins = currH * 60 + currM;
-
-  return userConsultations.flatMap((c: any) => 
-    (c.treatments || []).map((t: any, index: number) => {
-      const medId = String(t.id || `${c.id}_${index}_${t.medicineName}`);
-      const isTaken = !!(takenMap[medId]?.taken || t.status === 'taken');
-
-      let status: 'due-now' | 'upcoming' | 'taken' | 'missed' = 'upcoming';
-
-      if (isTaken) {
-        status = 'taken';
-      } else if (!t.nextDose || !String(t.nextDose).trim()) {
-        status = 'taken';
-      } else {
-        const timeMatch = String(t.nextDose).match(/(\d{1,2}):(\d{2})/);
-        if (timeMatch) {
-          const doseH = parseInt(timeMatch[1], 10);
-          const doseM = parseInt(timeMatch[2], 10);
-          const doseMins = doseH * 60 + doseM;
-          const consultDate = normalizeDate(c.date);
-
-          if (consultDate === today) {
-            if (currMins >= doseMins) {
-              status = 'due-now';
-            } else {
-              status = 'upcoming';
-            }
-          } else if (consultDate < today) {
-            status = 'missed';
-          } else {
-            status = 'upcoming';
-          }
-        } else {
-          status = 'upcoming';
-        }
-      }
-
-      return {
-        id: medId,
-        treatmentId: t.id,
-        name: t.medicineName,
-        dose: `${t.quantity} ${t.unit || 'dose'}`,
-        instructions: (t.remarks && String(t.remarks).trim()) ? String(t.remarks).trim() : "Take as directed by clinic staff.",
-        timeGiven: t.timeGiven,
-        nextDose: t.nextDose || null,
-        date: c.date,
-        status,
-        consultationId: c.id,
-        consultationStatus: c.status || 'Consultation',
-      };
-    })
-  );
-}
-
-function MedicationReminderChecker({
-  user,
-  medications,
-  setMedications,
-  setNotifications,
-}: {
-  user: Partial<AppUser>;
-  medications: any[];
-  setMedications: React.Dispatch<React.SetStateAction<any[]>>;
-  setNotifications: React.Dispatch<React.SetStateAction<any[]>>;
-}) {
-  const { showAlert } = useAlert();
-  const notifiedKeysRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!medications || medications.length === 0) return;
-
-    const checkDue = async () => {
-      const today = getManilaDate();
-      const [currHStr, currMStr] = getManilaTime().split(':');
-      const currMins = parseInt(currHStr, 10) * 60 + parseInt(currMStr, 10);
-
-      const storedTaken = await AsyncStorage.getItem('@cura_taken_medications').catch(() => null);
-      const takenMap = storedTaken ? JSON.parse(storedTaken) : {};
-
-      for (const med of medications) {
-        if (med.status === 'taken' || takenMap[med.id]?.taken) continue;
-        if (!med.nextDose) continue;
-
-        const timeMatch = String(med.nextDose).match(/(\d{1,2}):(\d{2})/);
-        if (!timeMatch) continue;
-
-        const doseMins = parseInt(timeMatch[1], 10) * 60 + parseInt(timeMatch[2], 10);
-        const medDate = med.date ? normalizeDate(med.date) : today;
-
-        if (medDate === today && currMins >= doseMins) {
-          const reminderKey = `med_reminder_${med.id}_${medDate}_${med.nextDose}`;
-          if (!notifiedKeysRef.current.has(reminderKey)) {
-            const alreadyNotified = await AsyncStorage.getItem(reminderKey).catch(() => null);
-            if (!alreadyNotified) {
-              notifiedKeysRef.current.add(reminderKey);
-              await AsyncStorage.setItem(reminderKey, 'true').catch(() => {});
-
-              showAlert(
-                '⏰ Medicine Reminder',
-                `Time to take your next dose of ${med.name} (${med.dose})!\n\nInstructions: ${med.instructions || 'Take as directed by clinic.'}`
-              );
-
-              const notif = {
-                id: reminderKey,
-                type: 'medication',
-                title: `Medicine Reminder: ${med.name}`,
-                message: `It's time to take your dose of ${med.name} (${med.dose}). Instructions: ${med.instructions || 'Take as directed.'}`,
-                time: new Date().toISOString(),
-                read: false,
-                patient_id: user?.id,
-                nextDose: med.nextDose,
-              };
-              setNotifications(prev => [notif, ...prev.filter(n => n.id !== reminderKey)]);
-
-              setMedications(prev =>
-                prev.map(m => m.id === med.id && m.status !== 'taken' ? { ...m, status: 'due-now' } : m)
-              );
-            }
-          }
-        }
-      }
-    };
-
-    checkDue();
-    const interval = setInterval(checkDue, 5000);
-    return () => clearInterval(interval);
-  }, [medications, showAlert, user?.id, setMedications, setNotifications]);
-
-  return null;
-}
-
 export default function App({ initialScreen }: { initialScreen?: Screen } = {}) {
   const [splashDone, setSplashDone] = useState(false);
   const [stack, setStack] = useState<NavEntry[]>([{ screen: initialScreen || "welcome" }]);
@@ -294,29 +157,13 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
           return updated;
         });
         
-        // Load taken map from AsyncStorage
-        const storedTaken = await AsyncStorage.getItem('@cura_taken_medications').catch(() => null);
-        const takenMap = storedTaken ? JSON.parse(storedTaken) : {};
-
         // Fetch consultations and certificates concurrently
         const [allConsultations, allCertificates] = await Promise.all([
           safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/consultations/`).then(d => Array.isArray(d) ? d : []),
           safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/certificates/`).then(d => Array.isArray(d) ? d : []),
         ]);
         
-        const pId = String(patient.id || '').trim();
-        const pIdNum = String(patient.id_number || '').trim();
-        const ptName = (patient.name || '').trim().toUpperCase();
-
-        const userConsultationsRaw = allConsultations.filter((c: any) => {
-          const cPat = String(c.patient || c.patientId || '').trim();
-          const cPatName = String(c.patient_name || c.patientName || '').trim().toUpperCase();
-          return (
-            (pId && cPat === pId) ||
-            (pIdNum && cPat === pIdNum) ||
-            (ptName && cPatName && cPatName === ptName)
-          );
-        });
+        const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === patient.id);
         
         // Deduplicate consultations to remove any duplicate records
         const userConsultationsMap = new Map();
@@ -331,10 +178,22 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         
         setConsultations(userConsultations);
 
-        // Extract medications from treatments (both Consultation and Non-Consultation visits)
-        const extractedMedications = buildMedicationsList(userConsultations, takenMap);
+        // Extract medications from treatments
+        const extractedMedications = userConsultations.flatMap((c: any) => 
+          (c.treatments || []).map((t: any) => ({
+            id: t.id || Math.random().toString(),
+            name: t.medicineName,
+            dose: `${t.quantity} ${t.unit}`,
+            instructions: t.remarks || "No instructions",
+            timeGiven: `${c.date} ${t.timeGiven}`,
+            nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
+            status: "taken",
+            consultationId: c.id
+          }))
+        );
         setMedications(extractedMedications);
 
+        const ptName = (patient.name || '').trim().toUpperCase();
         const userCertificates = allCertificates.filter((c: any) =>
           c.patient === patient.id ||
           c.patientId === patient.id ||
@@ -368,52 +227,6 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         .catch(() => {});
     }
   }, [current?.screen, user?.id, (user as any)?.name]);
-
-  const handleMarkTaken = useCallback(async (medId: string) => {
-    try {
-      // 1. Update AsyncStorage
-      const stored = await AsyncStorage.getItem('@cura_taken_medications').catch(() => null);
-      const takenMap = stored ? JSON.parse(stored) : {};
-      takenMap[medId] = { taken: true, takenAt: new Date().toISOString() };
-      await AsyncStorage.setItem('@cura_taken_medications', JSON.stringify(takenMap)).catch(() => {});
-
-      // 2. Update medications in state immediately
-      setMedications((prev) =>
-        prev.map((m) => (m.id === medId ? { ...m, status: 'taken' } : m))
-      );
-
-      // 3. Mark corresponding notification as read
-      setNotifications((prev) =>
-        prev.map((n) => (n.id && String(n.id).includes(medId) ? { ...n, read: true } : n))
-      );
-
-      // 4. Best effort backend sync
-      fetch(`https://cura-backend-dvj5.onrender.com/api/treatments/${medId}/`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'taken' }),
-      }).catch(() => {});
-    } catch (e) {
-      console.error('Failed to mark medication as taken:', e);
-    }
-  }, []);
-
-  const [refreshingMeds, setRefreshingMeds] = useState(false);
-
-  const handleRefreshMedications = useCallback(async () => {
-    if (user?.email) {
-      setRefreshingMeds(true);
-      await loadUserData(user.email);
-      setRefreshingMeds(false);
-    }
-  }, [user?.email, loadUserData]);
-
-  // Refresh consultations/medications whenever user views medications screen
-  useEffect(() => {
-    if (current?.screen === 'medications' && user?.email) {
-      loadUserData(user.email);
-    }
-  }, [current?.screen, user?.email, loadUserData]);
 
   const navigate = useCallback((screen: Screen, params?: Record<string, unknown>) => {
     setStack((prev) => {
@@ -518,16 +331,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
       case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
       case "health-detail":  return <HealthDetailScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
-      case "medications":    return (
-        <MedicationsScreen
-          navigate={navigate}
-          goBack={goBack}
-          medications={medications}
-          onMarkTaken={handleMarkTaken}
-          onRefresh={handleRefreshMedications}
-          refreshing={refreshingMeds}
-        />
-      );
+      case "medications":    return <MedicationsScreen navigate={navigate} goBack={goBack} medications={medications} />;
       case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
       case "prescription-detail": return <PrescriptionDetailScreen navigate={navigate} goBack={goBack} params={current.params} />;
       case "cert-detail":    return <CertificateDetailScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
@@ -541,14 +345,6 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   return (
     <AlertProvider>
       {splashDone && <NotificationPoller user={user} setNotifications={setNotifications} />}
-      {splashDone && (
-        <MedicationReminderChecker
-          user={user}
-          medications={medications}
-          setMedications={setMedications}
-          setNotifications={setNotifications}
-        />
-      )}
       <MobileShell theme={theme}>
         {renderScreen()}
         {splashDone && isMainTab && (
