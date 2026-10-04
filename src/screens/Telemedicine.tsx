@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, TextInput, Pressable, RefreshControl, Modal, Platform, PermissionsAndroid, Alert } from "react-native";
+import { View, ScrollView, Text, Pressable, RefreshControl, Modal, Platform, PermissionsAndroid, Alert } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
-import { Header, Button, Card, Badge } from "../components/Shell";
+import { Header, Input, Button, Select, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -334,174 +334,67 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-          {/* Information Card */}
-          <View
-            className="bg-white/10 rounded-[28px] p-4 flex-row items-center gap-3.5 border border-white/10 mb-6"
-            style={{ elevation: 1 }}
-          >
-            <View className="w-12 h-12 rounded-2xl bg-white/15 items-center justify-center">
-              <Text className="text-2xl">📹</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-white mb-0.5" style={{ fontFamily: "Outfit" }}>
-                Online Video Consultation
-              </Text>
-              <Text className="text-xs text-white/70 leading-relaxed">
-                The clinic will review your request and provide a secure meeting link once approved.
-              </Text>
-            </View>
+          <View className="mb-6">
+            <Text className="text-sm text-white/80 mb-2">
+              Request an online video consultation. The clinic will review your request and provide a meeting link if approved.
+            </Text>
           </View>
 
           <View className="flex-col gap-6">
-            {/* Preferred Date */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
-                Preferred Date
-              </Text>
-              <Pressable
-                onPress={() => setShowDatePicker(true)}
-                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
-                style={({ pressed }) => ({
-                  elevation: 2,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 8,
-                  opacity: pressed ? 0.85 : 1,
-                })}
-              >
-                <View className="flex-row items-center gap-3">
-                  <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
-                    <Text className="text-base">📅</Text>
-                  </View>
-                  <Text className={`text-sm ${date ? "text-slate-800 font-bold" : "text-slate-400 font-medium"}`}>
-                    {date
-                      ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "Select appointment date..."}
-                  </Text>
-                </View>
-                <View className="px-3 py-1 rounded-full bg-slate-100">
-                  <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
+              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Preferred Date</Text>
+              <Pressable onPress={() => setShowDatePicker(true)}>
+                <View pointerEvents="none">
+                  <Input
+                    label=""
+                    placeholder="YYYY-MM-DD"
+                    value={date}
+                    editable={false}
+                  />
                 </View>
               </Pressable>
               {showDatePicker && (
                 <DateTimePicker
-                  value={date ? new Date(date + "T00:00:00") : new Date()}
+                  value={date ? new Date(date) : new Date()}
                   mode="date"
                   display="default"
-                  minimumDate={new Date()}
-                  onChange={onDateChange}
+                  onValueChange={onDateChange}
+                  onDismiss={() => setShowDatePicker(false)}
                 />
               )}
             </View>
 
-            {/* Preferred Time */}
+            <Select
+              label="Preferred Time"
+              value={time}
+              onValueChange={setTime}
+              options={[
+                { label: "Morning (8AM - 12PM)", value: "Morning (8AM - 12PM)" },
+                { label: "Afternoon (1PM - 5PM)", value: "Afternoon (1PM - 5PM)" },
+              ]}
+            />
+
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
-                Preferred Time
-              </Text>
-              <View className="flex-row gap-3">
-                {[
-                  {
-                    label: "Morning",
-                    timeRange: "8:00 AM - 12:00 PM",
-                    icon: "🌅",
-                    value: "Morning (8AM - 12PM)",
-                  },
-                  {
-                    label: "Afternoon",
-                    timeRange: "1:00 PM - 5:00 PM",
-                    icon: "☀️",
-                    value: "Afternoon (1PM - 5PM)",
-                  },
-                ].map((slot) => {
-                  const isSelected = time === slot.value;
-                  return (
-                    <Pressable
-                      key={slot.value}
-                      onPress={() => setTime(slot.value)}
-                      className={`flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden ${
-                        isSelected
-                          ? "bg-white border-2 border-white shadow-md"
-                          : "bg-white/10 border border-white/15"
-                      }`}
-                      style={({ pressed }) => ({
-                        elevation: isSelected ? 3 : 0,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: isSelected ? 0.1 : 0,
-                        shadowRadius: 6,
-                        opacity: pressed ? 0.85 : 1,
-                      })}
-                    >
-                      {isSelected && (
-                        <View className="absolute top-0 left-0 right-0 h-1 bg-cura-500" />
-                      )}
-                      <Text className="text-xl mb-1">{slot.icon}</Text>
-                      <Text
-                        className={`text-sm font-black ${
-                          isSelected ? "text-[#0B2136]" : "text-white"
-                        }`}
-                        style={{ fontFamily: "Outfit" }}
-                      >
-                        {slot.label}
-                      </Text>
-                      <Text
-                        className={`text-[10px] font-semibold mt-0.5 ${
-                          isSelected ? "text-slate-500" : "text-white/70"
-                        }`}
-                      >
-                        {slot.timeRange}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Reason for Consult</Text>
+              <Input
+                label=""
+                placeholder="Describe what you are feeling..."
+                value={reason}
+                onChangeText={setReason}
+                multiline
+                numberOfLines={4}
+                style={{ minHeight: 100, textAlignVertical: 'top' }}
+              />
             </View>
 
-            {/* Reason for Consult */}
-            <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
-                Reason for Consult
-              </Text>
-              <View
-                className="bg-white rounded-[24px] px-4 py-3.5"
-                style={{
-                  elevation: 2,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 8,
-                }}
-              >
-                <TextInput
-                  placeholder="Describe what you are feeling, your symptoms, or medical concerns..."
-                  placeholderTextColor="#94A3B8"
-                  value={reason}
-                  onChangeText={setReason}
-                  multiline
-                  numberOfLines={4}
-                  className="text-sm text-slate-800 leading-relaxed"
-                  style={{ minHeight: 90, textAlignVertical: "top" }}
-                />
-              </View>
-            </View>
-
-            {/* Submit Button */}
             <View className="mt-8">
               <Button
-                variant="white"
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
                 disabled={!date.trim() || !reason.trim()}
               >
-                📹 Submit Request
+                Submit Request
               </Button>
             </View>
           </View>
@@ -568,8 +461,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       {access.canJoin ? (
                         <>
                           <Pressable
-                            className="bg-emerald-600 rounded-xl py-3 px-4 mt-2 items-center justify-center shadow-sm"
-                            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+                            className="bg-emerald-600 active:bg-emerald-700 rounded-xl py-3 px-4 mt-2 items-center justify-center shadow-sm"
                             onPress={() => handleOpenExternalBrowser(req.meeting_link, req.id, access)}
                           >
                             <Text className="text-white text-xs font-bold tracking-wider uppercase">
@@ -578,8 +470,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                           </Pressable>
 
                           <Pressable
-                            className="bg-slate-800 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
-                            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+                            className="bg-slate-800 active:bg-slate-700 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
                             onPress={() => handleJoinMeeting(req.meeting_link, req.id, access)}
                           >
                             <Text className="text-slate-300 text-xs font-semibold">
@@ -589,8 +480,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
                           {req.secondary_link ? (
                             <Pressable
-                              className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs"
-                              style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+                              className="bg-white border border-emerald-200 rounded-xl py-2.5 px-4 mt-2 items-center justify-center shadow-2xs active:bg-emerald-50"
                               onPress={() => Linking.openURL(req.secondary_link)}
                             >
                               <Text className="text-emerald-700 text-xs font-semibold">
@@ -602,7 +492,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       ) : (
                         <Pressable
                           className="bg-slate-200/80 rounded-xl py-3 px-4 mt-2 items-center justify-center border border-slate-300"
-                          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
                           onPress={() => Alert.alert("Consultation Locked", access.reason)}
                         >
                           <Text className="text-slate-500 text-xs font-bold tracking-wide uppercase">
@@ -650,15 +539,13 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   setActiveCallRoom(null);
                   if (room) handleOpenExternalBrowser(undefined, room);
                 }}
-                className="bg-slate-700 px-2.5 py-1.5 rounded-lg flex-row items-center"
-                style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+                className="bg-slate-700 active:bg-slate-600 px-2.5 py-1.5 rounded-lg flex-row items-center"
               >
                 <Text className="text-emerald-300 text-[11px] font-bold">🌐 Switch to Chrome</Text>
               </Pressable>
               <Pressable
                 onPress={() => setActiveCallRoom(null)}
-                className="bg-rose-600 px-3 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
-                style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+                className="bg-rose-600 active:bg-rose-700 px-3 py-1.5 rounded-lg flex-row items-center gap-1 shadow-sm"
               >
                 <Text className="text-white text-xs font-bold uppercase tracking-wider">✕ Leave</Text>
               </Pressable>
