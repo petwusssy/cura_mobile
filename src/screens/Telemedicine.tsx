@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, PermissionsAndroid, Alert } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Header, Button, Card, Badge } from "../components/Shell";
@@ -201,32 +201,77 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   // History State
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const isFetchingRef = useRef(false);
 
   const fetchRequests = useCallback(async (background = false) => {
-    if (!user?.id) return;
+    if (!user?.id || isFetchingRef.current) return;
+    isFetchingRef.current = true;
     if (!background) setIsLoading(true);
-    try {
-      // NOTE: Make sure your backend is deployed with the new Telemedicine endpoints!
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/`);
-      if (res.ok) {
-        const data = await res.json();
-        // Filter for this patient
-        const myRequests = data.filter((r: any) => r.patient === user.id);
-        setRequests(myRequests);
+
+    const executeFetch = async (retries = 1): Promise<void> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/`, {
+          signal: controller.signal,
+          headers: {
+            "Accept": "application/json",
+            "Cache-Control": "no-cache",
+          },
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const myRequests = data.filter((r: any) => r.patient === user.id);
+            setRequests(myRequests);
+          }
+        }
+      } catch (err: any) {
+        if (retries > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          return executeFetch(retries - 1);
+        }
+        if (background) {
+          console.warn("Telemedicine background fetch notice:", err?.message || err);
+        } else {
+          console.warn("Failed to fetch telemedicine requests:", err?.message || err);
+        }
       }
-    } catch (err) {
-      console.error("Failed to fetch telemedicine requests", err);
+    };
+
+    try {
+      await executeFetch(1);
     } finally {
+      isFetchingRef.current = false;
       if (!background) setIsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
+    let isMounted = true;
+    let timerId: any;
+
     if (activeTab === "history") {
-      setTimeout(() => fetchRequests(false), 0);
-      const interval = setInterval(() => fetchRequests(true), 3000);
-      return () => clearInterval(interval);
+      fetchRequests(false);
+
+      const poll = async () => {
+        if (!isMounted) return;
+        await fetchRequests(true);
+        if (isMounted) {
+          timerId = setTimeout(poll, 4000);
+        }
+      };
+
+      timerId = setTimeout(poll, 4000);
     }
+
+    return () => {
+      isMounted = false;
+      if (timerId) clearTimeout(timerId);
+    };
   }, [activeTab, fetchRequests]);
 
   const handleSubmit = async () => {
