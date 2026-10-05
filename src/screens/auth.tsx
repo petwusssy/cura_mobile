@@ -2250,99 +2250,117 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
-// ── Aurora Background ────────────────────────────────────────────────────────
+// ── Floating Bubbles Background ──────────────────────────────────────────────
 
-interface AuroraBlobConfig {
-  id: string;
-  color: string;
+interface BubbleConfig {
+  id: number;
+  xPct: number;
   size: number;
-  initialX: number;
-  initialY: number;
-  targetX: number;
-  targetY: number;
-  durationX: number;
-  durationY: number;
-  durationScale: number;
-  scaleRange: [number, number];
-  baseOpacity: number;
-  opacityRange: [number, number];
+  color: string;
+  targetOpacity: number;
+  duration: number;
+  swayRange: number;
+  swayDuration: number;
+  initialProgress: number;
 }
 
-const AuroraBlob = memo(function AuroraBlob({
-  id,
-  color,
-  size,
-  initialX,
-  initialY,
-  targetX,
-  targetY,
-  durationX,
-  durationY,
-  durationScale,
-  scaleRange,
-  baseOpacity,
-  opacityRange,
+const BUBBLE_CONFIGS: BubbleConfig[] = [
+  { id: 1, xPct: 0.06, size: 14, color: "#7DD3FC", targetOpacity: 0.22, duration: 17000, swayRange: 12, swayDuration: 4200, initialProgress: 0.15 },
+  { id: 2, xPct: 0.12, size: 28, color: "#38BDF8", targetOpacity: 0.28, duration: 13000, swayRange: -18, swayDuration: 3800, initialProgress: 0.55 },
+  { id: 3, xPct: 0.18, size: 8, color: "#FFFFFF", targetOpacity: 0.16, duration: 22000, swayRange: 10, swayDuration: 5100, initialProgress: 0.82 },
+  { id: 4, xPct: 0.24, size: 36, color: "#7DD3FC", targetOpacity: 0.32, duration: 12000, swayRange: 22, swayDuration: 3500, initialProgress: 0.35 },
+  { id: 5, xPct: 0.30, size: 12, color: "#38BDF8", targetOpacity: 0.18, duration: 19000, swayRange: -14, swayDuration: 4600, initialProgress: 0.70 },
+  { id: 6, xPct: 0.09, size: 20, color: "#FFFFFF", targetOpacity: 0.24, duration: 15000, swayRange: 16, swayDuration: 3900, initialProgress: 0.90 },
+  { id: 7, xPct: 0.22, size: 10, color: "#7DD3FC", targetOpacity: 0.15, duration: 21000, swayRange: -12, swayDuration: 4800, initialProgress: 0.05 },
+  { id: 8, xPct: 0.15, size: 34, color: "#38BDF8", targetOpacity: 0.30, duration: 12500, swayRange: 20, swayDuration: 3600, initialProgress: 0.42 },
+  { id: 9, xPct: 0.38, size: 7, color: "#FFFFFF", targetOpacity: 0.12, duration: 24000, swayRange: 8, swayDuration: 5400, initialProgress: 0.62 },
+  { id: 10, xPct: 0.62, size: 8, color: "#7DD3FC", targetOpacity: 0.14, duration: 23000, swayRange: -9, swayDuration: 5200, initialProgress: 0.28 },
+  { id: 11, xPct: 0.70, size: 16, color: "#38BDF8", targetOpacity: 0.20, duration: 18000, swayRange: 14, swayDuration: 4400, initialProgress: 0.75 },
+  { id: 12, xPct: 0.76, size: 32, color: "#7DD3FC", targetOpacity: 0.32, duration: 13500, swayRange: -22, swayDuration: 3700, initialProgress: 0.18 },
+  { id: 13, xPct: 0.82, size: 10, color: "#FFFFFF", targetOpacity: 0.18, duration: 20000, swayRange: 10, swayDuration: 4700, initialProgress: 0.88 },
+  { id: 14, xPct: 0.88, size: 26, color: "#38BDF8", targetOpacity: 0.28, duration: 14000, swayRange: 18, swayDuration: 4000, initialProgress: 0.48 },
+  { id: 15, xPct: 0.94, size: 18, color: "#7DD3FC", targetOpacity: 0.24, duration: 16000, swayRange: -15, swayDuration: 4300, initialProgress: 0.25 },
+  { id: 16, xPct: 0.85, size: 38, color: "#FFFFFF", targetOpacity: 0.34, duration: 11500, swayRange: 24, swayDuration: 3400, initialProgress: 0.65 },
+  { id: 17, xPct: 0.92, size: 9, color: "#7DD3FC", targetOpacity: 0.15, duration: 22500, swayRange: -10, swayDuration: 4900, initialProgress: 0.08 },
+  { id: 18, xPct: 0.48, size: 12, color: "#38BDF8", targetOpacity: 0.16, duration: 19500, swayRange: 12, swayDuration: 4500, initialProgress: 0.80 },
+  { id: 19, xPct: 0.54, size: 24, color: "#7DD3FC", targetOpacity: 0.26, duration: 14500, swayRange: -16, swayDuration: 4100, initialProgress: 0.95 },
+  { id: 20, xPct: 0.65, size: 14, color: "#FFFFFF", targetOpacity: 0.18, duration: 18500, swayRange: 13, swayDuration: 4600, initialProgress: 0.38 },
+];
+
+const FloatingBubble = memo(function FloatingBubble({
+  config,
+  screenWidth,
+  screenHeight,
   reduceMotion,
-}: AuroraBlobConfig & { reduceMotion: boolean }) {
-  const tx = useSharedValue(0);
-  const ty = useSharedValue(0);
-  const sc = useSharedValue(1);
-  const op = useSharedValue(baseOpacity);
+}: {
+  config: BubbleConfig;
+  screenWidth: number;
+  screenHeight: number;
+  reduceMotion: boolean;
+}) {
+  const { id, xPct, size, color, targetOpacity, duration, swayRange, swayDuration, initialProgress } = config;
+  const progress = useSharedValue(initialProgress);
+  const sway = useSharedValue(0);
 
   useEffect(() => {
     if (reduceMotion) {
-      tx.value = 0;
-      ty.value = 0;
-      sc.value = 1;
-      op.value = baseOpacity;
+      progress.value = initialProgress;
+      sway.value = 0;
       return;
     }
 
-    tx.value = withRepeat(
-      withTiming(targetX, {
-        duration: durationX,
+    // Animate upward from initialProgress to 1, then seamless infinite repeat from 0 to 1
+    const remainingTime = Math.max(500, Math.round(duration * (1 - initialProgress)));
+    progress.value = withTiming(
+      1,
+      { duration: remainingTime, easing: ReanimatedEasing.linear },
+      (finished) => {
+        if (finished) {
+          progress.value = 0;
+          progress.value = withRepeat(
+            withTiming(1, { duration, easing: ReanimatedEasing.linear }),
+            -1,
+            false
+          );
+        }
+      }
+    );
+
+    // Horizontal gentle sine sway
+    sway.value = withRepeat(
+      withTiming(swayRange, {
+        duration: swayDuration,
         easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
       }),
       -1,
       true
     );
+  }, [reduceMotion, duration, initialProgress, swayRange, swayDuration]);
 
-    ty.value = withRepeat(
-      withTiming(targetY, {
-        duration: durationY,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
+  const animatedStyle = useAnimatedStyle(() => {
+    const p = progress.value;
+    // Fade in at bottom (0 -> 0.15) and fade out at top (0.85 -> 1.0)
+    let op = targetOpacity;
+    if (p < 0.15) {
+      op = (p / 0.15) * targetOpacity;
+    } else if (p > 0.85) {
+      op = ((1 - p) / 0.15) * targetOpacity;
+    }
 
-    sc.value = withRepeat(
-      withTiming(scaleRange[1], {
-        duration: durationScale,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
+    // Translate from (screenHeight + 30) up to -50
+    const travel = screenHeight + 80;
+    const y = screenHeight + 30 - p * travel;
 
-    op.value = withRepeat(
-      withTiming(opacityRange[1], {
-        duration: Math.round((durationX + durationY) / 2),
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-  }, [reduceMotion, targetX, targetY, durationX, durationY, durationScale, scaleRange, opacityRange, baseOpacity]);
+    return {
+      transform: [
+        { translateX: sway.value },
+        { translateY: y },
+      ],
+      opacity: op,
+    };
+  });
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: tx.value },
-      { translateY: ty.value },
-      { scale: sc.value },
-    ],
-    opacity: op.value,
-  }));
+  const posX = screenWidth * xPct - size / 2;
 
   return (
     <AnimatedReanimated.View
@@ -2350,24 +2368,24 @@ const AuroraBlob = memo(function AuroraBlob({
       style={[
         {
           position: "absolute",
-          left: initialX,
-          top: initialY,
+          left: posX,
+          top: 0,
           width: size,
           height: size,
         },
         animatedStyle,
       ]}
     >
-      <Svg width="100%" height="100%" viewBox="0 0 200 200">
+      <Svg width={size} height={size} viewBox="0 0 100 100">
         <Defs>
-          <SvgRadialGradient id={id} cx="50%" cy="50%" rx="50%" ry="50%">
-            <Stop offset="0%" stopColor={color} stopOpacity="1" />
-            <Stop offset="32%" stopColor={color} stopOpacity="0.82" />
-            <Stop offset="65%" stopColor={color} stopOpacity="0.32" />
+          <SvgRadialGradient id={`bubbleGrad_${id}`} cx="50%" cy="50%" rx="50%" ry="50%">
+            <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+            <Stop offset="30%" stopColor={color} stopOpacity="0.80" />
+            <Stop offset="65%" stopColor={color} stopOpacity="0.30" />
             <Stop offset="100%" stopColor={color} stopOpacity="0" />
           </SvgRadialGradient>
         </Defs>
-        <Circle cx="100" cy="100" r="100" fill={`url(#${id})`} />
+        <Circle cx="50" cy="50" r="50" fill={`url(#bubbleGrad_${id})`} />
       </Svg>
     </AnimatedReanimated.View>
   );
@@ -2377,9 +2395,6 @@ const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBl
   const { width, height } = useWindowDimensions();
   const systemReducedMotion = typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
-
-  // Responsive scale base
-  const dim = Math.max(width, height);
 
   return (
     <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]} pointerEvents="none">
@@ -2398,102 +2413,22 @@ const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBl
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 2) Animated Aurora / Mesh Gradient Layer (4-5 overlapping soft radial blobs) */}
-      {/* Blob 1: Royal Blue core wave - mid/lower left */}
-      <AuroraBlob
-        id="auroraBlob1"
-        color="#2563EB"
-        size={dim * 0.70}
-        initialX={-dim * 0.18}
-        initialY={height * 0.45}
-        targetX={width * 0.18}
-        targetY={-height * 0.10}
-        durationX={22000}
-        durationY={19000}
-        durationScale={24000}
-        scaleRange={[0.95, 1.15]}
-        baseOpacity={0.34}
-        opacityRange={[0.26, 0.40]}
-        reduceMotion={reduceMotion}
-      />
-
-      {/* Blob 2: Vibrant Cyan Glow - mid right / center */}
-      <AuroraBlob
-        id="auroraBlob2"
-        color="#38BDF8"
-        size={dim * 0.60}
-        initialX={width * 0.32}
-        initialY={height * 0.36}
-        targetX={-width * 0.16}
-        targetY={height * 0.10}
-        durationX={18000}
-        durationY={23000}
-        durationScale={20000}
-        scaleRange={[0.92, 1.12]}
-        baseOpacity={0.28}
-        opacityRange={[0.20, 0.35]}
-        reduceMotion={reduceMotion}
-      />
-
-      {/* Blob 3: Light Cyan / Sky Wave - bottom-center behind white sheet */}
-      <AuroraBlob
-        id="auroraBlob3"
-        color="#7DD3FC"
-        size={dim * 0.72}
-        initialX={width * 0.05}
-        initialY={height * 0.62}
-        targetX={width * 0.16}
-        targetY={-height * 0.12}
-        durationX={25000}
-        durationY={21000}
-        durationScale={27000}
-        scaleRange={[0.92, 1.14]}
-        baseOpacity={0.25}
-        opacityRange={[0.18, 0.32]}
-        reduceMotion={reduceMotion}
-      />
-
-      {/* Blob 4: Subtle Teal Accent - mid-left edge (konti lang, delicate organic touch) */}
-      <AuroraBlob
-        id="auroraBlob4"
-        color="#14B8A6"
-        size={dim * 0.48}
-        initialX={-dim * 0.12}
-        initialY={height * 0.28}
-        targetX={width * 0.14}
-        targetY={height * 0.08}
-        durationX={28000}
-        durationY={20000}
-        durationScale={26000}
-        scaleRange={[0.90, 1.08]}
-        baseOpacity={0.16}
-        opacityRange={[0.10, 0.20]}
-        reduceMotion={reduceMotion}
-      />
-
-      {/* Blob 5: Deep Royal / Azure Whisper - upper-right periphery (away from center hero) */}
-      <AuroraBlob
-        id="auroraBlob5"
-        color="#2563EB"
-        size={dim * 0.52}
-        initialX={width * 0.52}
-        initialY={height * 0.08}
-        targetX={-width * 0.10}
-        targetY={height * 0.06}
-        durationX={16000}
-        durationY={24000}
-        durationScale={19000}
-        scaleRange={[0.94, 1.10]}
-        baseOpacity={0.20}
-        opacityRange={[0.14, 0.24]}
-        reduceMotion={reduceMotion}
-      />
+      {/* 2) 20 Animated Floating Bubbles / Particles (Soft radial gradient, rising upwards with sway) */}
+      {BUBBLE_CONFIGS.map((config) => (
+        <FloatingBubble
+          key={config.id}
+          config={config}
+          screenWidth={width}
+          screenHeight={height}
+          reduceMotion={reduceMotion}
+        />
+      ))}
 
       {/* 3) Upper Vignette: Darkening overlay for top hero area (preserves crisp contrast for white logo & text) */}
       <LinearGradient
         colors={[
-          "rgba(11, 27, 74, 0.60)",
-          "rgba(11, 27, 74, 0.25)",
+          "rgba(11, 27, 74, 0.55)",
+          "rgba(11, 27, 74, 0.20)",
           "rgba(11, 27, 74, 0)",
         ]}
         locations={[0, 0.32, 0.60]}
