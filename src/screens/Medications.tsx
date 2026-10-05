@@ -61,10 +61,13 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
     const rawList = medications.length > 0 ? medications : MEDICATIONS;
     return rawList.map((m) => {
       const isMarkedIntaked = localIntakedIds.has(m.id);
-      const isAlreadyIntaked = m.status === "intaked" || m.status === "taken";
+      const isBackendIntaked = (m.rawRemarks && m.rawRemarks.includes('[INTAKED]')) || (m.instructions && m.instructions.includes('[INTAKED]'));
+      const isAlreadyIntaked = m.status === "intaked" || m.status === "taken" || isBackendIntaked;
       const status = (isMarkedIntaked || isAlreadyIntaked) ? "intaked" : "next-intake";
+      const cleanInstructions = (m.instructions || '').replace('[INTAKED]', '').trim();
       return {
         ...m,
+        instructions: cleanInstructions || (m.instructions === '' ? '' : m.instructions),
         status,
       };
     });
