@@ -25,6 +25,8 @@ import AnimatedReanimated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  useReducedMotion,
   Easing as ReanimatedEasing,
 } from "react-native-reanimated";
 import Svg, { Path, Polyline, Circle, Rect, Defs, LinearGradient as SvgGradient, RadialGradient as SvgRadialGradient, Stop, Text as SvgText, TSpan, Mask, Image as SvgImage } from "react-native-svg";
@@ -2248,117 +2250,259 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
-// ── Welcome Background ───────────────────────────────────────────────────────
+// ── Aurora Background ────────────────────────────────────────────────────────
+
+interface AuroraBlobConfig {
+  id: string;
+  color: string;
+  size: number;
+  initialX: number;
+  initialY: number;
+  targetX: number;
+  targetY: number;
+  durationX: number;
+  durationY: number;
+  durationScale: number;
+  scaleRange: [number, number];
+  baseOpacity: number;
+  opacityRange: [number, number];
+}
+
+const AuroraBlob = memo(function AuroraBlob({
+  id,
+  color,
+  size,
+  initialX,
+  initialY,
+  targetX,
+  targetY,
+  durationX,
+  durationY,
+  durationScale,
+  scaleRange,
+  baseOpacity,
+  opacityRange,
+  reduceMotion,
+}: AuroraBlobConfig & { reduceMotion: boolean }) {
+  const tx = useSharedValue(0);
+  const ty = useSharedValue(0);
+  const sc = useSharedValue(1);
+  const op = useSharedValue(baseOpacity);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      tx.value = 0;
+      ty.value = 0;
+      sc.value = 1;
+      op.value = baseOpacity;
+      return;
+    }
+
+    tx.value = withRepeat(
+      withTiming(targetX, {
+        duration: durationX,
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+
+    ty.value = withRepeat(
+      withTiming(targetY, {
+        duration: durationY,
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+
+    sc.value = withRepeat(
+      withTiming(scaleRange[1], {
+        duration: durationScale,
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+
+    op.value = withRepeat(
+      withTiming(opacityRange[1], {
+        duration: Math.round((durationX + durationY) / 2),
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+  }, [reduceMotion, targetX, targetY, durationX, durationY, durationScale, scaleRange, opacityRange, baseOpacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: tx.value },
+      { translateY: ty.value },
+      { scale: sc.value },
+    ],
+    opacity: op.value,
+  }));
+
+  return (
+    <AnimatedReanimated.View
+      pointerEvents="none"
+      style={[
+        {
+          position: "absolute",
+          left: initialX,
+          top: initialY,
+          width: size,
+          height: size,
+        },
+        animatedStyle,
+      ]}
+    >
+      <Svg width="100%" height="100%" viewBox="0 0 200 200">
+        <Defs>
+          <SvgRadialGradient id={id} cx="50%" cy="50%" rx="50%" ry="50%">
+            <Stop offset="0%" stopColor={color} stopOpacity="1" />
+            <Stop offset="32%" stopColor={color} stopOpacity="0.82" />
+            <Stop offset="65%" stopColor={color} stopOpacity="0.32" />
+            <Stop offset="100%" stopColor={color} stopOpacity="0" />
+          </SvgRadialGradient>
+        </Defs>
+        <Circle cx="100" cy="100" r="100" fill={`url(#${id})`} />
+      </Svg>
+    </AnimatedReanimated.View>
+  );
+});
 
 const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBlurAnim: Animated.Value }) {
+  const { width, height } = useWindowDimensions();
+  const systemReducedMotion = typeof useReducedMotion === "function" ? useReducedMotion() : false;
+  const reduceMotion = Boolean(systemReducedMotion);
+
+  // Responsive scale base
+  const dim = Math.max(width, height);
+
   return (
     <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]} pointerEvents="none">
-      {/* 1) Base full-bleed vertical gradient: dark navy (#0B1B4A) -> royal blue (#1E3A8A) -> deep navy */}
+      {/* 1) Base full-bleed vertical gradient: #0B1B4A (taas) -> #1E3A8A (gitna) -> #2563EB (ibaba) */}
       <LinearGradient
         colors={[
           "#0B1B4A",
-          "#0E2460",
-          "#163482",
+          "#122868",
           "#1E3A8A",
-          "#10255C",
-          "#071333",
+          "#224FBF",
+          "#2563EB",
         ]}
-        locations={[0, 0.22, 0.44, 0.65, 0.85, 1]}
+        locations={[0, 0.26, 0.55, 0.80, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 2) Abstract flowing waves & ambient glow vector layer (Responsive: Phone + iPad) */}
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 1000 1200"
-        preserveAspectRatio="xMidYMid slice"
+      {/* 2) Animated Aurora / Mesh Gradient Layer (4-5 overlapping soft radial blobs) */}
+      {/* Blob 1: Royal Blue core wave - mid/lower left */}
+      <AuroraBlob
+        id="auroraBlob1"
+        color="#2563EB"
+        size={dim * 0.70}
+        initialX={-dim * 0.18}
+        initialY={height * 0.45}
+        targetX={width * 0.18}
+        targetY={-height * 0.10}
+        durationX={22000}
+        durationY={19000}
+        durationScale={24000}
+        scaleRange={[0.95, 1.15]}
+        baseOpacity={0.34}
+        opacityRange={[0.26, 0.40]}
+        reduceMotion={reduceMotion}
+      />
+
+      {/* Blob 2: Vibrant Cyan Glow - mid right / center */}
+      <AuroraBlob
+        id="auroraBlob2"
+        color="#38BDF8"
+        size={dim * 0.60}
+        initialX={width * 0.32}
+        initialY={height * 0.36}
+        targetX={-width * 0.16}
+        targetY={height * 0.10}
+        durationX={18000}
+        durationY={23000}
+        durationScale={20000}
+        scaleRange={[0.92, 1.12]}
+        baseOpacity={0.28}
+        opacityRange={[0.20, 0.35]}
+        reduceMotion={reduceMotion}
+      />
+
+      {/* Blob 3: Light Cyan / Sky Wave - bottom-center behind white sheet */}
+      <AuroraBlob
+        id="auroraBlob3"
+        color="#7DD3FC"
+        size={dim * 0.72}
+        initialX={width * 0.05}
+        initialY={height * 0.62}
+        targetX={width * 0.16}
+        targetY={-height * 0.12}
+        durationX={25000}
+        durationY={21000}
+        durationScale={27000}
+        scaleRange={[0.92, 1.14]}
+        baseOpacity={0.25}
+        opacityRange={[0.18, 0.32]}
+        reduceMotion={reduceMotion}
+      />
+
+      {/* Blob 4: Subtle Teal Accent - mid-left edge (konti lang, delicate organic touch) */}
+      <AuroraBlob
+        id="auroraBlob4"
+        color="#14B8A6"
+        size={dim * 0.48}
+        initialX={-dim * 0.12}
+        initialY={height * 0.28}
+        targetX={width * 0.14}
+        targetY={height * 0.08}
+        durationX={28000}
+        durationY={20000}
+        durationScale={26000}
+        scaleRange={[0.90, 1.08]}
+        baseOpacity={0.16}
+        opacityRange={[0.10, 0.20]}
+        reduceMotion={reduceMotion}
+      />
+
+      {/* Blob 5: Deep Royal / Azure Whisper - upper-right periphery (away from center hero) */}
+      <AuroraBlob
+        id="auroraBlob5"
+        color="#2563EB"
+        size={dim * 0.52}
+        initialX={width * 0.52}
+        initialY={height * 0.08}
+        targetX={-width * 0.10}
+        targetY={height * 0.06}
+        durationX={16000}
+        durationY={24000}
+        durationScale={19000}
+        scaleRange={[0.94, 1.10]}
+        baseOpacity={0.20}
+        opacityRange={[0.14, 0.24]}
+        reduceMotion={reduceMotion}
+      />
+
+      {/* 3) Upper Vignette: Darkening overlay for top hero area (preserves crisp contrast for white logo & text) */}
+      <LinearGradient
+        colors={[
+          "rgba(11, 27, 74, 0.60)",
+          "rgba(11, 27, 74, 0.25)",
+          "rgba(11, 27, 74, 0)",
+        ]}
+        locations={[0, 0.32, 0.60]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
-      >
-        <Defs>
-          {/* Subtle ambient cyan glow behind the CURA hero logo */}
-          <SvgRadialGradient
-            id="curaLogoAmbient"
-            cx="50%"
-            cy="32%"
-            rx="42%"
-            ry="25%"
-            fx="50%"
-            fy="32%"
-          >
-            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.16" />
-            <Stop offset="50%" stopColor="#2563EB" stopOpacity="0.06" />
-            <Stop offset="100%" stopColor="#0B1B4A" stopOpacity="0" />
-          </SvgRadialGradient>
+      />
 
-          {/* Wave 1: Deep flowing wave (Royal blue) */}
-          <SvgGradient id="curaWave1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#1D4ED8" stopOpacity="0.22" />
-            <Stop offset="55%" stopColor="#2563EB" stopOpacity="0.30" />
-            <Stop offset="100%" stopColor="#1E3A8A" stopOpacity="0.16" />
-          </SvgGradient>
-
-          {/* Wave 2: Middle flowing wave (Vibrant blue to cyan) */}
-          <SvgGradient id="curaWave2" x1="0%" y1="15%" x2="100%" y2="85%">
-            <Stop offset="0%" stopColor="#2563EB" stopOpacity="0.24" />
-            <Stop offset="50%" stopColor="#38BDF8" stopOpacity="0.26" />
-            <Stop offset="100%" stopColor="#1D4ED8" stopOpacity="0.14" />
-          </SvgGradient>
-
-          {/* Wave 3: Front swoosh wave (Cyan & sky blue) */}
-          <SvgGradient id="curaWave3" x1="5%" y1="0%" x2="95%" y2="100%">
-            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.25" />
-            <Stop offset="45%" stopColor="#7DD3FC" stopOpacity="0.22" />
-            <Stop offset="100%" stopColor="#2563EB" stopOpacity="0.10" />
-          </SvgGradient>
-
-          {/* Subtle top-right perimeter swoosh */}
-          <SvgGradient id="curaTopSwoosh" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.10" />
-            <Stop offset="100%" stopColor="#1E3A8A" stopOpacity="0.02" />
-          </SvgGradient>
-        </Defs>
-
-        {/* Ambient glow centered behind hero logo */}
-        <Rect width="1000" height="1200" fill="url(#curaLogoAmbient)" />
-
-        {/* Top-right subtle perimeter curve */}
-        <Path
-          d="M 680 0 C 750 120, 870 170, 1000 190 L 1000 0 Z"
-          fill="url(#curaTopSwoosh)"
-        />
-
-        {/* Wave 1 (Deepest curve) */}
-        <Path
-          d="M 0 740 C 220 670, 420 860, 680 770 C 820 720, 930 680, 1000 700 L 1000 1200 L 0 1200 Z"
-          fill="url(#curaWave1)"
-        />
-
-        {/* Wave 2 (Middle crest) */}
-        <Path
-          d="M 0 860 C 260 760, 480 910, 760 810 C 870 770, 950 780, 1000 800 L 1000 1200 L 0 1200 Z"
-          fill="url(#curaWave2)"
-        />
-
-        {/* Wave 3 (Front dynamic swoosh) */}
-        <Path
-          d="M 0 980 C 280 910, 540 1010, 780 900 C 880 855, 960 880, 1000 910 L 1000 1200 L 0 1200 Z"
-          fill="url(#curaWave3)"
-        />
-
-        {/* Delicate accent crest contour line */}
-        <Path
-          d="M 0 980 C 280 910, 540 1010, 780 900 C 880 855, 960 880, 1000 910"
-          fill="none"
-          stroke="#7DD3FC"
-          strokeWidth="1.5"
-          strokeOpacity="0.25"
-        />
-      </Svg>
-
-      {/* 3) Modal dimming overlay when auth sheet is open */}
+      {/* 4) Modal dimming overlay when auth sheet is open */}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
@@ -2525,10 +2669,12 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#08183C" }}>
-      {/* 1) Top Section with Campus Background Photo */}
-      <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-        <WelcomeBackground bgBlurAnim={bgBlurAnim} />
+    <View style={{ flex: 1, backgroundColor: "#0B1B4A", overflow: "hidden" }}>
+      {/* FULL-BLEED Aurora Background - continuous across full screen, behind header, hero, and bottom sheet */}
+      <WelcomeBackground bgBlurAnim={bgBlurAnim} />
+
+      {/* 1) Top Section (Header + Hero) */}
+      <View style={{ flex: 1, position: "relative" }}>
 
         {/* 2) Header (Top-left) */}
         <View
@@ -3279,7 +3425,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
   }, [setUser, loadUserData, navigate]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#08183C" }}>
+    <View style={{ flex: 1, backgroundColor: "#0B1B4A", overflow: "hidden" }}>
       <WelcomeBackground bgBlurAnim={bgBlurAnim} />
       <AuthModal
         visible={true}
