@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
@@ -12,6 +13,7 @@ interface Props {
   user: Partial<AppUser>;
   consultations?: any[];
   notifications?: any[];
+  medications?: any[];
 }
 
 function getGreeting() {
@@ -21,20 +23,65 @@ function getGreeting() {
   return "Good Evening";
 }
 
-export function HomeScreen({ navigate, user, consultations = [], notifications = [] }: Props) {
+export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
   const insets = useSafeAreaInsets();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
   const unread = notifications.filter((n) => !n.read).length;
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
-  
-  // Find a due medication from treatments of recent consultations
-  let dueMed = null;
-  for (const consult of consultations) {
-    if (consult.treatments) {
-      dueMed = consult.treatments.find((t: any) => t.nextDose); // Simplified check
-      if (dueMed) break;
+
+  const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchIntaked = () => {
+      AsyncStorage.getItem('@cura_intaked_meds')
+        .then((data) => {
+          if (data) {
+            try {
+              const parsed = JSON.parse(data);
+              if (Array.isArray(parsed)) {
+                setIntakedIds(new Set(parsed));
+              }
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchIntaked();
+    const interval = setInterval(fetchIntaked, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Find a due medication from treatments that have NOT been intaked yet
+  const dueMed = useMemo(() => {
+    if (medications && medications.length > 0) {
+      const pending = medications.filter(
+        (m: any) =>
+          m.status !== "intaked" &&
+          m.status !== "taken" &&
+          !intakedIds.has(String(m.id)) &&
+          !intakedIds.has(m.id) &&
+          !(m.rawRemarks && m.rawRemarks.includes('[INTAKED]')) &&
+          !(m.instructions && m.instructions.includes('[INTAKED]'))
+      );
+      if (pending.length === 0) return null;
+      return pending.find((m: any) => m.nextDose) || pending[0];
     }
-  }
+
+    // Fallback: check consultations treatments
+    for (const consult of consultations) {
+      if (consult.treatments) {
+        const found = consult.treatments.find((t: any, idx: number) => {
+          const medId = t.id ? String(t.id) : `${consult.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
+          if (intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)))) return false;
+          if (t.remarks && t.remarks.includes('[INTAKED]')) return false;
+          return true;
+        });
+        if (found) return found;
+      }
+    }
+    return null;
+  }, [medications, consultations, intakedIds]);
 
   // Bed Timer Logic
   const hasBed = !!BED_ASSIGNMENT;
@@ -256,10 +303,20 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
         {/* 2. Hero Card (Most Urgent Action) */}
         <View className="px-6 mb-8">
-          <SectionHeader title={isQueueActive ? "Live Queue" : isBedActive ? "Active Rest" : dueMed ? "Medication Due" : latestConsult ? "Next Follow-up" : "All Caught Up!"} action={latestConsult ? "See all" : undefined} onAction={latestConsult ? () => navigate("health-history") : undefined} />
+          <SectionHeader
+            title={
+              isQueueActive
+                ? "Live Queue"
+                : isBedActive
+                ? "Active Rest"
+                : "Medication Due"
+            }
+            action={!isQueueActive && !isBedActive ? "See all" : undefined}
+            onAction={!isQueueActive && !isBedActive ? () => navigate("medications") : undefined}
+          />
           
           <Pressable 
-            onPress={() => isQueueActive ? {} : isBedActive ? {} : dueMed ? navigate("medications") : latestConsult ? navigate("health-history") : {}}
+            onPress={() => isQueueActive ? {} : isBedActive ? {} : navigate("medications")}
             className="w-full bg-cura-900 rounded-[32px] p-6 relative overflow-hidden mt-2"
             style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 }}
           >
@@ -276,7 +333,13 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             <View className="flex-row items-start justify-between mb-4">
               <View className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 ${isQueueActive && queue.status === 'called' ? 'bg-green-500' : 'bg-white/20'}`}>
                 <Text className="text-white text-xs font-bold">
-                  {isQueueActive ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist") : isBedActive ? "🛏️ Timer" : dueMed ? "💊 Alert" : latestConsult ? "📅 Soon" : "✨ Great"}
+                  {isQueueActive
+                    ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist")
+                    : isBedActive
+                    ? "🛏️ Timer"
+                    : dueMed
+                    ? "💊 Alert"
+                    : "✨ All Intaked"}
                 </Text>
               </View>
               <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
@@ -294,39 +357,58 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                     : aheadCount === 0 
                       ? "🎉 You are next in line! (0 ahead)" 
                       : `⏳ ${aheadCount} ${aheadCount === 1 ? 'patient' : 'patients'} ahead of you`
-                ) : isBedActive ? BED_ASSIGNMENT?.reason : dueMed ? dueMed.instructions || "Take medication" : latestConsult ? latestConsult.complaint : "You have no pending actions"}
+                ) : isBedActive ? (
+                  BED_ASSIGNMENT?.reason
+                ) : dueMed ? (
+                  dueMed.instructions || "Take medication"
+                ) : (
+                  "No upcoming medications due"
+                )}
               </Text>
               <Text className="text-white text-2xl font-bold" style={{ fontFamily: "Outfit" }}>
-                {isQueueActive ? `Queue #${queue.queue_number}` : isBedActive ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : dueMed ? dueMed.medicineName : latestConsult ? latestConsult.doctorName || "Doctor" : "Stay Healthy!"}
+                {isQueueActive
+                  ? `Queue #${queue.queue_number}`
+                  : isBedActive
+                  ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+                  : dueMed
+                  ? (dueMed.name || dueMed.medicineName)
+                  : "All Caught Up!"}
               </Text>
               {isBedActive && <Text className="text-white/80 text-xs mt-1">Remaining time</Text>}
+              {!isQueueActive && !isBedActive && !dueMed && (
+                <Text className="text-white/70 text-xs mt-1">All scheduled medications are completed</Text>
+              )}
             </View>
 
-            { (isQueueActive || isBedActive || dueMed || latestConsult) && (
-              <View className="flex-row items-center gap-2 z-10">
-                <View className={`px-5 py-2.5 rounded-full ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
-                  <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
-                    {isQueueActive ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line") : isBedActive ? "View Status" : dueMed ? "Take Meds" : "View Details"}
-                  </Text>
-                </View>
-                {isQueueActive && (
-                  <Pressable 
-                    onPress={cancelQueue}
-                    disabled={cancelling}
-                    className="px-4 py-2.5 rounded-full bg-white/20 active:bg-white/30"
-                  >
-                    <Text className="text-white/90 text-xs font-semibold">
-                      {cancelling ? "Leaving..." : "Leave Queue"}
-                    </Text>
-                  </Pressable>
-                )}
+            <View className="flex-row items-center gap-2 z-10">
+              <View className={`px-5 py-2.5 rounded-full ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
+                <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
+                  {isQueueActive
+                    ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line")
+                    : isBedActive
+                    ? "View Status"
+                    : dueMed
+                    ? "Take Meds"
+                    : "View Meds"}
+                </Text>
               </View>
-            )}
+              {isQueueActive && (
+                <Pressable 
+                  onPress={cancelQueue}
+                  disabled={cancelling}
+                  className="px-4 py-2.5 rounded-full bg-white/20 active:bg-white/30"
+                >
+                  <Text className="text-white/90 text-xs font-semibold">
+                    {cancelling ? "Leaving..." : "Leave Queue"}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
 
             {/* Giant illustrative emoji on the right */}
             <View className="absolute -right-4 bottom-2 opacity-90">
               <Text style={{ fontSize: 96, transform: [{ rotate: '-10deg' }] }}>
-                {isQueueActive ? "🎟️" : isBedActive ? "😴" : dueMed ? "💊" : latestConsult ? "👨‍⚕️" : "🌟"}
+                {isQueueActive ? "🎟️" : isBedActive ? "😴" : dueMed ? "💊" : "✨"}
               </Text>
             </View>
           </Pressable>

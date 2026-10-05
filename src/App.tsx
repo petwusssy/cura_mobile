@@ -394,7 +394,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "onboard-avatar":   return <AvatarScreen {...navProps} />;
       case "onboard-complete": return <ProfileCompleteScreen {...navProps} />;
 
-      case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} />;
+      case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} medications={medications} />;
       case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} />;
       case "telemedicine":   return <TelemedicineScreen navigate={navigate} goBack={goBack} user={user} />;
       case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
