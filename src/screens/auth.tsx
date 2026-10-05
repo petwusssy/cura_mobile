@@ -2691,45 +2691,41 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Full coverage from CURA logo top edge down to very bottom of screen (edge-to-edge):
-  // 1. TOP LIMIT: starts at top edge of CURA logo (~19-20% H), clear gap below header/settings (<=16% H).
-  // 2. BOTTOM LIMIT: extends all the way down past the bottom edge of the screen behind the white card.
-  // 3. WIDTH: edge to edge across full screen width with generous blur margins.
-  // 4. Overlap generously so no bare spots exist inside this area.
+  // Exact COA mobile reference layout specs (% of full screen width W / height H):
+  // Blob A (large, left-anchored): x -10% to 85% (95% W), y 22% to 105% (83% H)
+  const blobAW = Math.round(width * 0.95);
+  const blobAH = Math.round(height * 0.83);
+  const blobATop = Math.round(height * 0.22);
+  const blobALeft = -Math.round(width * 0.10);
 
-  // Blob 1 (Upper-left & Center): ~86% W x 50% H (curving naturally at logo top-left, spanning to center)
-  const blob1W = Math.round(width * 0.86);
-  const blob1H = Math.round(height * 0.50);
-  const blob1Top = Math.round(height * 0.185);
-  const blob1Left = -Math.round(width * 0.06);
+  // Blob B (large, right-anchored): x 20% to 110% (90% W), y 28% to 105% (77% H)
+  // Higher on left (22%), lower on right (28%) -> natural wavy curve like COA reference
+  const blobBW = Math.round(width * 0.90);
+  const blobBH = Math.round(height * 0.77);
+  const blobBTop = Math.round(height * 0.28);
+  const blobBLeft = Math.round(width * 0.20);
 
-  // Blob 2 (Upper-right & Center): ~84% W x 50% H (curving naturally at logo top-right, spanning to right edge)
-  const blob2W = Math.round(width * 0.84);
-  const blob2H = Math.round(height * 0.50);
-  const blob2Top = Math.round(height * 0.205);
-  const blob2Right = -Math.round(width * 0.06);
+  // Blob C (fills gaps, bottom-center): x -5% to 105% (110% W), y 45% to 105% (60% H)
+  const blobCW = Math.round(width * 1.10);
+  const blobCH = Math.round(height * 0.60);
+  const blobCTop = Math.round(height * 0.45);
+  const blobCLeft = -Math.round(width * 0.05);
 
-  // Blob 3 (Lower Base - Full Width down to screen bottom): ~116% W x 60% H (covers tagline through bottom)
-  const blob3W = Math.round(width * 1.16);
-  const blob3H = Math.round(height * 0.60);
-  const blob3Top = Math.round(height * 0.45);
-  const blob3Left = -Math.round(width * 0.08);
-
-  // Blob 1: ~10s loop (subtle drift, stays strictly below header limit)
+  // Blob A: ~10s loop (subtle drift, never moves above top limit)
   const tx1 = useSharedValue(0);
   const ty1 = useSharedValue(0);
   const scale1 = useSharedValue(1);
   const rot1 = useSharedValue(0);
   const op1 = useSharedValue(0.38);
 
-  // Blob 2: ~13.5s loop (subtle drift, stays strictly below header limit)
+  // Blob B: ~13.5s loop (subtle drift, never moves above top limit)
   const tx2 = useSharedValue(0);
   const ty2 = useSharedValue(0);
   const scale2 = useSharedValue(1);
   const rot2 = useSharedValue(0);
   const op2 = useSharedValue(0.32);
 
-  // Blob 3: ~9s loop (subtle drift, seamless full-bleed base)
+  // Blob C: ~9s loop (subtle drift, seamless full-bleed base)
   const tx3 = useSharedValue(0);
   const ty3 = useSharedValue(0);
   const scale3 = useSharedValue(1);
@@ -2758,24 +2754,24 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       return;
     }
 
-    // Blob 1 (10s cycle - subtle drift within outline)
+    // Blob A (10s cycle - gentle float, coverage strictly preserved)
     tx1.value = withRepeat(
-      withTiming(4, { duration: 5000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(3, { duration: 5000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty1.value = withRepeat(
-      withTiming(3, { duration: 4600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(2, { duration: 4600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale1.value = withRepeat(
-      withTiming(1.02, { duration: 5200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.015, { duration: 5200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot1.value = withRepeat(
-      withTiming(2, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.5, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2785,14 +2781,14 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       true
     );
 
-    // Blob 2 (13.5s cycle - subtle drift within outline)
+    // Blob B (13.5s cycle - gentle float, coverage strictly preserved)
     tx2.value = withRepeat(
-      withTiming(-4, { duration: 6800, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-3, { duration: 6800, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty2.value = withRepeat(
-      withTiming(3, { duration: 6400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(2, { duration: 6400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2802,7 +2798,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       true
     );
     rot2.value = withRepeat(
-      withTiming(-2, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-1.5, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2812,24 +2808,24 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       true
     );
 
-    // Blob 3 (9s cycle - subtle drift within outline)
+    // Blob C (9s cycle - gentle float, seamless foundation)
     tx3.value = withRepeat(
-      withTiming(3, { duration: 4500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(2, { duration: 4500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty3.value = withRepeat(
-      withTiming(-3, { duration: 4200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-2, { duration: 4200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale3.value = withRepeat(
-      withTiming(1.015, { duration: 4700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.01, { duration: 4700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot3.value = withRepeat(
-      withTiming(1.5, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2840,7 +2836,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     );
   }, [reduceMotion, isModalOpen]);
 
-  const blob1AnimStyle = useAnimatedStyle(() => ({
+  const blobAAnimStyle = useAnimatedStyle(() => ({
     opacity: op1.value,
     transform: [
       { translateX: tx1.value },
@@ -2850,7 +2846,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     ],
   }));
 
-  const blob2AnimStyle = useAnimatedStyle(() => ({
+  const blobBAnimStyle = useAnimatedStyle(() => ({
     opacity: op2.value,
     transform: [
       { translateX: tx2.value },
@@ -2860,7 +2856,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     ],
   }));
 
-  const blob3AnimStyle = useAnimatedStyle(() => ({
+  const blobCAnimStyle = useAnimatedStyle(() => ({
     opacity: op3.value,
     transform: [
       { translateX: tx3.value },
@@ -2887,21 +2883,21 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
           : undefined,
       ]}
     >
-      {/* Blob 1: Upper-left organic blob (curving naturally at logo top-left, spanning to center) */}
+      {/* Blob A (large, left-anchored): x -10% to 85%, y 22% to 105% (higher on left) */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: blob1Top,
-            left: blob1Left,
-            width: blob1W,
-            height: blob1H,
+            top: blobATop,
+            left: blobALeft,
+            width: blobAW,
+            height: blobAH,
           },
-          blob1AnimStyle,
+          blobAAnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 340 400">
+        <Svg width="100%" height="100%" viewBox="0 0 500 600">
           <Defs>
             <SvgGradient id="curaBlobGrad1" x1="0" y1="0" x2="1" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.85" />
@@ -2911,27 +2907,27 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 170 20 C 260 16, 325 70, 325 190 C 325 310, 260 380, 165 385 C 70 390, 15 320, 15 195 C 15 75, 75 24, 170 20 Z"
+            d="M 180 20 C 330 20, 480 80, 485 240 C 490 410, 470 580, 250 585 C 50 590, 15 450, 15 260 C 15 110, 70 20, 180 20 Z"
             fill="url(#curaBlobGrad1)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob 2: Upper-right organic blob (curving naturally at logo top-right, spanning to right edge) */}
+      {/* Blob B (large, right-anchored): x 20% to 110%, y 28% to 105% (lower on right, natural wavy curve) */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: blob2Top,
-            right: blob2Right,
-            width: blob2W,
-            height: blob2H,
+            top: blobBTop,
+            left: blobBLeft,
+            width: blobBW,
+            height: blobBH,
           },
-          blob2AnimStyle,
+          blobBAnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 340 400">
+        <Svg width="100%" height="100%" viewBox="0 0 500 600">
           <Defs>
             <SvgGradient id="curaBlobGrad2" x1="1" y1="0" x2="0" y2="1">
               <Stop offset="0%" stopColor="#8FD0EE" stopOpacity="0.80" />
@@ -2941,27 +2937,27 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 175 22 C 265 18, 325 75, 325 200 C 325 320, 260 385, 170 385 C 75 385, 15 315, 15 195 C 15 75, 80 26, 175 22 Z"
+            d="M 220 30 C 360 30, 485 90, 485 260 C 485 430, 450 580, 250 585 C 50 590, 15 450, 15 280 C 15 130, 90 30, 220 30 Z"
             fill="url(#curaBlobGrad2)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob 3: Lower base organic blob (covers tagline down through screen bottom behind white card) */}
+      {/* Blob C (fills gaps, bottom-center): x -5% to 105%, y 45% to 105% */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: blob3Top,
-            left: blob3Left,
-            width: blob3W,
-            height: blob3H,
+            top: blobCTop,
+            left: blobCLeft,
+            width: blobCW,
+            height: blobCH,
           },
-          blob3AnimStyle,
+          blobCAnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 450 450">
+        <Svg width="100%" height="100%" viewBox="0 0 600 500">
           <Defs>
             <SvgGradient id="curaBlobGrad3" x1="0.5" y1="0" x2="0.5" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.82" />
@@ -2971,7 +2967,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 225 25 C 340 20, 435 80, 435 220 C 435 360, 345 435, 225 435 C 105 435, 15 360, 15 220 C 15 80, 110 30, 225 25 Z"
+            d="M 300 25 C 460 20, 585 90, 585 260 C 585 430, 470 485, 300 485 C 130 485, 15 430, 15 260 C 15 90, 140 25, 300 25 Z"
             fill="url(#curaBlobGrad3)"
           />
         </Svg>
