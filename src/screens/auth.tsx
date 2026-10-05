@@ -27,7 +27,7 @@ import AnimatedReanimated, {
   withTiming,
   Easing as ReanimatedEasing,
 } from "react-native-reanimated";
-import Svg, { Path, Polyline, Circle, Rect, Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, TSpan, Mask, Image as SvgImage } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Rect, Defs, LinearGradient as SvgGradient, RadialGradient as SvgRadialGradient, Stop, Text as SvgText, TSpan, Mask, Image as SvgImage } from "react-native-svg";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from 'expo-web-browser';
@@ -2253,22 +2253,112 @@ const AuthModal = memo(function AuthModal({
 const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBlurAnim: Animated.Value }) {
   return (
     <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]} pointerEvents="none">
-      <Image
-        source={require("../../assets/images/auth-bg.png")}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      />
+      {/* 1) Base full-bleed vertical gradient: dark navy (#0B1B4A) -> royal blue (#1E3A8A) -> deep navy */}
       <LinearGradient
         colors={[
-          "rgba(20, 60, 140, 0.40)",
-          "rgba(12, 36, 88, 0.70)",
-          "rgba(8, 24, 60, 0.92)",
+          "#0B1B4A",
+          "#0E2460",
+          "#163482",
+          "#1E3A8A",
+          "#10255C",
+          "#071333",
         ]}
-        locations={[0, 0.5, 1]}
+        locations={[0, 0.22, 0.44, 0.65, 0.85, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+
+      {/* 2) Abstract flowing waves & ambient glow vector layer (Responsive: Phone + iPad) */}
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 1000 1200"
+        preserveAspectRatio="xMidYMid slice"
+        style={StyleSheet.absoluteFill}
+      >
+        <Defs>
+          {/* Subtle ambient cyan glow behind the CURA hero logo */}
+          <SvgRadialGradient
+            id="curaLogoAmbient"
+            cx="50%"
+            cy="32%"
+            rx="42%"
+            ry="25%"
+            fx="50%"
+            fy="32%"
+          >
+            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.16" />
+            <Stop offset="50%" stopColor="#2563EB" stopOpacity="0.06" />
+            <Stop offset="100%" stopColor="#0B1B4A" stopOpacity="0" />
+          </SvgRadialGradient>
+
+          {/* Wave 1: Deep flowing wave (Royal blue) */}
+          <SvgGradient id="curaWave1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#1D4ED8" stopOpacity="0.22" />
+            <Stop offset="55%" stopColor="#2563EB" stopOpacity="0.30" />
+            <Stop offset="100%" stopColor="#1E3A8A" stopOpacity="0.16" />
+          </SvgGradient>
+
+          {/* Wave 2: Middle flowing wave (Vibrant blue to cyan) */}
+          <SvgGradient id="curaWave2" x1="0%" y1="15%" x2="100%" y2="85%">
+            <Stop offset="0%" stopColor="#2563EB" stopOpacity="0.24" />
+            <Stop offset="50%" stopColor="#38BDF8" stopOpacity="0.26" />
+            <Stop offset="100%" stopColor="#1D4ED8" stopOpacity="0.14" />
+          </SvgGradient>
+
+          {/* Wave 3: Front swoosh wave (Cyan & sky blue) */}
+          <SvgGradient id="curaWave3" x1="5%" y1="0%" x2="95%" y2="100%">
+            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.25" />
+            <Stop offset="45%" stopColor="#7DD3FC" stopOpacity="0.22" />
+            <Stop offset="100%" stopColor="#2563EB" stopOpacity="0.10" />
+          </SvgGradient>
+
+          {/* Subtle top-right perimeter swoosh */}
+          <SvgGradient id="curaTopSwoosh" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.10" />
+            <Stop offset="100%" stopColor="#1E3A8A" stopOpacity="0.02" />
+          </SvgGradient>
+        </Defs>
+
+        {/* Ambient glow centered behind hero logo */}
+        <Rect width="1000" height="1200" fill="url(#curaLogoAmbient)" />
+
+        {/* Top-right subtle perimeter curve */}
+        <Path
+          d="M 680 0 C 750 120, 870 170, 1000 190 L 1000 0 Z"
+          fill="url(#curaTopSwoosh)"
+        />
+
+        {/* Wave 1 (Deepest curve) */}
+        <Path
+          d="M 0 740 C 220 670, 420 860, 680 770 C 820 720, 930 680, 1000 700 L 1000 1200 L 0 1200 Z"
+          fill="url(#curaWave1)"
+        />
+
+        {/* Wave 2 (Middle crest) */}
+        <Path
+          d="M 0 860 C 260 760, 480 910, 760 810 C 870 770, 950 780, 1000 800 L 1000 1200 L 0 1200 Z"
+          fill="url(#curaWave2)"
+        />
+
+        {/* Wave 3 (Front dynamic swoosh) */}
+        <Path
+          d="M 0 980 C 280 910, 540 1010, 780 900 C 880 855, 960 880, 1000 910 L 1000 1200 L 0 1200 Z"
+          fill="url(#curaWave3)"
+        />
+
+        {/* Delicate accent crest contour line */}
+        <Path
+          d="M 0 980 C 280 910, 540 1010, 780 900 C 880 855, 960 880, 1000 910"
+          fill="none"
+          stroke="#7DD3FC"
+          strokeWidth="1.5"
+          strokeOpacity="0.25"
+        />
+      </Svg>
+
+      {/* 3) Modal dimming overlay when auth sheet is open */}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
