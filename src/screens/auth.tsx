@@ -2250,117 +2250,225 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
-// ── Floating Bubbles Background ──────────────────────────────────────────────
+// ── Glassmorphism Floating Shapes Background ─────────────────────────────────
 
-interface BubbleConfig {
+interface GlassShapeConfig {
   id: number;
+  type: "circle" | "blob";
   xPct: number;
-  size: number;
-  color: string;
-  targetOpacity: number;
+  yPct: number;
+  sizeRatio: number;
+  maxSize: number;
+  minSize: number;
+  targetX: number;
+  targetY: number;
+  targetRotate: number;
+  targetScale: number;
   duration: number;
-  swayRange: number;
-  swayDuration: number;
-  initialProgress: number;
+  fillOpacity: number;
+  borderOpacity: number;
 }
 
-const BUBBLE_CONFIGS: BubbleConfig[] = [
-  { id: 1, xPct: 0.06, size: 14, color: "#7DD3FC", targetOpacity: 0.22, duration: 17000, swayRange: 12, swayDuration: 4200, initialProgress: 0.15 },
-  { id: 2, xPct: 0.12, size: 28, color: "#38BDF8", targetOpacity: 0.28, duration: 13000, swayRange: -18, swayDuration: 3800, initialProgress: 0.55 },
-  { id: 3, xPct: 0.18, size: 8, color: "#FFFFFF", targetOpacity: 0.16, duration: 22000, swayRange: 10, swayDuration: 5100, initialProgress: 0.82 },
-  { id: 4, xPct: 0.24, size: 36, color: "#7DD3FC", targetOpacity: 0.32, duration: 12000, swayRange: 22, swayDuration: 3500, initialProgress: 0.35 },
-  { id: 5, xPct: 0.30, size: 12, color: "#38BDF8", targetOpacity: 0.18, duration: 19000, swayRange: -14, swayDuration: 4600, initialProgress: 0.70 },
-  { id: 6, xPct: 0.09, size: 20, color: "#FFFFFF", targetOpacity: 0.24, duration: 15000, swayRange: 16, swayDuration: 3900, initialProgress: 0.90 },
-  { id: 7, xPct: 0.22, size: 10, color: "#7DD3FC", targetOpacity: 0.15, duration: 21000, swayRange: -12, swayDuration: 4800, initialProgress: 0.05 },
-  { id: 8, xPct: 0.15, size: 34, color: "#38BDF8", targetOpacity: 0.30, duration: 12500, swayRange: 20, swayDuration: 3600, initialProgress: 0.42 },
-  { id: 9, xPct: 0.38, size: 7, color: "#FFFFFF", targetOpacity: 0.12, duration: 24000, swayRange: 8, swayDuration: 5400, initialProgress: 0.62 },
-  { id: 10, xPct: 0.62, size: 8, color: "#7DD3FC", targetOpacity: 0.14, duration: 23000, swayRange: -9, swayDuration: 5200, initialProgress: 0.28 },
-  { id: 11, xPct: 0.70, size: 16, color: "#38BDF8", targetOpacity: 0.20, duration: 18000, swayRange: 14, swayDuration: 4400, initialProgress: 0.75 },
-  { id: 12, xPct: 0.76, size: 32, color: "#7DD3FC", targetOpacity: 0.32, duration: 13500, swayRange: -22, swayDuration: 3700, initialProgress: 0.18 },
-  { id: 13, xPct: 0.82, size: 10, color: "#FFFFFF", targetOpacity: 0.18, duration: 20000, swayRange: 10, swayDuration: 4700, initialProgress: 0.88 },
-  { id: 14, xPct: 0.88, size: 26, color: "#38BDF8", targetOpacity: 0.28, duration: 14000, swayRange: 18, swayDuration: 4000, initialProgress: 0.48 },
-  { id: 15, xPct: 0.94, size: 18, color: "#7DD3FC", targetOpacity: 0.24, duration: 16000, swayRange: -15, swayDuration: 4300, initialProgress: 0.25 },
-  { id: 16, xPct: 0.85, size: 38, color: "#FFFFFF", targetOpacity: 0.34, duration: 11500, swayRange: 24, swayDuration: 3400, initialProgress: 0.65 },
-  { id: 17, xPct: 0.92, size: 9, color: "#7DD3FC", targetOpacity: 0.15, duration: 22500, swayRange: -10, swayDuration: 4900, initialProgress: 0.08 },
-  { id: 18, xPct: 0.48, size: 12, color: "#38BDF8", targetOpacity: 0.16, duration: 19500, swayRange: 12, swayDuration: 4500, initialProgress: 0.80 },
-  { id: 19, xPct: 0.54, size: 24, color: "#7DD3FC", targetOpacity: 0.26, duration: 14500, swayRange: -16, swayDuration: 4100, initialProgress: 0.95 },
-  { id: 20, xPct: 0.65, size: 14, color: "#FFFFFF", targetOpacity: 0.18, duration: 18500, swayRange: 13, swayDuration: 4600, initialProgress: 0.38 },
+const GLASS_SHAPE_CONFIGS: GlassShapeConfig[] = [
+  // Shape 1: Large glass sphere (Lower-right, overlaps near sheet)
+  {
+    id: 1,
+    type: "circle",
+    xPct: 0.65,
+    yPct: 0.56,
+    sizeRatio: 0.52,
+    minSize: 180,
+    maxSize: 260,
+    targetX: 35,
+    targetY: -40,
+    targetRotate: 7,
+    targetScale: 1.04,
+    duration: 19000,
+    fillOpacity: 0.14,
+    borderOpacity: 0.32,
+  },
+  // Shape 2: Rounded glass blob (Lower-left, crosses into bottom sheet depth)
+  {
+    id: 2,
+    type: "blob",
+    xPct: 0.08,
+    yPct: 0.68,
+    sizeRatio: 0.48,
+    minSize: 160,
+    maxSize: 240,
+    targetX: -30,
+    targetY: 45,
+    targetRotate: -8,
+    targetScale: 1.05,
+    duration: 23000,
+    fillOpacity: 0.16,
+    borderOpacity: 0.30,
+  },
+  // Shape 3: Massive translucent glass disc (Mid-right perimeter)
+  {
+    id: 3,
+    type: "circle",
+    xPct: 0.72,
+    yPct: 0.34,
+    sizeRatio: 0.58,
+    minSize: 200,
+    maxSize: 280,
+    targetX: -40,
+    targetY: 35,
+    targetRotate: -6,
+    targetScale: 1.03,
+    duration: 27000,
+    fillOpacity: 0.12,
+    borderOpacity: 0.25,
+  },
+  // Shape 4: Crisp medium glass orb (Upper-left corner, near header)
+  {
+    id: 4,
+    type: "circle",
+    xPct: 0.05,
+    yPct: 0.10,
+    sizeRatio: 0.30,
+    minSize: 95,
+    maxSize: 135,
+    targetX: 25,
+    targetY: 28,
+    targetRotate: 9,
+    targetScale: 1.04,
+    duration: 18000,
+    fillOpacity: 0.16,
+    borderOpacity: 0.35,
+  },
+  // Shape 5: Medium glass sphere (Upper-right perimeter)
+  {
+    id: 5,
+    type: "circle",
+    xPct: 0.78,
+    yPct: 0.12,
+    sizeRatio: 0.36,
+    minSize: 120,
+    maxSize: 165,
+    targetX: -26,
+    targetY: -22,
+    targetRotate: 8,
+    targetScale: 1.03,
+    duration: 21000,
+    fillOpacity: 0.14,
+    borderOpacity: 0.28,
+  },
+  // Shape 6: Deep glass disc (Directly beneath bottom sheet, glows when sheet drops)
+  {
+    id: 6,
+    type: "blob",
+    xPct: 0.38,
+    yPct: 0.82,
+    sizeRatio: 0.42,
+    minSize: 140,
+    maxSize: 210,
+    targetX: 32,
+    targetY: -35,
+    targetRotate: -5,
+    targetScale: 1.05,
+    duration: 25000,
+    fillOpacity: 0.18,
+    borderOpacity: 0.32,
+  },
 ];
 
-const FloatingBubble = memo(function FloatingBubble({
+const FloatingGlassShape = memo(function FloatingGlassShape({
   config,
   screenWidth,
   screenHeight,
   reduceMotion,
 }: {
-  config: BubbleConfig;
+  config: GlassShapeConfig;
   screenWidth: number;
   screenHeight: number;
   reduceMotion: boolean;
 }) {
-  const { id, xPct, size, color, targetOpacity, duration, swayRange, swayDuration, initialProgress } = config;
-  const progress = useSharedValue(initialProgress);
-  const sway = useSharedValue(0);
+  const {
+    type,
+    xPct,
+    yPct,
+    sizeRatio,
+    minSize,
+    maxSize,
+    targetX,
+    targetY,
+    targetRotate,
+    targetScale,
+    duration,
+    fillOpacity,
+    borderOpacity,
+  } = config;
+
+  const rawSize = screenWidth * sizeRatio;
+  const size = Math.max(minSize, Math.min(maxSize, rawSize));
+  const widthVal = size;
+  const heightVal = type === "blob" ? size * 0.82 : size;
+  const borderRadius = type === "blob" ? size * 0.42 : size / 2;
+
+  const tx = useSharedValue(0);
+  const ty = useSharedValue(0);
+  const rot = useSharedValue(0);
+  const sc = useSharedValue(1);
 
   useEffect(() => {
     if (reduceMotion) {
-      progress.value = initialProgress;
-      sway.value = 0;
+      tx.value = 0;
+      ty.value = 0;
+      rot.value = 0;
+      sc.value = 1;
       return;
     }
 
-    // Animate upward from initialProgress to 1, then seamless infinite repeat from 0 to 1
-    const remainingTime = Math.max(500, Math.round(duration * (1 - initialProgress)));
-    progress.value = withTiming(
-      1,
-      { duration: remainingTime, easing: ReanimatedEasing.linear },
-      (finished) => {
-        if (finished) {
-          progress.value = 0;
-          progress.value = withRepeat(
-            withTiming(1, { duration, easing: ReanimatedEasing.linear }),
-            -1,
-            false
-          );
-        }
-      }
-    );
-
-    // Horizontal gentle sine sway
-    sway.value = withRepeat(
-      withTiming(swayRange, {
-        duration: swayDuration,
+    tx.value = withRepeat(
+      withTiming(targetX, {
+        duration,
         easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
       }),
       -1,
       true
     );
-  }, [reduceMotion, duration, initialProgress, swayRange, swayDuration]);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    const p = progress.value;
-    // Fade in at bottom (0 -> 0.15) and fade out at top (0.85 -> 1.0)
-    let op = targetOpacity;
-    if (p < 0.15) {
-      op = (p / 0.15) * targetOpacity;
-    } else if (p > 0.85) {
-      op = ((1 - p) / 0.15) * targetOpacity;
-    }
+    ty.value = withRepeat(
+      withTiming(targetY, {
+        duration: Math.round(duration * 1.15),
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
 
-    // Translate from (screenHeight + 30) up to -50
-    const travel = screenHeight + 80;
-    const y = screenHeight + 30 - p * travel;
+    rot.value = withRepeat(
+      withTiming(targetRotate, {
+        duration: Math.round(duration * 0.9),
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
 
-    return {
-      transform: [
-        { translateX: sway.value },
-        { translateY: y },
-      ],
-      opacity: op,
-    };
-  });
+    sc.value = withRepeat(
+      withTiming(targetScale, {
+        duration: Math.round(duration * 0.8),
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+  }, [reduceMotion, targetX, targetY, targetRotate, targetScale, duration]);
 
-  const posX = screenWidth * xPct - size / 2;
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: tx.value },
+      { translateY: ty.value },
+      { rotateZ: `${rot.value}deg` },
+      { scale: sc.value },
+    ],
+  }));
+
+  const left = screenWidth * xPct - widthVal / 2;
+  const top = screenHeight * yPct - heightVal / 2;
 
   return (
     <AnimatedReanimated.View
@@ -2368,25 +2476,54 @@ const FloatingBubble = memo(function FloatingBubble({
       style={[
         {
           position: "absolute",
-          left: posX,
-          top: 0,
-          width: size,
-          height: size,
+          left,
+          top,
+          width: widthVal,
+          height: heightVal,
+          borderRadius,
+          overflow: "hidden",
+          borderWidth: 1.2,
+          borderColor: `rgba(255, 255, 255, ${borderOpacity})`,
+          shadowColor: "#051336",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.25,
+          shadowRadius: 20,
         },
         animatedStyle,
       ]}
     >
-      <Svg width={size} height={size} viewBox="0 0 100 100">
-        <Defs>
-          <SvgRadialGradient id={`bubbleGrad_${id}`} cx="50%" cy="50%" rx="50%" ry="50%">
-            <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-            <Stop offset="30%" stopColor={color} stopOpacity="0.80" />
-            <Stop offset="65%" stopColor={color} stopOpacity="0.30" />
-            <Stop offset="100%" stopColor={color} stopOpacity="0" />
-          </SvgRadialGradient>
-        </Defs>
-        <Circle cx="50" cy="50" r="50" fill={`url(#bubbleGrad_${id})`} />
-      </Svg>
+      {/* 1) Diagonal frosted glass gradient fill (richer on top/left, fading to soft translucent cyan) */}
+      <LinearGradient
+        colors={[
+          `rgba(255, 255, 255, ${fillOpacity})`,
+          `rgba(186, 230, 253, ${fillOpacity * 0.75})`,
+          `rgba(56, 189, 248, ${fillOpacity * 0.45})`,
+          `rgba(255, 255, 255, ${fillOpacity * 0.15})`,
+        ]}
+        locations={[0, 0.35, 0.70, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* 2) Top inner specular reflection line (frosted glass sheen) */}
+      <LinearGradient
+        colors={[
+          "rgba(255, 255, 255, 0.42)",
+          "rgba(186, 230, 253, 0.15)",
+          "rgba(255, 255, 255, 0)",
+        ]}
+        locations={[0, 0.4, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "40%",
+        }}
+      />
     </AnimatedReanimated.View>
   );
 });
@@ -2413,9 +2550,38 @@ const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBl
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 2) 20 Animated Floating Bubbles / Particles (Soft radial gradient, rising upwards with sway) */}
-      {BUBBLE_CONFIGS.map((config) => (
-        <FloatingBubble
+      {/* 2) Background ambient radial glows: 2-3 deep, soft color clouds for the glass to refract */}
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+        <Defs>
+          {/* Glow 1: Cyan glow - mid-right */}
+          <SvgRadialGradient id="glassGlow1" cx="75%" cy="48%" rx="40%" ry="25%">
+            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.26" />
+            <Stop offset="55%" stopColor="#2563EB" stopOpacity="0.10" />
+            <Stop offset="100%" stopColor="#0B1B4A" stopOpacity="0" />
+          </SvgRadialGradient>
+
+          {/* Glow 2: Royal blue glow - lower-left under sheet */}
+          <SvgRadialGradient id="glassGlow2" cx="20%" cy="72%" rx="45%" ry="30%">
+            <Stop offset="0%" stopColor="#2563EB" stopOpacity="0.30" />
+            <Stop offset="60%" stopColor="#38BDF8" stopOpacity="0.12" />
+            <Stop offset="100%" stopColor="#1E3A8A" stopOpacity="0" />
+          </SvgRadialGradient>
+
+          {/* Glow 3: Soft cyan ambient - upper-left periphery */}
+          <SvgRadialGradient id="glassGlow3" cx="15%" cy="15%" rx="35%" ry="20%">
+            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.16" />
+            <Stop offset="100%" stopColor="#0B1B4A" stopOpacity="0" />
+          </SvgRadialGradient>
+        </Defs>
+
+        <Rect width="100%" height="100%" fill="url(#glassGlow1)" />
+        <Rect width="100%" height="100%" fill="url(#glassGlow2)" />
+        <Rect width="100%" height="100%" fill="url(#glassGlow3)" />
+      </Svg>
+
+      {/* 3) 6 Translucent Glassmorphism Floating Shapes (Frosted glass gradient, border, & top sheen) */}
+      {GLASS_SHAPE_CONFIGS.map((config) => (
+        <FloatingGlassShape
           key={config.id}
           config={config}
           screenWidth={width}
@@ -2424,11 +2590,11 @@ const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBl
         />
       ))}
 
-      {/* 3) Upper Vignette: Darkening overlay for top hero area (preserves crisp contrast for white logo & text) */}
+      {/* 4) Upper Vignette: Darkening overlay for top hero area (preserves crisp contrast for white logo & text) */}
       <LinearGradient
         colors={[
-          "rgba(11, 27, 74, 0.55)",
-          "rgba(11, 27, 74, 0.20)",
+          "rgba(11, 27, 74, 0.60)",
+          "rgba(11, 27, 74, 0.22)",
           "rgba(11, 27, 74, 0)",
         ]}
         locations={[0, 0.32, 0.60]}
@@ -2437,7 +2603,7 @@ const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBl
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 4) Modal dimming overlay when auth sheet is open */}
+      {/* 5) Modal dimming overlay when auth sheet is open */}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
