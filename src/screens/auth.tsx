@@ -2282,8 +2282,14 @@ const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBl
   );
 });
 
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const curaLogoSource = require("../../assets/images/cura-logo.png");
+
+let MaskedView: any = null;
+try {
+  MaskedView = require("@react-native-masked-view/masked-view").default;
+} catch (e) {
+  MaskedView = null;
+}
 
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
@@ -2310,13 +2316,13 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
           toValue: 1,
           duration: 2500,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(shineAnim, {
           toValue: 0,
           duration: 2500,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ])
     );
@@ -2478,7 +2484,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             paddingHorizontal: 24,
           }}
         >
-          {/* CURA Shield Logo Icon with Masked Soft Light Band Shine (Strictly inside shape) */}
+          {/* CURA Shield Logo Icon with Masked Soft Light Band Shine (Strictly inside shape, no bottom lines) */}
           {Platform.OS === "web" ? (
             <div
               style={{
@@ -2488,6 +2494,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                overflow: "hidden",
               }}
             >
               <style>{`
@@ -2555,69 +2562,83 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
               style={{
                 width: logoSize,
                 height: logoSize,
-                justifyContent: "center",
+                overflow: "hidden",
                 alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <Svg width={logoSize} height={logoSize} viewBox={`0 0 ${logoSize} ${logoSize}`}>
-                <Defs>
-                  <Mask id="curaLogoMask">
-                    <SvgImage
-                      href={curaLogoSource}
-                      x="0"
-                      y="0"
-                      width={logoSize}
-                      height={logoSize}
-                      preserveAspectRatio="xMidYMid meet"
+              {MaskedView ? (
+                <MaskedView
+                  style={{ width: logoSize, height: logoSize }}
+                  maskElement={
+                    <Image
+                      source={curaLogoSource}
+                      style={{ width: logoSize, height: logoSize }}
+                      resizeMode="contain"
                     />
-                  </Mask>
-                  <SvgGradient id="logoShineBand" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
-                    <Stop offset="0.3" stopColor="#BAE6FD" stopOpacity="0.5" />
-                    <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.92" />
-                    <Stop offset="0.7" stopColor="#BAE6FD" stopOpacity="0.5" />
-                    <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
-                  </SvgGradient>
-                </Defs>
-
-                {/* Base Logo */}
-                <SvgImage
-                  href={curaLogoSource}
-                  x="0"
-                  y="0"
-                  width={logoSize}
-                  height={logoSize}
-                  preserveAspectRatio="xMidYMid meet"
+                  }
+                >
+                  <Image
+                    source={curaLogoSource}
+                    style={{ width: logoSize, height: logoSize }}
+                    resizeMode="contain"
+                    fadeDuration={0}
+                  />
+                  <Animated.View
+                    pointerEvents="none"
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      height: logoSize * 0.45,
+                      transform: [
+                        {
+                          translateY: shineAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-logoSize * 0.55, logoSize * 1.15],
+                          }),
+                        },
+                      ],
+                    }}
+                  >
+                    <LinearGradient
+                      colors={[
+                        "rgba(255, 255, 255, 0)",
+                        "rgba(186, 230, 253, 0.4)",
+                        "rgba(255, 255, 255, 0.88)",
+                        "rgba(186, 230, 253, 0.4)",
+                        "rgba(255, 255, 255, 0)",
+                      ]}
+                      locations={[0, 0.3, 0.5, 0.7, 1]}
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </Animated.View>
+                </MaskedView>
+              ) : (
+                <Image
+                  source={curaLogoSource}
+                  style={{ width: logoSize, height: logoSize }}
+                  resizeMode="contain"
+                  fadeDuration={0}
                 />
-
-                {/* Soft light band moving up and down, masked strictly to logo PNG alpha */}
-                <AnimatedRect
-                  x="0"
-                  y={shineAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-logoSize * 0.5, logoSize],
-                  })}
-                  width={logoSize}
-                  height={logoSize * 0.5}
-                  fill="url(#logoShineBand)"
-                  mask="url(#curaLogoMask)"
-                />
-              </Svg>
+              )}
             </View>
           )}
 
-          {/* CURA Wordmark (CU in #4FC3F7, RA in #FFFFFF) with Masked Soft Light Band Shine */}
+          {/* CURA Wordmark (CU in #4FC3F7, RA in #FFFFFF) with Masked Soft Light Band Shine (Full & Centered) */}
           {Platform.OS === "web" ? (
             <div
               style={{
                 position: "relative",
                 marginTop: 8,
-                display: "inline-block",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 userSelect: "none",
               }}
             >
               {/* Base two-tone text */}
-              <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span
                   style={{
                     color: "#4FC3F7",
@@ -2652,6 +2673,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                   inset: 0,
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "center",
                   pointerEvents: "none",
                   overflow: "hidden",
                 }}
@@ -2680,71 +2702,147 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
           ) : (
             <View
               style={{
-                marginTop: 8,
                 alignItems: "center",
                 justifyContent: "center",
-                width: wordmarkSize * 3.6,
-                height: wordmarkSize * 1.25,
+                marginTop: 8,
               }}
             >
-              <Svg
-                width={wordmarkSize * 3.6}
-                height={wordmarkSize * 1.25}
-                viewBox={`0 0 ${wordmarkSize * 3.6} ${wordmarkSize * 1.25}`}
-              >
-                <Defs>
-                  {/* Mask containing the wordmark letters */}
-                  <Mask id="curaWordmarkMask">
-                    <SvgText
-                      x="50%"
-                      y="76%"
-                      textAnchor="middle"
-                      fontSize={wordmarkSize}
-                      fontWeight="800"
-                      fontFamily="Outfit"
-                      letterSpacing={1.5}
-                      fill="#FFFFFF"
+              {MaskedView ? (
+                <MaskedView
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  maskElement={
+                    <View
+                      style={{
+                        backgroundColor: "transparent",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                     >
-                      CURA
-                    </SvgText>
-                  </Mask>
-                  {/* Soft light band gradient */}
-                  <SvgGradient id="textShineBand" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
-                    <Stop offset="0.3" stopColor="#BAE6FD" stopOpacity="0.5" />
-                    <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.95" />
-                    <Stop offset="0.7" stopColor="#BAE6FD" stopOpacity="0.5" />
-                    <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
-                  </SvgGradient>
-                </Defs>
-
-                {/* Base Text: CU in #4FC3F7, RA in #FFFFFF */}
-                <SvgText
-                  x="50%"
-                  y="76%"
-                  textAnchor="middle"
-                  fontSize={wordmarkSize}
-                  fontWeight="800"
-                  fontFamily="Outfit"
-                  letterSpacing={1.5}
+                      <Text
+                        style={{
+                          color: "#000000",
+                          fontSize: wordmarkSize,
+                          fontWeight: "800",
+                          letterSpacing: 1.5,
+                          fontFamily: "Outfit",
+                        }}
+                      >
+                        CU
+                      </Text>
+                      <Text
+                        style={{
+                          color: "#000000",
+                          fontSize: wordmarkSize,
+                          fontWeight: "800",
+                          letterSpacing: 1.5,
+                          fontFamily: "Outfit",
+                        }}
+                      >
+                        RA
+                      </Text>
+                    </View>
+                  }
                 >
-                  <TSpan fill="#4FC3F7">CU</TSpan>
-                  <TSpan fill="#FFFFFF">RA</TSpan>
-                </SvgText>
+                  {/* Base two-tone text */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#4FC3F7",
+                        fontSize: wordmarkSize,
+                        fontWeight: "800",
+                        letterSpacing: 1.5,
+                        fontFamily: "Outfit",
+                      }}
+                    >
+                      CU
+                    </Text>
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: wordmarkSize,
+                        fontWeight: "800",
+                        letterSpacing: 1.5,
+                        fontFamily: "Outfit",
+                      }}
+                    >
+                      RA
+                    </Text>
+                  </View>
 
-                {/* Moving soft light band masked strictly inside the text letters */}
-                <AnimatedRect
-                  x="0"
-                  y={shineAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-wordmarkSize * 0.6, wordmarkSize * 1.25],
-                  })}
-                  width={wordmarkSize * 3.6}
-                  height={wordmarkSize * 0.6}
-                  fill="url(#textShineBand)"
-                  mask="url(#curaWordmarkMask)"
-                />
-              </Svg>
+                  {/* Soft light band strictly inside the text letters */}
+                  <Animated.View
+                    pointerEvents="none"
+                    style={{
+                      position: "absolute",
+                      left: -40,
+                      right: -40,
+                      height: wordmarkSize * 0.55,
+                      transform: [
+                        {
+                          translateY: shineAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-wordmarkSize * 0.65, wordmarkSize * 1.25],
+                          }),
+                        },
+                      ],
+                    }}
+                  >
+                    <LinearGradient
+                      colors={[
+                        "rgba(255, 255, 255, 0)",
+                        "rgba(186, 230, 253, 0.45)",
+                        "rgba(255, 255, 255, 0.95)",
+                        "rgba(186, 230, 253, 0.45)",
+                        "rgba(255, 255, 255, 0)",
+                      ]}
+                      locations={[0, 0.3, 0.5, 0.7, 1]}
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </Animated.View>
+                </MaskedView>
+              ) : (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#4FC3F7",
+                      fontSize: wordmarkSize,
+                      fontWeight: "800",
+                      letterSpacing: 1.5,
+                      fontFamily: "Outfit",
+                    }}
+                  >
+                    CU
+                  </Text>
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontSize: wordmarkSize,
+                      fontWeight: "800",
+                      letterSpacing: 1.5,
+                      fontFamily: "Outfit",
+                    }}
+                  >
+                    RA
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
