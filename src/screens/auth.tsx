@@ -2691,29 +2691,16 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Full-bleed coverage specifications (% of full screen height H / width W):
-  // 1. TOP EDGE: sits in the gap between header and logo, at 17-20% H (higher on left at 17.5% H, lower on right at 19.5% H).
-  // 2. BOTTOM: overflows at least 10-15% H beyond screen bottom (extends to 115% H).
-  // 3. SIDES: overflows at least 10-15% W beyond BOTH left and right edges (spans -15% to 115% W).
-  // 4. COVERAGE: fully filled with 3 generously overlapping organic lobes, zero bare spots.
+  // Blob cluster layout calibrated to target outlines (% of full screen height H / width W):
+  // 1. Blob 1 (left, large): flat top edge at ~15% H on left, diagonal right edge sloping down-right to right edge at ~68% H. Fills left and below.
+  // 2. Blob 2 (right, large): soft arc starting at right edge at ~23% H, peaking near 63% W (~20-21% H), curving down-left to ~9% W at 49% H, running down toward bottom center. Fills right and below.
+  // 3. Two edges cross around 47% W, 22% H.
+  // 4. Overflows >= 15% on left/right and 18% on bottom.
 
-  // Blob A (large, left-anchored): x -15% to 85% (100% W), y 17.5% to 115% (97.5% H)
-  const blobAW = Math.round(width * 1.00);
-  const blobAH = Math.round(height * 0.98);
-  const blobATop = Math.round(height * 0.175);
-  const blobALeft = -Math.round(width * 0.15);
-
-  // Blob B (large, right-anchored): x 15% to 115% (100% W), y 19.5% to 115% (95.5% H)
-  const blobBW = Math.round(width * 1.00);
-  const blobBH = Math.round(height * 0.96);
-  const blobBTop = Math.round(height * 0.195);
-  const blobBLeft = Math.round(width * 0.15);
-
-  // Blob C (fills gaps, full-width foundation): x -15% to 115% (130% W), y 38% to 115% (77% H)
-  const blobCW = Math.round(width * 1.30);
-  const blobCH = Math.round(height * 0.77);
-  const blobCTop = Math.round(height * 0.38);
-  const blobCLeft = -Math.round(width * 0.15);
+  const clusterW = Math.round(width * 1.30);
+  const clusterH = Math.round(height * 1.18);
+  const clusterLeft = -Math.round(width * 0.15);
+  const clusterTop = 0;
 
   // Blob A: ~10s loop (subtle drift, never moves above top limit)
   const tx1 = useSharedValue(0);
@@ -2887,21 +2874,21 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
           : undefined,
       ]}
     >
-      {/* Blob A (large, left-anchored): x -10% to 85%, y 22% to 105% (higher on left) */}
+      {/* Blob 1 (left, large): flat top edge at ~15% H on left, diagonal sloping to right edge at ~68% H, fills left & below */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: blobATop,
-            left: blobALeft,
-            width: blobAW,
-            height: blobAH,
+            top: clusterTop,
+            left: clusterLeft,
+            width: clusterW,
+            height: clusterH,
           },
           blobAAnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 500 600">
+        <Svg width="100%" height="100%" viewBox="0 0 1300 1180">
           <Defs>
             <SvgGradient id="curaBlobGrad1" x1="0" y1="0" x2="1" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.85" />
@@ -2911,27 +2898,27 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 180 20 C 330 20, 480 80, 485 240 C 490 410, 470 580, 250 585 C 50 590, 15 450, 15 260 C 15 110, 70 20, 180 20 Z"
+            d="M 0 135 C 100 135, 300 140, 480 155 C 540 162, 580 185, 620 215 C 720 290, 850 420, 980 535 C 1070 610, 1110 645, 1150 670 C 1200 705, 1260 725, 1300 730 L 1300 1180 L 0 1180 Z"
             fill="url(#curaBlobGrad1)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob B (large, right-anchored): x 20% to 110%, y 28% to 105% (lower on right, natural wavy curve) */}
+      {/* Blob 2 (right, large): soft arc from right edge at ~23% H, peaking at ~63% W (~20-21% H), curving to ~9% W at 49% H, running down toward bottom center */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: blobBTop,
-            left: blobBLeft,
-            width: blobBW,
-            height: blobBH,
+            top: clusterTop,
+            left: clusterLeft,
+            width: clusterW,
+            height: clusterH,
           },
           blobBAnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 500 600">
+        <Svg width="100%" height="100%" viewBox="0 0 1300 1180">
           <Defs>
             <SvgGradient id="curaBlobGrad2" x1="1" y1="0" x2="0" y2="1">
               <Stop offset="0%" stopColor="#8FD0EE" stopOpacity="0.80" />
@@ -2941,27 +2928,27 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 220 30 C 360 30, 485 90, 485 260 C 485 430, 450 580, 250 585 C 50 590, 15 450, 15 280 C 15 130, 90 30, 220 30 Z"
+            d="M 1300 245 C 1250 235, 1190 228, 1150 230 C 1030 215, 890 195, 780 195 C 710 195, 660 205, 620 218 C 510 255, 370 335, 280 415 C 245 445, 230 465, 230 485 C 230 550, 270 650, 330 750 C 380 830, 430 980, 480 1180 L 1300 1180 Z"
             fill="url(#curaBlobGrad2)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob C (fills gaps, bottom-center): x -5% to 105%, y 45% to 105% */}
+      {/* Blob 3 (full foundation): fills gaps, bottom and sides overflow, seamless coverage under center & bottom card */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: blobCTop,
-            left: blobCLeft,
-            width: blobCW,
-            height: blobCH,
+            top: clusterTop,
+            left: clusterLeft,
+            width: clusterW,
+            height: clusterH,
           },
           blobCAnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 600 500">
+        <Svg width="100%" height="100%" viewBox="0 0 1300 1180">
           <Defs>
             <SvgGradient id="curaBlobGrad3" x1="0.5" y1="0" x2="0.5" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.82" />
@@ -2971,7 +2958,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 300 25 C 460 20, 585 90, 585 260 C 585 430, 470 485, 300 485 C 130 485, 15 430, 15 260 C 15 90, 140 25, 300 25 Z"
+            d="M 0 380 C 220 340, 450 325, 650 330 C 850 335, 1080 360, 1300 390 L 1300 1180 L 0 1180 Z"
             fill="url(#curaBlobGrad3)"
           />
         </Svg>
