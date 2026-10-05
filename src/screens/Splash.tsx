@@ -36,10 +36,9 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Exact matching dimensions from WelcomeScreen (landing page)
-  const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
-  const wordmarkSize = width < 380 || height < 700 ? 50 : 60;
-  const taglineSize = width < 380 ? 14 : 16;
+  // Responsive calculations: enlarged logo (~1.8x, max 240px) & bold prominent CURA text
+  const logoSize = Math.min(width * 0.58, height < 700 ? 190 : 230);
+  const wordmarkSize = width < 380 || height < 700 ? 68 : 82;
   const logoUri = Image.resolveAssetSource(curaLogoSource)?.uri || "";
 
   // Transition animations
@@ -467,36 +466,18 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
           <Text
             style={{
               color: "#BAE6FD",
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: "700",
-              letterSpacing: 2.5,
+              letterSpacing: 3,
               textTransform: "uppercase",
               fontFamily: "Outfit",
-              marginTop: 10,
+              marginTop: 12,
               textShadowColor: "rgba(0, 0, 0, 0.35)",
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 3,
             }}
           >
             University Clinic
-          </Text>
-
-          {/* Tagline */}
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: taglineSize,
-              lineHeight: taglineSize + 8,
-              fontWeight: "500",
-              textAlign: "center",
-              maxWidth: width * 0.78,
-              marginTop: 12,
-              textShadowColor: "rgba(0, 0, 0, 0.35)",
-              textShadowOffset: { width: 0, height: 2 },
-              textShadowRadius: 4,
-            }}
-          >
-            Your personal health companion for smarter, simpler campus care.
           </Text>
         </Animated.View>
       </View>
