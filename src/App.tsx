@@ -191,16 +191,12 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         const extractedMedications = userConsultations.flatMap((c: any) => 
           (c.treatments || []).map((t: any, idx: number) => {
             const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
-            const isRemarksIntaked = Boolean(t.remarks && t.remarks.includes('[INTAKED]'));
-            const isIntaked = isRemarksIntaked || intakedIds.has(medId);
-            const cleanInstructions = (t.remarks || "No instructions").replace('[INTAKED]', '').trim();
+            const isIntaked = intakedIds.has(medId);
             return {
               id: medId,
-              treatmentId: t.id ? String(t.id) : undefined,
-              rawRemarks: t.remarks || '',
               name: t.medicineName,
               dose: `${t.quantity} ${t.unit}`,
-              instructions: cleanInstructions || "No instructions",
+              instructions: t.remarks || "No instructions",
               timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
               nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
               status: isIntaked ? "intaked" : "next-intake",
@@ -231,7 +227,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     const pId = user?.id || (user as any)?.id_number;
     const uName = ((user as any)?.name || '').trim().toUpperCase();
     if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents' || current?.screen === 'medications')) {
-      const fetchUserConsultations = () => {
+      if (current?.screen === 'medications' || current?.screen === 'profile') {
         safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/consultations/`)
           .then(async (allConsultations) => {
             if (Array.isArray(allConsultations)) {
@@ -253,16 +249,12 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               const extracted = userConsultations.flatMap((c: any) =>
                 (c.treatments || []).map((t: any, idx: number) => {
                   const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
-                  const isRemarksIntaked = Boolean(t.remarks && t.remarks.includes('[INTAKED]'));
-                  const isIntaked = isRemarksIntaked || intakedIds.has(medId);
-                  const cleanInstructions = (t.remarks || "No instructions").replace('[INTAKED]', '').trim();
+                  const isIntaked = intakedIds.has(medId);
                   return {
                     id: medId,
-                    treatmentId: t.id ? String(t.id) : undefined,
-                    rawRemarks: t.remarks || '',
                     name: t.medicineName,
                     dose: `${t.quantity} ${t.unit}`,
-                    instructions: cleanInstructions || "No instructions",
+                    instructions: t.remarks || "No instructions",
                     timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
                     nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
                     status: isIntaked ? "intaked" : "next-intake",
@@ -274,15 +266,6 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
             }
           })
           .catch(() => {});
-      };
-
-      if (current?.screen === 'medications' || current?.screen === 'profile') {
-        fetchUserConsultations();
-      }
-
-      let pollInterval: any = null;
-      if (current?.screen === 'medications') {
-        pollInterval = setInterval(fetchUserConsultations, 2000);
       }
 
       safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/certificates/`)
@@ -296,9 +279,6 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
           }
         })
         .catch(() => {});
-      return () => {
-        if (pollInterval) clearInterval(pollInterval);
-      };
     }
   }, [current?.screen, user?.id, (user as any)?.name]);
 
@@ -386,26 +366,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   const handleIntakeMedication = useCallback((id: string) => {
-    setMedications(prev => {
-      const targetMed = prev.find(m => m.id === id);
-      if (targetMed) {
-        const treatId = (targetMed as any).treatmentId || (id.length === 36 ? id : null);
-        const currentRemarks = (targetMed as any).rawRemarks || (targetMed.instructions !== 'No instructions' ? targetMed.instructions : '');
-        const updatedRemarks = currentRemarks.includes('[INTAKED]')
-          ? currentRemarks
-          : (currentRemarks ? `${currentRemarks} [INTAKED]` : '[INTAKED]');
-
-        if (treatId) {
-          fetch(`https://cura-backend-dvj5.onrender.com/api/treatments/${treatId}/`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ remarks: updatedRemarks }),
-          }).catch(err => console.error("Failed to patch treatment status:", err));
-        }
-      }
-      return prev.map(m => m.id === id ? { ...m, status: "intaked" } : m);
-    });
-
+    setMedications(prev => prev.map(m => m.id === id ? { ...m, status: "intaked" } : m));
     AsyncStorage.getItem('@cura_intaked_meds').then(data => {
       let set = new Set<string>();
       if (data) {
