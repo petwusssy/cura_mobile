@@ -18,6 +18,7 @@ import {
   StyleSheet,
   Modal,
   Keyboard,
+  StatusBar,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
@@ -2250,100 +2251,150 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
-// ── Brand-Aligned Clean Background (Deep Navy + Sky Blue + Waves) ────────────
+// ── COA Web Style Light Background (White Base + Soft Light-Blue Blobs) ──────
 
-// 1) Soft Drifting & Breathing Radial Glow Blob
-interface AmbientGlowConfig {
+interface CoaBlobConfig {
   id: string;
-  cxPct: string;
-  cyPct: string;
-  rxPct: string;
-  ryPct: string;
-  color: string;
-  peakOpacity: number;
+  leftPct: number;
+  topPct: number;
+  sizeRatio: number;
+  minSize: number;
+  maxSize: number;
+  gradStart: string;
+  gradEnd: string;
+  opacity: number;
   driftX: number;
   driftY: number;
+  targetRotate: number;
   targetScale: number;
   duration: number;
+  pathD: string;
 }
 
-const AMBIENT_GLOWS: AmbientGlowConfig[] = [
-  // Glow 1: Upper-Right soft sky-blue glow (balanced, doesn't interfere with header)
+const COA_BLOBS: CoaBlobConfig[] = [
+  // Blob 1: Upper-Right light sky-blue blob (#A5DAF0 -> #DDF1FC)
   {
-    id: "glowTopRight",
-    cxPct: "82%",
-    cyPct: "16%",
-    rxPct: "45%",
-    ryPct: "28%",
-    color: "#38BDF8",
-    peakOpacity: 0.16,
-    driftX: 32,
-    driftY: -28,
+    id: "blobTopRight",
+    leftPct: 0.45,
+    topPct: -0.06,
+    sizeRatio: 0.95,
+    minSize: 320,
+    maxSize: 480,
+    gradStart: "#A5DAF0",
+    gradEnd: "#DDF1FC",
+    opacity: 0.65,
+    driftX: 40,
+    driftY: -35,
+    targetRotate: 6,
     targetScale: 1.06,
-    duration: 22000,
+    duration: 24000,
+    pathD:
+      "M 260 40 C 390 10, 480 110, 460 230 C 440 350, 370 450, 240 460 C 110 470, 30 380, 40 250 C 50 120, 130 70, 260 40 Z",
   },
-  // Glow 2: Mid-Lower Left soft sky-blue glow (adds subtle warmth to lower-left)
+  // Blob 2: Behind Hero / Logo - ultra-light translucent halo so logo & shine pop (#DDF1FC -> #FFFFFF)
   {
-    id: "glowMidLeft",
-    cxPct: "14%",
-    cyPct: "64%",
-    rxPct: "48%",
-    ryPct: "32%",
-    color: "#7DD3FC",
-    peakOpacity: 0.20,
-    driftX: -36,
-    driftY: 34,
-    targetScale: 1.07,
-    duration: 28000,
-  },
-  // Glow 3: Bottom deep accent glow (under bottom sheet, gives depth when sheet slides)
-  {
-    id: "glowBottom",
-    cxPct: "50%",
-    cyPct: "86%",
-    rxPct: "55%",
-    ryPct: "35%",
-    color: "#38BDF8",
-    peakOpacity: 0.18,
-    driftX: 25,
-    driftY: -30,
+    id: "blobCenterHero",
+    leftPct: 0.05,
+    topPct: 0.16,
+    sizeRatio: 1.10,
+    minSize: 360,
+    maxSize: 520,
+    gradStart: "#CBE8F7",
+    gradEnd: "#EBF6FD",
+    opacity: 0.48,
+    driftX: -32,
+    driftY: 28,
+    targetRotate: -5,
     targetScale: 1.05,
-    duration: 25000,
+    duration: 28000,
+    pathD:
+      "M 250 50 C 370 30, 470 120, 480 250 C 490 380, 390 470, 260 480 C 130 490, 30 400, 30 270 C 30 140, 130 70, 250 50 Z",
+  },
+  // Blob 3: Mid-Lower Left vivid accent blob (#7CC4EA -> #C7EAFB)
+  {
+    id: "blobLowerLeft",
+    leftPct: -0.22,
+    topPct: 0.44,
+    sizeRatio: 1.05,
+    minSize: 340,
+    maxSize: 500,
+    gradStart: "#7CC4EA",
+    gradEnd: "#C7EAFB",
+    opacity: 0.68,
+    driftX: 45,
+    driftY: -40,
+    targetRotate: 7,
+    targetScale: 1.07,
+    duration: 22000,
+    pathD:
+      "M 240 60 C 380 40, 480 150, 460 280 C 440 410, 330 480, 200 470 C 70 460, 20 340, 40 210 C 60 80, 100 80, 240 60 Z",
+  },
+  // Blob 4: Bottom Deep Foundation Blob (continues under blue bottom sheet, #A5DAF0 -> #DDF1FC)
+  {
+    id: "blobBottomRight",
+    leftPct: 0.25,
+    topPct: 0.62,
+    sizeRatio: 1.15,
+    minSize: 380,
+    maxSize: 560,
+    gradStart: "#A5DAF0",
+    gradEnd: "#E3F4FD",
+    opacity: 0.72,
+    driftX: -35,
+    driftY: 42,
+    targetRotate: -6,
+    targetScale: 1.06,
+    duration: 26000,
+    pathD:
+      "M 260 30 C 400 40, 490 160, 470 300 C 450 440, 330 490, 190 480 C 50 470, 10 330, 30 200 C 50 70, 120 20, 260 30 Z",
   },
 ];
 
-const AnimatedGlowLayer = memo(function AnimatedGlowLayer({
+const AnimatedCoaBlob = memo(function AnimatedCoaBlob({
   config,
+  screenWidth,
+  screenHeight,
   reduceMotion,
 }: {
-  config: AmbientGlowConfig;
+  config: CoaBlobConfig;
+  screenWidth: number;
+  screenHeight: number;
   reduceMotion: boolean;
 }) {
   const {
     id,
-    cxPct,
-    cyPct,
-    rxPct,
-    ryPct,
-    color,
-    peakOpacity,
+    leftPct,
+    topPct,
+    sizeRatio,
+    minSize,
+    maxSize,
+    gradStart,
+    gradEnd,
+    opacity,
     driftX,
     driftY,
+    targetRotate,
     targetScale,
     duration,
+    pathD,
   } = config;
+
+  const rawSize = screenWidth * sizeRatio;
+  const size = Math.max(minSize, Math.min(maxSize, rawSize));
+  const posX = screenWidth * leftPct;
+  const posY = screenHeight * topPct;
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
+  const rot = useSharedValue(0);
   const sc = useSharedValue(1);
-  const op = useSharedValue(peakOpacity * 0.9);
 
   useEffect(() => {
     if (reduceMotion) {
       tx.value = 0;
       ty.value = 0;
+      rot.value = 0;
       sc.value = 1;
-      op.value = peakOpacity;
       return;
     }
 
@@ -2358,7 +2409,16 @@ const AnimatedGlowLayer = memo(function AnimatedGlowLayer({
 
     ty.value = withRepeat(
       withTiming(driftY, {
-        duration: Math.round(duration * 1.14),
+        duration: Math.round(duration * 1.12),
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+
+    rot.value = withRepeat(
+      withTiming(targetRotate, {
+        duration: Math.round(duration * 0.92),
         easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
       }),
       -1,
@@ -2367,28 +2427,19 @@ const AnimatedGlowLayer = memo(function AnimatedGlowLayer({
 
     sc.value = withRepeat(
       withTiming(targetScale, {
-        duration: Math.round(duration * 0.88),
+        duration: Math.round(duration * 0.85),
         easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
       }),
       -1,
       true
     );
-
-    op.value = withRepeat(
-      withTiming(peakOpacity * 1.18, {
-        duration: Math.round(duration * 0.95),
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-  }, [reduceMotion, driftX, driftY, targetScale, peakOpacity, duration]);
+  }, [reduceMotion, driftX, driftY, targetRotate, targetScale, duration]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: op.value,
     transform: [
       { translateX: tx.value },
       { translateY: ty.value },
+      { rotateZ: `${rot.value}deg` },
       { scale: sc.value },
     ],
   }));
@@ -2396,210 +2447,33 @@ const AnimatedGlowLayer = memo(function AnimatedGlowLayer({
   return (
     <AnimatedReanimated.View
       pointerEvents="none"
-      style={[StyleSheet.absoluteFill, animatedStyle]}
+      style={[
+        {
+          position: "absolute",
+          left: posX,
+          top: posY,
+          width: size,
+          height: size,
+          opacity,
+        },
+        animatedStyle,
+      ]}
     >
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 500 500"
+        preserveAspectRatio="xMidYMid slice"
+      >
         <Defs>
-          <SvgRadialGradient
-            id={`grad-${id}`}
-            cx={cxPct}
-            cy={cyPct}
-            rx={rxPct}
-            ry={ryPct}
-          >
-            <Stop offset="0%" stopColor={color} stopOpacity="1" />
-            <Stop offset="55%" stopColor={color} stopOpacity="0.45" />
-            <Stop offset="100%" stopColor={color} stopOpacity="0" />
-          </SvgRadialGradient>
+          <SvgGradient id={`coaGrad-${id}`} x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0%" stopColor={gradStart} stopOpacity="1" />
+            <Stop offset="100%" stopColor={gradEnd} stopOpacity="0.85" />
+          </SvgGradient>
         </Defs>
-        <Rect width="100%" height="100%" fill={`url(#grad-${id})`} />
+        <Path d={pathD} fill={`url(#coaGrad-${id})`} />
       </Svg>
     </AnimatedReanimated.View>
-  );
-});
-
-// 2) Subtle Logo Halo Pulse (sky blue, 8-12% opacity, ~6-8s pulse)
-const LogoHaloGlow = memo(function LogoHaloGlow({
-  reduceMotion,
-}: {
-  reduceMotion: boolean;
-}) {
-  const haloScale = useSharedValue(0.96);
-  const haloOpacity = useSharedValue(0.08);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      haloScale.value = 1;
-      haloOpacity.value = 0.10;
-      return;
-    }
-
-    haloScale.value = withRepeat(
-      withTiming(1.06, {
-        duration: 3600,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-
-    haloOpacity.value = withRepeat(
-      withTiming(0.12, {
-        duration: 3600,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-  }, [reduceMotion]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: haloOpacity.value,
-    transform: [{ scale: haloScale.value }],
-  }));
-
-  return (
-    <AnimatedReanimated.View
-      pointerEvents="none"
-      style={[StyleSheet.absoluteFill, animatedStyle]}
-    >
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-        <Defs>
-          <SvgRadialGradient
-            id="logoHaloRadial"
-            cx="50%"
-            cy="32%"
-            rx="32%"
-            ry="20%"
-          >
-            <Stop offset="0%" stopColor="#7DD3FC" stopOpacity="1" />
-            <Stop offset="50%" stopColor="#38BDF8" stopOpacity="0.5" />
-            <Stop offset="100%" stopColor="#7DD3FC" stopOpacity="0" />
-          </SvgRadialGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#logoHaloRadial)" />
-      </Svg>
-    </AnimatedReanimated.View>
-  );
-});
-
-// 3) Layered Soft Wave Curves (SVG) with Parallax in the lower screen (below tagline)
-const ParallaxWaves = memo(function ParallaxWaves({
-  reduceMotion,
-}: {
-  reduceMotion: boolean;
-}) {
-  const wave1Tx = useSharedValue(0);
-  const wave2Tx = useSharedValue(0);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      wave1Tx.value = 0;
-      wave2Tx.value = 0;
-      return;
-    }
-
-    // Wave 1: slow horizontal parallax (28s loop)
-    wave1Tx.value = withRepeat(
-      withTiming(32, {
-        duration: 28000,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-
-    // Wave 2: counter horizontal parallax (22s loop)
-    wave2Tx.value = withRepeat(
-      withTiming(-36, {
-        duration: 22000,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-  }, [reduceMotion]);
-
-  const wave1Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: wave1Tx.value }],
-  }));
-
-  const wave2Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: wave2Tx.value }],
-  }));
-
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {/* Wave Layer 1 (Back wave, soft #7DD3FC at 8% opacity) */}
-      <AnimatedReanimated.View
-        pointerEvents="none"
-        style={[
-          {
-            position: "absolute",
-            left: "-8%",
-            right: "-8%",
-            top: 0,
-            bottom: 0,
-          },
-          wave1Style,
-        ]}
-      >
-        <Svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 1000 1200"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          <Defs>
-            <SvgGradient id="waveGrad1" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor="#7DD3FC" stopOpacity="0.09" />
-              <Stop offset="60%" stopColor="#38BDF8" stopOpacity="0.06" />
-              <Stop offset="100%" stopColor="#0C2A6B" stopOpacity="0.01" />
-            </SvgGradient>
-          </Defs>
-          {/* Smooth swoosh curve echoing the logo swoosh, starting well below tagline (y=780) */}
-          <Path
-            d="M -100 810 C 180 740, 480 870, 750 800 C 930 750, 1040 780, 1150 790 L 1150 1250 L -100 1250 Z"
-            fill="url(#waveGrad1)"
-          />
-        </Svg>
-      </AnimatedReanimated.View>
-
-      {/* Wave Layer 2 (Front wave, rich #38BDF8 at 12% opacity) */}
-      <AnimatedReanimated.View
-        pointerEvents="none"
-        style={[
-          {
-            position: "absolute",
-            left: "-8%",
-            right: "-8%",
-            top: 0,
-            bottom: 0,
-          },
-          wave2Style,
-        ]}
-      >
-        <Svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 1000 1200"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          <Defs>
-            <SvgGradient id="waveGrad2" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.13" />
-              <Stop offset="55%" stopColor="#7DD3FC" stopOpacity="0.08" />
-              <Stop offset="100%" stopColor="#123C8C" stopOpacity="0.02" />
-            </SvgGradient>
-          </Defs>
-          {/* Intersecting secondary curve, lower depth (y=890) */}
-          <Path
-            d="M -100 900 C 220 840, 490 950, 770 875 C 920 835, 1020 860, 1150 880 L 1150 1250 L -100 1250 Z"
-            fill="url(#waveGrad2)"
-          />
-        </Svg>
-      </AnimatedReanimated.View>
-    </View>
   );
 });
 
@@ -2608,56 +2482,173 @@ const WelcomeBackground = memo(function WelcomeBackground({
 }: {
   bgBlurAnim: Animated.Value;
 }) {
+  const { width, height } = useWindowDimensions();
   const systemReducedMotion =
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
   return (
     <View
-      style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: "#FFFFFF", overflow: "hidden" },
+      ]}
       pointerEvents="none"
     >
-      {/* 1) Base vertical gradient: #07173F (taas) -> #0C2A6B (gitna) -> #123C8C (ibaba) */}
-      <LinearGradient
-        colors={[
-          "#07173F",
-          "#091F53",
-          "#0C2A6B",
-          "#0F337B",
-          "#123C8C",
-        ]}
-        locations={[0, 0.24, 0.52, 0.78, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* 2) 3 Large Soft Ambient Radial Glows (Sky Blue #7DD3FC / #38BDF8, 10-22% opacity) */}
-      {AMBIENT_GLOWS.map((config) => (
-        <AnimatedGlowLayer
+      {/* 1) COA Style Animated Light-Blue Blobs */}
+      {COA_BLOBS.map((config) => (
+        <AnimatedCoaBlob
           key={config.id}
           config={config}
+          screenWidth={width}
+          screenHeight={height}
           reduceMotion={reduceMotion}
         />
       ))}
 
-      {/* 3) Subtle Logo Halo Pulse behind logo icon (sky blue, 8-12% opacity) */}
-      <LogoHaloGlow reduceMotion={reduceMotion} />
-
-      {/* 4) 2 Layered Soft Wave Curves (SVG) at bottom (below tagline, echoes logo swoosh) */}
-      <ParallaxWaves reduceMotion={reduceMotion} />
-
-      {/* 5) Modal dimming overlay when auth sheet is open */}
+      {/* 2) Modal dimming overlay when auth sheet is open */}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
           {
-            backgroundColor: "rgba(4, 14, 38, 0.65)",
+            backgroundColor: "rgba(11, 31, 92, 0.40)",
             opacity: bgBlurAnim,
           },
         ]}
       />
     </View>
+  );
+});
+
+// ── COA Blue Bottom Sheet Action Buttons ──────────────────────────────────────
+
+interface CoaActionButtonProps {
+  label: string;
+  variant: "primary" | "secondary";
+  onPress: () => void;
+  icon: (color: string) => React.ReactNode;
+}
+
+const CoaActionButton = memo(function CoaActionButton({
+  label,
+  variant,
+  onPress,
+  icon,
+}: CoaActionButtonProps) {
+  const isPrimary = variant === "primary";
+  const pressScale = useSharedValue(1);
+  const pressOpacity = useSharedValue(1);
+
+  const handlePressIn = useCallback(() => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+
+    pressScale.value = withTiming(0.97, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+    pressOpacity.value = withTiming(0.92, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    pressScale.value = withTiming(1, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+    pressOpacity.value = withTiming(1, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: pressOpacity.value,
+    transform: [{ scale: pressScale.value }],
+  }));
+
+  const textColor = isPrimary ? "#0C2A6B" : "#FFFFFF";
+  const iconColor = isPrimary ? "#0C2A6B" : "#FFFFFF";
+  const circleBg = isPrimary ? "rgba(12, 42, 107, 0.08)" : "rgba(255, 255, 255, 0.15)";
+
+  return (
+    <AnimatedReanimated.View style={[{ width: "100%" }, animatedStyle]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        style={{
+          width: "100%",
+          minHeight: 56,
+          height: 56,
+          borderRadius: 16,
+          backgroundColor: isPrimary ? "#FFFFFF" : "rgba(255, 255, 255, 0.12)",
+          borderWidth: isPrimary ? 0 : 1.5,
+          borderColor: isPrimary ? "transparent" : "rgba(255, 255, 255, 0.45)",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          overflow: "visible",
+          ...(isPrimary
+            ? {
+                shadowColor: "#000000",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.16,
+                shadowRadius: 14,
+                elevation: 4,
+              }
+            : {}),
+        }}
+      >
+        {/* Left: Icon circle + Label */}
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: circleBg,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {icon(iconColor)}
+          </View>
+          <Text
+            style={{
+              marginLeft: 14,
+              color: textColor,
+              fontSize: 16,
+              fontWeight: "600",
+              fontFamily: "Outfit",
+              letterSpacing: 0.2,
+            }}
+          >
+            {label}
+          </Text>
+        </View>
+
+        {/* Right: Arrow inside 36px circle */}
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: circleBg,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ArrowRightIcon color={iconColor} size={18} />
+        </View>
+      </Pressable>
+    </AnimatedReanimated.View>
   );
 });
 
@@ -2814,8 +2805,9 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#07173F", overflow: "hidden" }}>
-      {/* FULL-BLEED Brand Background - continuous across full screen, behind header, hero, and bottom sheet */}
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF", overflow: "hidden" }}>
+      <StatusBar barStyle="dark-content" />
+      {/* FULL-BLEED COA Light Background - continuous across full screen, behind header, hero, and bottom sheet */}
       <WelcomeBackground bgBlurAnim={bgBlurAnim} />
 
       {/* 1) Top Section (Header + Hero) */}
@@ -2839,15 +2831,15 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             style={{
               width: 1,
               height: 38,
-              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              backgroundColor: "rgba(12, 42, 107, 0.25)",
               marginHorizontal: 14,
             }}
           />
           <Text
             style={{
-              color: "#FFFFFF",
+              color: "#0C2A6B",
               fontSize: 22,
-              fontWeight: "500",
+              fontWeight: "600",
               letterSpacing: 0.5,
               fontFamily: "Outfit",
             }}
@@ -2865,7 +2857,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             paddingHorizontal: 24,
           }}
         >
-          {/* CURA Shield Logo Icon with Masked Soft Light Band Shine (Strictly inside shape, no bottom lines) */}
+          {/* CURA Shield Logo Icon with subtle drop shadow and Masked Soft Light Band Shine */}
           {Platform.OS === "web" ? (
             <div
               style={{
@@ -2876,6 +2868,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
+                filter: "drop-shadow(0 8px 16px rgba(12, 42, 107, 0.15))",
               }}
             >
               <style>{`
@@ -2946,6 +2939,11 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 overflow: "hidden",
                 alignItems: "center",
                 justifyContent: "center",
+                shadowColor: "#0C2A6B",
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.15,
+                shadowRadius: 16,
+                elevation: 4,
               }}
             >
               {MaskedView ? (
@@ -3006,7 +3004,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             </View>
           )}
 
-          {/* CURA Wordmark (White base with animated sky-blue color wave matching CURA Web) */}
+          {/* CURA Wordmark (Deep navy #0C2A6B base with sky-blue shine band) */}
           {Platform.OS === "web" ? (
             <div
               style={{
@@ -3018,11 +3016,11 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 userSelect: "none",
               }}
             >
-              {/* Base text: pure white */}
+              {/* Base text: deep navy */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span
                   style={{
-                    color: "#FFFFFF",
+                    color: "#0C2A6B",
                     fontSize: wordmarkSize,
                     fontWeight: 800,
                     letterSpacing: 1.5,
@@ -3058,7 +3056,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                     backgroundImage:
-                      "linear-gradient(180deg, rgba(186,230,253,0) 0%, rgba(186,230,253,0.85) 35%, #7DD3FC 50%, rgba(186,230,253,0.85) 65%, rgba(186,230,253,0) 100%)",
+                      "linear-gradient(180deg, rgba(56,189,248,0) 0%, rgba(56,189,248,0.75) 35%, #7DD3FC 50%, rgba(56,189,248,0.75) 65%, rgba(56,189,248,0) 100%)",
                     backgroundSize: "100% 280%",
                     animation: "curaTextShineSweep 5s ease-in-out infinite",
                   }}
@@ -3105,7 +3103,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                     </View>
                   }
                 >
-                  {/* Base text: pure white */}
+                  {/* Base text: deep navy */}
                   <View
                     style={{
                       flexDirection: "row",
@@ -3115,7 +3113,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                   >
                     <Text
                       style={{
-                        color: "#FFFFFF",
+                        color: "#0C2A6B",
                         fontSize: wordmarkSize,
                         fontWeight: "800",
                         letterSpacing: 1.5,
@@ -3146,11 +3144,11 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                   >
                     <LinearGradient
                       colors={[
-                        "rgba(186, 230, 253, 0)",
-                        "rgba(186, 230, 253, 0.85)",
+                        "rgba(56, 189, 248, 0)",
+                        "rgba(56, 189, 248, 0.75)",
                         "#7DD3FC",
-                        "rgba(186, 230, 253, 0.85)",
-                        "rgba(186, 230, 253, 0)",
+                        "rgba(56, 189, 248, 0.75)",
+                        "rgba(56, 189, 248, 0)",
                       ]}
                       locations={[0, 0.25, 0.5, 0.75, 1]}
                       style={{ width: "100%", height: "100%" }}
@@ -3167,7 +3165,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 >
                   <Text
                     style={{
-                      color: "#FFFFFF",
+                      color: "#0C2A6B",
                       fontSize: wordmarkSize,
                       fontWeight: "800",
                       letterSpacing: 1.5,
@@ -3181,19 +3179,16 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             </View>
           )}
 
-          {/* Tagline */}
+          {/* Tagline (Deep navy #1E3A8A) */}
           <Text
             style={{
-              color: "#FFFFFF",
+              color: "#1E3A8A",
               fontSize: taglineSize,
               lineHeight: taglineSize + 8,
               fontWeight: "500",
               textAlign: "center",
               maxWidth: width * 0.78,
               marginTop: 12,
-              textShadowColor: "rgba(0, 0, 0, 0.35)",
-              textShadowOffset: { width: 0, height: 2 },
-              textShadowRadius: 4,
             }}
           >
             Your personal health companion for smarter, simpler campus care.
@@ -3201,122 +3196,105 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
         </View>
       </View>
 
-      {/* 4) Bottom Sheet */}
+      {/* 4) Bottom Sheet (COA Blue Gradient Card Style: #0B1F5C -> #1D4ED8 -> #38BDF8) */}
       <AnimatedReanimated.View
         pointerEvents={isModalOpen ? "none" : "auto"}
         onLayout={onSheetLayout}
         style={[
           {
-            backgroundColor: "#FFFFFF",
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
-            paddingTop: 28,
-            paddingHorizontal: 24,
+            paddingTop: 12,
+            paddingHorizontal: Math.max(20, Math.round(width * 0.06)),
             paddingBottom: Math.max(insets.bottom, 20) + 8,
-            shadowColor: "#000",
+            shadowColor: "#0B1F5C",
             shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.08,
-            shadowRadius: 16,
-            elevation: 8,
+            shadowOpacity: 0.14,
+            shadowRadius: 18,
+            elevation: 10,
+            overflow: "hidden",
+            alignItems: "center",
           },
           sheetAnimatedStyle,
         ]}
       >
-        {/* Primary: Sign In Button */}
-        <TouchableOpacity
-          onPress={() => openAuthModal("signin")}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Sign In"
-          style={{
-            width: "100%",
-            height: 54,
-            borderRadius: 16,
-            backgroundColor: "#1E4FD8",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 20,
-            shadowColor: "#1E4FD8",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.28,
-            shadowRadius: 8,
-            elevation: 4,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <PersonIcon color="#FFFFFF" size={20} />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: "#FFFFFF",
-                fontSize: 16,
-                fontWeight: "600",
-                fontFamily: "Outfit",
-              }}
-            >
-              Sign In
-            </Text>
-          </View>
-          <ArrowRightIcon color="#FFFFFF" size={20} />
-        </TouchableOpacity>
+        {/* Diagonal Blue Gradient Fill */}
+        <LinearGradient
+          colors={["#0B1F5C", "#1D4ED8", "#38BDF8"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
 
-        {/* Secondary: Create Account Button */}
-        <TouchableOpacity
-          onPress={() => openAuthModal("create_account")}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Create Account"
-          style={{
-            width: "100%",
-            height: 54,
-            borderRadius: 16,
-            backgroundColor: "#FFFFFF",
-            borderWidth: 1.5,
-            borderColor: "#1E4FD8",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 20,
-            marginTop: 14,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <PencilIcon color="#1E4FD8" size={20} />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: "#1E4FD8",
-                fontSize: 16,
-                fontWeight: "600",
-                fontFamily: "Outfit",
-              }}
-            >
-              Create Account
-            </Text>
-          </View>
-          <ArrowRightIcon color="#1E4FD8" size={20} />
-        </TouchableOpacity>
-
-        {/* Footer */}
+        {/* Centered Handle Bar (40x4px, white 40%) */}
         <View
           style={{
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 20,
+            width: 40,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: "rgba(255, 255, 255, 0.40)",
+            marginBottom: 20,
+            alignSelf: "center",
+          }}
+        />
+
+        {/* Content Container (Max width ~480px on iPad) */}
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 480,
+            alignSelf: "center",
           }}
         >
-          <Text
+          {/* Primary: Sign In Button (White fill, #0C2A6B text & icon) */}
+          <CoaActionButton
+            label="Sign In"
+            variant="primary"
+            onPress={() => openAuthModal("signin")}
+            icon={(color) => <PersonIcon color={color} size={20} />}
+          />
+
+          <View style={{ height: 13 }} />
+
+          {/* Secondary: Create Account Button (White 12% fill, border white 45%, white text & icon) */}
+          <CoaActionButton
+            label="Create Account"
+            variant="secondary"
+            onPress={() => openAuthModal("create_account")}
+            icon={(color) => <PencilIcon color={color} size={20} />}
+          />
+
+          {/* Divider (White 20%) */}
+          <View
             style={{
-              fontSize: 13,
-              color: "#64748B",
-              fontWeight: "500",
-              fontFamily: "Outfit",
-              textAlign: "center",
+              height: 1,
+              backgroundColor: "rgba(255, 255, 255, 0.20)",
+              width: "100%",
+              marginTop: 20,
+              marginBottom: 14,
+            }}
+          />
+
+          {/* Footer */}
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            University of the Assumption
-          </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: "#CFE3FA",
+                fontWeight: "500",
+                fontFamily: "Outfit",
+                textAlign: "center",
+                letterSpacing: 0.2,
+              }}
+            >
+              University of the Assumption
+            </Text>
+          </View>
         </View>
       </AnimatedReanimated.View>
 
