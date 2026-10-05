@@ -2691,24 +2691,29 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Elevated full-screen coverage from above the CURA logo (gap between logo and header text) down to screen bottom:
-  // Blob A (large, left-anchored): top at 15% H (above logo, in the gap between logo and UA text)
-  const blobAW = Math.round(width * 0.95);
-  const blobAH = Math.round(height * 0.90);
-  const blobATop = Math.round(height * 0.15);
-  const blobALeft = -Math.round(width * 0.10);
+  // Full-bleed coverage specifications (% of full screen height H / width W):
+  // 1. TOP EDGE: sits in the gap between header and logo, at 17-20% H (higher on left at 17.5% H, lower on right at 19.5% H).
+  // 2. BOTTOM: overflows at least 10-15% H beyond screen bottom (extends to 115% H).
+  // 3. SIDES: overflows at least 10-15% W beyond BOTH left and right edges (spans -15% to 115% W).
+  // 4. COVERAGE: fully filled with 3 generously overlapping organic lobes, zero bare spots.
 
-  // Blob B (large, right-anchored): top at 19% H (higher on left at 15%, lower on right at 19% -> natural wavy curve)
-  const blobBW = Math.round(width * 0.90);
-  const blobBH = Math.round(height * 0.86);
-  const blobBTop = Math.round(height * 0.19);
-  const blobBLeft = Math.round(width * 0.20);
+  // Blob A (large, left-anchored): x -15% to 85% (100% W), y 17.5% to 115% (97.5% H)
+  const blobAW = Math.round(width * 1.00);
+  const blobAH = Math.round(height * 0.98);
+  const blobATop = Math.round(height * 0.175);
+  const blobALeft = -Math.round(width * 0.15);
 
-  // Blob C (fills gaps, bottom-center): extends all the way down to bottom
-  const blobCW = Math.round(width * 1.10);
-  const blobCH = Math.round(height * 0.67);
+  // Blob B (large, right-anchored): x 15% to 115% (100% W), y 19.5% to 115% (95.5% H)
+  const blobBW = Math.round(width * 1.00);
+  const blobBH = Math.round(height * 0.96);
+  const blobBTop = Math.round(height * 0.195);
+  const blobBLeft = Math.round(width * 0.15);
+
+  // Blob C (fills gaps, full-width foundation): x -15% to 115% (130% W), y 38% to 115% (77% H)
+  const blobCW = Math.round(width * 1.30);
+  const blobCH = Math.round(height * 0.77);
   const blobCTop = Math.round(height * 0.38);
-  const blobCLeft = -Math.round(width * 0.05);
+  const blobCLeft = -Math.round(width * 0.15);
 
   // Blob A: ~10s loop (subtle drift, never moves above top limit)
   const tx1 = useSharedValue(0);
@@ -2765,12 +2770,12 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       true
     );
     scale1.value = withRepeat(
-      withTiming(1.015, { duration: 5200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.01, { duration: 5200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot1.value = withRepeat(
-      withTiming(1.5, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2792,12 +2797,12 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       true
     );
     scale2.value = withRepeat(
-      withTiming(0.985, { duration: 6900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(0.99, { duration: 6900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot2.value = withRepeat(
-      withTiming(-1.5, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-1, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2819,12 +2824,12 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       true
     );
     scale3.value = withRepeat(
-      withTiming(1.01, { duration: 4700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.008, { duration: 4700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot3.value = withRepeat(
-      withTiming(1, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(0.8, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
