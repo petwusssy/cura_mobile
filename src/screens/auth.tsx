@@ -2900,14 +2900,6 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
               fadeDuration={150}
             />
           )}
-          <View
-            style={{
-              width: 1,
-              height: 38,
-              backgroundColor: "rgba(255, 255, 255, 0.7)",
-              marginHorizontal: 14,
-            }}
-          />
           <Text
             style={{
               color: "#FFFFFF",
@@ -2915,9 +2907,11 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
               fontWeight: "500",
               letterSpacing: 0.5,
               fontFamily: "Outfit",
+              marginLeft: 14,
+              flexShrink: 1,
             }}
           >
-            University Clinic
+            University of the Assumption
           </Text>
         </View>
 
@@ -3392,7 +3386,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
               textAlign: "center",
             }}
           >
-            University of the Assumption
+            University Clinic
           </Text>
         </View>
       </AnimatedReanimated.View>
