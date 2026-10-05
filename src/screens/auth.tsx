@@ -2250,179 +2250,105 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
-// ── Glassmorphism Floating Shapes Background ─────────────────────────────────
+// ── Brand-Aligned Clean Background (Deep Navy + Sky Blue + Waves) ────────────
 
-interface GlassShapeConfig {
-  id: number;
-  type: "circle" | "blob";
-  xPct: number;
-  yPct: number;
-  sizeRatio: number;
-  maxSize: number;
-  minSize: number;
-  targetX: number;
-  targetY: number;
-  targetRotate: number;
+// 1) Soft Drifting & Breathing Radial Glow Blob
+interface AmbientGlowConfig {
+  id: string;
+  cxPct: string;
+  cyPct: string;
+  rxPct: string;
+  ryPct: string;
+  color: string;
+  peakOpacity: number;
+  driftX: number;
+  driftY: number;
   targetScale: number;
   duration: number;
-  fillOpacity: number;
-  borderOpacity: number;
 }
 
-const GLASS_SHAPE_CONFIGS: GlassShapeConfig[] = [
-  // Shape 1: Large glass sphere (Lower-right, overlaps near sheet)
+const AMBIENT_GLOWS: AmbientGlowConfig[] = [
+  // Glow 1: Upper-Right soft sky-blue glow (balanced, doesn't interfere with header)
   {
-    id: 1,
-    type: "circle",
-    xPct: 0.65,
-    yPct: 0.56,
-    sizeRatio: 0.52,
-    minSize: 180,
-    maxSize: 260,
-    targetX: 35,
-    targetY: -40,
-    targetRotate: 7,
-    targetScale: 1.04,
-    duration: 19000,
-    fillOpacity: 0.14,
-    borderOpacity: 0.32,
+    id: "glowTopRight",
+    cxPct: "82%",
+    cyPct: "16%",
+    rxPct: "45%",
+    ryPct: "28%",
+    color: "#38BDF8",
+    peakOpacity: 0.16,
+    driftX: 32,
+    driftY: -28,
+    targetScale: 1.06,
+    duration: 22000,
   },
-  // Shape 2: Rounded glass blob (Lower-left, crosses into bottom sheet depth)
+  // Glow 2: Mid-Lower Left soft sky-blue glow (adds subtle warmth to lower-left)
   {
-    id: 2,
-    type: "blob",
-    xPct: 0.08,
-    yPct: 0.68,
-    sizeRatio: 0.48,
-    minSize: 160,
-    maxSize: 240,
-    targetX: -30,
-    targetY: 45,
-    targetRotate: -8,
-    targetScale: 1.05,
-    duration: 23000,
-    fillOpacity: 0.16,
-    borderOpacity: 0.30,
+    id: "glowMidLeft",
+    cxPct: "14%",
+    cyPct: "64%",
+    rxPct: "48%",
+    ryPct: "32%",
+    color: "#7DD3FC",
+    peakOpacity: 0.20,
+    driftX: -36,
+    driftY: 34,
+    targetScale: 1.07,
+    duration: 28000,
   },
-  // Shape 3: Massive translucent glass disc (Mid-right perimeter)
+  // Glow 3: Bottom deep accent glow (under bottom sheet, gives depth when sheet slides)
   {
-    id: 3,
-    type: "circle",
-    xPct: 0.72,
-    yPct: 0.34,
-    sizeRatio: 0.58,
-    minSize: 200,
-    maxSize: 280,
-    targetX: -40,
-    targetY: 35,
-    targetRotate: -6,
-    targetScale: 1.03,
-    duration: 27000,
-    fillOpacity: 0.12,
-    borderOpacity: 0.25,
-  },
-  // Shape 4: Crisp medium glass orb (Upper-left corner, near header)
-  {
-    id: 4,
-    type: "circle",
-    xPct: 0.05,
-    yPct: 0.10,
-    sizeRatio: 0.30,
-    minSize: 95,
-    maxSize: 135,
-    targetX: 25,
-    targetY: 28,
-    targetRotate: 9,
-    targetScale: 1.04,
-    duration: 18000,
-    fillOpacity: 0.16,
-    borderOpacity: 0.35,
-  },
-  // Shape 5: Medium glass sphere (Upper-right perimeter)
-  {
-    id: 5,
-    type: "circle",
-    xPct: 0.78,
-    yPct: 0.12,
-    sizeRatio: 0.36,
-    minSize: 120,
-    maxSize: 165,
-    targetX: -26,
-    targetY: -22,
-    targetRotate: 8,
-    targetScale: 1.03,
-    duration: 21000,
-    fillOpacity: 0.14,
-    borderOpacity: 0.28,
-  },
-  // Shape 6: Deep glass disc (Directly beneath bottom sheet, glows when sheet drops)
-  {
-    id: 6,
-    type: "blob",
-    xPct: 0.38,
-    yPct: 0.82,
-    sizeRatio: 0.42,
-    minSize: 140,
-    maxSize: 210,
-    targetX: 32,
-    targetY: -35,
-    targetRotate: -5,
+    id: "glowBottom",
+    cxPct: "50%",
+    cyPct: "86%",
+    rxPct: "55%",
+    ryPct: "35%",
+    color: "#38BDF8",
+    peakOpacity: 0.18,
+    driftX: 25,
+    driftY: -30,
     targetScale: 1.05,
     duration: 25000,
-    fillOpacity: 0.18,
-    borderOpacity: 0.32,
   },
 ];
 
-const FloatingGlassShape = memo(function FloatingGlassShape({
+const AnimatedGlowLayer = memo(function AnimatedGlowLayer({
   config,
-  screenWidth,
-  screenHeight,
   reduceMotion,
 }: {
-  config: GlassShapeConfig;
-  screenWidth: number;
-  screenHeight: number;
+  config: AmbientGlowConfig;
   reduceMotion: boolean;
 }) {
   const {
-    type,
-    xPct,
-    yPct,
-    sizeRatio,
-    minSize,
-    maxSize,
-    targetX,
-    targetY,
-    targetRotate,
+    id,
+    cxPct,
+    cyPct,
+    rxPct,
+    ryPct,
+    color,
+    peakOpacity,
+    driftX,
+    driftY,
     targetScale,
     duration,
-    fillOpacity,
-    borderOpacity,
   } = config;
-
-  const rawSize = screenWidth * sizeRatio;
-  const size = Math.max(minSize, Math.min(maxSize, rawSize));
-  const widthVal = size;
-  const heightVal = type === "blob" ? size * 0.82 : size;
-  const borderRadius = type === "blob" ? size * 0.42 : size / 2;
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
-  const rot = useSharedValue(0);
   const sc = useSharedValue(1);
+  const op = useSharedValue(peakOpacity * 0.9);
 
   useEffect(() => {
     if (reduceMotion) {
       tx.value = 0;
       ty.value = 0;
-      rot.value = 0;
       sc.value = 1;
+      op.value = peakOpacity;
       return;
     }
 
     tx.value = withRepeat(
-      withTiming(targetX, {
+      withTiming(driftX, {
         duration,
         easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
       }),
@@ -2431,17 +2357,8 @@ const FloatingGlassShape = memo(function FloatingGlassShape({
     );
 
     ty.value = withRepeat(
-      withTiming(targetY, {
-        duration: Math.round(duration * 1.15),
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-
-    rot.value = withRepeat(
-      withTiming(targetRotate, {
-        duration: Math.round(duration * 0.9),
+      withTiming(driftY, {
+        duration: Math.round(duration * 1.14),
         easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
       }),
       -1,
@@ -2450,165 +2367,292 @@ const FloatingGlassShape = memo(function FloatingGlassShape({
 
     sc.value = withRepeat(
       withTiming(targetScale, {
-        duration: Math.round(duration * 0.8),
+        duration: Math.round(duration * 0.88),
         easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
       }),
       -1,
       true
     );
-  }, [reduceMotion, targetX, targetY, targetRotate, targetScale, duration]);
+
+    op.value = withRepeat(
+      withTiming(peakOpacity * 1.18, {
+        duration: Math.round(duration * 0.95),
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+  }, [reduceMotion, driftX, driftY, targetScale, peakOpacity, duration]);
 
   const animatedStyle = useAnimatedStyle(() => ({
+    opacity: op.value,
     transform: [
       { translateX: tx.value },
       { translateY: ty.value },
-      { rotateZ: `${rot.value}deg` },
       { scale: sc.value },
     ],
   }));
 
-  const left = screenWidth * xPct - widthVal / 2;
-  const top = screenHeight * yPct - heightVal / 2;
-
   return (
     <AnimatedReanimated.View
       pointerEvents="none"
-      style={[
-        {
-          position: "absolute",
-          left,
-          top,
-          width: widthVal,
-          height: heightVal,
-          borderRadius,
-          overflow: "hidden",
-          borderWidth: 1.2,
-          borderColor: `rgba(255, 255, 255, ${borderOpacity})`,
-          shadowColor: "#051336",
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.25,
-          shadowRadius: 20,
-        },
-        animatedStyle,
-      ]}
+      style={[StyleSheet.absoluteFill, animatedStyle]}
     >
-      {/* 1) Diagonal frosted glass gradient fill (richer on top/left, fading to soft translucent cyan) */}
-      <LinearGradient
-        colors={[
-          `rgba(255, 255, 255, ${fillOpacity})`,
-          `rgba(186, 230, 253, ${fillOpacity * 0.75})`,
-          `rgba(56, 189, 248, ${fillOpacity * 0.45})`,
-          `rgba(255, 255, 255, ${fillOpacity * 0.15})`,
-        ]}
-        locations={[0, 0.35, 0.70, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* 2) Top inner specular reflection line (frosted glass sheen) */}
-      <LinearGradient
-        colors={[
-          "rgba(255, 255, 255, 0.42)",
-          "rgba(186, 230, 253, 0.15)",
-          "rgba(255, 255, 255, 0)",
-        ]}
-        locations={[0, 0.4, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "40%",
-        }}
-      />
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+        <Defs>
+          <SvgRadialGradient
+            id={`grad-${id}`}
+            cx={cxPct}
+            cy={cyPct}
+            rx={rxPct}
+            ry={ryPct}
+          >
+            <Stop offset="0%" stopColor={color} stopOpacity="1" />
+            <Stop offset="55%" stopColor={color} stopOpacity="0.45" />
+            <Stop offset="100%" stopColor={color} stopOpacity="0" />
+          </SvgRadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill={`url(#grad-${id})`} />
+      </Svg>
     </AnimatedReanimated.View>
   );
 });
 
-const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBlurAnim: Animated.Value }) {
-  const { width, height } = useWindowDimensions();
-  const systemReducedMotion = typeof useReducedMotion === "function" ? useReducedMotion() : false;
+// 2) Subtle Logo Halo Pulse (sky blue, 8-12% opacity, ~6-8s pulse)
+const LogoHaloGlow = memo(function LogoHaloGlow({
+  reduceMotion,
+}: {
+  reduceMotion: boolean;
+}) {
+  const haloScale = useSharedValue(0.96);
+  const haloOpacity = useSharedValue(0.08);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      haloScale.value = 1;
+      haloOpacity.value = 0.10;
+      return;
+    }
+
+    haloScale.value = withRepeat(
+      withTiming(1.06, {
+        duration: 3600,
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+
+    haloOpacity.value = withRepeat(
+      withTiming(0.12, {
+        duration: 3600,
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+  }, [reduceMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: haloOpacity.value,
+    transform: [{ scale: haloScale.value }],
+  }));
+
+  return (
+    <AnimatedReanimated.View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, animatedStyle]}
+    >
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+        <Defs>
+          <SvgRadialGradient
+            id="logoHaloRadial"
+            cx="50%"
+            cy="32%"
+            rx="32%"
+            ry="20%"
+          >
+            <Stop offset="0%" stopColor="#7DD3FC" stopOpacity="1" />
+            <Stop offset="50%" stopColor="#38BDF8" stopOpacity="0.5" />
+            <Stop offset="100%" stopColor="#7DD3FC" stopOpacity="0" />
+          </SvgRadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#logoHaloRadial)" />
+      </Svg>
+    </AnimatedReanimated.View>
+  );
+});
+
+// 3) Layered Soft Wave Curves (SVG) with Parallax in the lower screen (below tagline)
+const ParallaxWaves = memo(function ParallaxWaves({
+  reduceMotion,
+}: {
+  reduceMotion: boolean;
+}) {
+  const wave1Tx = useSharedValue(0);
+  const wave2Tx = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      wave1Tx.value = 0;
+      wave2Tx.value = 0;
+      return;
+    }
+
+    // Wave 1: slow horizontal parallax (28s loop)
+    wave1Tx.value = withRepeat(
+      withTiming(32, {
+        duration: 28000,
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+
+    // Wave 2: counter horizontal parallax (22s loop)
+    wave2Tx.value = withRepeat(
+      withTiming(-36, {
+        duration: 22000,
+        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
+      }),
+      -1,
+      true
+    );
+  }, [reduceMotion]);
+
+  const wave1Style = useAnimatedStyle(() => ({
+    transform: [{ translateX: wave1Tx.value }],
+  }));
+
+  const wave2Style = useAnimatedStyle(() => ({
+    transform: [{ translateX: wave2Tx.value }],
+  }));
+
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {/* Wave Layer 1 (Back wave, soft #7DD3FC at 8% opacity) */}
+      <AnimatedReanimated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: "absolute",
+            left: "-8%",
+            right: "-8%",
+            top: 0,
+            bottom: 0,
+          },
+          wave1Style,
+        ]}
+      >
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 1000 1200"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <Defs>
+            <SvgGradient id="waveGrad1" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0%" stopColor="#7DD3FC" stopOpacity="0.09" />
+              <Stop offset="60%" stopColor="#38BDF8" stopOpacity="0.06" />
+              <Stop offset="100%" stopColor="#0C2A6B" stopOpacity="0.01" />
+            </SvgGradient>
+          </Defs>
+          {/* Smooth swoosh curve echoing the logo swoosh, starting well below tagline (y=780) */}
+          <Path
+            d="M -100 810 C 180 740, 480 870, 750 800 C 930 750, 1040 780, 1150 790 L 1150 1250 L -100 1250 Z"
+            fill="url(#waveGrad1)"
+          />
+        </Svg>
+      </AnimatedReanimated.View>
+
+      {/* Wave Layer 2 (Front wave, rich #38BDF8 at 12% opacity) */}
+      <AnimatedReanimated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: "absolute",
+            left: "-8%",
+            right: "-8%",
+            top: 0,
+            bottom: 0,
+          },
+          wave2Style,
+        ]}
+      >
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 1000 1200"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <Defs>
+            <SvgGradient id="waveGrad2" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.13" />
+              <Stop offset="55%" stopColor="#7DD3FC" stopOpacity="0.08" />
+              <Stop offset="100%" stopColor="#123C8C" stopOpacity="0.02" />
+            </SvgGradient>
+          </Defs>
+          {/* Intersecting secondary curve, lower depth (y=890) */}
+          <Path
+            d="M -100 900 C 220 840, 490 950, 770 875 C 920 835, 1020 860, 1150 880 L 1150 1250 L -100 1250 Z"
+            fill="url(#waveGrad2)"
+          />
+        </Svg>
+      </AnimatedReanimated.View>
+    </View>
+  );
+});
+
+const WelcomeBackground = memo(function WelcomeBackground({
+  bgBlurAnim,
+}: {
+  bgBlurAnim: Animated.Value;
+}) {
+  const systemReducedMotion =
+    typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
   return (
-    <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]} pointerEvents="none">
-      {/* 1) Base full-bleed vertical gradient: #0B1B4A (taas) -> #1E3A8A (gitna) -> #2563EB (ibaba) */}
+    <View
+      style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}
+      pointerEvents="none"
+    >
+      {/* 1) Base vertical gradient: #07173F (taas) -> #0C2A6B (gitna) -> #123C8C (ibaba) */}
       <LinearGradient
         colors={[
-          "#0B1B4A",
-          "#122868",
-          "#1E3A8A",
-          "#224FBF",
-          "#2563EB",
+          "#07173F",
+          "#091F53",
+          "#0C2A6B",
+          "#0F337B",
+          "#123C8C",
         ]}
-        locations={[0, 0.26, 0.55, 0.80, 1]}
+        locations={[0, 0.24, 0.52, 0.78, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 2) Background ambient radial glows: 2-3 deep, soft color clouds for the glass to refract */}
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-        <Defs>
-          {/* Glow 1: Cyan glow - mid-right */}
-          <SvgRadialGradient id="glassGlow1" cx="75%" cy="48%" rx="40%" ry="25%">
-            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.26" />
-            <Stop offset="55%" stopColor="#2563EB" stopOpacity="0.10" />
-            <Stop offset="100%" stopColor="#0B1B4A" stopOpacity="0" />
-          </SvgRadialGradient>
-
-          {/* Glow 2: Royal blue glow - lower-left under sheet */}
-          <SvgRadialGradient id="glassGlow2" cx="20%" cy="72%" rx="45%" ry="30%">
-            <Stop offset="0%" stopColor="#2563EB" stopOpacity="0.30" />
-            <Stop offset="60%" stopColor="#38BDF8" stopOpacity="0.12" />
-            <Stop offset="100%" stopColor="#1E3A8A" stopOpacity="0" />
-          </SvgRadialGradient>
-
-          {/* Glow 3: Soft cyan ambient - upper-left periphery */}
-          <SvgRadialGradient id="glassGlow3" cx="15%" cy="15%" rx="35%" ry="20%">
-            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.16" />
-            <Stop offset="100%" stopColor="#0B1B4A" stopOpacity="0" />
-          </SvgRadialGradient>
-        </Defs>
-
-        <Rect width="100%" height="100%" fill="url(#glassGlow1)" />
-        <Rect width="100%" height="100%" fill="url(#glassGlow2)" />
-        <Rect width="100%" height="100%" fill="url(#glassGlow3)" />
-      </Svg>
-
-      {/* 3) 6 Translucent Glassmorphism Floating Shapes (Frosted glass gradient, border, & top sheen) */}
-      {GLASS_SHAPE_CONFIGS.map((config) => (
-        <FloatingGlassShape
+      {/* 2) 3 Large Soft Ambient Radial Glows (Sky Blue #7DD3FC / #38BDF8, 10-22% opacity) */}
+      {AMBIENT_GLOWS.map((config) => (
+        <AnimatedGlowLayer
           key={config.id}
           config={config}
-          screenWidth={width}
-          screenHeight={height}
           reduceMotion={reduceMotion}
         />
       ))}
 
-      {/* 4) Upper Vignette: Darkening overlay for top hero area (preserves crisp contrast for white logo & text) */}
-      <LinearGradient
-        colors={[
-          "rgba(11, 27, 74, 0.60)",
-          "rgba(11, 27, 74, 0.22)",
-          "rgba(11, 27, 74, 0)",
-        ]}
-        locations={[0, 0.32, 0.60]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* 3) Subtle Logo Halo Pulse behind logo icon (sky blue, 8-12% opacity) */}
+      <LogoHaloGlow reduceMotion={reduceMotion} />
+
+      {/* 4) 2 Layered Soft Wave Curves (SVG) at bottom (below tagline, echoes logo swoosh) */}
+      <ParallaxWaves reduceMotion={reduceMotion} />
 
       {/* 5) Modal dimming overlay when auth sheet is open */}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
           {
-            backgroundColor: "rgba(6, 18, 48, 0.60)",
+            backgroundColor: "rgba(4, 14, 38, 0.65)",
             opacity: bgBlurAnim,
           },
         ]}
@@ -2770,8 +2814,8 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0B1B4A", overflow: "hidden" }}>
-      {/* FULL-BLEED Aurora Background - continuous across full screen, behind header, hero, and bottom sheet */}
+    <View style={{ flex: 1, backgroundColor: "#07173F", overflow: "hidden" }}>
+      {/* FULL-BLEED Brand Background - continuous across full screen, behind header, hero, and bottom sheet */}
       <WelcomeBackground bgBlurAnim={bgBlurAnim} />
 
       {/* 1) Top Section (Header + Hero) */}
