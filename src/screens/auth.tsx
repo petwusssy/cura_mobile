@@ -2661,7 +2661,10 @@ const WelcomeBackground = memo(function WelcomeBackground({
   );
 });
 
-const curaLogoSource = require("../../assets/images/cura-logo.png");
+const curaLogo1xSource = require("../../assets/images/cura-logo-1x.webp");
+const curaLogo2xSource = require("../../assets/images/cura-logo-2x.webp");
+const uaSeal1xSource = require("../../assets/images/ua-seal-1x.webp");
+const uaSeal2xSource = require("../../assets/images/ua-seal-2x.webp");
 
 let MaskedView: any = null;
 try {
@@ -2680,7 +2683,10 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
   const wordmarkSize = width < 380 || height < 700 ? 50 : 60;
   const taglineSize = width < 380 ? 14 : 16;
-  const logoUri = Image.resolveAssetSource(curaLogoSource)?.uri || "";
+  const logo1xUri = Image.resolveAssetSource(curaLogo1xSource)?.uri || "";
+  const logo2xUri = Image.resolveAssetSource(curaLogo2xSource)?.uri || "";
+  const uaSeal1xUri = Image.resolveAssetSource(uaSeal1xSource)?.uri || "";
+  const uaSeal2xUri = Image.resolveAssetSource(uaSeal2xSource)?.uri || "";
 
   // Modal State & Background Blur Animation
   const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(null);
@@ -2706,8 +2712,31 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
       ])
     );
     loop.start();
-    return () => loop.stop();
   }, [shineAnim]);
+
+  // Dynamic Web Preload for both landing page logos (<link rel="preload" as="image">)
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+
+    const urls = [logo2xUri, logo1xUri, uaSeal2xUri, uaSeal1xUri].filter(Boolean);
+    const links: HTMLLinkElement[] = [];
+
+    urls.forEach((url) => {
+      const selector = `link[rel="preload"][as="image"][href="${url}"]`;
+      if (!document.querySelector(selector)) {
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
+        link.href = url;
+        document.head.appendChild(link);
+        links.push(link);
+      }
+    });
+
+    return () => {
+      links.forEach((l) => l.remove());
+    };
+  }, [logo1xUri, logo2xUri, uaSeal1xUri, uaSeal2xUri]);
 
   // Reanimated Bottom Sheet Slide Down / Up
   const isModalOpen = authMode !== null;
@@ -2830,11 +2859,47 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             alignItems: "center",
           }}
         >
-          <Image
-            source={require("../../assets/images/ua-seal.png")}
-            style={{ width: 48, height: 48, borderRadius: 24 }}
-            resizeMode="contain"
-          />
+          {Platform.OS === "web" ? (
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <img
+                src={uaSeal1xUri || uaSeal2xUri}
+                srcSet={`${uaSeal1xUri} 1x, ${uaSeal2xUri} 2x`}
+                alt="University of the Assumption Seal"
+                width={48}
+                height={48}
+                loading="eager"
+                // @ts-ignore
+                fetchpriority="high"
+                fetchPriority="high"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  objectFit: "contain",
+                  display: "block",
+                  animation: "logoFadeIn 0.25s ease-out forwards",
+                }}
+              />
+            </div>
+          ) : (
+            <Image
+              source={uaSeal2xSource}
+              style={{ width: 48, height: 48, borderRadius: 24 }}
+              resizeMode="contain"
+              fadeDuration={150}
+            />
+          )}
           <View
             style={{
               width: 1,
@@ -2879,6 +2944,10 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
               }}
             >
               <style>{`
+                @keyframes logoFadeIn {
+                  from { opacity: 0; }
+                  to { opacity: 1; }
+                }
                 @keyframes curaLogoShineSweep {
                   0%, 100% {
                     transform: translateY(-110%);
@@ -2898,25 +2967,33 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
               `}</style>
               {/* Base Logo */}
               <img
-                src={logoUri}
+                src={logo1xUri || logo2xUri}
+                srcSet={`${logo1xUri} 1x, ${logo2xUri} 2x`}
                 alt="CURA Logo"
+                width={Math.round(logoSize)}
+                height={Math.round(logoSize)}
+                loading="eager"
+                // @ts-ignore
+                fetchpriority="high"
+                fetchPriority="high"
                 style={{
                   width: logoSize,
                   height: logoSize,
                   objectFit: "contain",
                   display: "block",
+                  animation: "logoFadeIn 0.25s ease-out forwards",
                 }}
               />
-              {/* Shine Overlay - strictly masked to the logo's PNG alpha */}
+              {/* Shine Overlay - strictly masked to the logo's WebP/PNG alpha */}
               <div
                 style={{
                   position: "absolute",
                   inset: 0,
-                  WebkitMaskImage: `url(${logoUri})`,
+                  WebkitMaskImage: `url(${logo2xUri || logo1xUri})`,
                   WebkitMaskSize: "contain",
                   WebkitMaskRepeat: "no-repeat",
                   WebkitMaskPosition: "center",
-                  maskImage: `url(${logoUri})`,
+                  maskImage: `url(${logo2xUri || logo1xUri})`,
                   maskSize: "contain",
                   maskRepeat: "no-repeat",
                   maskPosition: "center",
@@ -2953,17 +3030,17 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                   style={{ width: logoSize, height: logoSize }}
                   maskElement={
                     <Image
-                      source={curaLogoSource}
+                      source={curaLogo2xSource}
                       style={{ width: logoSize, height: logoSize }}
                       resizeMode="contain"
                     />
                   }
                 >
                   <Image
-                    source={curaLogoSource}
+                    source={curaLogo2xSource}
                     style={{ width: logoSize, height: logoSize }}
                     resizeMode="contain"
-                    fadeDuration={0}
+                    fadeDuration={150}
                   />
                   <Animated.View
                     pointerEvents="none"
@@ -2997,10 +3074,10 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 </MaskedView>
               ) : (
                 <Image
-                  source={curaLogoSource}
+                  source={curaLogo2xSource}
                   style={{ width: logoSize, height: logoSize }}
                   resizeMode="contain"
-                  fadeDuration={0}
+                  fadeDuration={150}
                 />
               )}
             </View>
