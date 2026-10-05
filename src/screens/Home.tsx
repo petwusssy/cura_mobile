@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,9 +25,18 @@ function getGreeting() {
 
 export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
   const unread = notifications.filter((n) => !n.read).length;
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
+
+  // Responsive sizing for Quick Actions to fit perfectly across any screen width
+  const quickActionSize = useMemo(() => {
+    const availableWidth = windowWidth - 48; // px-6 (24px left and right)
+    return Math.min(60, Math.max(48, Math.floor((availableWidth - 36) / 5)));
+  }, [windowWidth]);
+
+  const quickActionIconSize = quickActionSize >= 58 ? 28 : quickActionSize >= 52 ? 26 : 23;
 
   const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
 
@@ -414,12 +423,12 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           </Pressable>
         </View>
 
-        {/* 3. Categories (Horizontal Scroll) */}
+        {/* 3. Categories (Quick Actions) */}
         <View className="mb-8">
           <View className="px-6 mb-4">
             <SectionHeader title="Quick Actions" />
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
+          <View className="px-6 flex-row items-start justify-between">
             {[
               { label: "Queue", icon: "🎫", bg: "#FEF2F2", action: joinQueue },
               { label: "Telemed", icon: "📹", bg: "#EFF6FF", screen: "telemedicine" as Screen },
@@ -427,14 +436,27 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               { label: "Meds", icon: "💊", bg: "#ECFDF5", screen: "medications" as Screen },
               { label: "Certs", icon: "📄", bg: "#FFFBEB", screen: "documents" as Screen },
             ].map((c) => (
-              <Pressable key={c.label} onPress={() => c.action ? c.action() : navigate(c.screen)} className="items-center gap-2">
-                <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: c.bg, opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 }}>
-                  <Text className="text-3xl">{c.icon}</Text>
+              <Pressable 
+                key={c.label} 
+                onPress={() => c.action ? c.action() : navigate(c.screen)} 
+                className="items-center"
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <View 
+                  className="rounded-full items-center justify-center mb-1.5" 
+                  style={{ 
+                    width: quickActionSize, 
+                    height: quickActionSize, 
+                    backgroundColor: c.bg, 
+                    opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 
+                  }}
+                >
+                  <Text style={{ fontSize: quickActionIconSize }}>{c.icon}</Text>
                 </View>
-                <Text className="text-xs font-semibold text-white/80">{c.label}</Text>
+                <Text numberOfLines={1} className="text-xs font-semibold text-white/80 text-center">{c.label}</Text>
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
         </View>
 
         {/* 5. Bottom List (Recent Visits) */}
