@@ -27,7 +27,7 @@ import AnimatedReanimated, {
   withTiming,
   Easing as ReanimatedEasing,
 } from "react-native-reanimated";
-import Svg, { Path, Polyline, Circle, Rect } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Rect, Defs, LinearGradient as SvgGradient, Stop, Text as SvgText } from "react-native-svg";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from 'expo-web-browser';
@@ -2296,6 +2296,29 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   // Modal State & Background Blur Animation
   const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(null);
   const bgBlurAnim = useRef(new Animated.Value(0)).current;
+  const liquidAnim = useRef(new Animated.Value(0)).current;
+
+  // 5s infinite liquid animation matching CURA Web liquidText exactly
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(liquidAnim, {
+          toValue: 1,
+          duration: 2500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(liquidAnim, {
+          toValue: 0,
+          duration: 2500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [liquidAnim]);
 
   // Reanimated Bottom Sheet Slide Down / Up
   const isModalOpen = authMode !== null;
@@ -2451,39 +2474,229 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             paddingHorizontal: 24,
           }}
         >
-          {/* CURA Shield Logo Icon */}
-          <Image
-            source={require("../../assets/images/cura-logo.png")}
-            style={{ width: logoSize, height: logoSize }}
-            resizeMode="contain"
-            fadeDuration={0}
-          />
+          {/* CURA Shield Logo Icon with Ambient Cyan Glow & Vertical Sweep */}
+          <View
+            style={{
+              width: logoSize,
+              height: logoSize,
+              justifyContent: "center",
+              alignItems: "center",
+              position: "relative",
+            }}
+          >
+            {/* Ambient pulsating cyan/sky-blue glow halo (drop-shadow / glow matching Web) */}
+            <Animated.View
+              style={{
+                position: "absolute",
+                width: logoSize * 0.88,
+                height: logoSize * 0.88,
+                borderRadius: (logoSize * 0.88) / 2,
+                backgroundColor: "rgba(56, 189, 248, 0.45)",
+                opacity: liquidAnim.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0.35, 0.75, 0.35],
+                }),
+                transform: [
+                  {
+                    scale: liquidAnim.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.96, 1.10, 0.96],
+                    }),
+                  },
+                ],
+                shadowColor: "#38bdf8",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.8,
+                shadowRadius: 18,
+                elevation: 12,
+              }}
+            />
 
-          {/* CURA Wordmark (CU in #4FC3F7, RA in #FFFFFF) */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-            <Text
+            {/* Logo Image */}
+            <Image
+              source={require("../../assets/images/cura-logo.png")}
               style={{
-                color: "#4FC3F7",
-                fontSize: wordmarkSize,
-                fontWeight: "800",
-                letterSpacing: 1.5,
-                fontFamily: "Outfit",
+                width: logoSize,
+                height: logoSize,
+                ...(Platform.OS === "web"
+                  ? ({
+                      filter: "drop-shadow(0 4px 14px rgba(56, 189, 248, 0.55))",
+                    } as any)
+                  : {}),
+              }}
+              resizeMode="contain"
+              fadeDuration={0}
+            />
+
+            {/* Sweeping vertical shine beam across the logo */}
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                width: logoSize,
+                height: logoSize,
+                overflow: "hidden",
+                borderRadius: logoSize * 0.22,
               }}
             >
-              CU
-            </Text>
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontSize: wordmarkSize,
-                fontWeight: "800",
-                letterSpacing: 1.5,
-                fontFamily: "Outfit",
-              }}
-            >
-              RA
-            </Text>
+              <Animated.View
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  height: logoSize * 0.55,
+                  transform: [
+                    {
+                      translateY: liquidAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-logoSize * 0.55, logoSize],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <LinearGradient
+                  colors={[
+                    "rgba(255, 255, 255, 0)",
+                    "rgba(255, 255, 255, 0.45)",
+                    "rgba(147, 197, 253, 0.35)",
+                    "rgba(255, 255, 255, 0)",
+                  ]}
+                  locations={[0, 0.45, 0.55, 1]}
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </Animated.View>
+            </View>
           </View>
+
+          {/* CURA Wordmark with 1:1 Web Liquid Text Animation */}
+          {Platform.OS === "web" ? (
+            <View style={{ marginTop: 8, alignItems: "center", justifyContent: "center" }}>
+              <style>{`
+                @keyframes liquidText {
+                  0%, 100% { background-position: 0% 0%; }
+                  50% { background-position: 0% 100%; }
+                }
+              `}</style>
+              <Text
+                style={({
+                  fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
+                  fontSize: wordmarkSize,
+                  fontWeight: "900",
+                  letterSpacing: 1.5,
+                  lineHeight: wordmarkSize * 1.12,
+                  textAlign: "center",
+                  userSelect: "none",
+                  backgroundImage: "linear-gradient(180deg, #ffffff 0%, #93c5fd 45%, #ffffff 55%, #bfdbfe 100%)",
+                  backgroundSize: "100% 300%",
+                  animation: "liquidText 5s ease-in-out infinite",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 2px 12px rgba(56, 189, 248, 0.4))",
+                } as any)}
+              >
+                CURA
+              </Text>
+            </View>
+          ) : (
+            <View
+              style={{
+                marginTop: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              {/* Cyan ambient glow shadow behind text */}
+              <Animated.Text
+                style={{
+                  position: "absolute",
+                  fontSize: wordmarkSize,
+                  fontWeight: "900",
+                  letterSpacing: 1.5,
+                  fontFamily: "Outfit",
+                  color: "#38bdf8",
+                  opacity: liquidAnim.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0.25, 0.65, 0.25],
+                  }),
+                  textShadowColor: "rgba(56, 189, 248, 0.85)",
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 14,
+                }}
+              >
+                CURA
+              </Animated.Text>
+
+              {/* Native SVG Liquid Gradient Text with vertical shine overlay */}
+              <View
+                style={{
+                  width: wordmarkSize * 3.6,
+                  height: wordmarkSize * 1.25,
+                  overflow: "hidden",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Svg
+                  width={wordmarkSize * 3.6}
+                  height={wordmarkSize * 1.25}
+                  viewBox={`0 0 ${wordmarkSize * 3.6} ${wordmarkSize * 1.25}`}
+                >
+                  <Defs>
+                    <SvgGradient id="curaLiquidGrad" x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0%" stopColor="#ffffff" />
+                      <Stop offset="45%" stopColor="#93c5fd" />
+                      <Stop offset="55%" stopColor="#ffffff" />
+                      <Stop offset="100%" stopColor="#bfdbfe" />
+                    </SvgGradient>
+                  </Defs>
+                  <SvgText
+                    x="50%"
+                    y="78%"
+                    textAnchor="middle"
+                    fontSize={wordmarkSize}
+                    fontWeight="900"
+                    fontFamily="Outfit"
+                    letterSpacing={1.5}
+                    fill="url(#curaLiquidGrad)"
+                  >
+                    CURA
+                  </SvgText>
+                </Svg>
+
+                {/* Sweeping light beam passing vertically up and down */}
+                <Animated.View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    height: wordmarkSize * 0.6,
+                    transform: [
+                      {
+                        translateY: liquidAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-wordmarkSize * 0.6, wordmarkSize * 1.25],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <LinearGradient
+                    colors={[
+                      "rgba(255, 255, 255, 0)",
+                      "rgba(255, 255, 255, 0.55)",
+                      "rgba(147, 197, 253, 0.4)",
+                      "rgba(255, 255, 255, 0)",
+                    ]}
+                    locations={[0, 0.45, 0.55, 1]}
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                </Animated.View>
+              </View>
+            </View>
+          )}
 
           {/* Tagline */}
           <Text
