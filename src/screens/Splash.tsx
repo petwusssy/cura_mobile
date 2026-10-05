@@ -18,7 +18,8 @@ interface Props {
   onDone: () => void;
 }
 
-const curaLogoSource = require("../../assets/images/cura-logo.png");
+const curaLogoBaseSource = require("../../assets/images/cura-logo-base.png");
+const curaLogoPlusSource = require("../../assets/images/cura-logo-plus.png");
 
 let MaskedView: any = null;
 try {
@@ -39,7 +40,13 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
   // Responsive calculations: enlarged logo (~1.8x, max 240px) & bold prominent CURA text
   const logoSize = Math.min(width * 0.58, height < 700 ? 190 : 230);
   const wordmarkSize = width < 380 || height < 700 ? 68 : 82;
-  const logoUri = Image.resolveAssetSource(curaLogoSource)?.uri || "";
+  const logoBaseUri = Image.resolveAssetSource(curaLogoBaseSource)?.uri || "";
+  const logoPlusUri = Image.resolveAssetSource(curaLogoPlusSource)?.uri || "";
+
+  // Exact geometric positioning of the 300x300 plus crop inside the 760x760 canvas
+  const plusSize = (logoSize * 300) / 760;
+  const plusLeft = (logoSize * 220) / 760;
+  const plusTop = (logoSize * 214) / 760;
 
   // Transition animations
   // 0 - 0.5s: fade-in and subtle scale (0.92 -> 1)
@@ -48,8 +55,28 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
   const entranceAnim = useRef(new Animated.Value(0)).current;
   const exitOpacity = useRef(new Animated.Value(1)).current;
   const shineAnim = useRef(new Animated.Value(0)).current;
+  const plusRotateAnim = useRef(new Animated.Value(0)).current;
 
-  // 1) 5s infinite soft light band loop (exact same easing, timing & direction as landing page)
+  // 1) Continuous 360-degree rotation loop for plus sign spinner (1.8s linear, seamless)
+  useEffect(() => {
+    const rotateLoop = Animated.loop(
+      Animated.timing(plusRotateAnim, {
+        toValue: 1,
+        duration: 1800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    rotateLoop.start();
+    return () => rotateLoop.stop();
+  }, [plusRotateAnim]);
+
+  const spinInterpolate = plusRotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  // 2) 5s infinite soft light band loop (exact same easing, timing & direction as landing page)
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -71,7 +98,7 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
     return () => loop.stop();
   }, [shineAnim]);
 
-  // 2) Staged sequence: 0-0.5s In, 0.5-2.2s Hold/Shine, 2.2-2.5s Out -> onDone
+  // 3) Staged sequence: 0-0.5s In, 0.5-2.2s Hold/Shine, 2.2-2.5s Out -> onDone
   useEffect(() => {
     // Entrance: 500ms
     Animated.timing(entranceAnim, {
@@ -146,7 +173,7 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
             transform: [{ scale: contentScale }],
           }}
         >
-          {/* CURA Shield Logo Icon with Masked Soft Light Band Shine */}
+          {/* CURA Shield Logo Icon with Rotating Plus Sign Spinner & Soft Light Band Shine */}
           {Platform.OS === "web" ? (
             <div
               style={{
@@ -176,10 +203,18 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
                     background-position: 0% 100%;
                   }
                 }
+                @keyframes curaPlusSpin {
+                  from {
+                    transform: rotate(0deg);
+                  }
+                  to {
+                    transform: rotate(360deg);
+                  }
+                }
               `}</style>
-              {/* Base Logo */}
+              {/* Base Logo (Shield ribbon without plus) */}
               <img
-                src={logoUri}
+                src={logoBaseUri}
                 alt="CURA Logo"
                 style={{
                   width: logoSize,
@@ -188,16 +223,33 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
                   display: "block",
                 }}
               />
+              {/* Continuously Rotating Plus Sign Spinner */}
+              <img
+                src={logoPlusUri}
+                alt="CURA Plus Spinner"
+                style={{
+                  position: "absolute",
+                  left: plusLeft,
+                  top: plusTop,
+                  width: plusSize,
+                  height: plusSize,
+                  objectFit: "contain",
+                  display: "block",
+                  animation: "curaPlusSpin 1.8s linear infinite",
+                  transformOrigin: "center",
+                  pointerEvents: "none",
+                }}
+              />
               {/* Shine Overlay - strictly masked to the logo's PNG alpha */}
               <div
                 style={{
                   position: "absolute",
                   inset: 0,
-                  WebkitMaskImage: `url(${logoUri})`,
+                  WebkitMaskImage: `url(${logoBaseUri})`,
                   WebkitMaskSize: "contain",
                   WebkitMaskRepeat: "no-repeat",
                   WebkitMaskPosition: "center",
-                  maskImage: `url(${logoUri})`,
+                  maskImage: `url(${logoBaseUri})`,
                   maskSize: "contain",
                   maskRepeat: "no-repeat",
                   maskPosition: "center",
@@ -224,9 +276,7 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
               style={{
                 width: logoSize,
                 height: logoSize,
-                overflow: "hidden",
-                alignItems: "center",
-                justifyContent: "center",
+                position: "relative",
               }}
             >
               {MaskedView ? (
@@ -234,14 +284,14 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
                   style={{ width: logoSize, height: logoSize }}
                   maskElement={
                     <Image
-                      source={curaLogoSource}
+                      source={curaLogoBaseSource}
                       style={{ width: logoSize, height: logoSize }}
                       resizeMode="contain"
                     />
                   }
                 >
                   <Image
-                    source={curaLogoSource}
+                    source={curaLogoBaseSource}
                     style={{ width: logoSize, height: logoSize }}
                     resizeMode="contain"
                     fadeDuration={0}
@@ -278,12 +328,32 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
                 </MaskedView>
               ) : (
                 <Image
-                  source={curaLogoSource}
+                  source={curaLogoBaseSource}
                   style={{ width: logoSize, height: logoSize }}
                   resizeMode="contain"
                   fadeDuration={0}
                 />
               )}
+
+              {/* Continuously Rotating Plus Sign Spinner */}
+              <Animated.View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  left: plusLeft,
+                  top: plusTop,
+                  width: plusSize,
+                  height: plusSize,
+                  transform: [{ rotate: spinInterpolate }],
+                }}
+              >
+                <Image
+                  source={curaLogoPlusSource}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                  fadeDuration={0}
+                />
+              </Animated.View>
             </View>
           )}
 
