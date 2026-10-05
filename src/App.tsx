@@ -16,13 +16,6 @@ cssInterop(LinearGradient, { className: "style" });
 // Auth
 import { WelcomeScreen, LoginScreen, RegisterScreen, ForgotPasswordScreen } from "./screens/auth";
 
-// Onboarding
-import {
-  PersonalInfoScreen,
-  AcademicInfoScreen,
-  AvatarScreen,
-  ProfileCompleteScreen,
-} from "./screens/onboarding";
 
 // Main app
 import { HomeScreen, NotificationsScreen } from "./screens/Home";
@@ -101,12 +94,18 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const [theme, setTheme] = useState<string>("light");
 
   useEffect(() => {
-    // Eagerly pre-cache logo asset in native memory on boot to eliminate any render delay
+    // Eagerly pre-cache landing page logo assets in native/browser memory on boot to eliminate any render delay
     try {
-      const asset = Image.resolveAssetSource(require("../assets/images/cura-logo.png"));
-      if (asset?.uri) {
-        Image.prefetch(asset.uri).catch(() => {});
-      }
+      const cura1x = Image.resolveAssetSource(require("../assets/images/cura-logo-1x.webp"));
+      const cura2x = Image.resolveAssetSource(require("../assets/images/cura-logo-2x.webp"));
+      const ua1x = Image.resolveAssetSource(require("../assets/images/ua-seal-1x.webp"));
+      const ua2x = Image.resolveAssetSource(require("../assets/images/ua-seal-2x.webp"));
+
+      [cura1x, cura2x, ua1x, ua2x].forEach((asset) => {
+        if (asset?.uri) {
+          Image.prefetch(asset.uri).catch(() => {});
+        }
+      });
     } catch (e) {}
   }, []);
 
@@ -384,15 +383,11 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     if (!splashDone) return <SplashScreen onDone={handleSplashDone} />;
 
     switch (current.screen) {
-      case "welcome":       return <WelcomeScreen navigate={navigate} goBack={goBack} />;
+      case "welcome":       return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
       case "login":         return <LoginScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
       case "register":      return <RegisterScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
       case "forgot-password": return <ForgotPasswordScreen navigate={navigate} goBack={goBack} />;
 
-      case "onboard-personal": return <PersonalInfoScreen {...navProps} />;
-      case "onboard-academic": return <AcademicInfoScreen {...navProps} />;
-      case "onboard-avatar":   return <AvatarScreen {...navProps} />;
-      case "onboard-complete": return <ProfileCompleteScreen {...navProps} />;
 
       case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} medications={medications} />;
       case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} />;
@@ -407,7 +402,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "request-med-cert": return <RequestMedCertScreen navigate={navigate} goBack={goBack} user={user} />;
       case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} setUser={setUser} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
 
-      default: return <WelcomeScreen navigate={navigate} goBack={goBack} />;
+      default: return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
     }
   };
 
