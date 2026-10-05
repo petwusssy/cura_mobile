@@ -2625,7 +2625,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             </View>
           )}
 
-          {/* CURA Wordmark (CU in #4FC3F7, RA in #FFFFFF) with Masked Soft Light Band Shine (Full & Centered) */}
+          {/* CURA Wordmark (White with sky-blue tint, matching CURA Web) with Masked Soft Light Band Shine (Full & Centered) */}
           {Platform.OS === "web" ? (
             <div
               style={{
@@ -2637,11 +2637,13 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 userSelect: "none",
               }}
             >
-              {/* Base two-tone text */}
+              {/* Base text: white with sky-blue tint matching CURA Web */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span
                   style={{
-                    color: "#4FC3F7",
+                    background: "linear-gradient(180deg, #ffffff 0%, #93c5fd 45%, #ffffff 55%, #bfdbfe 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
                     fontSize: wordmarkSize,
                     fontWeight: 800,
                     letterSpacing: 1.5,
@@ -2649,19 +2651,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                     lineHeight: 1,
                   }}
                 >
-                  CU
-                </span>
-                <span
-                  style={{
-                    color: "#FFFFFF",
-                    fontSize: wordmarkSize,
-                    fontWeight: 800,
-                    letterSpacing: 1.5,
-                    fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
-                    lineHeight: 1,
-                  }}
-                >
-                  RA
+                  CURA
                 </span>
               </div>
 
@@ -2732,23 +2722,12 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                           fontFamily: "Outfit",
                         }}
                       >
-                        CU
-                      </Text>
-                      <Text
-                        style={{
-                          color: "#000000",
-                          fontSize: wordmarkSize,
-                          fontWeight: "800",
-                          letterSpacing: 1.5,
-                          fontFamily: "Outfit",
-                        }}
-                      >
-                        RA
+                        CURA
                       </Text>
                     </View>
                   }
                 >
-                  {/* Base two-tone text */}
+                  {/* Base text fill matching CURA Web gradient */}
                   <View
                     style={{
                       flexDirection: "row",
@@ -2758,26 +2737,22 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                   >
                     <Text
                       style={{
-                        color: "#4FC3F7",
+                        color: "#E0F2FE",
                         fontSize: wordmarkSize,
                         fontWeight: "800",
                         letterSpacing: 1.5,
                         fontFamily: "Outfit",
                       }}
                     >
-                      CU
+                      CURA
                     </Text>
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: wordmarkSize,
-                        fontWeight: "800",
-                        letterSpacing: 1.5,
-                        fontFamily: "Outfit",
-                      }}
-                    >
-                      RA
-                    </Text>
+                    <LinearGradient
+                      colors={["#FFFFFF", "#93C5FD", "#FFFFFF", "#BFDBFE"]}
+                      locations={[0, 0.45, 0.55, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
                   </View>
 
                   {/* Soft light band strictly inside the text letters */}
@@ -2821,25 +2796,14 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 >
                   <Text
                     style={{
-                      color: "#4FC3F7",
+                      color: "#E0F2FE",
                       fontSize: wordmarkSize,
                       fontWeight: "800",
                       letterSpacing: 1.5,
                       fontFamily: "Outfit",
                     }}
                   >
-                    CU
-                  </Text>
-                  <Text
-                    style={{
-                      color: "#FFFFFF",
-                      fontSize: wordmarkSize,
-                      fontWeight: "800",
-                      letterSpacing: 1.5,
-                      fontFamily: "Outfit",
-                    }}
-                  >
-                    RA
+                    CURA
                   </Text>
                 </View>
               )}
