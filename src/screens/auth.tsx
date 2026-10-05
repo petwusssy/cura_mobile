@@ -2691,24 +2691,23 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Exact COA mobile reference layout specs (% of full screen width W / height H):
-  // Blob A (large, left-anchored): x -10% to 85% (95% W), y 22% to 105% (83% H)
+  // Elevated full-screen coverage from above the CURA logo (gap between logo and header text) down to screen bottom:
+  // Blob A (large, left-anchored): top at 15% H (above logo, in the gap between logo and UA text)
   const blobAW = Math.round(width * 0.95);
-  const blobAH = Math.round(height * 0.83);
-  const blobATop = Math.round(height * 0.22);
+  const blobAH = Math.round(height * 0.90);
+  const blobATop = Math.round(height * 0.15);
   const blobALeft = -Math.round(width * 0.10);
 
-  // Blob B (large, right-anchored): x 20% to 110% (90% W), y 28% to 105% (77% H)
-  // Higher on left (22%), lower on right (28%) -> natural wavy curve like COA reference
+  // Blob B (large, right-anchored): top at 19% H (higher on left at 15%, lower on right at 19% -> natural wavy curve)
   const blobBW = Math.round(width * 0.90);
-  const blobBH = Math.round(height * 0.77);
-  const blobBTop = Math.round(height * 0.28);
+  const blobBH = Math.round(height * 0.86);
+  const blobBTop = Math.round(height * 0.19);
   const blobBLeft = Math.round(width * 0.20);
 
-  // Blob C (fills gaps, bottom-center): x -5% to 105% (110% W), y 45% to 105% (60% H)
+  // Blob C (fills gaps, bottom-center): extends all the way down to bottom
   const blobCW = Math.round(width * 1.10);
-  const blobCH = Math.round(height * 0.60);
-  const blobCTop = Math.round(height * 0.45);
+  const blobCH = Math.round(height * 0.67);
+  const blobCTop = Math.round(height * 0.38);
   const blobCLeft = -Math.round(width * 0.05);
 
   // Blob A: ~10s loop (subtle drift, never moves above top limit)
