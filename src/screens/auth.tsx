@@ -2673,7 +2673,7 @@ try {
   MaskedView = null;
 }
 
-// ── Animated Organic Blobs Cluster behind CURA Logo ──────────────────────────
+// ── Animated Organic Blobs Cluster behind CURA Logo, Wordmark & Tagline ──────
 
 const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
   isModalOpen,
@@ -2688,40 +2688,30 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Each blob scaled to ~70-100% of screen width extending beyond edges
-  const baseBlobSize = Math.max(Math.round(width * 0.88), 340);
-  const blob1W = Math.round(baseBlobSize * 0.96);
-  const blob1H = Math.round(baseBlobSize * 0.92);
+  // Scaled to specifically encompass the Logo, "CURA" text, and the Tagline
+  const clusterWidth = Math.min(Math.max(Math.round(width * 0.90), 330), 380);
+  const clusterHeight = 440;
 
-  const blob2W = Math.round(baseBlobSize * 1.05);
-  const blob2H = Math.round(baseBlobSize * 0.98);
-
-  const blob3W = Math.round(baseBlobSize * 0.98);
-  const blob3H = Math.round(baseBlobSize * 0.95);
-
-  const clusterWidth = Math.round(width * 1.35);
-  const clusterHeight = Math.round(baseBlobSize * 1.35);
-
-  // Blob 1: ~10.5s loop (drifts top-left <-> bottom-right)
+  // Blob 1: ~10s loop (drifts top-left <-> bottom-right, over logo)
   const tx1 = useSharedValue(0);
   const ty1 = useSharedValue(0);
   const scale1 = useSharedValue(1);
   const rot1 = useSharedValue(0);
   const op1 = useSharedValue(0.38);
 
-  // Blob 2: ~13.8s loop (drifts top-right <-> bottom-left)
+  // Blob 2: ~13.5s loop (drifts top-right <-> bottom-left, over CURA wordmark)
   const tx2 = useSharedValue(0);
   const ty2 = useSharedValue(0);
   const scale2 = useSharedValue(1);
   const rot2 = useSharedValue(0);
   const op2 = useSharedValue(0.32);
 
-  // Blob 3: ~9.2s loop (drifts bottom <-> top)
+  // Blob 3: ~9s loop (drifts bottom <-> top, over tagline)
   const tx3 = useSharedValue(0);
   const ty3 = useSharedValue(0);
   const scale3 = useSharedValue(1);
   const rot3 = useSharedValue(0);
-  const op3 = useSharedValue(0.34);
+  const op3 = useSharedValue(0.35);
 
   useEffect(() => {
     if (reduceMotion || isModalOpen) {
@@ -2729,99 +2719,99 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
       ty1.value = withTiming(0, { duration: 600 });
       scale1.value = withTiming(1, { duration: 600 });
       rot1.value = withTiming(0, { duration: 600 });
-      op1.value = withTiming(0.18, { duration: 600 });
+      op1.value = withTiming(0.2, { duration: 600 });
 
       tx2.value = withTiming(0, { duration: 600 });
       ty2.value = withTiming(0, { duration: 600 });
       scale2.value = withTiming(1, { duration: 600 });
       rot2.value = withTiming(0, { duration: 600 });
-      op2.value = withTiming(0.16, { duration: 600 });
+      op2.value = withTiming(0.18, { duration: 600 });
 
       tx3.value = withTiming(0, { duration: 600 });
       ty3.value = withTiming(0, { duration: 600 });
       scale3.value = withTiming(1, { duration: 600 });
       rot3.value = withTiming(0, { duration: 600 });
-      op3.value = withTiming(0.18, { duration: 600 });
+      op3.value = withTiming(0.2, { duration: 600 });
       return;
     }
 
-    // Blob 1 (10.5s cycle)
+    // Blob 1 (10s cycle)
     tx1.value = withRepeat(
-      withTiming(18, { duration: 5250, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(14, { duration: 5000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty1.value = withRepeat(
-      withTiming(-14, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-12, { duration: 4600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale1.value = withRepeat(
-      withTiming(1.08, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.08, { duration: 5200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot1.value = withRepeat(
-      withTiming(7, { duration: 5600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(8, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     op1.value = withRepeat(
-      withTiming(0.44, { duration: 5000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(0.46, { duration: 4800, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
 
-    // Blob 2 (13.8s cycle)
+    // Blob 2 (13.5s cycle)
     tx2.value = withRepeat(
-      withTiming(-20, { duration: 6900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-15, { duration: 6800, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty2.value = withRepeat(
-      withTiming(16, { duration: 6600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(14, { duration: 6400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale2.value = withRepeat(
-      withTiming(0.92, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(0.92, { duration: 6900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot2.value = withRepeat(
-      withTiming(-9, { duration: 7200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-10, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     op2.value = withRepeat(
-      withTiming(0.40, { duration: 6700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(0.42, { duration: 6500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
 
-    // Blob 3 (9.2s cycle)
+    // Blob 3 (9s cycle)
     tx3.value = withRepeat(
-      withTiming(16, { duration: 4600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(14, { duration: 4500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty3.value = withRepeat(
-      withTiming(-14, { duration: 4300, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-11, { duration: 4200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale3.value = withRepeat(
-      withTiming(1.07, { duration: 4800, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.07, { duration: 4700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot3.value = withRepeat(
-      withTiming(8, { duration: 5000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(7, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     op3.value = withRepeat(
-      withTiming(0.42, { duration: 4500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(0.44, { duration: 4400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2867,106 +2857,103 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
           height: clusterHeight,
           top: "50%",
           left: "50%",
-          marginTop: -clusterHeight / 2 - 10,
+          marginTop: -clusterHeight / 2,
           marginLeft: -clusterWidth / 2,
           alignItems: "center",
           justifyContent: "center",
           zIndex: 0,
         },
         Platform.OS === "web"
-          ? ({ filter: "blur(36px)", WebkitFilter: "blur(36px)" } as any)
+          ? ({ filter: "blur(28px)", WebkitFilter: "blur(28px)" } as any)
           : undefined,
       ]}
     >
-      {/* Blob 1: Upper / center-left soft glowing mass */}
+      {/* Blob 1: Upper section (Covers CURA Shield Logo) */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: "2%",
-            left: "6%",
-            width: blob1W,
-            height: blob1H,
+            top: 5,
+            left: 10,
+            width: clusterWidth - 30,
+            height: 250,
           },
           blob1AnimStyle,
         ]}
       >
         <Svg width="100%" height="100%" viewBox="0 0 300 300">
           <Defs>
-            <SvgRadialGradient id="curaBlobRadial1" cx="48%" cy="46%" rx="52%" ry="50%">
+            <SvgGradient id="curaBlobGrad1" x1="0" y1="0" x2="1" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.85" />
-              <Stop offset="35%" stopColor="#A5DBF2" stopOpacity="0.65" />
-              <Stop offset="70%" stopColor="#8FD0EE" stopOpacity="0.28" />
-              <Stop offset="92%" stopColor="#8FD0EE" stopOpacity="0.06" />
+              <Stop offset="55%" stopColor="#8FD0EE" stopOpacity="0.55" />
+              <Stop offset="88%" stopColor="#8FD0EE" stopOpacity="0.15" />
               <Stop offset="100%" stopColor="#8FD0EE" stopOpacity="0" />
-            </SvgRadialGradient>
+            </SvgGradient>
           </Defs>
           <Path
-            d="M 150 35 C 235 25, 280 75, 272 155 C 264 235, 220 275, 140 268 C 60 260, 20 210, 26 130 C 32 50, 65 45, 150 35 Z"
-            fill="url(#curaBlobRadial1)"
+            d="M 150 45 C 225 35, 275 80, 268 155 C 260 230, 215 268, 142 262 C 68 255, 28 208, 32 135 C 38 62, 75 48, 150 45 Z"
+            fill="url(#curaBlobGrad1)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob 2: Center-right soft glowing mass (extends beyond right edge) */}
+      {/* Blob 2: Middle section (Covers CURA Wordmark & overlaps Logo/Tagline) */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: "14%",
-            right: "2%",
-            width: blob2W,
-            height: blob2H,
+            top: 95,
+            right: 5,
+            width: clusterWidth - 20,
+            height: 250,
           },
           blob2AnimStyle,
         ]}
       >
         <Svg width="100%" height="100%" viewBox="0 0 300 300">
           <Defs>
-            <SvgRadialGradient id="curaBlobRadial2" cx="52%" cy="48%" rx="50%" ry="52%">
-              <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.80" />
-              <Stop offset="38%" stopColor="#9BD4F0" stopOpacity="0.60" />
-              <Stop offset="72%" stopColor="#8FD0EE" stopOpacity="0.25" />
-              <Stop offset="90%" stopColor="#8FD0EE" stopOpacity="0.05" />
+            <SvgGradient id="curaBlobGrad2" x1="1" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#8FD0EE" stopOpacity="0.80" />
+              <Stop offset="50%" stopColor="#BDE5F6" stopOpacity="0.52" />
+              <Stop offset="85%" stopColor="#8FD0EE" stopOpacity="0.12" />
               <Stop offset="100%" stopColor="#8FD0EE" stopOpacity="0" />
-            </SvgRadialGradient>
+            </SvgGradient>
           </Defs>
           <Path
-            d="M 140 28 C 225 18, 285 68, 270 152 C 255 236, 195 282, 115 266 C 35 250, 15 185, 30 105 C 45 25, 55 38, 140 28 Z"
-            fill="url(#curaBlobRadial2)"
+            d="M 135 32 C 215 22, 282 72, 266 152 C 250 232, 192 278, 118 262 C 44 246, 18 185, 34 110 C 50 35, 55 42, 135 32 Z"
+            fill="url(#curaBlobGrad2)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob 3: Bottom-center / left soft glowing mass (covers tagline area & beyond left edge) */}
+      {/* Blob 3: Lower section (Covers Tagline: "Your personal health companion...") */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            bottom: "2%",
-            left: "10%",
-            width: blob3W,
-            height: blob3H,
+            bottom: 5,
+            left: 15,
+            width: clusterWidth - 30,
+            height: 240,
           },
           blob3AnimStyle,
         ]}
       >
         <Svg width="100%" height="100%" viewBox="0 0 300 300">
           <Defs>
-            <SvgRadialGradient id="curaBlobRadial3" cx="50%" cy="52%" rx="50%" ry="48%">
+            <SvgGradient id="curaBlobGrad3" x1="0.5" y1="0" x2="0.5" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.82" />
-              <Stop offset="40%" stopColor="#A2D9F2" stopOpacity="0.62" />
-              <Stop offset="72%" stopColor="#8FD0EE" stopOpacity="0.26" />
-              <Stop offset="90%" stopColor="#7DD3FC" stopOpacity="0.06" />
+              <Stop offset="55%" stopColor="#8FD0EE" stopOpacity="0.50" />
+              <Stop offset="85%" stopColor="#7DD3FC" stopOpacity="0.12" />
               <Stop offset="100%" stopColor="#7DD3FC" stopOpacity="0" />
-            </SvgRadialGradient>
+            </SvgGradient>
           </Defs>
           <Path
-            d="M 155 32 C 240 48, 276 108, 260 188 C 244 268, 170 282, 98 260 C 26 238, 18 158, 40 90 C 62 22, 70 16, 155 32 Z"
-            fill="url(#curaBlobRadial3)"
+            d="M 160 38 C 238 52, 272 112, 256 186 C 240 260, 172 276, 104 256 C 36 236, 24 162, 44 96 C 64 30, 82 22, 160 38 Z"
+            fill="url(#curaBlobGrad3)"
           />
         </Svg>
       </AnimatedReanimated.View>
