@@ -2688,18 +2688,27 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Scaled to specifically encompass the Logo, "CURA" text, and the Tagline
-  const clusterWidth = Math.min(Math.max(Math.round(width * 0.90), 330), 380);
-  const clusterHeight = 440;
+  // Wide, horizontally spread shapes covering 85-115% of screen width (like COA reference)
+  const clusterWidth = Math.round(width * 1.32);
+  const clusterHeight = 450;
 
-  // Blob 1: ~10s loop (drifts top-left <-> bottom-right, over logo)
+  const blob1W = Math.round(width * 1.08);
+  const blob1H = Math.round(width * 0.74);
+
+  const blob2W = Math.round(width * 1.14);
+  const blob2H = Math.round(width * 0.78);
+
+  const blob3W = Math.round(width * 1.10);
+  const blob3H = Math.round(width * 0.75);
+
+  // Blob 1: ~10s loop (drifts top-left <-> bottom-right, over logo & upper text)
   const tx1 = useSharedValue(0);
   const ty1 = useSharedValue(0);
   const scale1 = useSharedValue(1);
   const rot1 = useSharedValue(0);
   const op1 = useSharedValue(0.38);
 
-  // Blob 2: ~13.5s loop (drifts top-right <-> bottom-left, over CURA wordmark)
+  // Blob 2: ~13.5s loop (drifts top-right <-> bottom-left, over CURA wordmark & right edge)
   const tx2 = useSharedValue(0);
   const ty2 = useSharedValue(0);
   const scale2 = useSharedValue(1);
@@ -2737,22 +2746,22 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
 
     // Blob 1 (10s cycle)
     tx1.value = withRepeat(
-      withTiming(14, { duration: 5000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(12, { duration: 5000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty1.value = withRepeat(
-      withTiming(-12, { duration: 4600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-8, { duration: 4600, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale1.value = withRepeat(
-      withTiming(1.08, { duration: 5200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.05, { duration: 5200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot1.value = withRepeat(
-      withTiming(8, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(6, { duration: 5400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2764,22 +2773,22 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
 
     // Blob 2 (13.5s cycle)
     tx2.value = withRepeat(
-      withTiming(-15, { duration: 6800, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-14, { duration: 6800, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty2.value = withRepeat(
-      withTiming(14, { duration: 6400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(10, { duration: 6400, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale2.value = withRepeat(
-      withTiming(0.92, { duration: 6900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(0.95, { duration: 6900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot2.value = withRepeat(
-      withTiming(-10, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-7, { duration: 7100, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2791,22 +2800,22 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
 
     // Blob 3 (9s cycle)
     tx3.value = withRepeat(
-      withTiming(14, { duration: 4500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(10, { duration: 4500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     ty3.value = withRepeat(
-      withTiming(-11, { duration: 4200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(-8, { duration: 4200, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     scale3.value = withRepeat(
-      withTiming(1.07, { duration: 4700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(1.04, { duration: 4700, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
     rot3.value = withRepeat(
-      withTiming(7, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      withTiming(5, { duration: 4900, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
       -1,
       true
     );
@@ -2857,7 +2866,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
           height: clusterHeight,
           top: "50%",
           left: "50%",
-          marginTop: -clusterHeight / 2,
+          marginTop: -clusterHeight / 2 - 10,
           marginLeft: -clusterWidth / 2,
           alignItems: "center",
           justifyContent: "center",
@@ -2868,21 +2877,21 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
           : undefined,
       ]}
     >
-      {/* Blob 1: Upper section (Covers CURA Shield Logo) */}
+      {/* Blob 1: Upper-left wide lobe (covers logo and extends beyond left edge) */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: 5,
-            left: 10,
-            width: clusterWidth - 30,
-            height: 250,
+            top: 10,
+            left: 0,
+            width: blob1W,
+            height: blob1H,
           },
           blob1AnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 300 300">
+        <Svg width="100%" height="100%" viewBox="0 0 540 360">
           <Defs>
             <SvgGradient id="curaBlobGrad1" x1="0" y1="0" x2="1" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.85" />
@@ -2892,27 +2901,27 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 150 45 C 225 35, 275 80, 268 155 C 260 230, 215 268, 142 262 C 68 255, 28 208, 32 135 C 38 62, 75 48, 150 45 Z"
+            d="M 270 25 C 410 20, 510 70, 515 170 C 520 270, 420 330, 275 335 C 130 340, 25 280, 25 180 C 25 80, 130 30, 270 25 Z"
             fill="url(#curaBlobGrad1)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob 2: Middle section (Covers CURA Wordmark & overlaps Logo/Tagline) */}
+      {/* Blob 2: Mid-right wide lobe (covers CURA text and extends beyond right edge) */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            top: 95,
-            right: 5,
-            width: clusterWidth - 20,
-            height: 250,
+            top: 75,
+            right: 0,
+            width: blob2W,
+            height: blob2H,
           },
           blob2AnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 300 300">
+        <Svg width="100%" height="100%" viewBox="0 0 540 360">
           <Defs>
             <SvgGradient id="curaBlobGrad2" x1="1" y1="0" x2="0" y2="1">
               <Stop offset="0%" stopColor="#8FD0EE" stopOpacity="0.80" />
@@ -2922,27 +2931,27 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 135 32 C 215 22, 282 72, 266 152 C 250 232, 192 278, 118 262 C 44 246, 18 185, 34 110 C 50 35, 55 42, 135 32 Z"
+            d="M 275 30 C 415 15, 515 80, 510 185 C 505 290, 395 335, 250 330 C 105 325, 30 255, 35 155 C 40 55, 135 45, 275 30 Z"
             fill="url(#curaBlobGrad2)"
           />
         </Svg>
       </AnimatedReanimated.View>
 
-      {/* Blob 3: Lower section (Covers Tagline: "Your personal health companion...") */}
+      {/* Blob 3: Center-bottom wide foundation (covers tagline area and merges left and right lobes) */}
       <AnimatedReanimated.View
         pointerEvents="none"
         style={[
           {
             position: "absolute",
-            bottom: 5,
-            left: 15,
-            width: clusterWidth - 30,
-            height: 240,
+            bottom: 10,
+            left: Math.round((clusterWidth - blob3W) / 2),
+            width: blob3W,
+            height: blob3H,
           },
           blob3AnimStyle,
         ]}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 300 300">
+        <Svg width="100%" height="100%" viewBox="0 0 540 360">
           <Defs>
             <SvgGradient id="curaBlobGrad3" x1="0.5" y1="0" x2="0.5" y2="1">
               <Stop offset="0%" stopColor="#BDE5F6" stopOpacity="0.82" />
@@ -2952,7 +2961,7 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
             </SvgGradient>
           </Defs>
           <Path
-            d="M 160 38 C 238 52, 272 112, 256 186 C 240 260, 172 276, 104 256 C 36 236, 24 162, 44 96 C 64 30, 82 22, 160 38 Z"
+            d="M 270 35 C 410 30, 520 90, 505 195 C 490 300, 385 340, 245 335 C 105 330, 25 265, 30 170 C 35 75, 130 40, 270 35 Z"
             fill="url(#curaBlobGrad3)"
           />
         </Svg>
