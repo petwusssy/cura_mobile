@@ -27,7 +27,7 @@ import AnimatedReanimated, {
   withTiming,
   Easing as ReanimatedEasing,
 } from "react-native-reanimated";
-import Svg, { Path, Polyline, Circle, Rect, Defs, LinearGradient as SvgGradient, Stop, Text as SvgText } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Rect, Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, TSpan, Mask, Image as SvgImage } from "react-native-svg";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from 'expo-web-browser';
@@ -2282,6 +2282,9 @@ const WelcomeBackground = memo(function WelcomeBackground({ bgBlurAnim }: { bgBl
   );
 });
 
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const curaLogoSource = require("../../assets/images/cura-logo.png");
+
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
 export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
@@ -2292,33 +2295,34 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
   const wordmarkSize = width < 380 || height < 700 ? 50 : 60;
   const taglineSize = width < 380 ? 14 : 16;
+  const logoUri = Image.resolveAssetSource(curaLogoSource)?.uri || "";
 
   // Modal State & Background Blur Animation
   const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(null);
   const bgBlurAnim = useRef(new Animated.Value(0)).current;
-  const liquidAnim = useRef(new Animated.Value(0)).current;
+  const shineAnim = useRef(new Animated.Value(0)).current;
 
-  // 5s infinite liquid animation matching CURA Web liquidText exactly
+  // 5s infinite soft light band animation moving up and down
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(liquidAnim, {
+        Animated.timing(shineAnim, {
           toValue: 1,
           duration: 2500,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
-        Animated.timing(liquidAnim, {
+        Animated.timing(shineAnim, {
           toValue: 0,
           duration: 2500,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [liquidAnim]);
+  }, [shineAnim]);
 
   // Reanimated Bottom Sheet Slide Down / Up
   const isModalOpen = authMode !== null;
@@ -2474,227 +2478,273 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             paddingHorizontal: 24,
           }}
         >
-          {/* CURA Shield Logo Icon with Ambient Cyan Glow & Vertical Sweep */}
-          <View
-            style={{
-              width: logoSize,
-              height: logoSize,
-              justifyContent: "center",
-              alignItems: "center",
-              position: "relative",
-            }}
-          >
-            {/* Ambient pulsating cyan/sky-blue glow halo (drop-shadow / glow matching Web) */}
-            <Animated.View
+          {/* CURA Shield Logo Icon with Masked Soft Light Band Shine (Strictly inside shape) */}
+          {Platform.OS === "web" ? (
+            <div
               style={{
-                position: "absolute",
-                width: logoSize * 0.88,
-                height: logoSize * 0.88,
-                borderRadius: (logoSize * 0.88) / 2,
-                backgroundColor: "rgba(56, 189, 248, 0.45)",
-                opacity: liquidAnim.interpolate({
-                  inputRange: [0, 0.5, 1],
-                  outputRange: [0.35, 0.75, 0.35],
-                }),
-                transform: [
-                  {
-                    scale: liquidAnim.interpolate({
-                      inputRange: [0, 0.5, 1],
-                      outputRange: [0.96, 1.10, 0.96],
-                    }),
-                  },
-                ],
-                shadowColor: "#38bdf8",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.8,
-                shadowRadius: 18,
-                elevation: 12,
-              }}
-            />
-
-            {/* Logo Image */}
-            <Image
-              source={require("../../assets/images/cura-logo.png")}
-              style={{
+                position: "relative",
                 width: logoSize,
                 height: logoSize,
-                ...(Platform.OS === "web"
-                  ? ({
-                      filter: "drop-shadow(0 4px 14px rgba(56, 189, 248, 0.55))",
-                    } as any)
-                  : {}),
-              }}
-              resizeMode="contain"
-              fadeDuration={0}
-            />
-
-            {/* Sweeping vertical shine beam across the logo */}
-            <View
-              pointerEvents="none"
-              style={{
-                position: "absolute",
-                width: logoSize,
-                height: logoSize,
-                overflow: "hidden",
-                borderRadius: logoSize * 0.22,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <Animated.View
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  height: logoSize * 0.55,
-                  transform: [
-                    {
-                      translateY: liquidAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-logoSize * 0.55, logoSize],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <LinearGradient
-                  colors={[
-                    "rgba(255, 255, 255, 0)",
-                    "rgba(255, 255, 255, 0.45)",
-                    "rgba(147, 197, 253, 0.35)",
-                    "rgba(255, 255, 255, 0)",
-                  ]}
-                  locations={[0, 0.45, 0.55, 1]}
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </Animated.View>
-            </View>
-          </View>
-
-          {/* CURA Wordmark with 1:1 Web Liquid Text Animation */}
-          {Platform.OS === "web" ? (
-            <View style={{ marginTop: 8, alignItems: "center", justifyContent: "center" }}>
               <style>{`
-                @keyframes liquidText {
-                  0%, 100% { background-position: 0% 0%; }
-                  50% { background-position: 0% 100%; }
+                @keyframes curaLogoShineSweep {
+                  0%, 100% {
+                    transform: translateY(-110%);
+                  }
+                  50% {
+                    transform: translateY(220%);
+                  }
+                }
+                @keyframes curaTextShineSweep {
+                  0%, 100% {
+                    background-position: 0% 0%;
+                  }
+                  50% {
+                    background-position: 0% 100%;
+                  }
                 }
               `}</style>
-              <Text
-                style={({
-                  fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
-                  fontSize: wordmarkSize,
-                  fontWeight: "900",
-                  letterSpacing: 1.5,
-                  lineHeight: wordmarkSize * 1.12,
-                  textAlign: "center",
-                  userSelect: "none",
-                  backgroundImage: "linear-gradient(180deg, #ffffff 0%, #93c5fd 45%, #ffffff 55%, #bfdbfe 100%)",
-                  backgroundSize: "100% 300%",
-                  animation: "liquidText 5s ease-in-out infinite",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  filter: "drop-shadow(0 2px 12px rgba(56, 189, 248, 0.4))",
-                } as any)}
+              {/* Base Logo */}
+              <img
+                src={logoUri}
+                alt="CURA Logo"
+                style={{
+                  width: logoSize,
+                  height: logoSize,
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+              {/* Shine Overlay - strictly masked to the logo's PNG alpha */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  WebkitMaskImage: `url(${logoUri})`,
+                  WebkitMaskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                  maskImage: `url(${logoUri})`,
+                  maskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  pointerEvents: "none",
+                  overflow: "hidden",
+                }}
               >
-                CURA
-              </Text>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    height: logoSize * 0.45,
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.5) 30%, rgba(255,255,255,0.92) 50%, rgba(186,230,253,0.5) 70%, rgba(255,255,255,0) 100%)",
+                    animation: "curaLogoShineSweep 5s ease-in-out infinite",
+                    mixBlendMode: "screen",
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <View
+              style={{
+                width: logoSize,
+                height: logoSize,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Svg width={logoSize} height={logoSize} viewBox={`0 0 ${logoSize} ${logoSize}`}>
+                <Defs>
+                  <Mask id="curaLogoMask">
+                    <SvgImage
+                      href={curaLogoSource}
+                      x="0"
+                      y="0"
+                      width={logoSize}
+                      height={logoSize}
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  </Mask>
+                  <SvgGradient id="logoShineBand" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
+                    <Stop offset="0.3" stopColor="#BAE6FD" stopOpacity="0.5" />
+                    <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.92" />
+                    <Stop offset="0.7" stopColor="#BAE6FD" stopOpacity="0.5" />
+                    <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+                  </SvgGradient>
+                </Defs>
+
+                {/* Base Logo */}
+                <SvgImage
+                  href={curaLogoSource}
+                  x="0"
+                  y="0"
+                  width={logoSize}
+                  height={logoSize}
+                  preserveAspectRatio="xMidYMid meet"
+                />
+
+                {/* Soft light band moving up and down, masked strictly to logo PNG alpha */}
+                <AnimatedRect
+                  x="0"
+                  y={shineAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-logoSize * 0.5, logoSize],
+                  })}
+                  width={logoSize}
+                  height={logoSize * 0.5}
+                  fill="url(#logoShineBand)"
+                  mask="url(#curaLogoMask)"
+                />
+              </Svg>
             </View>
+          )}
+
+          {/* CURA Wordmark (CU in #4FC3F7, RA in #FFFFFF) with Masked Soft Light Band Shine */}
+          {Platform.OS === "web" ? (
+            <div
+              style={{
+                position: "relative",
+                marginTop: 8,
+                display: "inline-block",
+                userSelect: "none",
+              }}
+            >
+              {/* Base two-tone text */}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span
+                  style={{
+                    color: "#4FC3F7",
+                    fontSize: wordmarkSize,
+                    fontWeight: 800,
+                    letterSpacing: 1.5,
+                    fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
+                    lineHeight: 1,
+                  }}
+                >
+                  CU
+                </span>
+                <span
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: wordmarkSize,
+                    fontWeight: 800,
+                    letterSpacing: 1.5,
+                    fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
+                    lineHeight: 1,
+                  }}
+                >
+                  RA
+                </span>
+              </div>
+
+              {/* Shine overlay masked strictly to text letters via background-clip: text */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  pointerEvents: "none",
+                  overflow: "hidden",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: wordmarkSize,
+                    fontWeight: 800,
+                    letterSpacing: 1.5,
+                    fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
+                    lineHeight: 1,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    backgroundImage:
+                      "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.55) 35%, rgba(255,255,255,0.95) 50%, rgba(186,230,253,0.55) 65%, rgba(255,255,255,0) 100%)",
+                    backgroundSize: "100% 280%",
+                    animation: "curaTextShineSweep 5s ease-in-out infinite",
+                    mixBlendMode: "screen",
+                  }}
+                >
+                  CURA
+                </span>
+              </div>
+            </div>
           ) : (
             <View
               style={{
                 marginTop: 8,
                 alignItems: "center",
                 justifyContent: "center",
-                position: "relative",
+                width: wordmarkSize * 3.6,
+                height: wordmarkSize * 1.25,
               }}
             >
-              {/* Cyan ambient glow shadow behind text */}
-              <Animated.Text
-                style={{
-                  position: "absolute",
-                  fontSize: wordmarkSize,
-                  fontWeight: "900",
-                  letterSpacing: 1.5,
-                  fontFamily: "Outfit",
-                  color: "#38bdf8",
-                  opacity: liquidAnim.interpolate({
-                    inputRange: [0, 0.5, 1],
-                    outputRange: [0.25, 0.65, 0.25],
-                  }),
-                  textShadowColor: "rgba(56, 189, 248, 0.85)",
-                  textShadowOffset: { width: 0, height: 2 },
-                  textShadowRadius: 14,
-                }}
+              <Svg
+                width={wordmarkSize * 3.6}
+                height={wordmarkSize * 1.25}
+                viewBox={`0 0 ${wordmarkSize * 3.6} ${wordmarkSize * 1.25}`}
               >
-                CURA
-              </Animated.Text>
+                <Defs>
+                  {/* Mask containing the wordmark letters */}
+                  <Mask id="curaWordmarkMask">
+                    <SvgText
+                      x="50%"
+                      y="76%"
+                      textAnchor="middle"
+                      fontSize={wordmarkSize}
+                      fontWeight="800"
+                      fontFamily="Outfit"
+                      letterSpacing={1.5}
+                      fill="#FFFFFF"
+                    >
+                      CURA
+                    </SvgText>
+                  </Mask>
+                  {/* Soft light band gradient */}
+                  <SvgGradient id="textShineBand" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
+                    <Stop offset="0.3" stopColor="#BAE6FD" stopOpacity="0.5" />
+                    <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.95" />
+                    <Stop offset="0.7" stopColor="#BAE6FD" stopOpacity="0.5" />
+                    <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+                  </SvgGradient>
+                </Defs>
 
-              {/* Native SVG Liquid Gradient Text with vertical shine overlay */}
-              <View
-                style={{
-                  width: wordmarkSize * 3.6,
-                  height: wordmarkSize * 1.25,
-                  overflow: "hidden",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Svg
+                {/* Base Text: CU in #4FC3F7, RA in #FFFFFF */}
+                <SvgText
+                  x="50%"
+                  y="76%"
+                  textAnchor="middle"
+                  fontSize={wordmarkSize}
+                  fontWeight="800"
+                  fontFamily="Outfit"
+                  letterSpacing={1.5}
+                >
+                  <TSpan fill="#4FC3F7">CU</TSpan>
+                  <TSpan fill="#FFFFFF">RA</TSpan>
+                </SvgText>
+
+                {/* Moving soft light band masked strictly inside the text letters */}
+                <AnimatedRect
+                  x="0"
+                  y={shineAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-wordmarkSize * 0.6, wordmarkSize * 1.25],
+                  })}
                   width={wordmarkSize * 3.6}
-                  height={wordmarkSize * 1.25}
-                  viewBox={`0 0 ${wordmarkSize * 3.6} ${wordmarkSize * 1.25}`}
-                >
-                  <Defs>
-                    <SvgGradient id="curaLiquidGrad" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="#ffffff" />
-                      <Stop offset="45%" stopColor="#93c5fd" />
-                      <Stop offset="55%" stopColor="#ffffff" />
-                      <Stop offset="100%" stopColor="#bfdbfe" />
-                    </SvgGradient>
-                  </Defs>
-                  <SvgText
-                    x="50%"
-                    y="78%"
-                    textAnchor="middle"
-                    fontSize={wordmarkSize}
-                    fontWeight="900"
-                    fontFamily="Outfit"
-                    letterSpacing={1.5}
-                    fill="url(#curaLiquidGrad)"
-                  >
-                    CURA
-                  </SvgText>
-                </Svg>
-
-                {/* Sweeping light beam passing vertically up and down */}
-                <Animated.View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    height: wordmarkSize * 0.6,
-                    transform: [
-                      {
-                        translateY: liquidAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [-wordmarkSize * 0.6, wordmarkSize * 1.25],
-                        }),
-                      },
-                    ],
-                  }}
-                >
-                  <LinearGradient
-                    colors={[
-                      "rgba(255, 255, 255, 0)",
-                      "rgba(255, 255, 255, 0.55)",
-                      "rgba(147, 197, 253, 0.4)",
-                      "rgba(255, 255, 255, 0)",
-                    ]}
-                    locations={[0, 0.45, 0.55, 1]}
-                    style={{ width: "100%", height: "100%" }}
-                  />
-                </Animated.View>
-              </View>
+                  height={wordmarkSize * 0.6}
+                  fill="url(#textShineBand)"
+                  mask="url(#curaWordmarkMask)"
+                />
+              </Svg>
             </View>
           )}
 
