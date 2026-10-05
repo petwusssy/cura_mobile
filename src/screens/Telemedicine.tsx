@@ -382,7 +382,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           {/* Info Banner */}
           <View
             className="bg-white/10 rounded-[28px] p-4 flex-row items-center gap-3.5 border border-white/10 mb-6"
-            style={{ elevation: 1 }}
           >
             <View className="w-11 h-11 rounded-2xl bg-white/15 items-center justify-center">
               <Text className="text-xl">📹</Text>
