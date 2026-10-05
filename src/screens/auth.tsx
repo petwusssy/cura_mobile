@@ -2625,7 +2625,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             </View>
           )}
 
-          {/* CURA Wordmark (White with sky-blue tint, matching CURA Web) with Masked Soft Light Band Shine (Full & Centered) */}
+          {/* CURA Wordmark (White base with animated sky-blue color wave matching CURA Web) */}
           {Platform.OS === "web" ? (
             <div
               style={{
@@ -2637,13 +2637,11 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 userSelect: "none",
               }}
             >
-              {/* Base text: white with sky-blue tint matching CURA Web */}
+              {/* Base text: pure white */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span
                   style={{
-                    background: "linear-gradient(180deg, #ffffff 0%, #93c5fd 45%, #ffffff 55%, #bfdbfe 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    color: "#FFFFFF",
                     fontSize: wordmarkSize,
                     fontWeight: 800,
                     letterSpacing: 1.5,
@@ -2655,7 +2653,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 </span>
               </div>
 
-              {/* Shine overlay masked strictly to text letters via background-clip: text */}
+              {/* Sky-blue color wave overlay masked strictly to text letters via background-clip: text */}
               <div
                 aria-hidden="true"
                 style={{
@@ -2679,10 +2677,9 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                     backgroundImage:
-                      "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.55) 35%, rgba(255,255,255,0.95) 50%, rgba(186,230,253,0.55) 65%, rgba(255,255,255,0) 100%)",
+                      "linear-gradient(180deg, rgba(186,230,253,0) 0%, rgba(186,230,253,0.85) 35%, #7DD3FC 50%, rgba(186,230,253,0.85) 65%, rgba(186,230,253,0) 100%)",
                     backgroundSize: "100% 280%",
                     animation: "curaTextShineSweep 5s ease-in-out infinite",
-                    mixBlendMode: "screen",
                   }}
                 >
                   CURA
@@ -2727,7 +2724,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                     </View>
                   }
                 >
-                  {/* Base text fill matching CURA Web gradient */}
+                  {/* Base text: pure white */}
                   <View
                     style={{
                       flexDirection: "row",
@@ -2737,7 +2734,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                   >
                     <Text
                       style={{
-                        color: "#E0F2FE",
+                        color: "#FFFFFF",
                         fontSize: wordmarkSize,
                         fontWeight: "800",
                         letterSpacing: 1.5,
@@ -2746,28 +2743,21 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                     >
                       CURA
                     </Text>
-                    <LinearGradient
-                      colors={["#FFFFFF", "#93C5FD", "#FFFFFF", "#BFDBFE"]}
-                      locations={[0, 0.45, 0.55, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 0, y: 1 }}
-                      style={StyleSheet.absoluteFill}
-                    />
                   </View>
 
-                  {/* Soft light band strictly inside the text letters */}
+                  {/* Sky-blue wave band strictly inside the text letters */}
                   <Animated.View
                     pointerEvents="none"
                     style={{
                       position: "absolute",
                       left: -40,
                       right: -40,
-                      height: wordmarkSize * 0.55,
+                      height: wordmarkSize * 0.65,
                       transform: [
                         {
                           translateY: shineAnim.interpolate({
                             inputRange: [0, 1],
-                            outputRange: [-wordmarkSize * 0.65, wordmarkSize * 1.25],
+                            outputRange: [-wordmarkSize * 0.75, wordmarkSize * 1.35],
                           }),
                         },
                       ],
@@ -2775,13 +2765,13 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                   >
                     <LinearGradient
                       colors={[
-                        "rgba(255, 255, 255, 0)",
-                        "rgba(186, 230, 253, 0.45)",
-                        "rgba(255, 255, 255, 0.95)",
-                        "rgba(186, 230, 253, 0.45)",
-                        "rgba(255, 255, 255, 0)",
+                        "rgba(186, 230, 253, 0)",
+                        "rgba(186, 230, 253, 0.85)",
+                        "#7DD3FC",
+                        "rgba(186, 230, 253, 0.85)",
+                        "rgba(186, 230, 253, 0)",
                       ]}
-                      locations={[0, 0.3, 0.5, 0.7, 1]}
+                      locations={[0, 0.25, 0.5, 0.75, 1]}
                       style={{ width: "100%", height: "100%" }}
                     />
                   </Animated.View>
@@ -2796,7 +2786,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
                 >
                   <Text
                     style={{
-                      color: "#E0F2FE",
+                      color: "#FFFFFF",
                       fontSize: wordmarkSize,
                       fontWeight: "800",
                       letterSpacing: 1.5,
