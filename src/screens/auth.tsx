@@ -25,6 +25,7 @@ import AnimatedReanimated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withDelay,
   withRepeat,
   useReducedMotion,
   Easing as ReanimatedEasing,
@@ -2670,11 +2671,191 @@ try {
   MaskedView = null;
 }
 
+// ── Redesigned Brand-Aligned Welcome Action Button ───────────────────────────
+
+interface WelcomeActionButtonProps {
+  label: string;
+  variant: "primary" | "secondary";
+  onPress: () => void;
+  icon: (color: string) => React.ReactNode;
+  delayMs?: number;
+  reduceMotion?: boolean;
+}
+
+const WelcomeActionButton = memo(function WelcomeActionButton({
+  label,
+  variant,
+  onPress,
+  icon,
+  delayMs = 0,
+  reduceMotion = false,
+}: WelcomeActionButtonProps) {
+  const isPrimary = variant === "primary";
+  const pressScale = useSharedValue(1);
+  const pressOpacity = useSharedValue(1);
+
+  // Entrance animation (subtle fade-up with stagger)
+  const entranceOpacity = useSharedValue(reduceMotion ? 1 : 0);
+  const entranceTranslateY = useSharedValue(reduceMotion ? 0 : 16);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      entranceOpacity.value = 1;
+      entranceTranslateY.value = 0;
+      return;
+    }
+
+    entranceOpacity.value = withDelay(
+      delayMs,
+      withTiming(1, {
+        duration: 380,
+        easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
+      })
+    );
+    entranceTranslateY.value = withDelay(
+      delayMs,
+      withTiming(0, {
+        duration: 380,
+        easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
+      })
+    );
+  }, [reduceMotion, delayMs]);
+
+  const handlePressIn = useCallback(() => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+
+    pressScale.value = withTiming(0.97, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+    pressOpacity.value = withTiming(0.92, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    pressScale.value = withTiming(1, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+    pressOpacity.value = withTiming(1, {
+      duration: 150,
+      easing: ReanimatedEasing.out(ReanimatedEasing.ease),
+    });
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: entranceOpacity.value * pressOpacity.value,
+    transform: [
+      { translateY: entranceTranslateY.value },
+      { scale: pressScale.value },
+    ],
+  }));
+
+  const iconColor = isPrimary ? "#FFFFFF" : "#1D4ED8";
+  const circleBg = isPrimary ? "rgba(255, 255, 255, 0.15)" : "rgba(29, 78, 216, 0.10)";
+
+  return (
+    <AnimatedReanimated.View style={[{ width: "100%" }, animatedStyle]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        style={{
+          width: "100%",
+          minHeight: 56,
+          height: 56,
+          borderRadius: 16,
+          backgroundColor: isPrimary ? "transparent" : "#F1F6FF",
+          borderWidth: isPrimary ? 0 : 1.5,
+          borderColor: isPrimary ? "transparent" : "#BFD4F6",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          overflow: "visible",
+          // Soft shadow for primary button
+          ...(isPrimary
+            ? {
+                shadowColor: "#1D4ED8",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.25,
+                shadowRadius: 16,
+                elevation: 5,
+              }
+            : {}),
+        }}
+      >
+        {isPrimary && (
+          <LinearGradient
+            colors={["#0C2A6B", "#1D4ED8"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[
+              StyleSheet.absoluteFill,
+              { borderRadius: 16 },
+            ]}
+          />
+        )}
+
+        {/* Left: Icon inside 36px circle + Label */}
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: circleBg,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {icon(iconColor)}
+          </View>
+          <Text
+            style={{
+              marginLeft: 14,
+              color: isPrimary ? "#FFFFFF" : "#0C2A6B",
+              fontSize: 16,
+              fontWeight: "600",
+              fontFamily: "Outfit",
+              letterSpacing: 0.2,
+            }}
+          >
+            {label}
+          </Text>
+        </View>
+
+        {/* Right: Arrow inside 36px circle */}
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: circleBg,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ArrowRightIcon color={iconColor} size={18} />
+        </View>
+      </Pressable>
+    </AnimatedReanimated.View>
+  );
+});
+
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
 export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+  const systemReducedMotion = typeof useReducedMotion === "function" ? useReducedMotion() : false;
+  const reduceMotion = Boolean(systemReducedMotion);
 
   // Responsive calculations
   const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
@@ -3210,113 +3391,92 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
             backgroundColor: "#FFFFFF",
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
-            paddingTop: 28,
-            paddingHorizontal: 24,
+            paddingTop: 12,
+            paddingHorizontal: Math.max(20, Math.round(width * 0.06)),
             paddingBottom: Math.max(insets.bottom, 20) + 8,
-            shadowColor: "#000",
+            shadowColor: "#051336",
             shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.08,
+            shadowOpacity: 0.06,
             shadowRadius: 16,
             elevation: 8,
+            alignItems: "center",
           },
           sheetAnimatedStyle,
         ]}
       >
-        {/* Primary: Sign In Button */}
-        <TouchableOpacity
-          onPress={() => openAuthModal("signin")}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Sign In"
-          style={{
-            width: "100%",
-            height: 54,
-            borderRadius: 16,
-            backgroundColor: "#1E4FD8",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 20,
-            shadowColor: "#1E4FD8",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.28,
-            shadowRadius: 8,
-            elevation: 4,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <PersonIcon color="#FFFFFF" size={20} />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: "#FFFFFF",
-                fontSize: 16,
-                fontWeight: "600",
-                fontFamily: "Outfit",
-              }}
-            >
-              Sign In
-            </Text>
-          </View>
-          <ArrowRightIcon color="#FFFFFF" size={20} />
-        </TouchableOpacity>
-
-        {/* Secondary: Create Account Button */}
-        <TouchableOpacity
-          onPress={() => openAuthModal("create_account")}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Create Account"
-          style={{
-            width: "100%",
-            height: 54,
-            borderRadius: 16,
-            backgroundColor: "#FFFFFF",
-            borderWidth: 1.5,
-            borderColor: "#1E4FD8",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 20,
-            marginTop: 14,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <PencilIcon color="#1E4FD8" size={20} />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: "#1E4FD8",
-                fontSize: 16,
-                fontWeight: "600",
-                fontFamily: "Outfit",
-              }}
-            >
-              Create Account
-            </Text>
-          </View>
-          <ArrowRightIcon color="#1E4FD8" size={20} />
-        </TouchableOpacity>
-
-        {/* Footer */}
+        {/* Centered Handle Bar (40x4px, #CBD5E1) */}
         <View
           style={{
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 20,
+            width: 40,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: "#CBD5E1",
+            marginBottom: 20,
+            alignSelf: "center",
+          }}
+        />
+
+        {/* Inner Content Container: Responsive Max Width ~480px on iPad / Tablets */}
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 480,
+            alignSelf: "center",
           }}
         >
-          <Text
+          {/* Primary: Sign In Button (56px, gradient #0C2A6B -> #1D4ED8, soft shadow) */}
+          <WelcomeActionButton
+            label="Sign In"
+            variant="primary"
+            onPress={() => openAuthModal("signin")}
+            delayMs={0}
+            reduceMotion={reduceMotion}
+            icon={(color) => <PersonIcon color={color} size={20} />}
+          />
+
+          <View style={{ height: 13 }} />
+
+          {/* Secondary: Create Account Button (56px, fill #F1F6FF, border #BFD4F6, text/icon #0C2A6B) */}
+          <WelcomeActionButton
+            label="Create Account"
+            variant="secondary"
+            onPress={() => openAuthModal("create_account")}
+            delayMs={80}
+            reduceMotion={reduceMotion}
+            icon={(color) => <PencilIcon color={color} size={20} />}
+          />
+
+          {/* Thin Divider (#E2E8F0) */}
+          <View
             style={{
-              fontSize: 13,
-              color: "#64748B",
-              fontWeight: "500",
-              fontFamily: "Outfit",
-              textAlign: "center",
+              height: 1,
+              backgroundColor: "#E2E8F0",
+              width: "100%",
+              marginTop: 20,
+              marginBottom: 14,
+            }}
+          />
+
+          {/* Footer: University of the Assumption */}
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            University of the Assumption
-          </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: "#64748B",
+                fontWeight: "500",
+                fontFamily: "Outfit",
+                textAlign: "center",
+                letterSpacing: 0.2,
+              }}
+            >
+              University of the Assumption
+            </Text>
+          </View>
         </View>
       </AnimatedReanimated.View>
 
