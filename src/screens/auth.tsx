@@ -248,6 +248,8 @@ interface GlassInputProps {
   onSubmitEditing?: () => void;
   blurOnSubmit?: boolean;
   maxLength?: number;
+  multiline?: boolean;
+  numberOfLines?: number;
 }
 
 const GlassInput = memo(
@@ -267,6 +269,8 @@ const GlassInput = memo(
       onSubmitEditing,
       blurOnSubmit = false,
       maxLength,
+      multiline = false,
+      numberOfLines,
     },
     ref
   ) {
@@ -292,16 +296,18 @@ const GlassInput = memo(
         <View
           style={{
             flexDirection: "row",
-            alignItems: "center",
-            height: 48,
+            alignItems: multiline ? "flex-start" : "center",
+            height: multiline ? undefined : 48,
+            minHeight: multiline ? 72 : undefined,
             borderRadius: 12,
             backgroundColor: "rgba(255, 255, 255, 0.18)",
             borderWidth: 1.5,
             borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
             paddingHorizontal: 14,
+            paddingVertical: multiline ? 10 : 0,
           }}
         >
-          {icon ? <View style={{ marginRight: 10 }} pointerEvents="none">{icon}</View> : null}
+          {icon ? <View style={{ marginRight: 10, marginTop: multiline ? 2 : 0 }} pointerEvents="none">{icon}</View> : null}
           <TextInput
             ref={ref}
             value={value}
@@ -315,6 +321,9 @@ const GlassInput = memo(
             onSubmitEditing={onSubmitEditing}
             blurOnSubmit={blurOnSubmit}
             maxLength={maxLength}
+            multiline={multiline}
+            numberOfLines={numberOfLines}
+            textAlignVertical={multiline ? "top" : "center"}
             editable={true}
             style={{
               flex: 1,
@@ -322,7 +331,8 @@ const GlassInput = memo(
               fontSize: 14,
               fontFamily: "Outfit",
               paddingVertical: 0,
-              height: "100%",
+              height: multiline ? undefined : "100%",
+              minHeight: multiline ? 52 : undefined,
             }}
           />
           {showPasswordToggle ? (
@@ -484,6 +494,117 @@ function GlassDatePickerField({
         </Modal>
       )}
     </View>
+  );
+}
+
+const GRADE_LEVELS: Record<"Elementary" | "Junior High School" | "Senior High School", string[]> = {
+  Elementary: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"],
+  "Junior High School": ["Grade 7", "Grade 8", "Grade 9", "Grade 10"],
+  "Senior High School": ["Grade 11", "Grade 12"],
+};
+
+const STUDENT_CATEGORIES = [
+  "Elementary",
+  "Junior High School",
+  "Senior High School",
+  "College",
+];
+
+const YEAR_LEVELS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Graduate"];
+
+function formatPHPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+}
+
+function isValidPHPhone(num: string): boolean {
+  const digits = num.replace(/\D/g, "");
+  return /^09\d{9}$/.test(digits);
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+function GlassSelectionModal({
+  visible,
+  title,
+  options,
+  selected,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  options: string[];
+  selected: string;
+  onSelect: (opt: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.70)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 380,
+            maxHeight: "80%",
+            borderRadius: 24,
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.30)",
+            backgroundColor: "rgba(10, 24, 58, 0.96)",
+            padding: 20,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: 0.4,
+            shadowRadius: 24,
+            elevation: 12,
+          }}
+          onStartShouldSetResponder={() => true}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.15)", marginBottom: 10 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "700", fontFamily: "Outfit" }}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={{ backgroundColor: "rgba(255, 255, 255, 0.15)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Outfit" }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {options.map((opt) => {
+              const isSel = selected === opt;
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  onPress={() => {
+                    onSelect(opt);
+                    onClose();
+                  }}
+                  activeOpacity={0.7}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 12,
+                    paddingHorizontal: 14,
+                    borderRadius: 12,
+                    backgroundColor: isSel ? "rgba(30, 79, 216, 0.4)" : "rgba(255, 255, 255, 0.08)",
+                    borderWidth: 1,
+                    borderColor: isSel ? "#60A5FA" : "rgba(255, 255, 255, 0.12)",
+                    marginVertical: 3,
+                  }}
+                >
+                  <Text style={{ color: isSel ? "#60A5FA" : "#FFFFFF", fontSize: 14, fontWeight: isSel ? "700" : "500", fontFamily: "Outfit" }}>
+                    {opt}
+                  </Text>
+                  {isSel && <CheckIcon color="#60A5FA" size={14} />}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 
@@ -889,84 +1010,55 @@ const AuthModal = memo(function AuthModal({
   const stepSlideAnim = useRef(new Animated.Value(0)).current;
 
   const [createForm, setCreateForm] = useState({
-    // Step 1: Account
-    fullName: "",
-    idNumber: "",
+    // Step 1: Category Selection
+    category: "" as "" | "Student" | "Employee" | "Outsider",
+    // Step 2: Account
     email: "",
-    username: "",
     password: "",
     confirmPassword: "",
-    // Step 2: Personal Info
-    firstName: "",
-    lastName: "",
-    contact: "",
+    // Step 3: Basic Info
+    fullName: "",
     dob: "",
     sex: "",
-    // Step 3: Address & Emergency Contact
-    regionCode: "03",
-    provinceCode: "0354",
-    cityCode: "035416",
-    barangay: "Dolores",
-    street: "",
-    address: "",
+    contact: "",
     emergencyName: "",
     emergencyPhone: "",
-    // Step 4: Avatar
-    avatarId: "",
-    displayName: "",
+    // Step 4: Category Specific
+    studentId: "",
+    studentCategory: "" as "" | "Elementary" | "Junior High School" | "Senior High School" | "College",
+    gradeLevel: "",
+    guardianName: "",
+    course: "",
+    yearLevel: "",
+    employeeId: "",
+    position: "",
+    department: "",
+    address: "",
   });
 
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
   const [regGeneralError, setRegGeneralError] = useState("");
 
-  // Location modal selector state
-  const [locationModalType, setLocationModalType] = useState<"region" | "province" | "city" | "barangay" | null>(null);
-
-  // Active items derived from PSGC
-  const currentRegion = useMemo(() => {
-    return PH_REGIONS.find((r: any) => r.region_code === createForm.regionCode) || PH_REGIONS[0];
-  }, [createForm.regionCode]);
-
-  const availableProvinces = useMemo(() => {
-    return getProvincesByRegion(createForm.regionCode);
-  }, [createForm.regionCode]);
-
-  const currentProvince = useMemo(() => {
-    return availableProvinces.find((p: any) => p.province_code === createForm.provinceCode) || availableProvinces[0];
-  }, [availableProvinces, createForm.provinceCode]);
-
-  const availableCities = useMemo(() => {
-    return getCitiesByProvince(createForm.provinceCode);
-  }, [createForm.provinceCode]);
-
-  const currentCity = useMemo(() => {
-    return availableCities.find((c: any) => c.city_code === createForm.cityCode) || availableCities[0];
-  }, [availableCities, createForm.cityCode]);
-
-  const availableBarangays = useMemo(() => {
-    return getBarangaysByCity(createForm.cityCode);
-  }, [createForm.cityCode]);
-
-  // Sync address preview string whenever location components change
-  useEffect(() => {
-    const parts: string[] = [];
-    if (createForm.street.trim()) parts.push(createForm.street.trim());
-    if (createForm.barangay.trim()) parts.push(`Brgy. ${createForm.barangay.trim()}`);
-    if (currentCity?.city_name) parts.push(currentCity.city_name);
-    if (currentProvince?.province_name) parts.push(currentProvince.province_name);
-    if (currentRegion?.region_name) parts.push(currentRegion.region_name);
-    const full = parts.join(", ");
-    setCreateForm((f) => ({ ...f, address: full }));
-  }, [createForm.street, createForm.barangay, currentCity, currentProvince, currentRegion]);
+  // Category select modals (Student Classification, Grade Level, Year Level)
+  const [selectModalType, setSelectModalType] = useState<"studentCategory" | "gradeLevel" | "yearLevel" | null>(null);
 
   // Input refs for keyboard navigation
   const signInPasswordRef = useRef<TextInput>(null);
-  const idNumberRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
-  const usernameRef = useRef<TextInput>(null);
   const regPasswordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
+  const fullNameRef = useRef<TextInput>(null);
+  const contactRef = useRef<TextInput>(null);
+  const emergencyNameRef = useRef<TextInput>(null);
+  const emergencyPhoneRef = useRef<TextInput>(null);
+  const studentIdRef = useRef<TextInput>(null);
+  const courseRef = useRef<TextInput>(null);
+  const guardianNameRef = useRef<TextInput>(null);
+  const employeeIdRef = useRef<TextInput>(null);
+  const positionRef = useRef<TextInput>(null);
+  const departmentRef = useRef<TextInput>(null);
+  const addressRef = useRef<TextInput>(null);
 
   const triggerHaptic = useCallback(() => {
     try {
@@ -1078,23 +1170,40 @@ const AuthModal = memo(function AuthModal({
     }
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
-  // Step 1 Validation & Next
+  // Step 1 Validation & Next: Category Selection
   const handleStep1Next = useCallback(() => {
     const errs: Record<string, string> = {};
-    if (!createForm.fullName.trim()) errs.fullName = "Full name is required";
-    if (!createForm.idNumber.trim()) errs.idNumber = "Student / Employee ID is required";
-    if (!createForm.email.trim()) {
-      errs.email = "Email address is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email.trim())) {
-      errs.email = "Enter a valid email address";
+    if (!createForm.category) {
+      errs.category = "Please select a patient category to proceed";
     }
-    if (!createForm.username.trim()) errs.username = "Username is required";
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+
+    goToCreateStep(2, "next");
+  }, [createForm.category, goToCreateStep]);
+
+  // Step 2 Validation & Next: Account Credentials
+  const handleStep2Next = useCallback(() => {
+    const errs: Record<string, string> = {};
+    const trimmedEmail = createForm.email.trim();
+    if (!trimmedEmail) {
+      errs.email = "Email address is required";
+    } else if (!isValidEmail(trimmedEmail)) {
+      errs.email = "Please enter a valid email address";
+    }
+
     if (!createForm.password) {
       errs.password = "Password is required";
-    } else if (createForm.password.length < 8) {
-      errs.password = "At least 8 characters required";
+    } else if (createForm.password.length < 6) {
+      errs.password = "Password must be at least 6 characters";
     }
-    if (createForm.password !== createForm.confirmPassword) {
+
+    if (!createForm.confirmPassword) {
+      errs.confirmPassword = "Confirm password is required";
+    } else if (createForm.confirmPassword !== createForm.password) {
       errs.confirmPassword = "Passwords do not match";
     }
 
@@ -1103,56 +1212,47 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    // Auto-prefill first and last name from Full Name if empty
-    const parts = createForm.fullName.trim().split(/\s+/);
-    const autoFirst = parts[0] || "";
-    const autoLast = parts.slice(1).join(" ") || "";
-
-    setCreateForm((prev) => ({
-      ...prev,
-      firstName: prev.firstName || autoFirst,
-      lastName: prev.lastName || autoLast,
-    }));
-
-    goToCreateStep(2, "next");
-  }, [createForm, goToCreateStep]);
-
-  // Step 2 Validation & Next
-  const handleStep2Next = useCallback(() => {
-    const errs: Record<string, string> = {};
-    if (!createForm.firstName.trim()) errs.firstName = "First name is required";
-    if (!createForm.lastName.trim()) errs.lastName = "Last name is required";
-    const cleanedContact = createForm.contact.replace(/\D/g, "");
-    if (!cleanedContact) {
-      errs.contact = "Contact number is required";
-    } else if (!/^09\d{9}$/.test(cleanedContact)) {
-      errs.contact = "Must be valid PH mobile (09XXXXXXXXX)";
-    }
-    if (!createForm.dob) errs.dob = "Birthday is required";
-    if (!createForm.sex) errs.sex = "Please select sex";
-
-    if (Object.keys(errs).length > 0) {
-      setRegErrors(errs);
-      return;
-    }
-
     goToCreateStep(3, "next");
-  }, [createForm, goToCreateStep]);
+  }, [createForm.email, createForm.password, createForm.confirmPassword, goToCreateStep]);
 
-  // Step 3 Validation & Next
+  // Step 3 Validation & Next: Basic Information
   const handleStep3Next = useCallback(() => {
     const errs: Record<string, string> = {};
-    if (!createForm.street.trim() || createForm.street.trim().length < 2) {
-      errs.street = "Please enter House No. / Street / Village (min 2 chars)";
+    if (!createForm.fullName.trim()) {
+      errs.fullName = "Full name is required";
     }
+
+    if (!createForm.dob) {
+      errs.dob = "Birthday is required";
+    } else {
+      const bDate = new Date(createForm.dob);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (bDate > today) {
+        errs.dob = "Birthday cannot be in the future";
+      }
+    }
+
+    if (!createForm.sex) {
+      errs.sex = "Please select sex";
+    }
+
+    const contactDigits = createForm.contact.replace(/\D/g, "");
+    if (!contactDigits) {
+      errs.contact = "Contact number is required";
+    } else if (!isValidPHPhone(createForm.contact) && !/^09\d{9}$/.test(contactDigits)) {
+      errs.contact = "Must be valid PH mobile (09XX-XXX-XXXX)";
+    }
+
     if (!createForm.emergencyName.trim()) {
       errs.emergencyName = "Emergency contact name is required";
     }
-    const cleanedEm = createForm.emergencyPhone.replace(/\D/g, "");
-    if (!cleanedEm) {
+
+    const emDigits = createForm.emergencyPhone.replace(/\D/g, "");
+    if (!emDigits) {
       errs.emergencyPhone = "Emergency contact number is required";
-    } else if (!/^09\d{9}$/.test(cleanedEm)) {
-      errs.emergencyPhone = "Must be valid PH mobile (09XXXXXXXXX)";
+    } else if (!isValidPHPhone(createForm.emergencyPhone) && !/^09\d{9}$/.test(emDigits)) {
+      errs.emergencyPhone = "Must be valid PH mobile (09XX-XXX-XXXX)";
     }
 
     if (Object.keys(errs).length > 0) {
@@ -1160,20 +1260,35 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    // Auto-prefill display name if not yet set
-    setCreateForm((prev) => ({
-      ...prev,
-      displayName: prev.displayName || (prev.username || prev.firstName).toUpperCase(),
-    }));
-
     goToCreateStep(4, "next");
-  }, [createForm, goToCreateStep]);
+  }, [createForm.fullName, createForm.dob, createForm.sex, createForm.contact, createForm.emergencyName, createForm.emergencyPhone, goToCreateStep]);
 
-  // Step 4 Final Submit (Get Started)
+  // Step 4 Validation & Submit: Category-Specific Details
   const handleGetStarted = useCallback(async () => {
     const errs: Record<string, string> = {};
-    if (!createForm.avatarId) errs.avatar = "Please select an avatar";
-    if (!createForm.displayName.trim()) errs.displayName = "Display name is required";
+    const { category } = createForm;
+
+    if (category === "Student") {
+      if (!createForm.studentId.trim()) {
+        errs.studentId = "Student ID is required";
+      }
+      if (!createForm.studentCategory) {
+        errs.studentCategory = "Student classification is required";
+      }
+      if (createForm.studentCategory === "College") {
+        if (!createForm.course.trim()) errs.course = "Course / Program is required";
+        if (!createForm.yearLevel.trim()) errs.yearLevel = "Year Level is required";
+      } else if (createForm.studentCategory) {
+        if (!createForm.gradeLevel.trim()) errs.gradeLevel = "Grade level is required";
+        if (!createForm.guardianName.trim()) errs.guardianName = "Guardian name is required";
+      }
+    } else if (category === "Employee") {
+      if (!createForm.employeeId.trim()) errs.employeeId = "Employee ID is required";
+      if (!createForm.position.trim()) errs.position = "Position is required";
+      if (!createForm.department.trim()) errs.department = "Department is required";
+    } else if (category === "Outsider") {
+      if (!createForm.address.trim()) errs.address = "Home address is required";
+    }
 
     if (Object.keys(errs).length > 0) {
       setRegErrors(errs);
@@ -1185,25 +1300,21 @@ const AuthModal = memo(function AuthModal({
     setRegLoading(true);
 
     try {
-      const lowerEmail = createForm.email.trim().toLowerCase();
-      let role = "Outsider";
-      if (lowerEmail.endsWith(".student@ua.edu.ph")) {
-        role = "Student";
-      } else if (lowerEmail.endsWith("@ua.edu.ph")) {
-        role = "Employee";
-      }
+      const trimmedEmail = createForm.email.trim().toLowerCase();
+      const trimmedName = createForm.fullName.trim().toUpperCase();
+      const selectedId = category === "Student" ? createForm.studentId.trim() : category === "Employee" ? createForm.employeeId.trim() : "";
 
       // Step A: Register API call
       const regRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: createForm.email.trim(),
+          email: trimmedEmail,
           password: createForm.password,
-          username: createForm.username.trim(),
-          name: createForm.fullName.trim(),
-          id_number: createForm.idNumber.trim(),
-          role: role,
+          username: trimmedEmail,
+          name: trimmedName,
+          id_number: selectedId,
+          role: category,
         }),
       });
 
@@ -1212,9 +1323,9 @@ const AuthModal = memo(function AuthModal({
       try { regData = resText ? JSON.parse(resText) : {}; } catch {}
 
       if (!regRes.ok && !regData.access) {
-        const msg = regData.error || regData.detail || "Registration failed. Account may already exist.";
-        setRegGeneralError(msg);
-        showAlert("Registration Failed", msg);
+        const msg = regData.error || regData.detail || (typeof regData === "object" ? Object.values(regData)[0] : "Registration failed.");
+        setRegGeneralError(String(msg));
+        showAlert("Registration Failed", String(msg));
         setRegLoading(false);
         return;
       }
@@ -1234,18 +1345,34 @@ const AuthModal = memo(function AuthModal({
       }
 
       // Step B: Complete profile payload
-      const profilePayload = {
-        id: createForm.idNumber.trim(),
-        name: `${createForm.firstName} ${createForm.lastName}`.trim().toUpperCase() || createForm.fullName.trim().toUpperCase(),
-        category: role,
-        contact: createForm.contact.trim(),
+      const profilePayload: Record<string, any> = {
+        name: trimmedName,
+        category: category,
+        contact: createForm.contact.replace(/\D/g, ""),
         birthday: createForm.dob,
         age: Math.max(0, age),
         sex: createForm.sex,
         emergencyContact: createForm.emergencyName.trim().toUpperCase(),
-        emergencyPhone: createForm.emergencyPhone.trim(),
-        address: createForm.address.trim(),
+        emergencyPhone: createForm.emergencyPhone.replace(/\D/g, ""),
       };
+
+      if (category === "Student") {
+        profilePayload.id = createForm.studentId.trim();
+        profilePayload.studentCategory = createForm.studentCategory;
+        if (createForm.studentCategory === "College") {
+          profilePayload.course = createForm.course.trim();
+          profilePayload.yearLevel = createForm.yearLevel.trim();
+        } else {
+          profilePayload.gradeLevel = createForm.gradeLevel.trim();
+          profilePayload.guardianName = createForm.guardianName.trim().toUpperCase();
+        }
+      } else if (category === "Employee") {
+        profilePayload.id = createForm.employeeId.trim();
+        profilePayload.position = createForm.position.trim();
+        profilePayload.department = createForm.department.trim();
+      } else if (category === "Outsider") {
+        profilePayload.address = createForm.address.trim();
+      }
 
       if (token) {
         await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/complete-profile/`, {
@@ -1261,23 +1388,27 @@ const AuthModal = memo(function AuthModal({
       }
 
       // Step C: Build final AppUser object
-      const mascot = MASCOTS.find((m) => m.id === createForm.avatarId) || MASCOTS[0];
+      const assignedId = selectedId || regData.user?.id || `OUT-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
       const finalUser: any = {
-        id: createForm.idNumber.trim(),
-        id_number: createForm.idNumber.trim(),
-        name: profilePayload.name,
-        firstName: createForm.firstName.trim().toUpperCase(),
-        lastName: createForm.lastName.trim().toUpperCase(),
-        displayName: createForm.displayName.trim().toUpperCase(),
-        email: createForm.email.trim(),
+        id: assignedId,
+        id_number: assignedId,
+        name: trimmedName,
+        firstName: trimmedName.split(" ")[0] || "",
+        lastName: trimmedName.split(" ").slice(1).join(" ") || "",
+        displayName: trimmedName,
+        email: trimmedEmail,
         phone: createForm.contact.trim(),
         dob: createForm.dob,
         gender: createForm.sex,
-        category: role.toLowerCase() as PatientCategory,
-        avatarId: mascot.id,
-        avatarColor: mascot.color,
-        avatarEmoji: mascot.emoji,
-        address: createForm.address.trim(),
+        category: category.toLowerCase() as PatientCategory,
+        studentCategory: category === "Student" ? createForm.studentCategory : undefined,
+        gradeLevel: category === "Student" ? createForm.gradeLevel : undefined,
+        guardianName: category === "Student" ? createForm.guardianName.trim().toUpperCase() : undefined,
+        course: category === "Student" ? createForm.course.trim() : undefined,
+        yearLevel: category === "Student" ? createForm.yearLevel : undefined,
+        position: category === "Employee" ? createForm.position.trim() : undefined,
+        department: category === "Employee" ? createForm.department.trim() : undefined,
+        address: category === "Outsider" ? createForm.address.trim() : undefined,
         emergencyName: createForm.emergencyName.trim().toUpperCase(),
         emergencyPhone: createForm.emergencyPhone.trim(),
         accessToken: token,
@@ -1289,10 +1420,10 @@ const AuthModal = memo(function AuthModal({
       }
 
       onSuccessRegister(
-        createForm.email.trim(),
+        trimmedEmail,
         finalUser.displayName,
         token,
-        createForm.idNumber.trim(),
+        assignedId,
         finalUser.name,
         finalUser
       );
@@ -1559,11 +1690,7 @@ const AuthModal = memo(function AuthModal({
                       </Text>
                       <TouchableOpacity
                         onPress={() => {
-                          if (onNavigateToRegister) {
-                            onNavigateToRegister();
-                          } else {
-                            switchAuthMode("create_account");
-                          }
+                          switchAuthMode("create_account");
                         }}
                         activeOpacity={0.7}
                       >
@@ -1604,7 +1731,7 @@ const AuthModal = memo(function AuthModal({
                       </View>
                     ) : null}
 
-                    {/* Step 1: Account */}
+                    {/* Step 1: Patient Category */}
                     {createStep === 1 && (
                       <Animated.View
                         style={{
@@ -1615,105 +1742,88 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={1}
                           total={4}
-                          title="Create Account"
-                          subtitle="Step 1 of 4 • Account credentials"
+                          title="Patient Category"
+                          subtitle="Select your classification"
                         />
 
-                        <GlassInput
-                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Full Name (e.g. Juan Dela Cruz)"
-                          value={createForm.fullName}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, fullName: t }));
-                            if (regErrors.fullName) setRegErrors((e) => ({ ...e, fullName: "" }));
-                          }}
-                          autoCapitalize="words"
-                          returnKeyType="next"
-                          onSubmitEditing={() => idNumberRef.current?.focus()}
-                          blurOnSubmit={false}
-                          error={regErrors.fullName}
-                        />
-
-                        <GlassInput
-                          ref={idNumberRef}
-                          icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Student / Employee ID"
-                          value={createForm.idNumber}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, idNumber: t }));
-                            if (regErrors.idNumber) setRegErrors((e) => ({ ...e, idNumber: "" }));
-                          }}
-                          returnKeyType="next"
-                          onSubmitEditing={() => emailRef.current?.focus()}
-                          blurOnSubmit={false}
-                          error={regErrors.idNumber}
-                        />
-
-                        <GlassInput
-                          ref={emailRef}
-                          icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Email address"
-                          value={createForm.email}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, email: t }));
-                            if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
-                          }}
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                          returnKeyType="next"
-                          onSubmitEditing={() => usernameRef.current?.focus()}
-                          blurOnSubmit={false}
-                          error={regErrors.email}
-                        />
-
-                        <GlassInput
-                          ref={usernameRef}
-                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Username"
-                          value={createForm.username}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, username: t }));
-                            if (regErrors.username) setRegErrors((e) => ({ ...e, username: "" }));
-                          }}
-                          autoCapitalize="none"
-                          returnKeyType="next"
-                          onSubmitEditing={() => regPasswordRef.current?.focus()}
-                          blurOnSubmit={false}
-                          error={regErrors.username}
-                        />
-
-                        <GlassInput
-                          ref={regPasswordRef}
-                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Password (min 8 characters)"
-                          value={createForm.password}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, password: t }));
-                            if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
-                          }}
-                          secureTextEntry
-                          showPasswordToggle
-                          returnKeyType="next"
-                          onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                          blurOnSubmit={false}
-                          error={regErrors.password}
-                        />
-
-                        <GlassInput
-                          ref={confirmPasswordRef}
-                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Confirm Password"
-                          value={createForm.confirmPassword}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, confirmPassword: t }));
-                            if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
-                          }}
-                          secureTextEntry
-                          showPasswordToggle
-                          returnKeyType="done"
-                          onSubmitEditing={handleStep1Next}
-                          error={regErrors.confirmPassword}
-                        />
+                        <View style={{ marginBottom: 12 }}>
+                          {[
+                            {
+                              key: "Student",
+                              title: "Student",
+                              desc: "Enrolled student at University of the Assumption",
+                              icon: "🎓",
+                            },
+                            {
+                              key: "Employee",
+                              title: "Employee",
+                              desc: "Faculty, academic personnel, or admin staff",
+                              icon: "💼",
+                            },
+                            {
+                              key: "Outsider",
+                              title: "Outsider",
+                              desc: "External guest, visitor, or non-university patient",
+                              icon: "🌐",
+                            },
+                          ].map((item) => {
+                            const isSelected = createForm.category === item.key;
+                            return (
+                              <TouchableOpacity
+                                key={item.key}
+                                onPress={() => {
+                                  triggerHaptic();
+                                  setCreateForm((f) => ({ ...f, category: item.key as any }));
+                                  if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
+                                }}
+                                activeOpacity={0.8}
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  padding: 14,
+                                  borderRadius: 14,
+                                  backgroundColor: isSelected ? "rgba(30, 79, 216, 0.40)" : "rgba(255, 255, 255, 0.12)",
+                                  borderWidth: 1.5,
+                                  borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.22)",
+                                  marginBottom: 10,
+                                  shadowColor: isSelected ? "#1E4FD8" : "transparent",
+                                  shadowOffset: { width: 0, height: 2 },
+                                  shadowOpacity: isSelected ? 0.35 : 0,
+                                  shadowRadius: 6,
+                                }}
+                              >
+                                <Text style={{ fontSize: 26, marginRight: 14 }}>{item.icon}</Text>
+                                <View style={{ flex: 1, paddingRight: 8 }}>
+                                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700", fontFamily: "Outfit" }}>
+                                    {item.title}
+                                  </Text>
+                                  <Text style={{ color: "rgba(255, 255, 255, 0.72)", fontSize: 12, fontFamily: "Outfit", marginTop: 2 }}>
+                                    {item.desc}
+                                  </Text>
+                                </View>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: 11,
+                                    borderWidth: 2,
+                                    borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.4)",
+                                    backgroundColor: isSelected ? "#1E4FD8" : "transparent",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  {isSelected ? <CheckIcon color="#FFFFFF" size={12} /> : null}
+                                </View>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                        {regErrors.category ? (
+                          <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginBottom: 10, marginLeft: 4 }}>
+                            {regErrors.category}
+                          </Text>
+                        ) : null}
 
                         <TouchableOpacity
                           onPress={handleStep1Next}
@@ -1725,7 +1835,7 @@ const AuthModal = memo(function AuthModal({
                             backgroundColor: "#1E4FD8",
                             alignItems: "center",
                             justifyContent: "center",
-                            marginTop: 8,
+                            marginTop: 6,
                             shadowColor: "#1E4FD8",
                             shadowOffset: { width: 0, height: 4 },
                             shadowOpacity: 0.35,
@@ -1787,7 +1897,7 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 2: Personal Info */}
+                    {/* Step 2: Account Credentials */}
                     {createStep === 2 && (
                       <Animated.View
                         style={{
@@ -1798,72 +1908,59 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={2}
                           total={4}
-                          title="Personal Info"
-                          subtitle="Step 2 of 4 • Tell us about yourself"
+                          title="Account Setup"
+                          subtitle="Enter your email and password"
                           onBack={() => goToCreateStep(1, "back")}
                         />
 
-                        <View style={{ flexDirection: "row", gap: 10 }}>
-                          <View style={{ flex: 1 }}>
-                            <GlassInput
-                              label="First Name"
-                              placeholder="JUAN"
-                              value={createForm.firstName}
-                              autoCapitalize="characters"
-                              onChangeText={(t) => {
-                                setCreateForm((f) => ({ ...f, firstName: t.toUpperCase() }));
-                                if (regErrors.firstName) setRegErrors((e) => ({ ...e, firstName: "" }));
-                              }}
-                              error={regErrors.firstName}
-                            />
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <GlassInput
-                              label="Last Name"
-                              placeholder="DELA CRUZ"
-                              value={createForm.lastName}
-                              autoCapitalize="characters"
-                              onChangeText={(t) => {
-                                setCreateForm((f) => ({ ...f, lastName: t.toUpperCase() }));
-                                if (regErrors.lastName) setRegErrors((e) => ({ ...e, lastName: "" }));
-                              }}
-                              error={regErrors.lastName}
-                            />
-                          </View>
-                        </View>
+                        <GlassInput
+                          ref={emailRef}
+                          icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Email address (e.g. name@ua.edu.ph)"
+                          value={createForm.email}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, email: t }));
+                            if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
+                          }}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          returnKeyType="next"
+                          onSubmitEditing={() => regPasswordRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.email}
+                        />
 
                         <GlassInput
-                          label="Contact Number"
-                          icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="09XXXXXXXXX"
-                          value={createForm.contact}
-                          keyboardType="phone-pad"
-                          maxLength={11}
+                          ref={regPasswordRef}
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Password (min 6 characters)"
+                          value={createForm.password}
                           onChangeText={(t) => {
-                            const num = t.replace(/\D/g, "");
-                            setCreateForm((f) => ({ ...f, contact: num }));
-                            if (regErrors.contact) setRegErrors((e) => ({ ...e, contact: "" }));
+                            setCreateForm((f) => ({ ...f, password: t }));
+                            if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
                           }}
-                          error={regErrors.contact}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="next"
+                          onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.password}
                         />
 
-                        <GlassDatePickerField
-                          label="Birthday"
-                          value={createForm.dob}
-                          onChange={(d) => {
-                            setCreateForm((f) => ({ ...f, dob: d }));
-                            if (regErrors.dob) setRegErrors((e) => ({ ...e, dob: "" }));
+                        <GlassInput
+                          ref={confirmPasswordRef}
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Confirm Password"
+                          value={createForm.confirmPassword}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, confirmPassword: t }));
+                            if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
                           }}
-                          error={regErrors.dob}
-                        />
-
-                        <GlassSexChips
-                          value={createForm.sex}
-                          onChange={(val) => {
-                            setCreateForm((f) => ({ ...f, sex: val }));
-                            if (regErrors.sex) setRegErrors((e) => ({ ...e, sex: "" }));
-                          }}
-                          error={regErrors.sex}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="done"
+                          onSubmitEditing={handleStep2Next}
+                          error={regErrors.confirmPassword}
                         />
 
                         <TouchableOpacity
@@ -1876,7 +1973,7 @@ const AuthModal = memo(function AuthModal({
                             backgroundColor: "#1E4FD8",
                             alignItems: "center",
                             justifyContent: "center",
-                            marginTop: 10,
+                            marginTop: 8,
                             shadowColor: "#1E4FD8",
                             shadowOffset: { width: 0, height: 4 },
                             shadowOpacity: 0.35,
@@ -1899,7 +1996,7 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 3: Address & Emergency Contact */}
+                    {/* Step 3: Basic Information */}
                     {createStep === 3 && (
                       <Animated.View
                         style={{
@@ -1910,78 +2007,65 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={3}
                           total={4}
-                          title="Address & Emergency"
-                          subtitle="Step 3 of 4 • Cascading PSGC & emergency"
+                          title="Basic Information"
+                          subtitle="Personal and emergency details"
                           onBack={() => goToCreateStep(2, "back")}
                         />
 
-                        <GlassSelectRow
-                          label="Region"
-                          value={currentRegion?.region_name || "Select Region"}
-                          placeholder="Select Region"
-                          onPress={() => setLocationModalType("region")}
-                        />
-
-                        <GlassSelectRow
-                          label="Province"
-                          value={currentProvince?.province_name || "Select Province"}
-                          placeholder="Select Province"
-                          onPress={() => setLocationModalType("province")}
-                        />
-
-                        <GlassSelectRow
-                          label="City / Municipality"
-                          value={currentCity?.city_name || "Select City / Municipality"}
-                          placeholder="Select City / Municipality"
-                          onPress={() => setLocationModalType("city")}
-                        />
-
-                        <GlassSelectRow
-                          label="Barangay"
-                          value={createForm.barangay || "Select Barangay"}
-                          placeholder="Select Barangay"
-                          onPress={() => setLocationModalType("barangay")}
-                        />
-
                         <GlassInput
-                          label="House No. / Street / Village"
-                          icon={<MapPinIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="e.g. 123 MacArthur Hwy, Villa Angela"
-                          value={createForm.street}
+                          ref={fullNameRef}
+                          label="Full Name"
+                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="JUAN DELA CRUZ"
+                          value={createForm.fullName}
+                          autoCapitalize="characters"
                           onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, street: t }));
-                            if (regErrors.street) setRegErrors((e) => ({ ...e, street: "" }));
+                            setCreateForm((f) => ({ ...f, fullName: t.toUpperCase() }));
+                            if (regErrors.fullName) setRegErrors((e) => ({ ...e, fullName: "" }));
                           }}
-                          error={regErrors.street}
+                          error={regErrors.fullName}
                         />
 
-                        {/* Live Address Preview Card */}
-                        <View
-                          style={{
-                            marginTop: 2,
-                            marginBottom: 14,
-                            padding: 12,
-                            borderRadius: 14,
-                            backgroundColor: "rgba(255, 255, 255, 0.10)",
-                            borderWidth: 1,
-                            borderColor: "rgba(255, 255, 255, 0.18)",
+                        <GlassDatePickerField
+                          label="Birthday"
+                          value={createForm.dob}
+                          onChange={(d) => {
+                            setCreateForm((f) => ({ ...f, dob: d }));
+                            if (regErrors.dob) setRegErrors((e) => ({ ...e, dob: "" }));
                           }}
-                        >
-                          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                            <MapPinIcon color="#38BDF8" size={14} />
-                            <Text style={{ color: "#38BDF8", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6, fontFamily: "Outfit", marginLeft: 6 }}>
-                              Address Preview
-                            </Text>
-                          </View>
-                          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "500", fontFamily: "Outfit", lineHeight: 18 }}>
-                            {createForm.address || "Please select location and enter street"}
-                          </Text>
-                        </View>
+                          error={regErrors.dob}
+                        />
+
+                        <GlassSexChips
+                          value={createForm.sex}
+                          onChange={(val) => {
+                            setCreateForm((f) => ({ ...f, sex: val }));
+                            if (regErrors.sex) setRegErrors((e) => ({ ...e, sex: "" }));
+                          }}
+                          error={regErrors.sex}
+                        />
 
                         <GlassInput
+                          ref={contactRef}
+                          label="Contact Number"
+                          icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="09XX-XXX-XXXX"
+                          value={createForm.contact}
+                          keyboardType="phone-pad"
+                          maxLength={13}
+                          onChangeText={(t) => {
+                            const formatted = formatPHPhone(t);
+                            setCreateForm((f) => ({ ...f, contact: formatted }));
+                            if (regErrors.contact) setRegErrors((e) => ({ ...e, contact: "" }));
+                          }}
+                          error={regErrors.contact}
+                        />
+
+                        <GlassInput
+                          ref={emergencyNameRef}
                           label="Emergency Contact Name"
                           icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="NAME"
+                          placeholder="MARIA DELA CRUZ"
                           value={createForm.emergencyName}
                           autoCapitalize="characters"
                           onChangeText={(t) => {
@@ -1992,15 +2076,16 @@ const AuthModal = memo(function AuthModal({
                         />
 
                         <GlassInput
-                          label="Emergency Contact No."
+                          ref={emergencyPhoneRef}
+                          label="Emergency Contact Number"
                           icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="09XXXXXXXXX"
+                          placeholder="09XX-XXX-XXXX"
                           value={createForm.emergencyPhone}
                           keyboardType="phone-pad"
-                          maxLength={11}
+                          maxLength={13}
                           onChangeText={(t) => {
-                            const num = t.replace(/\D/g, "");
-                            setCreateForm((f) => ({ ...f, emergencyPhone: num }));
+                            const formatted = formatPHPhone(t);
+                            setCreateForm((f) => ({ ...f, emergencyPhone: formatted }));
                             if (regErrors.emergencyPhone) setRegErrors((e) => ({ ...e, emergencyPhone: "" }));
                           }}
                           error={regErrors.emergencyPhone}
@@ -2039,7 +2124,7 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 4: Choose Avatar */}
+                    {/* Step 4: Category-Specific Details */}
                     {createStep === 4 && (
                       <Animated.View
                         style={{
@@ -2050,90 +2135,150 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={4}
                           total={4}
-                          title="Choose Avatar"
-                          subtitle="Step 4 of 4 • Select your companion"
+                          title="Category Details"
+                          subtitle="Complete your specific requirements"
                           onBack={() => goToCreateStep(3, "back")}
                         />
 
-                        <Text
-                          style={{
-                            color: "rgba(255, 255, 255, 0.75)",
-                            fontSize: 11.5,
-                            fontWeight: "700",
-                            textTransform: "uppercase",
-                            letterSpacing: 0.6,
-                            fontFamily: "Outfit",
-                            marginBottom: 10,
-                          }}
-                        >
-                          Select Companion
-                        </Text>
+                        {/* Student Fields */}
+                        {createForm.category === "Student" && (
+                          <View>
+                            <GlassInput
+                              ref={studentIdRef}
+                              label="Student ID"
+                              icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="e.g. 2024-00123"
+                              value={createForm.studentId}
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, studentId: t }));
+                                if (regErrors.studentId) setRegErrors((e) => ({ ...e, studentId: "" }));
+                              }}
+                              error={regErrors.studentId}
+                            />
 
-                        {/* 8 Avatar Grid */}
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 10, marginBottom: 16 }}>
-                          {MASCOTS.map((m) => {
-                            const isSel = createForm.avatarId === m.id;
-                            return (
-                              <TouchableOpacity
-                                key={m.id}
-                                onPress={() => {
-                                  triggerHaptic();
-                                  setCreateForm((f) => ({ ...f, avatarId: m.id }));
-                                  if (regErrors.avatar) setRegErrors((e) => ({ ...e, avatar: "" }));
-                                }}
-                                activeOpacity={0.8}
-                                style={{
-                                  width: "22%",
-                                  aspectRatio: 1,
-                                  borderRadius: 16,
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  backgroundColor: isSel ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.10)",
-                                  borderWidth: 2,
-                                  borderColor: isSel ? (m.color || "#38BDF8") : "rgba(255, 255, 255, 0.20)",
-                                  transform: [{ scale: isSel ? 1.06 : 1 }],
-                                  shadowColor: isSel ? m.color : "transparent",
-                                  shadowOffset: { width: 0, height: 4 },
-                                  shadowOpacity: isSel ? 0.45 : 0,
-                                  shadowRadius: 8,
-                                  elevation: isSel ? 4 : 0,
-                                }}
-                              >
-                                <Text style={{ fontSize: 28 }}>{m.emoji}</Text>
-                                <Text
-                                  style={{
-                                    fontSize: 9.5,
-                                    color: isSel ? "#FFFFFF" : "rgba(255, 255, 255, 0.7)",
-                                    fontWeight: isSel ? "700" : "500",
-                                    fontFamily: "Outfit",
-                                    marginTop: 2,
+                            <GlassSelectRow
+                              label="Student Classification"
+                              value={createForm.studentCategory}
+                              placeholder="Select Classification"
+                              onPress={() => setSelectModalType("studentCategory")}
+                              error={regErrors.studentCategory}
+                            />
+
+                            {createForm.studentCategory === "College" && (
+                              <View>
+                                <GlassInput
+                                  ref={courseRef}
+                                  label="Course / Program"
+                                  placeholder="e.g. BS Information Technology"
+                                  value={createForm.course}
+                                  onChangeText={(t) => {
+                                    setCreateForm((f) => ({ ...f, course: t }));
+                                    if (regErrors.course) setRegErrors((e) => ({ ...e, course: "" }));
                                   }}
-                                  numberOfLines={1}
-                                >
-                                  {m.name}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
-                        {regErrors.avatar ? (
-                          <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginBottom: 10, marginLeft: 4 }}>
-                            {regErrors.avatar}
-                          </Text>
-                        ) : null}
+                                  error={regErrors.course}
+                                />
 
-                        <GlassInput
-                          label="Display Name"
-                          icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="What should we call you?"
-                          value={createForm.displayName}
-                          autoCapitalize="characters"
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, displayName: t.toUpperCase() }));
-                            if (regErrors.displayName) setRegErrors((e) => ({ ...e, displayName: "" }));
-                          }}
-                          error={regErrors.displayName}
-                        />
+                                <GlassSelectRow
+                                  label="Year Level"
+                                  value={createForm.yearLevel}
+                                  placeholder="Select Year Level"
+                                  onPress={() => setSelectModalType("yearLevel")}
+                                  error={regErrors.yearLevel}
+                                />
+                              </View>
+                            )}
+
+                            {(createForm.studentCategory === "Elementary" ||
+                              createForm.studentCategory === "Junior High School" ||
+                              createForm.studentCategory === "Senior High School") && (
+                              <View>
+                                <GlassSelectRow
+                                  label="Grade Level"
+                                  value={createForm.gradeLevel}
+                                  placeholder="Select Grade Level"
+                                  onPress={() => setSelectModalType("gradeLevel")}
+                                  error={regErrors.gradeLevel}
+                                />
+
+                                <GlassInput
+                                  ref={guardianNameRef}
+                                  label="Parent / Guardian Name"
+                                  icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                                  placeholder="MARIA DELA CRUZ"
+                                  autoCapitalize="characters"
+                                  value={createForm.guardianName}
+                                  onChangeText={(t) => {
+                                    setCreateForm((f) => ({ ...f, guardianName: t.toUpperCase() }));
+                                    if (regErrors.guardianName) setRegErrors((e) => ({ ...e, guardianName: "" }));
+                                  }}
+                                  error={regErrors.guardianName}
+                                />
+                              </View>
+                            )}
+                          </View>
+                        )}
+
+                        {/* Employee Fields */}
+                        {createForm.category === "Employee" && (
+                          <View>
+                            <GlassInput
+                              ref={employeeIdRef}
+                              label="Employee ID"
+                              icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="e.g. EMP-2024-042"
+                              value={createForm.employeeId}
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, employeeId: t }));
+                                if (regErrors.employeeId) setRegErrors((e) => ({ ...e, employeeId: "" }));
+                              }}
+                              error={regErrors.employeeId}
+                            />
+
+                            <GlassInput
+                              ref={positionRef}
+                              label="Position / Designation"
+                              placeholder="e.g. Assistant Professor"
+                              value={createForm.position}
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, position: t }));
+                                if (regErrors.position) setRegErrors((e) => ({ ...e, position: "" }));
+                              }}
+                              error={regErrors.position}
+                            />
+
+                            <GlassInput
+                              ref={departmentRef}
+                              label="Department"
+                              placeholder="e.g. College of Computing Studies"
+                              value={createForm.department}
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, department: t }));
+                                if (regErrors.department) setRegErrors((e) => ({ ...e, department: "" }));
+                              }}
+                              error={regErrors.department}
+                            />
+                          </View>
+                        )}
+
+                        {/* Outsider Fields */}
+                        {createForm.category === "Outsider" && (
+                          <View>
+                            <GlassInput
+                              ref={addressRef}
+                              label="Home Address"
+                              icon={<MapPinIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="Complete address (House No., Street, Barangay, City, Province)"
+                              value={createForm.address}
+                              multiline
+                              numberOfLines={3}
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, address: t }));
+                                if (regErrors.address) setRegErrors((e) => ({ ...e, address: "" }));
+                              }}
+                              error={regErrors.address}
+                            />
+                          </View>
+                        )}
 
                         <TouchableOpacity
                           onPress={handleGetStarted}
@@ -2166,7 +2311,7 @@ const AuthModal = memo(function AuthModal({
                                 letterSpacing: 0.4,
                               }}
                             >
-                              Get Started 🎉
+                              Create Account
                             </Text>
                           )}
                         </TouchableOpacity>
@@ -2180,82 +2325,54 @@ const AuthModal = memo(function AuthModal({
         </KeyboardAvoidingView>
       </View>
 
-      {/* Cascading Location Picker Modals */}
-      <GlassLocationModalPicker
-        visible={locationModalType === "region"}
-        title="Select Region"
-        options={PH_REGIONS.map((r) => ({ label: r.region_name, value: r.region_code }))}
-        selected={createForm.regionCode}
-        onSelect={(item) => {
-          setCreateForm((f) => {
-            const provs = getProvincesByRegion(item.value);
-            const firstProv = provs[0]?.province_code || "";
-            const cities = getCitiesByProvince(firstProv);
-            const firstCity = cities[0]?.city_code || "";
-            const brgys = getBarangaysByCity(firstCity);
-            const firstBrgy = brgys[0] || "";
-            return {
-              ...f,
-              regionCode: item.value,
-              provinceCode: firstProv,
-              cityCode: firstCity,
-              barangay: firstBrgy,
-            };
-          });
+      {/* Student Category Picker */}
+      <GlassSelectionModal
+        visible={selectModalType === "studentCategory"}
+        title="Select Classification"
+        options={STUDENT_CATEGORIES}
+        selected={createForm.studentCategory}
+        onSelect={(opt) => {
+          setCreateForm((f) => ({
+            ...f,
+            studentCategory: opt as any,
+            gradeLevel: "",
+            guardianName: "",
+            course: "",
+            yearLevel: "",
+          }));
+          if (regErrors.studentCategory) setRegErrors((e) => ({ ...e, studentCategory: "" }));
         }}
-        onClose={() => setLocationModalType(null)}
+        onClose={() => setSelectModalType(null)}
       />
 
-      <GlassLocationModalPicker
-        visible={locationModalType === "province"}
-        title="Select Province"
-        options={availableProvinces.map((p: any) => ({ label: p.province_name, value: p.province_code }))}
-        selected={createForm.provinceCode}
-        onSelect={(item) => {
-          setCreateForm((f) => {
-            const cities = getCitiesByProvince(item.value);
-            const firstCity = cities[0]?.city_code || "";
-            const brgys = getBarangaysByCity(firstCity);
-            const firstBrgy = brgys[0] || "";
-            return {
-              ...f,
-              provinceCode: item.value,
-              cityCode: firstCity,
-              barangay: firstBrgy,
-            };
-          });
+      {/* Grade Level Picker */}
+      <GlassSelectionModal
+        visible={selectModalType === "gradeLevel"}
+        title="Select Grade Level"
+        options={
+          createForm.studentCategory && GRADE_LEVELS[createForm.studentCategory as keyof typeof GRADE_LEVELS]
+            ? GRADE_LEVELS[createForm.studentCategory as keyof typeof GRADE_LEVELS]
+            : []
+        }
+        selected={createForm.gradeLevel}
+        onSelect={(opt) => {
+          setCreateForm((f) => ({ ...f, gradeLevel: opt }));
+          if (regErrors.gradeLevel) setRegErrors((e) => ({ ...e, gradeLevel: "" }));
         }}
-        onClose={() => setLocationModalType(null)}
+        onClose={() => setSelectModalType(null)}
       />
 
-      <GlassLocationModalPicker
-        visible={locationModalType === "city"}
-        title="Select City / Municipality"
-        options={availableCities.map((c: any) => ({ label: c.city_name, value: c.city_code }))}
-        selected={createForm.cityCode}
-        onSelect={(item) => {
-          setCreateForm((f) => {
-            const brgys = getBarangaysByCity(item.value);
-            const firstBrgy = brgys[0] || "";
-            return {
-              ...f,
-              cityCode: item.value,
-              barangay: firstBrgy,
-            };
-          });
+      {/* Year Level Picker */}
+      <GlassSelectionModal
+        visible={selectModalType === "yearLevel"}
+        title="Select Year Level"
+        options={YEAR_LEVELS}
+        selected={createForm.yearLevel}
+        onSelect={(opt) => {
+          setCreateForm((f) => ({ ...f, yearLevel: opt }));
+          if (regErrors.yearLevel) setRegErrors((e) => ({ ...e, yearLevel: "" }));
         }}
-        onClose={() => setLocationModalType(null)}
-      />
-
-      <GlassLocationModalPicker
-        visible={locationModalType === "barangay"}
-        title="Select Barangay"
-        options={availableBarangays.map((b: any) => ({ label: b, value: b }))}
-        selected={createForm.barangay}
-        onSelect={(item) => {
-          setCreateForm((f) => ({ ...f, barangay: item.label }));
-        }}
-        onClose={() => setLocationModalType(null)}
+        onClose={() => setSelectModalType(null)}
       />
     </Modal>
   );
@@ -2980,7 +3097,13 @@ const AnimatedBlobsCluster = memo(function AnimatedBlobsCluster({
 
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
-export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
+export function WelcomeScreen({
+  navigate,
+  goBack,
+  setUser,
+  loadUserData,
+  initialAuthMode,
+}: NavProps & { initialAuthMode?: "signin" | "create_account" | null }) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
@@ -2994,8 +3117,8 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
   const uaSeal2xUri = Image.resolveAssetSource(uaSeal2xSource)?.uri || "";
 
   // Modal State & Background Blur Animation
-  const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(null);
-  const bgBlurAnim = useRef(new Animated.Value(0)).current;
+  const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(initialAuthMode ?? null);
+  const bgBlurAnim = useRef(new Animated.Value(initialAuthMode ? 1 : 0)).current;
   const shineAnim = useRef(new Animated.Value(0)).current;
 
   // 5s infinite soft light band animation moving up and down
@@ -3045,7 +3168,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
 
   // Reanimated Bottom Sheet Slide Down / Up
   const isModalOpen = authMode !== null;
-  const sheetProgress = useSharedValue(0);
+  const sheetProgress = useSharedValue(initialAuthMode ? 1 : 0);
   const sheetHeightShared = useSharedValue(260);
 
   useEffect(() => {
@@ -3095,8 +3218,11 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
       useNativeDriver: true,
     }).start(() => {
       setAuthMode(null);
+      if (initialAuthMode && goBack) {
+        goBack();
+      }
     });
-  }, [bgBlurAnim]);
+  }, [bgBlurAnim, initialAuthMode, goBack]);
 
   const handleSignInSuccess = useCallback((userEmail: string, userName: string, accessToken: string) => {
     if (setUser) {
@@ -3646,7 +3772,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
 
         {/* Secondary: Create Account Button */}
         <TouchableOpacity
-          onPress={() => navigate("register")}
+          onPress={() => openAuthModal("create_account")}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Create Account"
@@ -3711,10 +3837,6 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
           onClose={closeAuthModal}
           onSuccessSignIn={handleSignInSuccess}
           onSuccessRegister={handleRegisterSuccess}
-          onNavigateToRegister={() => {
-            closeAuthModal();
-            navigate("register");
-          }}
         />
       )}
     </View>
@@ -3893,9 +4015,17 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   );
 }
 
-// ── Register Screen ──────────────────────────────────────────────────────────
-
-export { RegisterScreen } from "./RegisterScreen";
+export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
+  return (
+    <WelcomeScreen
+      navigate={navigate}
+      goBack={goBack}
+      setUser={setUser}
+      loadUserData={loadUserData}
+      initialAuthMode="create_account"
+    />
+  );
+}
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
 
