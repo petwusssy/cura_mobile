@@ -6,7 +6,7 @@ import '../global.css';
 export default function Layout() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" backgroundColor="transparent" translucent />
+      <StatusBar style="dark" />
       <Slot />
     </SafeAreaProvider>
   );

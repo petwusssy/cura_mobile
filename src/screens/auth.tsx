@@ -860,6 +860,7 @@ interface AuthModalProps {
     fullName: string,
     finalUser?: any
   ) => void;
+  onNavigateToRegister?: () => void;
 }
 
 const AuthModal = memo(function AuthModal({
@@ -868,6 +869,7 @@ const AuthModal = memo(function AuthModal({
   onClose,
   onSuccessSignIn,
   onSuccessRegister,
+  onNavigateToRegister,
 }: AuthModalProps) {
   const { showAlert } = useAlert();
   const [authMode, setAuthMode] = useState<"signin" | "create_account">(initialMode);
@@ -1555,7 +1557,16 @@ const AuthModal = memo(function AuthModal({
                       >
                         No account?{" "}
                       </Text>
-                      <TouchableOpacity onPress={() => switchAuthMode("create_account")} activeOpacity={0.7}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (onNavigateToRegister) {
+                            onNavigateToRegister();
+                          } else {
+                            switchAuthMode("create_account");
+                          }
+                        }}
+                        activeOpacity={0.7}
+                      >
                         <Text
                           style={{
                             color: "#60A5FA",
@@ -3635,7 +3646,7 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
 
         {/* Secondary: Create Account Button */}
         <TouchableOpacity
-          onPress={() => openAuthModal("create_account")}
+          onPress={() => navigate("register")}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Create Account"
@@ -3700,6 +3711,10 @@ export function WelcomeScreen({ navigate, setUser, loadUserData }: NavProps) {
           onClose={closeAuthModal}
           onSuccessSignIn={handleSignInSuccess}
           onSuccessRegister={handleRegisterSuccess}
+          onNavigateToRegister={() => {
+            closeAuthModal();
+            navigate("register");
+          }}
         />
       )}
     </View>
@@ -3878,82 +3893,9 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   );
 }
 
-// ── Register (Routes directly into Glass Auth Modal) ──────────────────────────
+// ── Register Screen ──────────────────────────────────────────────────────────
 
-export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavProps) {
-  const bgBlurAnim = useRef(new Animated.Value(1)).current;
-
-  const handleClose = useCallback(() => {
-    goBack();
-  }, [goBack]);
-
-  const handleSignInSuccess = useCallback((userEmail: string, userName: string, accessToken: string) => {
-    if (setUser) {
-      setUser((prev: any) => ({
-        ...prev,
-        email: userEmail,
-        firstName: userName,
-        displayName: userName,
-        lastName: "",
-        accessToken,
-      }));
-    }
-    if (accessToken) {
-      AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
-    }
-    if (loadUserData) {
-      loadUserData(userEmail);
-    }
-    navigate("home");
-  }, [setUser, loadUserData, navigate]);
-
-  const handleRegisterSuccess = useCallback((
-    userEmail: string,
-    userName: string,
-    accessToken: string,
-    idNumber: string,
-    fullName: string,
-    finalUser?: any
-  ) => {
-    if (setUser) {
-      if (finalUser) {
-        setUser(finalUser);
-      } else {
-        setUser((prev: any) => ({
-          ...prev,
-          id: idNumber,
-          id_number: idNumber,
-          email: userEmail,
-          name: fullName,
-          firstName: userName,
-          displayName: userName,
-          lastName: "",
-          accessToken,
-        }));
-      }
-    }
-    if (accessToken) {
-      AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
-    }
-    if (loadUserData) {
-      loadUserData(userEmail);
-    }
-    navigate("home");
-  }, [setUser, loadUserData, navigate]);
-
-  return (
-    <View style={{ flex: 1, backgroundColor: "#0B1B4A", overflow: "hidden" }}>
-      <WelcomeBackground bgBlurAnim={bgBlurAnim} />
-      <AuthModal
-        visible={true}
-        initialMode="create_account"
-        onClose={handleClose}
-        onSuccessSignIn={handleSignInSuccess}
-        onSuccessRegister={handleRegisterSuccess}
-      />
-    </View>
-  );
-}
+export { RegisterScreen } from "./RegisterScreen";
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
 
