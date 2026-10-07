@@ -316,13 +316,13 @@ export const FogBackground = memo(function FogBackground({
     >
       {/* ── Top ~20% is left pure white #FFFFFF (clean header space) ── */}
 
-      {/* ── 0) Cloud 0: Above Shield Logo Crown Mist (~18-20% height directly above shield) ── */}
+      {/* ── 0) Cloud 0: Above Shield Logo Crown Mist (positioned high, well above the shield) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.17,
+            top: Math.max(screenHeight * 0.06, 36),
             left: (screenWidth - cloud0Size) / 2,
             width: cloud0Size,
             height: cloud0Size,
@@ -333,10 +333,10 @@ export const FogBackground = memo(function FogBackground({
         <Svg width="100%" height="100%" viewBox="0 0 500 500">
           <Defs>
             <RadialGradient id="fogCrown0" cx="50%" cy="50%" r="50%" fx="50%" fy="48%">
-              <Stop offset="0%" stopColor="#4DA3FF" stopOpacity="0.42" />
-              <Stop offset="28%" stopColor="#BFE0FF" stopOpacity="0.28" />
-              <Stop offset="58%" stopColor="#007AFF" stopOpacity="0.14" />
-              <Stop offset="82%" stopColor="#BAE6FD" stopOpacity="0.04" />
+              <Stop offset="0%" stopColor="#4DA3FF" stopOpacity="0.46" />
+              <Stop offset="28%" stopColor="#BFE0FF" stopOpacity="0.32" />
+              <Stop offset="58%" stopColor="#007AFF" stopOpacity="0.16" />
+              <Stop offset="82%" stopColor="#BAE6FD" stopOpacity="0.05" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </RadialGradient>
           </Defs>
@@ -344,13 +344,13 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── 1) Cloud 1: Center-Upper Smoke Plume (~24% height around shield and wordmark) ── */}
+      {/* ── 1) Cloud 1: Upper-Left Smoke Plume (higher above shield shoulders) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.24,
+            top: screenHeight * 0.14,
             left: -cloud1Size * 0.16,
             width: cloud1Size,
             height: cloud1Size,
@@ -361,8 +361,8 @@ export const FogBackground = memo(function FogBackground({
         <Svg width="100%" height="100%" viewBox="0 0 500 500">
           <Defs>
             <RadialGradient id="fogPlume1" cx="50%" cy="50%" r="50%" fx="48%" fy="48%">
-              <Stop offset="0%" stopColor="#BFE0FF" stopOpacity="0.46" />
-              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.30" />
+              <Stop offset="0%" stopColor="#BFE0FF" stopOpacity="0.48" />
+              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.32" />
               <Stop offset="60%" stopColor="#007AFF" stopOpacity="0.16" />
               <Stop offset="84%" stopColor="#BAE6FD" stopOpacity="0.05" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
@@ -372,14 +372,14 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── 2) Cloud 2: Mid-Right Smoke Billow (~34% height) ── */}
+      {/* ── 2) Cloud 2: Upper-Right Smoke Billow (~22% height) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.34,
-            right: -cloud2Size * 0.20,
+            top: screenHeight * 0.22,
+            right: -cloud2Size * 0.18,
             width: cloud2Size,
             height: cloud2Size,
           },
@@ -389,8 +389,8 @@ export const FogBackground = memo(function FogBackground({
         <Svg width="100%" height="100%" viewBox="0 0 500 500">
           <Defs>
             <RadialGradient id="fogPlume2" cx="50%" cy="50%" r="50%" fx="52%" fy="48%">
-              <Stop offset="0%" stopColor="#007AFF" stopOpacity="0.40" />
-              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.26" />
+              <Stop offset="0%" stopColor="#007AFF" stopOpacity="0.42" />
+              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.28" />
               <Stop offset="62%" stopColor="#BFE0FF" stopOpacity="0.14" />
               <Stop offset="84%" stopColor="#BAE6FD" stopOpacity="0.04" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
@@ -400,14 +400,14 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── 3) Cloud 3: Mid-Left Smoke Billow (~46% height) ── */}
+      {/* ── 3) Cloud 3: Mid-Left Smoke Billow (~36% height) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.46,
-            left: -cloud3Size * 0.22,
+            top: screenHeight * 0.36,
+            left: -cloud3Size * 0.20,
             width: cloud3Size,
             height: cloud3Size,
           },
@@ -428,13 +428,13 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── 4) Cloud 4: Lower-Center Large Cloud (~58% height) ── */}
+      {/* ── 4) Cloud 4: Center-Lower Large Cloud (~48% height) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.58,
+            top: screenHeight * 0.48,
             left: (screenWidth - cloud4Size) / 2,
             width: cloud4Size,
             height: cloud4Size,
@@ -462,7 +462,7 @@ export const FogBackground = memo(function FogBackground({
         style={[
           styles.blobBase,
           {
-            bottom: -cloud5Size * 0.16,
+            bottom: -cloud5Size * 0.14,
             right: -cloud5Size * 0.18,
             width: cloud5Size,
             height: cloud5Size,
