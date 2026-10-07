@@ -5,6 +5,7 @@ import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
 import { Card, SectionHeader, Badge, AvatarBadge, Header } from "../components/Shell";
+import { AnimatedWaveBackground } from "../components/AnimatedWaveBackground";
 import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT, MASCOTS } from "../data";
 import { getManilaHour, formatManilaDateTime, formatTime12 } from "../utils/philippineTime";
 
@@ -251,6 +252,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
   return (
     <View className="flex-1 bg-transparent">
+      <AnimatedWaveBackground />
       <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: Math.max(insets.top, 24) + 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         
         {/* 1. Header Section */}
@@ -258,15 +260,15 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           <View className="flex-row items-center gap-3">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={48} />
             <View>
-              <Text className="text-white text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
+              <Text className="text-cura-900 text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
                 Hi, {(user.displayName || user.firstName || "Patient").toUpperCase()}
               </Text>
-              <Text className="text-white/70 text-xs font-medium">{getGreeting()}</Text>
+              <Text className="text-cura-900/75 text-xs font-semibold">{getGreeting()}</Text>
             </View>
           </View>
           <Pressable
             onPress={() => navigate("notifications")}
-            className="w-12 h-12 rounded-full border border-slate-200 bg-white items-center justify-center relative"
+            className="w-12 h-12 rounded-full border border-slate-200 bg-white items-center justify-center relative shadow-xs"
           >
             <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><Path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -453,7 +455,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 >
                   <Text style={{ fontSize: quickActionIconSize }}>{c.icon}</Text>
                 </View>
-                <Text numberOfLines={1} className="text-xs font-semibold text-white/80 text-center">{c.label}</Text>
+                <Text numberOfLines={1} className="text-xs font-bold text-slate-700 text-center">{c.label}</Text>
               </Pressable>
             ))}
           </View>

@@ -432,12 +432,14 @@ export function VitalItem({ icon, label, value }: { icon: string; label: string;
   );
 }
 
+export { AnimatedWaveBackground } from "./AnimatedWaveBackground";
+
 // ── Section header ────────────────────────────────────────────────────────────
 
-export function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+export function SectionHeader({ title, action, onAction, textColor = "#0B2136" }: { title: string; action?: string; onAction?: () => void; textColor?: string }) {
   return (
     <View className="flex-row items-center justify-between mb-3">
-      <Text className="text-base font-black tracking-tight" style={{ color: "#FFFFFF", fontFamily: "Outfit" }}>{title}</Text>
+      <Text className="text-base font-black tracking-tight" style={{ color: textColor, fontFamily: "Outfit" }}>{title}</Text>
       {action && (
         <Pressable onPress={onAction} className="bg-white px-3 py-1.5 rounded-full" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }}>
           <Text className="text-xs font-bold text-slate-700">{action}</Text>
