@@ -116,25 +116,6 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const joiningRef = useRef(false);
   const cancelledQueueIdRef = useRef<string | null>(null);
 
-  const cardAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(cardAnim, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(cardAnim, { toValue: 2, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(cardAnim, { toValue: 3, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [cardAnim]);
-
-  const cardBlob1X = cardAnim.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -10, 15, 0] });
-  const cardBlob1Y = cardAnim.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 15, -10, 0] });
-  
-  const cardBlob2X = cardAnim.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, 15, -15, 0] });
-  const cardBlob2Y = cardAnim.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0, -10, 15, 0] });
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -346,15 +327,6 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               style={StyleSheet.absoluteFill}
             />
 
-            {/* Background Decorations */}
-            <Animated.View 
-              className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10" 
-              style={{ transform: [{ translateX: cardBlob1X }, { translateY: cardBlob1Y }] }}
-            />
-            <Animated.View 
-              className="absolute right-12 -bottom-10 w-24 h-24 rounded-full bg-white/10" 
-              style={{ transform: [{ translateX: cardBlob2X }, { translateY: cardBlob2Y }] }}
-            />
 
             <View className="flex-row items-start justify-between mb-4">
               <View className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 ${isQueueActive && queue.status === 'called' ? 'bg-green-500' : 'bg-white/20'}`}>
