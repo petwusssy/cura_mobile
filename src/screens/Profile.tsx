@@ -532,7 +532,7 @@ export function ProfileScreen({
         className="px-5 pb-7"
         style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
-        <Text className="text-white text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
+        <Text className="text-cura-900 text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
 
         <View className="flex-row items-center gap-4">
           <View className="relative">
@@ -548,10 +548,10 @@ export function ProfileScreen({
             </Pressable>
           </View>
           <View>
-            <Text className="text-xl font-black text-white" style={{ fontFamily: "Outfit" }}>
+            <Text className="text-xl font-black text-cura-900" style={{ fontFamily: "Outfit" }}>
               {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
-            <Text className="text-xs text-white/70 mt-0.5">{user.email}</Text>
+            <Text className="text-xs text-slate-500 mt-0.5">{user.email}</Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
                 className="rounded-full px-2.5 py-0.5"
@@ -560,7 +560,7 @@ export function ProfileScreen({
                 <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
               </View>
               {user.category?.toLowerCase() === "student" && (
-                <Text className="text-[10px] text-white/70 font-medium">
+                <Text className="text-[10px] text-slate-500 font-medium">
                   {[(user as any).studentCategory, user.course, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null, user.yearLevel].filter(Boolean).join(' · ')}
                 </Text>
               )}

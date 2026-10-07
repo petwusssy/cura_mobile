@@ -118,13 +118,15 @@ function AnimatedBackground() {
   );
 }
 
+import { FogBackground } from "./FogBackground";
+
 export function MobileShell({ children, theme = 'light' }: MobileShellProps) {
   return (
     <View
       className={`flex-1 ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
-      style={{ backgroundColor: '#1B3A6B' }}
+      style={{ backgroundColor: '#FFFFFF' }}
     >
-      <AnimatedBackground />
+      <FogBackground />
 
       {/* Screen content */}
       <View className="flex-1 z-10">{children}</View>
@@ -186,13 +188,13 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
   return (
     <View className="absolute bottom-6 left-6 right-6">
       <View
-        className="bg-white rounded-full flex-row items-center justify-around px-4 py-3"
+        className="bg-white/95 rounded-full flex-row items-center justify-around px-4 py-3 border border-slate-100"
         style={{
-          shadowColor: '#3B82F6',
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.15,
-          shadowRadius: 24,
-          elevation: 10,
+          shadowColor: '#0284C7',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.12,
+          shadowRadius: 20,
+          elevation: 8,
         }}
       >
         {tabs.map((tab) => {
@@ -218,16 +220,17 @@ interface HeaderProps {
   title: string;
   onBack?: () => void;
   right?: ReactNode;
+  textColor?: string;
 }
 
-export function Header({ title, onBack, right }: HeaderProps) {
+export function Header({ title, onBack, right, textColor = "#0B2136" }: HeaderProps) {
   const insets = useSafeAreaInsets();
   return (
     <View className="bg-transparent flex-row items-center px-4" style={{ paddingTop: Math.max(insets.top, 12) + 12, paddingBottom: 12 }}>
       {onBack && (
         <Pressable
           onPress={onBack}
-          className="w-10 h-10 rounded-full items-center justify-center bg-white mr-3 shadow-sm"
+          className="w-10 h-10 rounded-full items-center justify-center bg-white mr-3 shadow-sm border border-slate-100"
           style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
         >
           <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2136" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -235,7 +238,7 @@ export function Header({ title, onBack, right }: HeaderProps) {
           </Svg>
         </Pressable>
       )}
-      <Text className="flex-1 text-[22px] font-black tracking-tight" style={{ color: "#FFFFFF", fontFamily: 'Outfit' }}>{title}</Text>
+      <Text className="flex-1 text-[22px] font-black tracking-tight" style={{ color: textColor, fontFamily: 'Outfit' }}>{title}</Text>
       {right && <View>{right}</View>}
     </View>
   );
@@ -288,7 +291,7 @@ interface InputProps {
 export function Input({ label, error, icon, ...props }: InputProps) {
   return (
     <View className="flex-col gap-1.5">
-      <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">{label}</Text>
+      <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">{label}</Text>
       <View className="relative justify-center">
         {icon && <View className="absolute left-4 z-10">{icon}</View>}
         <TextInput
@@ -433,6 +436,7 @@ export function VitalItem({ icon, label, value }: { icon: string; label: string;
 }
 
 export { AnimatedWaveBackground } from "./AnimatedWaveBackground";
+export { FogBackground } from "./FogBackground";
 
 // ── Section header ────────────────────────────────────────────────────────────
 
@@ -473,7 +477,7 @@ interface SelectProps {
 export function Select({ label, value, options, onValueChange }: SelectProps) {
   return (
     <View className="flex-col gap-1.5">
-      <Text className="text-xs font-bold text-white/80 uppercase tracking-wider">{label}</Text>
+      <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">{label}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
         {options.map((opt) => {
           const active = value === opt.value;

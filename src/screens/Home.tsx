@@ -5,7 +5,6 @@ import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
 import { Card, SectionHeader, Badge, AvatarBadge, Header } from "../components/Shell";
-import { AnimatedWaveBackground } from "../components/AnimatedWaveBackground";
 import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT, MASCOTS } from "../data";
 import { getManilaHour, formatManilaDateTime, formatTime12 } from "../utils/philippineTime";
 
@@ -252,7 +251,6 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
   return (
     <View className="flex-1 bg-transparent">
-      <AnimatedWaveBackground />
       <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: Math.max(insets.top, 24) + 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         
         {/* 1. Header Section */}

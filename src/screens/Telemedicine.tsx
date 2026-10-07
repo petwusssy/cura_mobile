@@ -364,16 +364,16 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       {/* Tabs */}
       <View className="flex-row px-6 mb-4 mt-2">
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-white" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "book" ? "border-cura-900" : "border-transparent"}`}
           onPress={() => setActiveTab("book")}
         >
-          <Text className={`font-bold text-sm ${activeTab === "book" ? "text-white" : "text-white/50"}`}>Book Call</Text>
+          <Text className={`font-bold text-sm ${activeTab === "book" ? "text-cura-900" : "text-slate-400"}`}>Book Call</Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-white" : "border-transparent"}`}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "history" ? "border-cura-900" : "border-transparent"}`}
           onPress={() => setActiveTab("history")}
         >
-          <Text className={`font-bold text-sm ${activeTab === "history" ? "text-white" : "text-white/50"}`}>My Requests</Text>
+          <Text className={`font-bold text-sm ${activeTab === "history" ? "text-cura-900" : "text-slate-400"}`}>My Requests</Text>
         </Pressable>
       </View>
 
@@ -381,16 +381,16 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
           {/* Info Banner */}
           <View
-            className="bg-white/10 rounded-[28px] p-4 flex-row items-center gap-3.5 border border-white/10 mb-6"
+            className="bg-white rounded-[28px] p-4 flex-row items-center gap-3.5 border border-sky-100 mb-6 shadow-xs"
           >
-            <View className="w-11 h-11 rounded-2xl bg-white/15 items-center justify-center">
+            <View className="w-11 h-11 rounded-2xl bg-sky-50 items-center justify-center">
               <Text className="text-xl">📹</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-bold text-white mb-0.5" style={{ fontFamily: "Outfit" }}>
+              <Text className="text-sm font-bold text-cura-900 mb-0.5" style={{ fontFamily: "Outfit" }}>
                 Online Video Consultation
               </Text>
-              <Text className="text-xs text-white/70 leading-relaxed">
+              <Text className="text-xs text-slate-500 leading-relaxed">
                 Request an online video consultation. The clinic will review your request and provide a meeting link if approved.
               </Text>
             </View>
@@ -399,7 +399,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           <View className="flex-col gap-6">
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
                 Preferred Date
               </Text>
               <TouchableOpacity
@@ -446,7 +446,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
             {/* Preferred Time */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
                 Preferred Time
               </Text>
               <View className="flex-row gap-3">
@@ -472,24 +472,24 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       activeOpacity={0.75}
                       className="flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden"
                       style={{
-                        backgroundColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.12)",
-                        borderColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.18)",
+                        backgroundColor: isSelected ? "#0B2136" : "#FFFFFF",
+                        borderColor: isSelected ? "#0B2136" : "#E2E8F0",
                         borderWidth: isSelected ? 2 : 1,
-                        elevation: isSelected ? 3 : 0,
+                        elevation: isSelected ? 3 : 1,
                         shadowColor: "#000",
                         shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: isSelected ? 0.1 : 0,
+                        shadowOpacity: isSelected ? 0.12 : 0.04,
                         shadowRadius: 6,
                       }}
                     >
                       {isSelected && (
-                        <View className="absolute top-0 left-0 right-0 h-1 bg-sky-500" />
+                        <View className="absolute top-0 left-0 right-0 h-1 bg-sky-400" />
                       )}
                       <Text className="text-xl mb-1">{slot.icon}</Text>
                       <Text
                         className="text-sm font-black"
                         style={{
-                          color: isSelected ? "#0B2136" : "#FFFFFF",
+                          color: isSelected ? "#FFFFFF" : "#0B2136",
                           fontFamily: "Outfit",
                         }}
                       >
@@ -498,7 +498,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       <Text
                         className="text-[10px] font-semibold mt-0.5"
                         style={{
-                          color: isSelected ? "#64748B" : "rgba(255, 255, 255, 0.7)",
+                          color: isSelected ? "rgba(255, 255, 255, 0.75)" : "#64748B",
                         }}
                       >
                         {slot.timeRange}
@@ -511,7 +511,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
             {/* Reason for Consult */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
                 Reason for Consult
               </Text>
               <View
