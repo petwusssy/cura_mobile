@@ -258,10 +258,12 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           <View className="flex-row items-center gap-3">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={48} />
             <View>
-              <Text className="text-cura-900 text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
-                Hi, {(user.displayName || user.firstName || "Patient").toUpperCase()}
+              <Text className="text-cura-900/75 text-xs font-semibold -mb-0.5">
+                Hi, {getGreeting()}
               </Text>
-              <Text className="text-cura-900/75 text-xs font-semibold">{getGreeting()}</Text>
+              <Text className="text-cura-900 text-[22px] font-black tracking-tight" style={{ fontFamily: "Outfit" }}>
+                {(user.displayName || user.firstName || "Patient").toUpperCase()}
+              </Text>
             </View>
           </View>
           <Pressable
