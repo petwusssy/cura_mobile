@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import Svg, { Defs, RadialGradient, LinearGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -32,8 +32,8 @@ export interface FogBackgroundProps {
 
 /**
  * Reusable FogBackground Component
- * Renders rich animated blurred blue smoke/fog gradient blobs (#4DA3FF, #007AFF, #BFE0FF)
- * with dedicated top smoke filling the upper header/hero area across a clean #FFFFFF base.
+ * Renders 4 large animated blurred blue smoke/fog gradient blobs (#4DA3FF, #007AFF, #BFE0FF)
+ * drifting gently across a clean #FFFFFF base with smooth 8-12s 60fps loops.
  */
 export const FogBackground = memo(function FogBackground({
   baseColor = "#FFFFFF",
@@ -64,11 +64,6 @@ export const FogBackground = memo(function FogBackground({
   const b4Ty = useSharedValue(0);
   const b4Scale = useSharedValue(1);
 
-  // Blob 5: Top-Center Crown Plume (#BFE0FF / #4DA3FF) ~10.8s cycle (fills upper white area)
-  const b5Tx = useSharedValue(0);
-  const b5Ty = useSharedValue(0);
-  const b5Scale = useSharedValue(1);
-
   const isRunningRef = useRef(false);
 
   const startAnimations = () => {
@@ -77,29 +72,29 @@ export const FogBackground = memo(function FogBackground({
 
     // Blob 1: Top-Left drift (9.5s)
     b1Tx.value = withRepeat(
-      withTiming(42, { duration: 9500, easing: Easing.inOut(Easing.ease) }),
+      withTiming(38, { duration: 9500, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     b1Ty.value = withRepeat(
-      withTiming(32, { duration: 9000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(28, { duration: 9000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     b1Scale.value = withRepeat(
-      withTiming(1.12, { duration: 9500, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1.10, { duration: 9500, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
 
     // Blob 2: Top-Right counter-drift (11.2s)
     b2Tx.value = withRepeat(
-      withTiming(-40, { duration: 11200, easing: Easing.inOut(Easing.ease) }),
+      withTiming(-36, { duration: 11200, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     b2Ty.value = withRepeat(
-      withTiming(36, { duration: 10500, easing: Easing.inOut(Easing.ease) }),
+      withTiming(32, { duration: 10500, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
@@ -142,23 +137,6 @@ export const FogBackground = memo(function FogBackground({
       -1,
       true
     );
-
-    // Blob 5: Top-Center Crown drift (10.8s)
-    b5Tx.value = withRepeat(
-      withTiming(28, { duration: 10800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-    b5Ty.value = withRepeat(
-      withTiming(34, { duration: 10200, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-    b5Scale.value = withRepeat(
-      withTiming(1.14, { duration: 10800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
   };
 
   const stopAnimations = () => {
@@ -175,9 +153,6 @@ export const FogBackground = memo(function FogBackground({
     cancelAnimation(b4Tx);
     cancelAnimation(b4Ty);
     cancelAnimation(b4Scale);
-    cancelAnimation(b5Tx);
-    cancelAnimation(b5Ty);
-    cancelAnimation(b5Scale);
   };
 
   useEffect(() => {
@@ -194,9 +169,6 @@ export const FogBackground = memo(function FogBackground({
       b4Tx.value = 0;
       b4Ty.value = 0;
       b4Scale.value = 1;
-      b5Tx.value = 0;
-      b5Ty.value = 0;
-      b5Scale.value = 1;
       return;
     }
 
@@ -219,7 +191,7 @@ export const FogBackground = memo(function FogBackground({
     };
   }, [reduceMotion]);
 
-  // Animated styles for the blobs
+  // Animated styles for the 4 blobs
   const blob1Style = useAnimatedStyle(() => ({
     transform: [
       { translateX: b1Tx.value },
@@ -252,20 +224,11 @@ export const FogBackground = memo(function FogBackground({
     ],
   }));
 
-  const blob5Style = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: b5Tx.value },
-      { translateY: b5Ty.value },
-      { scale: b5Scale.value },
-    ],
-  }));
-
-  // Sizing calibrated to fill viewport edges and upper area with ~80-120 blur plume
-  const blob1Size = Math.max(screenWidth * 1.30, 440);
-  const blob2Size = Math.max(screenWidth * 1.25, 420);
+  // Sizing calibrated to fill viewport edges with ~80-120 blur plume
+  const blob1Size = Math.max(screenWidth * 1.15, 380);
+  const blob2Size = Math.max(screenWidth * 1.05, 350);
   const blob3Size = Math.max(screenWidth * 1.25, 420);
   const blob4Size = Math.max(screenWidth * 1.10, 370);
-  const blob5Size = Math.max(screenWidth * 1.40, 480);
 
   return (
     <View
@@ -276,73 +239,14 @@ export const FogBackground = memo(function FogBackground({
         style,
       ]}
     >
-      {/* ── Top Ambient Fog Wash (Soft upper sky blue to fill white at top) ── */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: Math.max(screenHeight * 0.42, 320),
-        }}
-      >
-        <Svg width="100%" height="100%" preserveAspectRatio="none">
-          <Defs>
-            <LinearGradient id="topFogWash" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#BFE0FF" stopOpacity="0.45" />
-              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.25" />
-              <Stop offset="65%" stopColor="#BAE6FD" stopOpacity="0.10" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#topFogWash)" />
-        </Svg>
-      </View>
-
-      {/* ── Blob 5: Top-Center Crown Mist Plume (#BFE0FF / #4DA3FF, opacity ~0.38) ── */}
+      {/* ── Blob 1: Top-Left Mist (#4DA3FF, opacity ~0.35, blur ~100) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: -blob5Size * 0.26,
-            left: (screenWidth - blob5Size) / 2,
-            width: blob5Size,
-            height: blob5Size,
-          },
-          blob5Style,
-        ]}
-      >
-        <Svg width="100%" height="100%" viewBox="0 0 500 500">
-          <Defs>
-            <RadialGradient
-              id="fogBlob5"
-              cx="50%"
-              cy="50%"
-              r="50%"
-              fx="50%"
-              fy="46%"
-            >
-              <Stop offset="0%" stopColor="#BFE0FF" stopOpacity="0.40" />
-              <Stop offset="25%" stopColor="#4DA3FF" stopOpacity="0.28" />
-              <Stop offset="55%" stopColor="#007AFF" stopOpacity="0.14" />
-              <Stop offset="78%" stopColor="#BAE6FD" stopOpacity="0.05" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </RadialGradient>
-          </Defs>
-          <Rect x="0" y="0" width="500" height="500" fill="url(#fogBlob5)" />
-        </Svg>
-      </Animated.View>
-
-      {/* ── Blob 1: Top-Left Mist (#4DA3FF, opacity ~0.36, blur ~100) ── */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.blobBase,
-          {
-            top: -blob1Size * 0.16,
-            left: -blob1Size * 0.20,
+            top: -blob1Size * 0.28,
+            left: -blob1Size * 0.22,
             width: blob1Size,
             height: blob1Size,
           },
@@ -359,9 +263,9 @@ export const FogBackground = memo(function FogBackground({
               fx="48%"
               fy="48%"
             >
-              <Stop offset="0%" stopColor="#4DA3FF" stopOpacity="0.38" />
-              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.28" />
-              <Stop offset="55%" stopColor="#BFE0FF" stopOpacity="0.18" />
+              <Stop offset="0%" stopColor="#4DA3FF" stopOpacity="0.36" />
+              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.26" />
+              <Stop offset="55%" stopColor="#BFE0FF" stopOpacity="0.16" />
               <Stop offset="78%" stopColor="#BFE0FF" stopOpacity="0.06" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </RadialGradient>
@@ -370,14 +274,14 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── Blob 2: Top-Right Smoke (#007AFF, opacity ~0.34, blur ~110) ── */}
+      {/* ── Blob 2: Top-Right Smoke (#007AFF, opacity ~0.30, blur ~110) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: -blob2Size * 0.14,
-            right: -blob2Size * 0.22,
+            top: -blob2Size * 0.24,
+            right: -blob2Size * 0.26,
             width: blob2Size,
             height: blob2Size,
           },
@@ -394,9 +298,9 @@ export const FogBackground = memo(function FogBackground({
               fx="52%"
               fy="48%"
             >
-              <Stop offset="0%" stopColor="#007AFF" stopOpacity="0.35" />
-              <Stop offset="28%" stopColor="#4DA3FF" stopOpacity="0.24" />
-              <Stop offset="60%" stopColor="#BFE0FF" stopOpacity="0.14" />
+              <Stop offset="0%" stopColor="#007AFF" stopOpacity="0.32" />
+              <Stop offset="28%" stopColor="#4DA3FF" stopOpacity="0.22" />
+              <Stop offset="60%" stopColor="#BFE0FF" stopOpacity="0.12" />
               <Stop offset="82%" stopColor="#BAE6FD" stopOpacity="0.04" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </RadialGradient>
