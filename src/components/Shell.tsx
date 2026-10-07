@@ -188,7 +188,7 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
   return (
     <View className="absolute bottom-6 left-6 right-6">
       <View
-        className="bg-white/95 rounded-full flex-row items-center justify-around px-4 py-3 border border-slate-100"
+        className="bg-white/80 rounded-full flex-row items-center justify-around px-4 py-3 border border-white/60"
         style={{
           shadowColor: '#0284C7',
           shadowOffset: { width: 0, height: 6 },
