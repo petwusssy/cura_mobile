@@ -1,7 +1,8 @@
-import { type ReactNode, useEffect, useRef } from "react";
-import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Animated, Easing } from "react-native";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Animated, Easing, StyleSheet } from "react-native";
 import Svg, { Path, Circle, Rect, Polyline, Line } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen } from "../types";
 
@@ -145,7 +146,7 @@ const tabs: { screen: Screen; icon: (a: boolean) => ReactNode }[] = [
   {
     screen: "home",
     icon: (a) => (
-      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#64748B"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><Polyline points="9 22 9 12 15 12 15 22"/>
       </Svg>
     ),
@@ -153,7 +154,7 @@ const tabs: { screen: Screen; icon: (a: boolean) => ReactNode }[] = [
   {
     screen: "telemedicine",
     icon: (a) => (
-      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#64748B"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Path d="M23 7l-7 5 7 5V7z" /><Rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
       </Svg>
     ),
@@ -161,7 +162,7 @@ const tabs: { screen: Screen; icon: (a: boolean) => ReactNode }[] = [
   {
     screen: "appointment", 
     icon: (a) => (
-      <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a ? "white" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a ? "white" : "#64748B"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><Line x1="16" y1="2" x2="16" y2="6"/><Line x1="8" y1="2" x2="8" y2="6"/><Line x1="3" y1="10" x2="21" y2="10"/>
       </Svg>
     ),
@@ -169,7 +170,7 @@ const tabs: { screen: Screen; icon: (a: boolean) => ReactNode }[] = [
   {
     screen: "medications", // mapped to Heart in ref
     icon: (a) => (
-      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#64748B"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
       </Svg>
     ),
@@ -177,33 +178,129 @@ const tabs: { screen: Screen; icon: (a: boolean) => ReactNode }[] = [
   {
     screen: "profile",
     icon: (a) => (
-      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Svg width="22" height="22" viewBox="0 0 24 24" fill={a ? "white" : "none"} stroke={a ? "white" : "#64748B"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><Circle cx="12" cy="7" r="4"/>
       </Svg>
     ),
   },
 ];
 
+const INDICATOR_SIZE = 44;
+
 export function BottomNav({ active, navigate }: BottomNavProps) {
+  const [layout, setLayout] = useState({ width: 0, height: 0 });
+  const activeIndex = tabs.findIndex((t) => t.screen === active);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const isInitialized = useRef(false);
+
+  const slotWidth = layout.width > 0 ? (layout.width - 12) / tabs.length : 0;
+  const targetX = activeIndex >= 0 && slotWidth > 0 
+    ? 6 + activeIndex * slotWidth + (slotWidth - INDICATOR_SIZE) / 2 
+    : 0;
+
+  const onContainerLayout = (e: any) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (width > 0) {
+      if (!isInitialized.current) {
+        const sw = (width - 12) / tabs.length;
+        const initialX = activeIndex >= 0 ? 6 + activeIndex * sw + (sw - INDICATOR_SIZE) / 2 : 0;
+        translateX.setValue(initialX);
+        isInitialized.current = true;
+      }
+      setLayout({ width, height });
+    }
+  };
+
+  useEffect(() => {
+    if (!isInitialized.current || layout.width === 0 || activeIndex < 0) return;
+
+    Animated.spring(translateX, {
+      toValue: targetX,
+      friction: 8.5,
+      tension: 65,
+      useNativeDriver: true,
+    }).start();
+  }, [active, layout.width, targetX]);
+
   return (
-    <View className="absolute bottom-6 left-6 right-6">
+    <View className="absolute bottom-6 left-0 right-0 items-center" pointerEvents="box-none">
       <View
-        className="bg-white/80 rounded-full flex-row items-center justify-around px-4 py-3 border border-white/60"
+        className="rounded-full flex-row items-center relative overflow-hidden"
+        onLayout={onContainerLayout}
         style={{
+          width: '82%',
+          maxWidth: 340,
+          minWidth: 280,
+          backgroundColor: 'rgba(255, 255, 255, 0.32)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.65)',
           shadowColor: '#0284C7',
           shadowOffset: { width: 0, height: 6 },
           shadowOpacity: 0.12,
           shadowRadius: 20,
           elevation: 8,
-        }}
+          paddingVertical: 6,
+          paddingHorizontal: 6,
+        } as any}
       >
+        <BlurView
+          intensity={40}
+          tint="light"
+          style={StyleSheet.absoluteFill}
+        />
+
+        {/* Sliding active indicator */}
+        {layout.width > 0 && (
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                top: layout.height > 0 ? (layout.height - INDICATOR_SIZE) / 2 : 6,
+                left: 0,
+                width: INDICATOR_SIZE,
+                height: INDICATOR_SIZE,
+                borderRadius: INDICATOR_SIZE / 2,
+                overflow: 'hidden',
+                transform: [{ translateX }],
+                shadowColor: '#2347A8',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.35,
+                shadowRadius: 10,
+                elevation: 6,
+                zIndex: 1,
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <LinearGradient
+              colors={['rgba(10, 36, 114, 0.95)', 'rgba(18, 52, 153, 0.95)', '#72caec']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
+        )}
+
         {tabs.map((tab) => {
           const isActive = active === tab.screen;
           return (
             <Pressable
               key={tab.screen}
               onPress={() => navigate(tab.screen)}
-              className={`w-12 h-12 rounded-full items-center justify-center ${isActive ? 'bg-cura-900' : 'bg-transparent'}`}
+              style={({ pressed, hovered }: any) => [
+                {
+                  flex: 1,
+                  height: 48,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 2,
+                  transform: [{ scale: pressed ? 0.95 : hovered ? 1.05 : 1 }],
+                  transitionProperty: 'transform',
+                  transitionDuration: '150ms',
+                } as any,
+              ]}
             >
               {tab.icon(isActive)}
             </Pressable>
