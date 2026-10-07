@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +23,12 @@ function getGreeting() {
   if (h < 17) return "Good Afternoon";
   return "Good Evening";
 }
+
+const ADMIN_PORTAL_GRADIENT = {
+  colors: ['rgba(10, 36, 114, 0.85)', 'rgba(18, 52, 153, 0.9)', '#72caec'] as const,
+  start: { x: 0, y: 0 },
+  end: { x: 1, y: 1 },
+};
 
 export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
   const insets = useSafeAreaInsets();
@@ -328,9 +335,17 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           
           <Pressable 
             onPress={() => isQueueActive ? {} : isBedActive ? {} : navigate("medications")}
-            className="w-full bg-cura-900 rounded-[32px] p-6 relative overflow-hidden mt-2"
+            className="w-full bg-white rounded-[32px] p-6 relative overflow-hidden mt-2"
             style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 }}
           >
+            {/* Admin Portal Gradient Background */}
+            <LinearGradient
+              colors={ADMIN_PORTAL_GRADIENT.colors}
+              start={ADMIN_PORTAL_GRADIENT.start}
+              end={ADMIN_PORTAL_GRADIENT.end}
+              style={StyleSheet.absoluteFill}
+            />
+
             {/* Background Decorations */}
             <Animated.View 
               className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10" 
