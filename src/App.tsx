@@ -412,7 +412,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       <MobileShell theme={theme}>
         {renderScreen()}
         {splashDone && isMainTab && (
-          <BottomNav active={current.screen} navigate={navigate} />
+          <BottomNav active={current.screen} navigate={navigate} isDark={theme === 'dark'} />
         )}
       </MobileShell>
     </AlertProvider>
