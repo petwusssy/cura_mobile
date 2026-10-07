@@ -45,6 +45,7 @@ import {
 import { MASCOTS } from "../data";
 import { useAlert } from "../components/AlertProvider";
 import { Button, Input } from "../components/Shell";
+import { FogBackground } from "../components/FogBackground";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -3274,19 +3275,25 @@ export function WelcomeScreen({
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#07173F", overflow: "hidden" }}>
-      {/* FULL-BLEED Brand Background - continuous across full screen, behind header, hero, and bottom sheet */}
-      <WelcomeBackground bgBlurAnim={bgBlurAnim} />
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF", overflow: "hidden" }}>
+      {/* Reusable FogBackground with pure #FFFFFF base and soft blue smoke/fog blobs */}
+      <FogBackground baseColor="#FFFFFF" />
 
-      {/* Animated 3-Blob Cluster behind CURA Logo, Wordmark & Tagline (Full-screen coordinates matching white outlines) */}
-      <AnimatedBlobsCluster
-        isModalOpen={authMode !== null}
-        screenWidth={width}
-        screenHeight={height}
+      {/* Modal dimming overlay when auth sheet is open */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: "rgba(15, 23, 42, 0.45)",
+            opacity: bgBlurAnim,
+            zIndex: 1,
+          },
+        ]}
       />
 
       {/* 1) Top Section (Header + Hero) */}
-      <View style={{ flex: 1, position: "relative" }}>
+      <View style={{ flex: 1, position: "relative", zIndex: 2 }}>
 
         {/* 2) Header (Top-left) */}
         <View
@@ -3340,9 +3347,9 @@ export function WelcomeScreen({
           )}
           <Text
             style={{
-              color: "#FFFFFF",
+              color: "#0F2B5C",
               fontSize: 22,
-              fontWeight: "500",
+              fontWeight: "600",
               letterSpacing: 0.5,
               fontFamily: "Outfit",
               marginLeft: 14,
@@ -3527,11 +3534,11 @@ export function WelcomeScreen({
                 userSelect: "none",
               }}
             >
-              {/* Base text: pure white */}
+              {/* Base text: deep brand navy */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span
                   style={{
-                    color: "#FFFFFF",
+                    color: "#0F2B5C",
                     fontSize: wordmarkSize,
                     fontWeight: 800,
                     letterSpacing: 1.5,
@@ -3567,7 +3574,7 @@ export function WelcomeScreen({
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                     backgroundImage:
-                      "linear-gradient(180deg, rgba(186,230,253,0) 0%, rgba(186,230,253,0.85) 35%, #7DD3FC 50%, rgba(186,230,253,0.85) 65%, rgba(186,230,253,0) 100%)",
+                      "linear-gradient(180deg, rgba(77,163,255,0) 0%, rgba(77,163,255,0.7) 35%, #007AFF 50%, rgba(77,163,255,0.7) 65%, rgba(77,163,255,0) 100%)",
                     backgroundSize: "100% 280%",
                     animation: "curaTextShineSweep 5s ease-in-out infinite",
                   }}
@@ -3614,7 +3621,7 @@ export function WelcomeScreen({
                     </View>
                   }
                 >
-                  {/* Base text: pure white */}
+                  {/* Base text: deep brand navy */}
                   <View
                     style={{
                       flexDirection: "row",
@@ -3624,7 +3631,7 @@ export function WelcomeScreen({
                   >
                     <Text
                       style={{
-                        color: "#FFFFFF",
+                        color: "#0F2B5C",
                         fontSize: wordmarkSize,
                         fontWeight: "800",
                         letterSpacing: 1.5,
@@ -3655,11 +3662,11 @@ export function WelcomeScreen({
                   >
                     <LinearGradient
                       colors={[
-                        "rgba(186, 230, 253, 0)",
-                        "rgba(186, 230, 253, 0.85)",
-                        "#7DD3FC",
-                        "rgba(186, 230, 253, 0.85)",
-                        "rgba(186, 230, 253, 0)",
+                        "rgba(77, 163, 255, 0)",
+                        "rgba(77, 163, 255, 0.7)",
+                        "#007AFF",
+                        "rgba(77, 163, 255, 0.7)",
+                        "rgba(77, 163, 255, 0)",
                       ]}
                       locations={[0, 0.25, 0.5, 0.75, 1]}
                       style={{ width: "100%", height: "100%" }}
@@ -3676,7 +3683,7 @@ export function WelcomeScreen({
                 >
                   <Text
                     style={{
-                      color: "#FFFFFF",
+                      color: "#0F2B5C",
                       fontSize: wordmarkSize,
                       fontWeight: "800",
                       letterSpacing: 1.5,
@@ -3693,16 +3700,13 @@ export function WelcomeScreen({
           {/* Tagline */}
           <Text
             style={{
-              color: "#FFFFFF",
+              color: "#334155",
               fontSize: taglineSize,
               lineHeight: taglineSize + 8,
               fontWeight: "500",
               textAlign: "center",
               maxWidth: width * 0.78,
               marginTop: 12,
-              textShadowColor: "rgba(0, 0, 0, 0.35)",
-              textShadowOffset: { width: 0, height: 2 },
-              textShadowRadius: 4,
             }}
           >
             Your personal health companion for smarter, simpler campus care.
