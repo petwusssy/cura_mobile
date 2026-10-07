@@ -63,3 +63,9 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+export const ADMIN_PORTAL_GRADIENT = {
+  colors: ['rgba(10, 36, 114, 0.85)', 'rgba(18, 52, 153, 0.9)', '#72caec'] as const,
+  start: { x: 0, y: 0 },
+  end: { x: 1, y: 1 },
+};

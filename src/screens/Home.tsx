@@ -24,11 +24,7 @@ function getGreeting() {
   return "Good Evening";
 }
 
-const ADMIN_PORTAL_GRADIENT = {
-  colors: ['rgba(10, 36, 114, 0.85)', 'rgba(18, 52, 153, 0.9)', '#72caec'] as const,
-  start: { x: 0, y: 0 },
-  end: { x: 1, y: 1 },
-};
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
   const insets = useSafeAreaInsets();

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl } from "react-native";
+import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Screen, AppUser } from "../types";
 import { formatTime12 } from "../utils/philippineTime";
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -183,8 +185,8 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                       activeOpacity={0.75}
                       className="flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden"
                       style={{
-                        backgroundColor: isSelected ? "#0B2136" : "#FFFFFF",
-                        borderColor: isSelected ? "#0B2136" : "#E2E8F0",
+                        backgroundColor: isSelected ? "transparent" : "#FFFFFF",
+                        borderColor: isSelected ? "#1E3A9E" : "#E2E8F0",
                         borderWidth: isSelected ? 2 : 1,
                         elevation: isSelected ? 3 : 1,
                         shadowColor: "#000",
@@ -193,6 +195,14 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                         shadowRadius: 6,
                       }}
                     >
+                      {isSelected && (
+                        <LinearGradient
+                          colors={ADMIN_PORTAL_GRADIENT.colors}
+                          start={ADMIN_PORTAL_GRADIENT.start}
+                          end={ADMIN_PORTAL_GRADIENT.end}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      )}
                       {isSelected && (
                         <View className="absolute top-0 left-0 right-0 h-1 bg-sky-400" />
                       )}
@@ -287,8 +297,8 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                       activeOpacity={0.75}
                       className="flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden"
                       style={{
-                        backgroundColor: isSelected ? "#0B2136" : "#FFFFFF",
-                        borderColor: isSelected ? "#0B2136" : "#E2E8F0",
+                        backgroundColor: isSelected ? "transparent" : "#FFFFFF",
+                        borderColor: isSelected ? "#1E3A9E" : "#E2E8F0",
                         borderWidth: isSelected ? 2 : 1,
                         elevation: isSelected ? 3 : 1,
                         shadowColor: "#000",
@@ -297,6 +307,14 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                         shadowRadius: 6,
                       }}
                     >
+                      {isSelected && (
+                        <LinearGradient
+                          colors={ADMIN_PORTAL_GRADIENT.colors}
+                          start={ADMIN_PORTAL_GRADIENT.start}
+                          end={ADMIN_PORTAL_GRADIENT.end}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      )}
                       {isSelected && (
                         <View className="absolute top-0 left-0 right-0 h-1 bg-sky-400" />
                       )}
