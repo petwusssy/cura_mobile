@@ -32,9 +32,9 @@ export interface FogBackgroundProps {
 
 /**
  * Reusable FogBackground Component
- * - Top ~25% is clean pure white (#FFFFFF).
- * - Bottom ~75% (gitna pababa) is filled with large animated blue smoke/fog plumes
- *   (#4DA3FF, #007AFF, #BFE0FF) drifting gently in 10-14s 60fps loops.
+ * - Top ~20% is clean pure white (#FFFFFF).
+ * - Bottom ~80% (mula sa taas ng shield logo pababa) is filled with large animated
+ *   blue smoke/fog plumes (#4DA3FF, #007AFF, #BFE0FF) drifting in 10-14s 60fps loops.
  */
 export const FogBackground = memo(function FogBackground({
   baseColor = "#FFFFFF",
@@ -45,27 +45,32 @@ export const FogBackground = memo(function FogBackground({
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const reduceMotion = Boolean(useReducedMotion());
 
-  // Cloud 1: Center-Upper Smoke Plume (~10.5s loop, starts around 25% height)
+  // Cloud 0: Above Shield Logo Crown Plume (~10.2s loop, starts at ~18-20% height directly above shield)
+  const c0Tx = useSharedValue(0);
+  const c0Ty = useSharedValue(0);
+  const c0Scale = useSharedValue(1);
+
+  // Cloud 1: Center-Upper Smoke Plume (~10.8s loop, around 24% height)
   const c1Tx = useSharedValue(0);
   const c1Ty = useSharedValue(0);
   const c1Scale = useSharedValue(1);
 
-  // Cloud 2: Mid-Right Fog Billow (~12.2s loop)
+  // Cloud 2: Mid-Right Fog Billow (~12.2s loop, ~34% height)
   const c2Tx = useSharedValue(0);
   const c2Ty = useSharedValue(0);
   const c2Scale = useSharedValue(1);
 
-  // Cloud 3: Mid-Left Smoke Billow (~11.0s loop)
+  // Cloud 3: Mid-Left Smoke Billow (~11.0s loop, ~46% height)
   const c3Tx = useSharedValue(0);
   const c3Ty = useSharedValue(0);
   const c3Scale = useSharedValue(1);
 
-  // Cloud 4: Lower-Center Large Cloud (~13.0s loop)
+  // Cloud 4: Lower-Center Large Cloud (~13.0s loop, ~58% height)
   const c4Tx = useSharedValue(0);
   const c4Ty = useSharedValue(0);
   const c4Scale = useSharedValue(1);
 
-  // Cloud 5: Bottom Haze Mist (~9.8s loop)
+  // Cloud 5: Bottom Haze Mist (~9.8s loop, bottom safe area)
   const c5Tx = useSharedValue(0);
   const c5Ty = useSharedValue(0);
   const c5Scale = useSharedValue(1);
@@ -76,26 +81,43 @@ export const FogBackground = memo(function FogBackground({
     if (reduceMotion || isRunningRef.current) return;
     isRunningRef.current = true;
 
+    // Cloud 0: Above Shield drift
+    c0Tx.value = withRepeat(
+      withTiming(36, { duration: 10200, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    c0Ty.value = withRepeat(
+      withTiming(24, { duration: 9600, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    c0Scale.value = withRepeat(
+      withTiming(1.10, { duration: 10200, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+
     // Cloud 1: Center-Upper drift
     c1Tx.value = withRepeat(
-      withTiming(40, { duration: 10500, easing: Easing.inOut(Easing.ease) }),
+      withTiming(-38, { duration: 10800, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     c1Ty.value = withRepeat(
-      withTiming(26, { duration: 9800, easing: Easing.inOut(Easing.ease) }),
+      withTiming(28, { duration: 10000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     c1Scale.value = withRepeat(
-      withTiming(1.12, { duration: 10500, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1.12, { duration: 10800, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
 
     // Cloud 2: Mid-Right counter-drift
     c2Tx.value = withRepeat(
-      withTiming(-38, { duration: 12200, easing: Easing.inOut(Easing.ease) }),
+      withTiming(-40, { duration: 12200, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
@@ -122,7 +144,7 @@ export const FogBackground = memo(function FogBackground({
       true
     );
     c3Scale.value = withRepeat(
-      withTiming(1.10, { duration: 11000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1.12, { duration: 11000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
@@ -164,6 +186,9 @@ export const FogBackground = memo(function FogBackground({
 
   const stopAnimations = () => {
     isRunningRef.current = false;
+    cancelAnimation(c0Tx);
+    cancelAnimation(c0Ty);
+    cancelAnimation(c0Scale);
     cancelAnimation(c1Tx);
     cancelAnimation(c1Ty);
     cancelAnimation(c1Scale);
@@ -183,6 +208,9 @@ export const FogBackground = memo(function FogBackground({
 
   useEffect(() => {
     if (reduceMotion) {
+      c0Tx.value = 0;
+      c0Ty.value = 0;
+      c0Scale.value = 1;
       c1Tx.value = 0;
       c1Ty.value = 0;
       c1Scale.value = 1;
@@ -221,6 +249,14 @@ export const FogBackground = memo(function FogBackground({
   }, [reduceMotion]);
 
   // Animated styles
+  const cloud0Style = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: c0Tx.value },
+      { translateY: c0Ty.value },
+      { scale: c0Scale.value },
+    ],
+  }));
+
   const cloud1Style = useAnimatedStyle(() => ({
     transform: [
       { translateX: c1Tx.value },
@@ -261,7 +297,8 @@ export const FogBackground = memo(function FogBackground({
     ],
   }));
 
-  // Sizing calibrated for huge billowing smoke across the lower 75%
+  // Sizing calibrated for billowing smoke across 80% of screen
+  const cloud0Size = Math.max(screenWidth * 1.35, 450);
   const cloud1Size = Math.max(screenWidth * 1.40, 480);
   const cloud2Size = Math.max(screenWidth * 1.35, 450);
   const cloud3Size = Math.max(screenWidth * 1.40, 470);
@@ -277,16 +314,44 @@ export const FogBackground = memo(function FogBackground({
         style,
       ]}
     >
-      {/* ── Top ~25% is left pure white #FFFFFF (no clouds in top 0-25%) ── */}
+      {/* ── Top ~20% is left pure white #FFFFFF (clean header space) ── */}
 
-      {/* ── 1) Cloud 1: Center-Upper Smoke Plume (starts at 25% height) ── */}
+      {/* ── 0) Cloud 0: Above Shield Logo Crown Mist (~18-20% height directly above shield) ── */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.blobBase,
+          {
+            top: screenHeight * 0.17,
+            left: (screenWidth - cloud0Size) / 2,
+            width: cloud0Size,
+            height: cloud0Size,
+          },
+          cloud0Style,
+        ]}
+      >
+        <Svg width="100%" height="100%" viewBox="0 0 500 500">
+          <Defs>
+            <RadialGradient id="fogCrown0" cx="50%" cy="50%" r="50%" fx="50%" fy="48%">
+              <Stop offset="0%" stopColor="#4DA3FF" stopOpacity="0.42" />
+              <Stop offset="28%" stopColor="#BFE0FF" stopOpacity="0.28" />
+              <Stop offset="58%" stopColor="#007AFF" stopOpacity="0.14" />
+              <Stop offset="82%" stopColor="#BAE6FD" stopOpacity="0.04" />
+              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="500" height="500" fill="url(#fogCrown0)" />
+        </Svg>
+      </Animated.View>
+
+      {/* ── 1) Cloud 1: Center-Upper Smoke Plume (~24% height around shield and wordmark) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
             top: screenHeight * 0.24,
-            left: (screenWidth - cloud1Size) / 2,
+            left: -cloud1Size * 0.16,
             width: cloud1Size,
             height: cloud1Size,
           },
@@ -296,10 +361,10 @@ export const FogBackground = memo(function FogBackground({
         <Svg width="100%" height="100%" viewBox="0 0 500 500">
           <Defs>
             <RadialGradient id="fogPlume1" cx="50%" cy="50%" r="50%" fx="48%" fy="48%">
-              <Stop offset="0%" stopColor="#4DA3FF" stopOpacity="0.44" />
-              <Stop offset="28%" stopColor="#4DA3FF" stopOpacity="0.30" />
-              <Stop offset="58%" stopColor="#BFE0FF" stopOpacity="0.18" />
-              <Stop offset="82%" stopColor="#BAE6FD" stopOpacity="0.06" />
+              <Stop offset="0%" stopColor="#BFE0FF" stopOpacity="0.46" />
+              <Stop offset="30%" stopColor="#4DA3FF" stopOpacity="0.30" />
+              <Stop offset="60%" stopColor="#007AFF" stopOpacity="0.16" />
+              <Stop offset="84%" stopColor="#BAE6FD" stopOpacity="0.05" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </RadialGradient>
           </Defs>
@@ -307,13 +372,13 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── 2) Cloud 2: Mid-Right Smoke Billow (~36% height) ── */}
+      {/* ── 2) Cloud 2: Mid-Right Smoke Billow (~34% height) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.36,
+            top: screenHeight * 0.34,
             right: -cloud2Size * 0.20,
             width: cloud2Size,
             height: cloud2Size,
@@ -335,13 +400,13 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── 3) Cloud 3: Mid-Left Smoke Billow (~48% height) ── */}
+      {/* ── 3) Cloud 3: Mid-Left Smoke Billow (~46% height) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.48,
+            top: screenHeight * 0.46,
             left: -cloud3Size * 0.22,
             width: cloud3Size,
             height: cloud3Size,
@@ -363,13 +428,13 @@ export const FogBackground = memo(function FogBackground({
         </Svg>
       </Animated.View>
 
-      {/* ── 4) Cloud 4: Lower-Center Large Cloud (~62% height) ── */}
+      {/* ── 4) Cloud 4: Lower-Center Large Cloud (~58% height) ── */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.blobBase,
           {
-            top: screenHeight * 0.60,
+            top: screenHeight * 0.58,
             left: (screenWidth - cloud4Size) / 2,
             width: cloud4Size,
             height: cloud4Size,
@@ -397,7 +462,7 @@ export const FogBackground = memo(function FogBackground({
         style={[
           styles.blobBase,
           {
-            bottom: -cloud5Size * 0.18,
+            bottom: -cloud5Size * 0.16,
             right: -cloud5Size * 0.18,
             width: cloud5Size,
             height: cloud5Size,
