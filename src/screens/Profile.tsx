@@ -12,7 +12,9 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  useColorScheme,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline } from "react-native-svg";
 import type { Screen, AppUser } from "../types";
@@ -44,8 +46,11 @@ export function ProfileScreen({
   consultations = [],
   medications = [],
   certificates = [],
+  theme = "light",
 }: Props) {
   const insets = useSafeAreaInsets();
+  const systemScheme = useColorScheme();
+  const isDark = theme === "dark" || systemScheme === "dark";
   const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
   const userKey = user.id || (user as any).id_number || user.email || "default";
 
@@ -468,7 +473,17 @@ export function ProfileScreen({
           onPress={handleOpenMyInfoEdit}
           className="px-3 py-1 rounded-full active:opacity-80"
           style={{
-            backgroundColor: infoCooldown.active ? "rgba(251, 191, 36, 0.2)" : "rgba(255, 255, 255, 0.2)",
+            backgroundColor: infoCooldown.active
+              ? "rgba(251, 191, 36, 0.2)"
+              : isDark
+              ? "rgba(255, 255, 255, 0.12)"
+              : "rgba(255, 255, 255, 0.22)",
+            borderWidth: 1,
+            borderColor: infoCooldown.active
+              ? "rgba(251, 191, 36, 0.4)"
+              : isDark
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(255, 255, 255, 0.45)",
           }}
         >
           <Text
@@ -490,7 +505,14 @@ export function ProfileScreen({
       title: "Preferences",
       cooldown: prefCooldown,
       action: prefCooldown.active ? (
-        <View className="bg-amber-400/20 px-3 py-1 rounded-full">
+        <View
+          className="px-3 py-1 rounded-full"
+          style={{
+            backgroundColor: "rgba(251, 191, 36, 0.2)",
+            borderWidth: 1,
+            borderColor: "rgba(251, 191, 36, 0.4)",
+          }}
+        >
           <Text className="text-[10px] font-bold text-amber-200">⏳ {prefCooldown.days}d Cooldown</Text>
         </View>
       ) : null,
@@ -534,15 +556,29 @@ export function ProfileScreen({
         className="px-5 pb-7"
         style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
-        <Text className="text-cura-900 text-[22px] font-black tracking-tight mb-5" style={{ fontFamily: "Outfit" }}>Profile</Text>
+        <Text
+          className="text-[22px] font-black tracking-tight mb-5"
+          style={{ fontFamily: "Outfit", color: isDark ? "#FFFFFF" : "#0B2136" }}
+        >
+          Profile
+        </Text>
 
         <View className="flex-row items-center gap-4">
           <View className="relative">
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={66} />
             <Pressable
               onPress={handleOpenMascotModal}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center border-2 border-white"
-              style={{ backgroundColor: "#0B2136", elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8 }}
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: isDark ? "#1E293B" : "#0B2136",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.3)" : "#FFFFFF",
+                borderWidth: 2,
+                elevation: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+              }}
             >
               <Svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -550,19 +586,24 @@ export function ProfileScreen({
             </Pressable>
           </View>
           <View>
-            <Text className="text-xl font-black text-cura-900" style={{ fontFamily: "Outfit" }}>
+            <Text
+              className="text-xl font-black"
+              style={{ fontFamily: "Outfit", color: isDark ? "#FFFFFF" : "#0B2136" }}
+            >
               {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
-            <Text className="text-xs text-slate-500 mt-0.5">{user.email}</Text>
+            <Text className="text-xs mt-0.5" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+              {user.email}
+            </Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
                 className="rounded-full px-2.5 py-0.5"
-                style={{ backgroundColor: "#0B2136" }}
+                style={{ backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#0B2136" }}
               >
                 <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
               </View>
               {user.category?.toLowerCase() === "student" && (
-                <Text className="text-[10px] text-slate-500 font-medium">
+                <Text className="text-[10px] font-medium" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
                   {[(user as any).studentCategory, user.course, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null, user.yearLevel].filter(Boolean).join(' · ')}
                 </Text>
               )}
@@ -580,12 +621,44 @@ export function ProfileScreen({
             <Pressable
               key={s.label}
               onPress={s.action}
-              className="flex-1 bg-white rounded-[32px] px-3 py-4 items-center active:opacity-90"
-              style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
+              className="flex-1 active:opacity-90"
+              style={{
+                borderRadius: 24,
+                shadowColor: isDark ? "#000000" : "#0A2540",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: isDark ? 0.35 : 0.08,
+                shadowRadius: 14,
+                elevation: 3,
+              }}
             >
-              <Text className="text-base mb-1">{s.icon}</Text>
-              <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>{s.value}</Text>
-              <Text className="text-[10px] text-slate-400 font-medium">{s.label}</Text>
+              <BlurView
+                intensity={isDark ? 55 : 75}
+                tint={isDark ? "dark" : "light"}
+                style={{
+                  borderRadius: 24,
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.75)",
+                  backgroundColor: isDark ? "rgba(22, 32, 50, 0.65)" : "rgba(255, 255, 255, 0.68)",
+                  overflow: "hidden",
+                  paddingHorizontal: 12,
+                  paddingVertical: 16,
+                  alignItems: "center",
+                }}
+              >
+                <Text className="text-base mb-1">{s.icon}</Text>
+                <Text
+                  className="text-xl font-black"
+                  style={{ fontFamily: "Outfit", color: isDark ? "#FFFFFF" : "#0B2136" }}
+                >
+                  {s.value}
+                </Text>
+                <Text
+                  className="text-[10px] font-medium"
+                  style={{ color: isDark ? "#94A3B8" : "#64748B" }}
+                >
+                  {s.label}
+                </Text>
+              </BlurView>
             </Pressable>
           ))}
         </View>
@@ -596,66 +669,181 @@ export function ProfileScreen({
           {sections.map((section) => (
             <View key={section.title}>
               <View className="flex-row items-center justify-between mb-2 px-1">
-                <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider">{section.title}</Text>
+                <Text
+                  className="text-[11px] font-bold uppercase tracking-wider"
+                  style={{ color: isDark ? "rgba(255, 255, 255, 0.75)" : "rgba(255, 255, 255, 0.85)" }}
+                >
+                  {section.title}
+                </Text>
                 {section.action}
               </View>
               <View
-                className="bg-white rounded-[32px] overflow-hidden p-2"
-                style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 }}
+                style={{
+                  borderRadius: 28,
+                  shadowColor: isDark ? "#000000" : "#0A2540",
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: isDark ? 0.35 : 0.08,
+                  shadowRadius: 16,
+                  elevation: 3,
+                }}
               >
-                {section.items.map((item: any, i) => (
-                  <Pressable
-                    key={`${item.label}-${i}`}
-                    onPress={item.onPress}
-                    className={`flex-row items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-sky-50" : ""}`}
-                  >
-                    <View
-                      className="w-9 h-9 rounded-xl items-center justify-center"
-                      style={{ backgroundColor: item.color }}
+                <BlurView
+                  intensity={isDark ? 55 : 75}
+                  tint={isDark ? "dark" : "light"}
+                  style={{
+                    borderRadius: 28,
+                    borderWidth: 1,
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.75)",
+                    backgroundColor: isDark ? "rgba(22, 32, 50, 0.65)" : "rgba(255, 255, 255, 0.68)",
+                    overflow: "hidden",
+                    padding: 8,
+                  }}
+                >
+                  {section.items.map((item: any, i) => (
+                    <Pressable
+                      key={`${item.label}-${i}`}
+                      onPress={item.onPress}
+                      className="flex-row items-center gap-3 px-4 py-3.5"
+                      style={
+                        i > 0
+                          ? {
+                              borderTopWidth: 1,
+                              borderTopColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(224, 242, 254, 0.6)",
+                            }
+                          : undefined
+                      }
                     >
-                      <Text className="text-base">{item.icon}</Text>
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-sm font-semibold text-slate-800">{item.label}</Text>
-                      <Text className="text-xs text-slate-400 mt-0.5" numberOfLines={1}>{item.sub}</Text>
-                    </View>
-                    <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <Polyline points="9 18 15 12 9 6"/>
-                    </Svg>
-                  </Pressable>
-                ))}
+                      <View
+                        className="w-9 h-9 rounded-xl items-center justify-center"
+                        style={{
+                          backgroundColor: isDark
+                            ? "rgba(255, 255, 255, 0.09)"
+                            : item.color,
+                          borderWidth: isDark ? 1 : 0,
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                        }}
+                      >
+                        <Text className="text-base">{item.icon}</Text>
+                      </View>
+                      <View className="flex-1">
+                        <Text
+                          className="text-sm font-semibold"
+                          style={{ color: isDark ? "#F8FAFC" : "#1E293B" }}
+                        >
+                          {item.label}
+                        </Text>
+                        <Text
+                          className="text-xs mt-0.5"
+                          numberOfLines={1}
+                          style={{ color: isDark ? "#94A3B8" : "#64748B" }}
+                        >
+                          {item.sub}
+                        </Text>
+                      </View>
+                      <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#64748B" : "#CBD5E1"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <Polyline points="9 18 15 12 9 6"/>
+                      </Svg>
+                    </Pressable>
+                  ))}
+                </BlurView>
               </View>
             </View>
           ))}
 
-
           {/* Logout */}
           <Pressable
             onPress={resetApp}
-            className="flex-row items-center gap-3 bg-white rounded-2xl px-4 py-4 mt-1 border border-rose-100"
-            style={{ elevation: 2, shadowColor: '#F43F5E', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 }}
+            className="mt-1 active:opacity-90"
+            style={{
+              borderRadius: 22,
+              shadowColor: "#F43F5E",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDark ? 0.25 : 0.08,
+              shadowRadius: 14,
+              elevation: 2,
+            }}
           >
-            <View className="w-9 h-9 rounded-xl bg-rose-50 items-center justify-center">
-              <Text className="text-base">🚪</Text>
-            </View>
-            <Text className="text-sm font-bold text-rose-500">Sign Out</Text>
-            <View className="flex-1 items-end">
-              <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FDA4AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <Polyline points="9 18 15 12 9 6"/>
-              </Svg>
-            </View>
+            <BlurView
+              intensity={isDark ? 55 : 75}
+              tint={isDark ? "dark" : "light"}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                borderRadius: 22,
+                borderWidth: 1,
+                borderColor: isDark ? "rgba(244, 63, 94, 0.35)" : "rgba(255, 255, 255, 0.8)",
+                backgroundColor: isDark ? "rgba(244, 63, 94, 0.08)" : "rgba(255, 255, 255, 0.68)",
+                overflow: "hidden",
+                paddingHorizontal: 16,
+                paddingVertical: 16,
+              }}
+            >
+              <View
+                className="w-9 h-9 rounded-xl items-center justify-center"
+                style={{
+                  backgroundColor: isDark ? "rgba(244, 63, 94, 0.2)" : "#FFF1F2",
+                  borderWidth: isDark ? 1 : 0,
+                  borderColor: isDark ? "rgba(244, 63, 94, 0.3)" : "transparent",
+                }}
+              >
+                <Text className="text-base">🚪</Text>
+              </View>
+              <Text className="text-sm font-bold text-rose-500">Sign Out</Text>
+              <View className="flex-1 items-end">
+                <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#FB7185" : "#FDA4AF"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <Polyline points="9 18 15 12 9 6"/>
+                </Svg>
+              </View>
+            </BlurView>
           </Pressable>
 
           <View className="items-center flex-col gap-1.5 mt-6 mb-4">
-            <View className="w-9 h-9 rounded-xl bg-white items-center justify-center p-1.5" style={{ elevation: 2 }}>
-              <Image
-                source={require("../../assets/images/cura-logo.png")}
-                style={{ width: "100%", height: "100%" }}
-                resizeMode="contain"
-              />
+            <View
+              style={{
+                borderRadius: 14,
+                shadowColor: isDark ? "#000" : "#0A2540",
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: isDark ? 0.3 : 0.08,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
+            >
+              <BlurView
+                intensity={isDark ? 55 : 75}
+                tint={isDark ? "dark" : "light"}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "rgba(255, 255, 255, 0.8)",
+                  backgroundColor: isDark ? "rgba(22, 32, 50, 0.65)" : "rgba(255, 255, 255, 0.72)",
+                  overflow: "hidden",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 6,
+                }}
+              >
+                <Image
+                  source={require("../../assets/images/cura-logo.png")}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                />
+              </BlurView>
             </View>
-            <Text className="text-[11px] text-white/70 font-semibold tracking-wide">CURA · University Clinic Patient App</Text>
-            <Text className="text-[10px] text-white/50">v1.0.0 · Your health, our priority 💙</Text>
+            <Text
+              className="text-[11px] font-semibold tracking-wide"
+              style={{ color: isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(255, 255, 255, 0.7)" }}
+            >
+              CURA · University Clinic Patient App
+            </Text>
+            <Text
+              className="text-[10px]"
+              style={{ color: isDark ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.5)" }}
+            >
+              v1.0.0 · Your health, our priority 💙
+            </Text>
           </View>
         </View>
       </ScrollView>
