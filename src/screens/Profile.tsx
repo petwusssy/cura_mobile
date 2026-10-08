@@ -415,6 +415,8 @@ export function ProfileScreen({
   // My Information items
   const myInfoItems = [
     { icon: "🪪", label: "ID", sub: (user as any).id || user.id_number || "—", color: "#F3F4F6", onPress: handleOpenMyInfoEdit },
+    { icon: "👤", label: "Gender", sub: user.gender || (user as any).sex || "—", color: "#EFF8FF", onPress: handleOpenMyInfoEdit },
+    { icon: "📅", label: "Date of Birth", sub: user.dob || (user as any).birthday ? new Date(user.dob || (user as any).birthday).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" }) : "—", color: "#ECFDF5", onPress: handleOpenMyInfoEdit },
     { icon: "📞", label: "Contact Details", sub: user.phone || (user as any).contact || "—", color: "#ECFEFF", onPress: handleOpenMyInfoEdit },
     { icon: "📧", label: "Email", sub: user.email || "—", color: "#EFF8FF", onPress: handleOpenMyInfoEdit },
     { icon: "🆘", label: "Emergency Contact", sub: `${user.emergencyName || (user as any).emergencyContact || "—"} (${user.emergencyPhone || "—"})`, color: "#FFF7ED", onPress: handleOpenMyInfoEdit },
@@ -626,25 +628,6 @@ export function ProfileScreen({
             </View>
           ))}
 
-          {/* Health Summary */}
-          <View>
-            <Text className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-2 px-1">Health Summary</Text>
-            <View className="bg-white rounded-2xl p-4" style={{ elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 }}>
-              <View className="flex-row flex-wrap justify-between">
-                {[
-                  { label: "Blood Type", value: user.bloodType || "—", bg: "#FFF1F2", color: "#F43F5E" },
-                  { label: "Gender", value: user.gender || (user as any).sex || "—", bg: "#EFF8FF", color: "#0994E8" },
-                  { label: "Date of Birth", value: user.dob || (user as any).birthday ? new Date(user.dob || (user as any).birthday).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" }) : "—", bg: "#ECFDF5", color: "#059669" },
-                  { label: "Emergency", value: user.emergencyName || (user as any).emergencyContact ? `${user.emergencyName || (user as any).emergencyContact}` : "—", bg: "#FFFBEB", color: "#D97706" },
-                ].map((item) => (
-                  <View key={item.label} className="rounded-xl p-3 mb-2" style={{ backgroundColor: item.bg, width: '48%' }}>
-                    <Text className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: item.color }}>{item.label}</Text>
-                    <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>{item.value}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
 
           {/* Logout */}
           <Pressable
