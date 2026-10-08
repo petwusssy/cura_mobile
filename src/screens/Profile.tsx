@@ -13,8 +13,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   useColorScheme,
+  StyleSheet,
 } from "react-native";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline } from "react-native-svg";
 import type { Screen, AppUser } from "../types";
@@ -551,6 +553,100 @@ export function ProfileScreen({
 
   return (
     <View className="flex-1 bg-transparent">
+      {/* Liquid Glass Background Colorful Orbs / Ambient Light */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        {/* Top-right vibrant sky / cyan orb */}
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(14, 165, 233, 0.35)", "rgba(56, 189, 248, 0.12)", "transparent"]
+              : ["rgba(14, 165, 233, 0.42)", "rgba(56, 189, 248, 0.18)", "transparent"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            position: "absolute",
+            top: insets.top + 10,
+            right: -50,
+            width: 250,
+            height: 250,
+            borderRadius: 125,
+          }}
+        />
+        {/* Upper-left vibrant violet / indigo orb */}
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(139, 92, 246, 0.3)", "rgba(99, 102, 241, 0.1)", "transparent"]
+              : ["rgba(139, 92, 246, 0.35)", "rgba(99, 102, 241, 0.15)", "transparent"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            position: "absolute",
+            top: insets.top + 150,
+            left: -60,
+            width: 270,
+            height: 270,
+            borderRadius: 135,
+          }}
+        />
+        {/* Mid-screen azure blue / teal orb */}
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(6, 182, 212, 0.28)", "rgba(37, 99, 235, 0.1)", "transparent"]
+              : ["rgba(6, 182, 212, 0.35)", "rgba(37, 99, 235, 0.15)", "transparent"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            position: "absolute",
+            top: 400,
+            right: -40,
+            width: 260,
+            height: 260,
+            borderRadius: 130,
+          }}
+        />
+        {/* Lower emerald / cyan orb */}
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(16, 185, 129, 0.25)", "rgba(14, 165, 233, 0.08)", "transparent"]
+              : ["rgba(16, 185, 129, 0.3)", "rgba(14, 165, 233, 0.12)", "transparent"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            position: "absolute",
+            top: 640,
+            left: -50,
+            width: 250,
+            height: 250,
+            borderRadius: 125,
+          }}
+        />
+        {/* Bottom rose / amber orb */}
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(244, 63, 94, 0.22)", "rgba(249, 115, 22, 0.06)", "transparent"]
+              : ["rgba(244, 63, 94, 0.26)", "rgba(249, 115, 22, 0.1)", "transparent"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            position: "absolute",
+            bottom: 40,
+            right: 0,
+            width: 220,
+            height: 220,
+            borderRadius: 110,
+          }}
+        />
+      </View>
+
       {/* Profile header */}
       <View
         className="px-5 pb-7"
@@ -571,7 +667,7 @@ export function ProfileScreen({
               className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center"
               style={{
                 backgroundColor: isDark ? "#1E293B" : "#0B2136",
-                borderColor: isDark ? "rgba(255, 255, 255, 0.3)" : "#FFFFFF",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.4)" : "#FFFFFF",
                 borderWidth: 2,
                 elevation: 4,
                 shadowColor: '#000',
@@ -592,18 +688,22 @@ export function ProfileScreen({
             >
               {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
-            <Text className="text-xs mt-0.5" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+            <Text className="text-xs mt-0.5 font-medium" style={{ color: isDark ? "#CBD5E1" : "#475569" }}>
               {user.email}
             </Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
                 className="rounded-full px-2.5 py-0.5"
-                style={{ backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#0B2136" }}
+                style={{
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#0B2136",
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "transparent",
+                }}
               >
                 <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
               </View>
               {user.category?.toLowerCase() === "student" && (
-                <Text className="text-[10px] font-medium" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+                <Text className="text-[10px] font-semibold" style={{ color: isDark ? "#CBD5E1" : "#475569" }}>
                   {[(user as any).studentCategory, user.course, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null, user.yearLevel].filter(Boolean).join(' · ')}
                 </Text>
               )}
@@ -623,28 +723,44 @@ export function ProfileScreen({
               onPress={s.action}
               className="flex-1 active:opacity-90"
               style={{
-                borderRadius: 24,
+                borderRadius: 26,
                 shadowColor: isDark ? "#000000" : "#0A2540",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: isDark ? 0.35 : 0.08,
-                shadowRadius: 14,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: isDark ? 0.3 : 0.07,
+                shadowRadius: 16,
                 elevation: 3,
               }}
             >
               <BlurView
-                intensity={isDark ? 55 : 75}
+                intensity={isDark ? 85 : 95}
                 tint={isDark ? "dark" : "light"}
                 style={{
-                  borderRadius: 24,
+                  borderRadius: 26,
                   borderWidth: 1,
-                  borderColor: isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.75)",
-                  backgroundColor: isDark ? "rgba(22, 32, 50, 0.65)" : "rgba(255, 255, 255, 0.68)",
+                  borderTopColor: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0.9)",
+                  borderLeftColor: isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.65)",
+                  borderRightColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.35)",
+                  borderBottomColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.2)",
+                  backgroundColor: isDark ? "rgba(15, 23, 42, 0.28)" : "rgba(255, 255, 255, 0.16)",
                   overflow: "hidden",
                   paddingHorizontal: 12,
                   paddingVertical: 16,
                   alignItems: "center",
+                  position: "relative",
                 }}
               >
+                {/* Subtle top reflection sheen */}
+                <LinearGradient
+                  colors={
+                    isDark
+                      ? ["rgba(255, 255, 255, 0.18)", "rgba(255, 255, 255, 0.03)", "transparent"]
+                      : ["rgba(255, 255, 255, 0.5)", "rgba(255, 255, 255, 0.12)", "transparent"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 0.9 }}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
                 <Text className="text-base mb-1">{s.icon}</Text>
                 <Text
                   className="text-xl font-black"
@@ -653,8 +769,8 @@ export function ProfileScreen({
                   {s.value}
                 </Text>
                 <Text
-                  className="text-[10px] font-medium"
-                  style={{ color: isDark ? "#94A3B8" : "#64748B" }}
+                  className="text-[10px] font-bold"
+                  style={{ color: isDark ? "#CBD5E1" : "#475569" }}
                 >
                   {s.label}
                 </Text>
@@ -671,7 +787,7 @@ export function ProfileScreen({
               <View className="flex-row items-center justify-between mb-2 px-1">
                 <Text
                   className="text-[11px] font-bold uppercase tracking-wider"
-                  style={{ color: isDark ? "rgba(255, 255, 255, 0.75)" : "rgba(255, 255, 255, 0.85)" }}
+                  style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#0B2136" }}
                 >
                   {section.title}
                 </Text>
@@ -679,26 +795,42 @@ export function ProfileScreen({
               </View>
               <View
                 style={{
-                  borderRadius: 28,
+                  borderRadius: 30,
                   shadowColor: isDark ? "#000000" : "#0A2540",
-                  shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: isDark ? 0.35 : 0.08,
-                  shadowRadius: 16,
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: isDark ? 0.3 : 0.07,
+                  shadowRadius: 20,
                   elevation: 3,
                 }}
               >
                 <BlurView
-                  intensity={isDark ? 55 : 75}
+                  intensity={isDark ? 85 : 95}
                   tint={isDark ? "dark" : "light"}
                   style={{
-                    borderRadius: 28,
+                    borderRadius: 30,
                     borderWidth: 1,
-                    borderColor: isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.75)",
-                    backgroundColor: isDark ? "rgba(22, 32, 50, 0.65)" : "rgba(255, 255, 255, 0.68)",
+                    borderTopColor: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0.9)",
+                    borderLeftColor: isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.65)",
+                    borderRightColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.35)",
+                    borderBottomColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.2)",
+                    backgroundColor: isDark ? "rgba(15, 23, 42, 0.28)" : "rgba(255, 255, 255, 0.16)",
                     overflow: "hidden",
                     padding: 8,
+                    position: "relative",
                   }}
                 >
+                  {/* Subtle top reflection sheen */}
+                  <LinearGradient
+                    colors={
+                      isDark
+                        ? ["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.03)", "transparent"]
+                        : ["rgba(255, 255, 255, 0.45)", "rgba(255, 255, 255, 0.1)", "transparent"]
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 0.8 }}
+                    style={StyleSheet.absoluteFill}
+                    pointerEvents="none"
+                  />
                   {section.items.map((item: any, i) => (
                     <Pressable
                       key={`${item.label}-${i}`}
@@ -708,7 +840,7 @@ export function ProfileScreen({
                         i > 0
                           ? {
                               borderTopWidth: 1,
-                              borderTopColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(224, 242, 254, 0.6)",
+                              borderTopColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.25)",
                             }
                           : undefined
                       }
@@ -717,30 +849,39 @@ export function ProfileScreen({
                         className="w-9 h-9 rounded-xl items-center justify-center"
                         style={{
                           backgroundColor: isDark
-                            ? "rgba(255, 255, 255, 0.09)"
-                            : item.color,
-                          borderWidth: isDark ? 1 : 0,
-                          borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                            ? "rgba(255, 255, 255, 0.12)"
+                            : "rgba(255, 255, 255, 0.55)",
+                          borderWidth: 1,
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "rgba(255, 255, 255, 0.75)",
                         }}
                       >
                         <Text className="text-base">{item.icon}</Text>
                       </View>
                       <View className="flex-1">
                         <Text
-                          className="text-sm font-semibold"
-                          style={{ color: isDark ? "#F8FAFC" : "#1E293B" }}
+                          className="text-sm font-bold"
+                          style={{ color: isDark ? "#FFFFFF" : "#0B2136" }}
                         >
                           {item.label}
                         </Text>
                         <Text
-                          className="text-xs mt-0.5"
+                          className="text-xs mt-0.5 font-semibold"
                           numberOfLines={1}
-                          style={{ color: isDark ? "#94A3B8" : "#64748B" }}
+                          style={{ color: isDark ? "#CBD5E1" : "#475569" }}
                         >
                           {item.sub}
                         </Text>
                       </View>
-                      <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#64748B" : "#CBD5E1"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <Svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke={isDark ? "#94A3B8" : "#64748B"}
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <Polyline points="9 18 15 12 9 6"/>
                       </Svg>
                     </Pressable>
@@ -755,36 +896,51 @@ export function ProfileScreen({
             onPress={resetApp}
             className="mt-1 active:opacity-90"
             style={{
-              borderRadius: 22,
+              borderRadius: 24,
               shadowColor: "#F43F5E",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.25 : 0.08,
-              shadowRadius: 14,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: isDark ? 0.3 : 0.08,
+              shadowRadius: 16,
               elevation: 2,
             }}
           >
             <BlurView
-              intensity={isDark ? 55 : 75}
+              intensity={isDark ? 85 : 95}
               tint={isDark ? "dark" : "light"}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 12,
-                borderRadius: 22,
+                borderRadius: 24,
                 borderWidth: 1,
-                borderColor: isDark ? "rgba(244, 63, 94, 0.35)" : "rgba(255, 255, 255, 0.8)",
-                backgroundColor: isDark ? "rgba(244, 63, 94, 0.08)" : "rgba(255, 255, 255, 0.68)",
+                borderTopColor: isDark ? "rgba(251, 113, 133, 0.5)" : "rgba(255, 255, 255, 0.9)",
+                borderLeftColor: isDark ? "rgba(251, 113, 133, 0.35)" : "rgba(255, 255, 255, 0.65)",
+                borderRightColor: isDark ? "rgba(244, 63, 94, 0.2)" : "rgba(255, 255, 255, 0.35)",
+                borderBottomColor: isDark ? "rgba(244, 63, 94, 0.15)" : "rgba(255, 255, 255, 0.2)",
+                backgroundColor: isDark ? "rgba(244, 63, 94, 0.12)" : "rgba(255, 255, 255, 0.18)",
                 overflow: "hidden",
                 paddingHorizontal: 16,
                 paddingVertical: 16,
+                position: "relative",
               }}
             >
+              <LinearGradient
+                colors={
+                  isDark
+                    ? ["rgba(251, 113, 133, 0.2)", "rgba(244, 63, 94, 0.04)", "transparent"]
+                    : ["rgba(255, 255, 255, 0.5)", "rgba(255, 241, 242, 0.2)", "transparent"]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 0.9 }}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
               <View
                 className="w-9 h-9 rounded-xl items-center justify-center"
                 style={{
-                  backgroundColor: isDark ? "rgba(244, 63, 94, 0.2)" : "#FFF1F2",
-                  borderWidth: isDark ? 1 : 0,
-                  borderColor: isDark ? "rgba(244, 63, 94, 0.3)" : "transparent",
+                  backgroundColor: isDark ? "rgba(244, 63, 94, 0.25)" : "rgba(255, 241, 242, 0.8)",
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(251, 113, 133, 0.4)" : "rgba(253, 164, 175, 0.5)",
                 }}
               >
                 <Text className="text-base">🚪</Text>
@@ -801,30 +957,45 @@ export function ProfileScreen({
           <View className="items-center flex-col gap-1.5 mt-6 mb-4">
             <View
               style={{
-                borderRadius: 14,
+                borderRadius: 16,
                 shadowColor: isDark ? "#000" : "#0A2540",
-                shadowOffset: { width: 0, height: 3 },
+                shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: isDark ? 0.3 : 0.08,
-                shadowRadius: 8,
+                shadowRadius: 10,
                 elevation: 2,
               }}
             >
               <BlurView
-                intensity={isDark ? 55 : 75}
+                intensity={isDark ? 85 : 95}
                 tint={isDark ? "dark" : "light"}
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 14,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 16,
                   borderWidth: 1,
-                  borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "rgba(255, 255, 255, 0.8)",
-                  backgroundColor: isDark ? "rgba(22, 32, 50, 0.65)" : "rgba(255, 255, 255, 0.72)",
+                  borderTopColor: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(255, 255, 255, 0.9)",
+                  borderLeftColor: isDark ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.65)",
+                  borderRightColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.35)",
+                  borderBottomColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.2)",
+                  backgroundColor: isDark ? "rgba(15, 23, 42, 0.25)" : "rgba(255, 255, 255, 0.18)",
                   overflow: "hidden",
                   alignItems: "center",
                   justifyContent: "center",
                   padding: 6,
+                  position: "relative",
                 }}
               >
+                <LinearGradient
+                  colors={
+                    isDark
+                      ? ["rgba(255, 255, 255, 0.2)", "transparent"]
+                      : ["rgba(255, 255, 255, 0.5)", "transparent"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
                 <Image
                   source={require("../../assets/images/cura-logo.png")}
                   style={{ width: "100%", height: "100%" }}
@@ -833,14 +1004,14 @@ export function ProfileScreen({
               </BlurView>
             </View>
             <Text
-              className="text-[11px] font-semibold tracking-wide"
-              style={{ color: isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(255, 255, 255, 0.7)" }}
+              className="text-[11px] font-bold tracking-wide"
+              style={{ color: isDark ? "rgba(255, 255, 255, 0.8)" : "#334155" }}
             >
               CURA · University Clinic Patient App
             </Text>
             <Text
-              className="text-[10px]"
-              style={{ color: isDark ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.5)" }}
+              className="text-[10px] font-semibold"
+              style={{ color: isDark ? "rgba(255, 255, 255, 0.55)" : "#64748B" }}
             >
               v1.0.0 · Your health, our priority 💙
             </Text>
