@@ -635,7 +635,7 @@ export function ProfileScreen({
               className="flex-1 active:opacity-90 overflow-hidden relative"
               style={{
                 borderRadius: 24,
-                paddingHorizontal: 8,
+                paddingHorizontal: 6,
                 paddingVertical: 18,
                 alignItems: "center",
                 justifyContent: "center",
@@ -669,7 +669,9 @@ export function ProfileScreen({
                 {s.value}
               </Text>
               <Text
-                className="text-xs font-bold text-white/95 mt-1.5 tracking-tight"
+                className="text-sm font-bold text-white mt-1.5 tracking-tight text-center"
+                numberOfLines={1}
+                adjustsFontSizeToFit
                 style={{
                   textShadowColor: "rgba(0, 0, 0, 0.25)",
                   textShadowOffset: { width: 0, height: 1 },
