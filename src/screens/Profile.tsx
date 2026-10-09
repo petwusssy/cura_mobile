@@ -23,6 +23,7 @@ import type { Screen, AppUser } from "../types";
 import { AvatarBadge } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MASCOTS } from "../data";
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -631,71 +632,52 @@ export function ProfileScreen({
             <Pressable
               key={s.label}
               onPress={s.action}
-              className="flex-1 active:opacity-90"
+              className="flex-1 active:opacity-90 overflow-hidden relative"
               style={{
-                borderRadius: 26,
-                shadowColor: isDark ? "#000000" : "#0A2540",
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: isDark ? 0.12 : 0.03,
-                shadowRadius: 10,
-                elevation: 1,
+                borderRadius: 24,
+                paddingHorizontal: 12,
+                paddingVertical: 16,
+                alignItems: "center",
+                borderWidth: 1,
+                borderTopColor: "rgba(255, 255, 255, 0.45)",
+                borderLeftColor: "rgba(255, 255, 255, 0.3)",
+                borderRightColor: "rgba(255, 255, 255, 0.2)",
+                borderBottomColor: "rgba(255, 255, 255, 0.15)",
+                shadowColor: "#0A2472",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.22,
+                shadowRadius: 12,
+                elevation: 4,
               }}
             >
-              <BlurView
-                intensity={18}
-                tint={isDark ? "dark" : "light"}
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
+              <Text className="text-base mb-1">{s.icon}</Text>
+              <Text
+                className="text-xl font-black text-white"
                 style={{
-                  borderRadius: 26,
-                  borderWidth: 1,
-                  borderTopColor: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(255, 255, 255, 0.5)",
-                  borderLeftColor: isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.4)",
-                  borderRightColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.22)",
-                  borderBottomColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.15)",
-                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.02)" : "rgba(255, 255, 255, 0.04)",
-                  overflow: "hidden",
-                  paddingHorizontal: 12,
-                  paddingVertical: 16,
-                  alignItems: "center",
-                  position: "relative",
+                  fontFamily: "Outfit",
+                  textShadowColor: "rgba(0, 0, 0, 0.35)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
                 }}
               >
-                {/* Subtle light reflection on clear glass */}
-                <LinearGradient
-                  colors={
-                    isDark
-                      ? ["rgba(255, 255, 255, 0.08)", "transparent"]
-                      : ["rgba(255, 255, 255, 0.18)", "transparent"]
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 0.6 }}
-                  style={StyleSheet.absoluteFill}
-                  pointerEvents="none"
-                />
-                <Text className="text-base mb-1">{s.icon}</Text>
-                <Text
-                  className="text-xl font-black"
-                  style={{
-                    fontFamily: "Outfit",
-                    color: isDark ? "#FFFFFF" : "#0B2136",
-                    textShadowColor: isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.9)",
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 2,
-                  }}
-                >
-                  {s.value}
-                </Text>
-                <Text
-                  className="text-[10px] font-bold"
-                  style={{
-                    color: isDark ? "#E2E8F0" : "#1E293B",
-                    textShadowColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.8)",
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 2,
-                  }}
-                >
-                  {s.label}
-                </Text>
-              </BlurView>
+                {s.value}
+              </Text>
+              <Text
+                className="text-[10px] font-bold text-white/90"
+                style={{
+                  textShadowColor: "rgba(0, 0, 0, 0.25)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                }}
+              >
+                {s.label}
+              </Text>
             </Pressable>
           ))}
         </View>
