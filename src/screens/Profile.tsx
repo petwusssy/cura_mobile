@@ -106,6 +106,37 @@ function renderInfoBlueIcon(label: string) {
           <Circle cx="12" cy="10" r="3" />
         </Svg>
       );
+    case "Notification Preferences":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </Svg>
+      );
+    case "Mascot & Display Name":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Circle cx="12" cy="12" r="10" />
+          <Path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <Line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3" />
+          <Line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3" />
+        </Svg>
+      );
+    case "Privacy & Security":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </Svg>
+      );
+    case "About CURA":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Circle cx="12" cy="12" r="10" />
+          <Line x1="12" y1="16" x2="12" y2="12" />
+          <Line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="3" />
+        </Svg>
+      );
     default:
       return (
         <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -759,220 +790,87 @@ export function ProfileScreen({
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-4 pb-12">
-          {sections.map((section) => {
-            const isMyInfo = section.title === "My Information";
-
-            if (isMyInfo) {
-              return (
-                <View key={section.title}>
-                  <View className="flex-row items-center justify-between mb-2 px-1">
-                    <Text
-                      className="text-[11px] font-bold uppercase tracking-wider"
-                      style={{
-                        color: isDark ? "#FFFFFF" : "#0B2136",
-                        textShadowColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.9)",
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 2,
-                      }}
-                    >
-                      {section.title}
-                    </Text>
-                    {section.action}
-                  </View>
-
-                  <View
-                    style={{
-                      backgroundColor: "#FFFFFF",
-                      borderRadius: 24,
-                      borderWidth: 1,
-                      borderColor: "#EEF2F6",
-                      shadowColor: "#0A2540",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.05,
-                      shadowRadius: 14,
-                      elevation: 2,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {section.items.map((item: any, i: number) => (
-                      <Pressable
-                        key={`${item.label}-${i}`}
-                        onPress={item.onPress}
-                        className="flex-row items-center gap-3.5 px-5 py-4 active:bg-slate-50"
-                        style={
-                          i > 0
-                            ? {
-                                borderTopWidth: 1,
-                                borderTopColor: "#F1F5F9",
-                              }
-                            : undefined
-                        }
-                      >
-                        <View className="w-6 items-center justify-center">
-                          {renderInfoBlueIcon(item.label)}
-                        </View>
-                        <View className="flex-1">
-                          <Text
-                            className="text-[15px] font-bold"
-                            style={{
-                              color: "#002D72",
-                              fontFamily: "Outfit",
-                            }}
-                          >
-                            {item.label}
-                          </Text>
-                          {item.sub ? (
-                            <Text
-                              className="text-xs mt-0.5 font-medium text-slate-500"
-                              numberOfLines={1}
-                            >
-                              {item.sub}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <Svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#8DA4C4"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <Polyline points="9 18 15 12 9 6" />
-                        </Svg>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              );
-            }
-
-            return (
+          {sections.map((section) => (
             <View key={section.title}>
               <View className="flex-row items-center justify-between mb-2 px-1">
                 <Text
-                  className="text-[11px] font-bold uppercase tracking-wider"
+                  className="text-[11px] font-bold uppercase tracking-wider text-cura-900"
                   style={{
-                    color: isDark ? "#FFFFFF" : "#0B2136",
-                    textShadowColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.9)",
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 2,
+                    fontFamily: "Outfit",
                   }}
                 >
                   {section.title}
                 </Text>
                 {section.action}
               </View>
+
               <View
                 style={{
-                  borderRadius: 30,
-                  shadowColor: isDark ? "#000000" : "#0A2540",
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: isDark ? 0.12 : 0.03,
-                  shadowRadius: 10,
-                  elevation: 1,
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 24,
+                  borderWidth: 1,
+                  borderColor: "#EEF2F6",
+                  shadowColor: "#0A2540",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 14,
+                  elevation: 2,
+                  overflow: "hidden",
                 }}
               >
-                <BlurView
-                  intensity={18}
-                  tint={isDark ? "dark" : "light"}
-                  style={{
-                    borderRadius: 30,
-                    borderWidth: 1,
-                    borderTopColor: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(255, 255, 255, 0.5)",
-                    borderLeftColor: isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.4)",
-                    borderRightColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.22)",
-                    borderBottomColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.15)",
-                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.02)" : "rgba(255, 255, 255, 0.04)",
-                    overflow: "hidden",
-                    padding: 8,
-                    position: "relative",
-                  }}
-                >
-                  {/* Subtle light reflection on clear glass */}
-                  <LinearGradient
-                    colors={
-                      isDark
-                        ? ["rgba(255, 255, 255, 0.08)", "transparent"]
-                        : ["rgba(255, 255, 255, 0.18)", "transparent"]
+                {section.items.map((item: any, i: number) => (
+                  <Pressable
+                    key={`${item.label}-${i}`}
+                    onPress={item.onPress}
+                    className="flex-row items-center gap-3.5 px-5 py-4 active:bg-slate-50"
+                    style={
+                      i > 0
+                        ? {
+                            borderTopWidth: 1,
+                            borderTopColor: "#F1F5F9",
+                          }
+                        : undefined
                     }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 0.5 }}
-                    style={StyleSheet.absoluteFill}
-                    pointerEvents="none"
-                  />
-                  {section.items.map((item: any, i) => (
-                    <Pressable
-                      key={`${item.label}-${i}`}
-                      onPress={item.onPress}
-                      className="flex-row items-center gap-3 px-4 py-3.5"
-                      style={
-                        i > 0
-                          ? {
-                              borderTopWidth: 1,
-                              borderTopColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
-                            }
-                          : undefined
-                      }
-                    >
-                      <View
-                        className="w-9 h-9 rounded-xl items-center justify-center"
+                  >
+                    <View className="w-6 items-center justify-center">
+                      {renderInfoBlueIcon(item.label)}
+                    </View>
+                    <View className="flex-1">
+                      <Text
+                        className="text-[15px] font-bold"
                         style={{
-                          backgroundColor: isDark
-                            ? "rgba(255, 255, 255, 0.08)"
-                            : "rgba(255, 255, 255, 0.45)",
-                          borderWidth: 1,
-                          borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.4)",
+                          color: "#002D72",
+                          fontFamily: "Outfit",
                         }}
                       >
-                        <Text className="text-base">{item.icon}</Text>
-                      </View>
-                      <View className="flex-1">
+                        {item.label}
+                      </Text>
+                      {item.sub ? (
                         <Text
-                          className="text-sm font-bold"
-                          style={{
-                            color: isDark ? "#FFFFFF" : "#0B2136",
-                            textShadowColor: isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.8)",
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 2,
-                          }}
-                        >
-                          {item.label}
-                        </Text>
-                        <Text
-                          className="text-xs mt-0.5 font-semibold"
+                          className="text-xs mt-0.5 font-medium text-slate-500"
                           numberOfLines={1}
-                          style={{
-                            color: isDark ? "#CBD5E1" : "#334155",
-                            textShadowColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.8)",
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 2,
-                          }}
                         >
                           {item.sub}
                         </Text>
-                      </View>
-                      <Svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke={isDark ? "#CBD5E1" : "#475569"}
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <Polyline points="9 18 15 12 9 6"/>
-                      </Svg>
-                    </Pressable>
-                  ))}
-                </BlurView>
+                      ) : null}
+                    </View>
+                    <Svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#8DA4C4"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <Polyline points="9 18 15 12 9 6" />
+                    </Svg>
+                  </Pressable>
+                ))}
               </View>
             </View>
-            );
-          })}
+          ))}
 
           {/* Logout */}
           <Pressable
