@@ -808,73 +808,57 @@ export function ProfileScreen({
           {/* Logout */}
           <Pressable
             onPress={resetApp}
-            className="mt-1 active:opacity-90"
+            className="mt-1 active:opacity-90 overflow-hidden relative"
             style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
               borderRadius: 24,
-              shadowColor: "#F43F5E",
-              shadowOffset: { width: 0, height: 3 },
-              shadowOpacity: isDark ? 0.15 : 0.04,
-              shadowRadius: 10,
-              elevation: 1,
+              paddingHorizontal: 16,
+              paddingVertical: 16,
+              borderWidth: 1,
+              borderTopColor: "rgba(255, 255, 255, 0.45)",
+              borderLeftColor: "rgba(255, 255, 255, 0.3)",
+              borderRightColor: "rgba(255, 255, 255, 0.2)",
+              borderBottomColor: "rgba(255, 255, 255, 0.15)",
+              shadowColor: "#0A2472",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.22,
+              shadowRadius: 12,
+              elevation: 4,
             }}
           >
-            <BlurView
-              intensity={18}
-              tint={isDark ? "dark" : "light"}
+            <LinearGradient
+              colors={ADMIN_PORTAL_GRADIENT.colors}
+              start={ADMIN_PORTAL_GRADIENT.start}
+              end={ADMIN_PORTAL_GRADIENT.end}
+              style={StyleSheet.absoluteFill}
+            />
+            <View
+              className="w-9 h-9 rounded-xl items-center justify-center"
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 12,
-                borderRadius: 24,
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
                 borderWidth: 1,
-                borderTopColor: isDark ? "rgba(251, 113, 133, 0.45)" : "rgba(251, 113, 133, 0.45)",
-                borderLeftColor: isDark ? "rgba(251, 113, 133, 0.35)" : "rgba(251, 113, 133, 0.35)",
-                borderRightColor: "rgba(244, 63, 94, 0.15)",
-                borderBottomColor: "rgba(244, 63, 94, 0.1)",
-                backgroundColor: isDark ? "rgba(244, 63, 94, 0.04)" : "rgba(244, 63, 94, 0.03)",
-                overflow: "hidden",
-                paddingHorizontal: 16,
-                paddingVertical: 16,
-                position: "relative",
+                borderColor: "rgba(255, 255, 255, 0.35)",
               }}
             >
-              <LinearGradient
-                colors={
-                  isDark
-                    ? ["rgba(251, 113, 133, 0.12)", "transparent"]
-                    : ["rgba(255, 255, 255, 0.25)", "transparent"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 0.6 }}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-              <View
-                className="w-9 h-9 rounded-xl items-center justify-center"
-                style={{
-                  backgroundColor: isDark ? "rgba(244, 63, 94, 0.18)" : "rgba(255, 241, 242, 0.6)",
-                  borderWidth: 1,
-                  borderColor: isDark ? "rgba(251, 113, 133, 0.35)" : "rgba(253, 164, 175, 0.4)",
-                }}
-              >
-                <Text className="text-base">🚪</Text>
-              </View>
-              <Text
-                className="text-sm font-bold text-rose-500"
-                style={{
-                  textShadowColor: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)",
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}
-              >
-                Sign Out
-              </Text>
-              <View className="flex-1 items-end">
-                <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#FB7185" : "#FDA4AF"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <Polyline points="9 18 15 12 9 6"/>
-                </Svg>
-              </View>
-            </BlurView>
+              <Text className="text-base">🚪</Text>
+            </View>
+            <Text
+              className="text-sm font-bold text-white"
+              style={{
+                textShadowColor: "rgba(0, 0, 0, 0.25)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              Sign Out
+            </Text>
+            <View className="flex-1 items-end">
+              <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <Polyline points="9 18 15 12 9 6"/>
+              </Svg>
+            </View>
           </Pressable>
 
           <View className="items-center flex-col gap-1.5 mt-6 mb-4">
