@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Svg, { Path, Polyline, Circle, Rect, Line } from "react-native-svg";
+import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
 import { Card, SectionHeader, Badge, AvatarBadge, Header } from "../components/Shell";
@@ -33,13 +33,6 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const unread = notifications.filter((n) => !n.read).length;
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
 
-  // Responsive sizing for Quick Actions to fit perfectly across any screen width
-  const quickActionSize = useMemo(() => {
-    const availableWidth = windowWidth - 48; // px-6 (24px left and right)
-    return Math.min(60, Math.max(48, Math.floor((availableWidth - 36) / 5)));
-  }, [windowWidth]);
-
-  const quickActionIconSize = quickActionSize >= 58 ? 28 : quickActionSize >= 52 ? 26 : 23;
 
   const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
 
@@ -297,6 +290,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         )}
 
         {/* 2. Hero Card (Most Urgent Action) */}
+        {/* 2. Hero Card & Quick Actions (Attached GCash-Style Container) */}
         <View className="px-6 mb-8">
           <SectionHeader
             title={
@@ -310,137 +304,244 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             onAction={!isQueueActive && !isBedActive ? () => navigate("medications") : undefined}
           />
           
-          <Pressable 
-            onPress={() => isQueueActive ? {} : isBedActive ? {} : navigate("medications")}
-            className="w-full bg-white rounded-[32px] p-6 relative overflow-hidden mt-2"
-            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 }}
+          <View 
+            className="w-full bg-white rounded-[28px] overflow-hidden mt-2"
+            style={{
+              shadowColor: '#0A2540',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.14,
+              shadowRadius: 22,
+              elevation: 8,
+              borderWidth: 1,
+              borderColor: '#EEF2F6',
+            }}
           >
-            {/* Admin Portal Gradient Background */}
-            <LinearGradient
-              colors={ADMIN_PORTAL_GRADIENT.colors}
-              start={ADMIN_PORTAL_GRADIENT.start}
-              end={ADMIN_PORTAL_GRADIENT.end}
-              style={StyleSheet.absoluteFill}
-            />
+            {/* Top: Blue Hero Section */}
+            <Pressable 
+              onPress={() => isQueueActive ? {} : isBedActive ? {} : navigate("medications")}
+              className="w-full p-6 relative overflow-hidden"
+            >
+              {/* Admin Portal Gradient Background */}
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
 
-
-            <View className="flex-row items-start justify-between mb-4">
-              <View className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 ${isQueueActive && queue.status === 'called' ? 'bg-green-500' : 'bg-white/20'}`}>
-                <Text className="text-white text-xs font-bold">
-                  {isQueueActive
-                    ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist")
-                    : isBedActive
-                    ? "🛏️ Timer"
-                    : dueMed
-                    ? "💊 Alert"
-                    : "✨ All Intaked"}
-                </Text>
-              </View>
-              <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
-                <Svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="none">
-                  <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </Svg>
-              </View>
-            </View>
-
-            <View className="mb-6 z-10 w-3/4">
-              <Text className="text-white/80 text-sm font-medium mb-1">
-                {isQueueActive ? (
-                  queue.status === 'called' 
-                    ? "📢 It's your turn! Proceed to counter" 
-                    : aheadCount === 0 
-                      ? "🎉 You are next in line! (0 ahead)" 
-                      : `⏳ ${aheadCount} ${aheadCount === 1 ? 'patient' : 'patients'} ahead of you`
-                ) : isBedActive ? (
-                  BED_ASSIGNMENT?.reason
-                ) : dueMed ? (
-                  dueMed.instructions || "Take medication"
-                ) : (
-                  "No upcoming medications due"
-                )}
-              </Text>
-              <Text className="text-white text-2xl font-bold" style={{ fontFamily: "Outfit" }}>
-                {isQueueActive
-                  ? `Queue #${queue.queue_number}`
-                  : isBedActive
-                  ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
-                  : dueMed
-                  ? (dueMed.name || dueMed.medicineName)
-                  : "All Caught Up!"}
-              </Text>
-              {isBedActive && <Text className="text-white/80 text-xs mt-1">Remaining time</Text>}
-              {!isQueueActive && !isBedActive && !dueMed && (
-                <Text className="text-white/70 text-xs mt-1">All scheduled medications are completed</Text>
-              )}
-            </View>
-
-            <View className="flex-row items-center gap-2 z-10">
-              <View className={`px-5 py-2.5 rounded-full ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
-                <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
-                  {isQueueActive
-                    ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line")
-                    : isBedActive
-                    ? "View Status"
-                    : dueMed
-                    ? "Take Meds"
-                    : "View Meds"}
-                </Text>
-              </View>
-              {isQueueActive && (
-                <Pressable 
-                  onPress={cancelQueue}
-                  disabled={cancelling}
-                  className="px-4 py-2.5 rounded-full bg-white/20 active:bg-white/30"
-                >
-                  <Text className="text-white/90 text-xs font-semibold">
-                    {cancelling ? "Leaving..." : "Leave Queue"}
+              <View className="flex-row items-start justify-between mb-4">
+                <View className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 ${isQueueActive && queue.status === 'called' ? 'bg-green-500' : 'bg-white/20'}`}>
+                  <Text className="text-white text-xs font-bold">
+                    {isQueueActive
+                      ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist")
+                      : isBedActive
+                      ? "🛏️ Timer"
+                      : dueMed
+                      ? "💊 Alert"
+                      : "✨ All Intaked"}
                   </Text>
-                </Pressable>
-              )}
-            </View>
+                </View>
+                <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
+                  <Svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="none">
+                    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </Svg>
+                </View>
+              </View>
 
-            {/* Giant illustrative emoji on the right */}
-            <View className="absolute -right-4 bottom-2 opacity-90">
-              <Text style={{ fontSize: 96, transform: [{ rotate: '-10deg' }] }}>
-                {isQueueActive ? "🎟️" : isBedActive ? "😴" : dueMed ? "💊" : "✨"}
-              </Text>
-            </View>
-          </Pressable>
-        </View>
+              <View className="mb-6 z-10 w-3/4">
+                <Text className="text-white/80 text-sm font-medium mb-1">
+                  {isQueueActive ? (
+                    queue.status === 'called' 
+                      ? "📢 It's your turn! Proceed to counter" 
+                      : aheadCount === 0 
+                        ? "🎉 You are next in line! (0 ahead)" 
+                        : `⏳ ${aheadCount} ${aheadCount === 1 ? 'patient' : 'patients'} ahead of you`
+                  ) : isBedActive ? (
+                    BED_ASSIGNMENT?.reason
+                  ) : dueMed ? (
+                    dueMed.instructions || "Take medication"
+                  ) : (
+                    "No upcoming medications due"
+                  )}
+                </Text>
+                <Text className="text-white text-2xl font-bold" style={{ fontFamily: "Outfit" }}>
+                  {isQueueActive
+                    ? `Queue #${queue.queue_number}`
+                    : isBedActive
+                    ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+                    : dueMed
+                    ? (dueMed.name || dueMed.medicineName)
+                    : "All Caught Up!"}
+                </Text>
+                {isBedActive && <Text className="text-white/80 text-xs mt-1">Remaining time</Text>}
+                {!isQueueActive && !isBedActive && !dueMed && (
+                  <Text className="text-white/70 text-xs mt-1">All scheduled medications are completed</Text>
+                )}
+              </View>
 
-        {/* 3. Categories (Quick Actions) */}
-        <View className="mb-8">
-          <View className="px-6 mb-4">
-            <SectionHeader title="Quick Actions" />
-          </View>
-          <View className="px-6 flex-row items-start justify-between">
-            {[
-              { label: "Queue", icon: "🎫", bg: "#FEF2F2", action: joinQueue },
-              { label: "Telemed", icon: "📹", bg: "#EFF6FF", screen: "telemedicine" as Screen },
-              { label: "Appoint", icon: "📅", bg: "#FDF4FF", screen: "appointment" as Screen },
-              { label: "Meds", icon: "💊", bg: "#ECFDF5", screen: "medications" as Screen },
-              { label: "Certs", icon: "📄", bg: "#FFFBEB", screen: "documents" as Screen },
-            ].map((c) => (
+              <View className="flex-row items-center gap-2 z-10">
+                <View className={`px-5 py-2.5 rounded-full ${isQueueActive && queue.status === 'called' ? 'bg-green-100' : 'bg-white'}`}>
+                  <Text className={`${isQueueActive && queue.status === 'called' ? 'text-green-800' : 'text-cura-600'} text-xs font-bold`}>
+                    {isQueueActive
+                      ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line")
+                      : isBedActive
+                      ? "View Status"
+                      : dueMed
+                      ? "Take Meds"
+                      : "View Meds"}
+                  </Text>
+                </View>
+                {isQueueActive && (
+                  <Pressable 
+                    onPress={cancelQueue}
+                    disabled={cancelling}
+                    className="px-4 py-2.5 rounded-full bg-white/20 active:bg-white/30"
+                  >
+                    <Text className="text-white/90 text-xs font-semibold">
+                      {cancelling ? "Leaving..." : "Leave Queue"}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Giant illustrative emoji on the right */}
+              <View className="absolute -right-4 bottom-2 opacity-90">
+                <Text style={{ fontSize: 96, transform: [{ rotate: '-10deg' }] }}>
+                  {isQueueActive ? "🎟️" : isBedActive ? "😴" : dueMed ? "💊" : "✨"}
+                </Text>
+              </View>
+            </Pressable>
+
+            {/* Bottom: Quick Actions (Nakatuglong sa Medication Due container tulad sa GCash) */}
+            <View className="bg-white px-2 pt-3.5 pb-4 flex-row items-center justify-between">
               <Pressable 
-                key={c.label} 
-                onPress={() => c.action ? c.action() : navigate(c.screen)} 
-                className="items-center"
+                onPress={joinQueue} 
+                className="items-center flex-1 active:opacity-75"
+                style={{ opacity: joining ? 0.5 : 1 }}
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
-                <View 
-                  className="rounded-full items-center justify-center mb-1.5" 
-                  style={{ 
-                    width: quickActionSize, 
-                    height: quickActionSize, 
-                    backgroundColor: c.bg, 
-                    opacity: (c.label === 'Queue' && joining) ? 0.5 : 1 
-                  }}
-                >
-                  <Text style={{ fontSize: quickActionIconSize }}>{c.icon}</Text>
-                </View>
-                <Text numberOfLines={1} className="text-xs font-bold text-slate-700 text-center">{c.label}</Text>
+                <Svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+                  <Defs>
+                    <SvgLinearGradient id="gQueue" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#00A3FF" />
+                      <Stop offset="100%" stopColor="#0056B3" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Rect x="4" y="9" width="32" height="22" rx="6" fill="url(#gQueue)" />
+                  <Circle cx="4" cy="20" r="3.5" fill="#FFFFFF" />
+                  <Circle cx="36" cy="20" r="3.5" fill="#FFFFFF" />
+                  <Line x1="15" y1="10" x2="15" y2="30" stroke="#FFFFFF" strokeWidth="1.5" strokeDasharray="2,2" strokeOpacity="0.6" />
+                  <Line x1="20" y1="15" x2="30" y2="15" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                  <Line x1="20" y1="20" x2="28" y2="20" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                  <Line x1="20" y1="25" x2="25" y2="25" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                  <Circle cx="9.5" cy="20" r="2.5" fill="#38BDF8" />
+                </Svg>
+                <Text numberOfLines={1} className="text-[12px] font-semibold text-center mt-1.5" style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  Queue
+                </Text>
               </Pressable>
-            ))}
+
+              <Pressable 
+                onPress={() => navigate("telemedicine")} 
+                className="items-center flex-1 active:opacity-75"
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <Svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+                  <Defs>
+                    <SvgLinearGradient id="gTelemed" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#00A3FF" />
+                      <Stop offset="100%" stopColor="#0056B3" />
+                    </SvgLinearGradient>
+                    <SvgLinearGradient id="gLens" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#38BDF8" />
+                      <Stop offset="100%" stopColor="#0284C7" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Rect x="4" y="10" width="22" height="20" rx="6" fill="url(#gTelemed)" />
+                  <Path d="M26 16l8-4.5v17l-8-4.5v-8z" fill="url(#gLens)" />
+                  <Rect x="13.5" y="15" width="3" height="10" rx="1" fill="#FFFFFF" />
+                  <Rect x="10" y="18.5" width="10" height="3" rx="1" fill="#FFFFFF" />
+                </Svg>
+                <Text numberOfLines={1} className="text-[12px] font-semibold text-center mt-1.5" style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  Telemed
+                </Text>
+              </Pressable>
+
+              <Pressable 
+                onPress={() => navigate("appointment")} 
+                className="items-center flex-1 active:opacity-75"
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <Svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+                  <Defs>
+                    <SvgLinearGradient id="gAppoint" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#00A3FF" />
+                      <Stop offset="100%" stopColor="#0056B3" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Rect x="5" y="9" width="30" height="25" rx="6" fill="url(#gAppoint)" />
+                  <Rect x="11" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+                  <Rect x="26" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+                  <Line x1="5" y1="16" x2="35" y2="16" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.4" />
+                  <Polyline points="14 24 18 28 26 20" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+                <Text numberOfLines={1} className="text-[12px] font-semibold text-center mt-1.5" style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  Appoint
+                </Text>
+              </Pressable>
+
+              <Pressable 
+                onPress={() => navigate("medications")} 
+                className="items-center flex-1 active:opacity-75"
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <Svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+                  <Defs>
+                    <SvgLinearGradient id="gMedCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#38BDF8" />
+                      <Stop offset="100%" stopColor="#00A3FF" />
+                    </SvgLinearGradient>
+                    <SvgLinearGradient id="gMedBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#0056B3" />
+                      <Stop offset="100%" stopColor="#002D72" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <G transform="rotate(-45 20 20)">
+                    <Path d="M14 11a6 6 0 0 1 12 0v8H14v-8z" fill="url(#gMedCyan)" />
+                    <Path d="M14 19h12v8a6 6 0 0 1-12 0v-8z" fill="url(#gMedBlue)" />
+                    <Line x1="14" y1="19" x2="26" y2="19" stroke="#FFFFFF" strokeWidth="1.5" />
+                    <Rect x="16" y="11" width="2" height="6" rx="1" fill="#FFFFFF" opacity="0.7" />
+                  </G>
+                </Svg>
+                <Text numberOfLines={1} className="text-[12px] font-semibold text-center mt-1.5" style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  Meds
+                </Text>
+              </Pressable>
+
+              <Pressable 
+                onPress={() => navigate("documents")} 
+                className="items-center flex-1 active:opacity-75"
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <Svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+                  <Defs>
+                    <SvgLinearGradient id="gCerts" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#00A3FF" />
+                      <Stop offset="100%" stopColor="#0056B3" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Path d="M8 8a4 4 0 0 1 4-4h12l8 8v20a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V8z" fill="url(#gCerts)" />
+                  <Path d="M24 4v6a2 2 0 0 0 2 2h6l-8-8z" fill="#38BDF8" />
+                  <Line x1="13" y1="16" x2="27" y2="16" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                  <Line x1="13" y1="21" x2="23" y2="21" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                  <Circle cx="23" cy="27" r="3.5" fill="#38BDF8" />
+                  <Polyline points="21.5 27 22.5 28 24.5 26" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+                <Text numberOfLines={1} className="text-[12px] font-semibold text-center mt-1.5" style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  Certs
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
