@@ -625,9 +625,9 @@ export function ProfileScreen({
         {/* Stats */}
         <View className="flex-row gap-3 mt-5">
           {[
-            { label: "Visits", value: consultations.length.toString(), icon: "🩺", action: () => navigate("health-history") },
-            { label: "Medications", value: medications.length.toString(), icon: "💊", action: () => navigate("medications") },
-            { label: "Documents", value: certificates.length.toString(), icon: "📄", action: () => navigate("documents", { tab: "certificates" }) },
+            { label: "Visits", value: consultations.length.toString(), action: () => navigate("health-history") },
+            { label: "Medications", value: medications.length.toString(), action: () => navigate("medications") },
+            { label: "Documents", value: certificates.length.toString(), action: () => navigate("documents", { tab: "certificates" }) },
           ].map((s) => (
             <Pressable
               key={s.label}
@@ -635,9 +635,10 @@ export function ProfileScreen({
               className="flex-1 active:opacity-90 overflow-hidden relative"
               style={{
                 borderRadius: 24,
-                paddingHorizontal: 12,
-                paddingVertical: 16,
+                paddingHorizontal: 8,
+                paddingVertical: 18,
                 alignItems: "center",
+                justifyContent: "center",
                 borderWidth: 1,
                 borderTopColor: "rgba(255, 255, 255, 0.45)",
                 borderLeftColor: "rgba(255, 255, 255, 0.3)",
@@ -656,9 +657,8 @@ export function ProfileScreen({
                 end={ADMIN_PORTAL_GRADIENT.end}
                 style={StyleSheet.absoluteFill}
               />
-              <Text className="text-base mb-1">{s.icon}</Text>
               <Text
-                className="text-xl font-black text-white"
+                className="text-[28px] font-black text-white leading-none"
                 style={{
                   fontFamily: "Outfit",
                   textShadowColor: "rgba(0, 0, 0, 0.35)",
@@ -669,7 +669,7 @@ export function ProfileScreen({
                 {s.value}
               </Text>
               <Text
-                className="text-[10px] font-bold text-white/90"
+                className="text-xs font-bold text-white/95 mt-1.5 tracking-tight"
                 style={{
                   textShadowColor: "rgba(0, 0, 0, 0.25)",
                   textShadowOffset: { width: 0, height: 1 },
