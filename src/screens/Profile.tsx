@@ -564,8 +564,8 @@ export function ProfileScreen({
         style={{ paddingTop: Math.max(insets.top, 24) + 16 }}
       >
         <Text
-          className="text-[22px] font-black tracking-tight mb-5"
-          style={{ fontFamily: "Outfit", color: isDark ? "#FFFFFF" : "#0B2136" }}
+          className="text-[22px] font-black tracking-tight mb-5 text-cura-900"
+          style={{ fontFamily: "Outfit" }}
         >
           Profile
         </Text>
@@ -575,10 +575,9 @@ export function ProfileScreen({
             <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={66} />
             <Pressable
               onPress={handleOpenMascotModal}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center bg-cura-900"
               style={{
-                backgroundColor: isDark ? "#1E293B" : "#0B2136",
-                borderColor: isDark ? "rgba(255, 255, 255, 0.4)" : "#FFFFFF",
+                borderColor: "#FFFFFF",
                 borderWidth: 2,
                 elevation: 4,
                 shadowColor: '#000',
@@ -594,27 +593,22 @@ export function ProfileScreen({
           </View>
           <View>
             <Text
-              className="text-xl font-black"
-              style={{ fontFamily: "Outfit", color: isDark ? "#FFFFFF" : "#0B2136" }}
+              className="text-xl font-black text-cura-900"
+              style={{ fontFamily: "Outfit" }}
             >
               {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
-            <Text className="text-xs mt-0.5 font-medium" style={{ color: isDark ? "#CBD5E1" : "#475569" }}>
+            <Text className="text-xs mt-0.5 font-medium text-slate-500">
               {user.email}
             </Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
-                className="rounded-full px-2.5 py-0.5"
-                style={{
-                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#0B2136",
-                  borderWidth: 1,
-                  borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "transparent",
-                }}
+                className="rounded-full px-2.5 py-0.5 bg-cura-900"
               >
                 <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
               </View>
               {user.category?.toLowerCase() === "student" && (
-                <Text className="text-[10px] font-semibold" style={{ color: isDark ? "#CBD5E1" : "#475569" }}>
+                <Text className="text-[10px] font-semibold text-slate-500">
                   {[(user as any).studentCategory, user.course, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null, user.yearLevel].filter(Boolean).join(' · ')}
                 </Text>
               )}
