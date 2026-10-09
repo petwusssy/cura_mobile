@@ -974,12 +974,10 @@ export function ProfileScreen({
               </BlurView>
             </View>
             <Text
-              className="text-[11px] font-bold tracking-wide"
+              className="text-[11px] font-bold tracking-wide text-cura-900"
               style={{
-                color: isDark ? "#FFFFFF" : "#0B2136",
-                textShadowColor: isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.8)",
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
+                color: "#0B2136",
+                fontFamily: "Outfit",
               }}
             >
               CURA · University Clinic Patient App
@@ -987,13 +985,10 @@ export function ProfileScreen({
             <Text
               className="text-[10px] font-semibold"
               style={{
-                color: isDark ? "#CBD5E1" : "#475569",
-                textShadowColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.8)",
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
+                color: "#002D72",
               }}
             >
-              v1.0.0 · Your health, our priority 💙
+              v1.0.0 · Your health, our priority
             </Text>
           </View>
         </View>
