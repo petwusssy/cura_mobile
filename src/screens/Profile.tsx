@@ -873,60 +873,56 @@ export function ProfileScreen({
           ))}
 
           {/* Logout */}
-          <Pressable
-            onPress={resetApp}
-            className="mt-1 active:opacity-90 overflow-hidden relative"
+          <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
+              backgroundColor: "#FFFFFF",
               borderRadius: 24,
-              paddingHorizontal: 16,
-              paddingVertical: 16,
               borderWidth: 1,
-              borderTopColor: "rgba(255, 255, 255, 0.45)",
-              borderLeftColor: "rgba(255, 255, 255, 0.3)",
-              borderRightColor: "rgba(255, 255, 255, 0.2)",
-              borderBottomColor: "rgba(255, 255, 255, 0.15)",
-              shadowColor: "#0A2472",
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.22,
-              shadowRadius: 12,
-              elevation: 4,
+              borderColor: "#EEF2F6",
+              shadowColor: "#0A2540",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.05,
+              shadowRadius: 14,
+              elevation: 2,
+              overflow: "hidden",
             }}
           >
-            <LinearGradient
-              colors={ADMIN_PORTAL_GRADIENT.colors}
-              start={ADMIN_PORTAL_GRADIENT.start}
-              end={ADMIN_PORTAL_GRADIENT.end}
-              style={StyleSheet.absoluteFill}
-            />
-            <View
-              className="w-9 h-9 rounded-xl items-center justify-center"
-              style={{
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-                borderWidth: 1,
-                borderColor: "rgba(255, 255, 255, 0.35)",
-              }}
+            <Pressable
+              onPress={resetApp}
+              className="flex-row items-center gap-3.5 px-5 py-4 active:bg-slate-50"
             >
-              <Text className="text-base">🚪</Text>
-            </View>
-            <Text
-              className="text-sm font-bold text-white"
-              style={{
-                textShadowColor: "rgba(0, 0, 0, 0.25)",
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
-              }}
-            >
-              Sign Out
-            </Text>
-            <View className="flex-1 items-end">
-              <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <Polyline points="9 18 15 12 9 6"/>
+              <View className="w-6 items-center justify-center">
+                <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0056B3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <Polyline points="16 17 21 12 16 7" />
+                  <Line x1="21" y1="12" x2="9" y2="12" />
+                </Svg>
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-[15px] font-bold"
+                  style={{
+                    color: "#002D72",
+                    fontFamily: "Outfit",
+                  }}
+                >
+                  Sign Out
+                </Text>
+              </View>
+              <Svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#8DA4C4"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <Polyline points="9 18 15 12 9 6" />
               </Svg>
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
 
           <View className="items-center flex-col gap-1.5 mt-6 mb-4">
             <View
