@@ -18,7 +18,7 @@ import {
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Svg, { Path, Polyline } from "react-native-svg";
+import Svg, { Path, Polyline, Rect, Circle, Line } from "react-native-svg";
 import type { Screen, AppUser } from "../types";
 import { AvatarBadge } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,6 +40,84 @@ interface Props {
 
 const COOLDOWN_DAYS = 7;
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
+function renderInfoBlueIcon(label: string) {
+  const blue = "#0056B3";
+  switch (label) {
+    case "ID":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Rect x="3" y="4" width="18" height="16" rx="3" />
+          <Circle cx="9" cy="10" r="2" />
+          <Line x1="15" y1="8" x2="17" y2="8" />
+          <Line x1="15" y1="12" x2="17" y2="12" />
+          <Line x1="7" y1="16" x2="17" y2="16" />
+        </Svg>
+      );
+    case "Gender":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <Circle cx="12" cy="7" r="4" />
+        </Svg>
+      );
+    case "Date of Birth":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Rect x="3" y="4" width="18" height="18" rx="2" />
+          <Line x1="16" y1="2" x2="16" y2="6" />
+          <Line x1="8" y1="2" x2="8" y2="6" />
+          <Line x1="3" y1="10" x2="21" y2="10" />
+        </Svg>
+      );
+    case "Contact Details":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+        </Svg>
+      );
+    case "Email":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <Polyline points="22,6 12,13 2,6" />
+        </Svg>
+      );
+    case "Emergency Contact":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <Line x1="12" y1="8" x2="12" y2="12" />
+          <Line x1="12" y1="16" x2="12.01" y2="16" />
+        </Svg>
+      );
+    case "Position":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+          <Path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </Svg>
+      );
+    case "Department":
+    case "Address":
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <Circle cx="12" cy="10" r="3" />
+        </Svg>
+      );
+    default:
+      return (
+        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <Polyline points="14 2 14 8 20 8" />
+          <Line x1="16" y1="13" x2="8" y2="13" />
+          <Line x1="16" y1="17" x2="8" y2="17" />
+          <Polyline points="10 9 9 9 8 9" />
+        </Svg>
+      );
+  }
+}
 
 export function ProfileScreen({
   navigate,
@@ -681,7 +759,97 @@ export function ProfileScreen({
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-4 pb-12">
-          {sections.map((section) => (
+          {sections.map((section) => {
+            const isMyInfo = section.title === "My Information";
+
+            if (isMyInfo) {
+              return (
+                <View key={section.title}>
+                  <View className="flex-row items-center justify-between mb-2 px-1">
+                    <Text
+                      className="text-[11px] font-bold uppercase tracking-wider"
+                      style={{
+                        color: isDark ? "#FFFFFF" : "#0B2136",
+                        textShadowColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.9)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      {section.title}
+                    </Text>
+                    {section.action}
+                  </View>
+
+                  <View
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: 24,
+                      borderWidth: 1,
+                      borderColor: "#EEF2F6",
+                      shadowColor: "#0A2540",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 14,
+                      elevation: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {section.items.map((item: any, i: number) => (
+                      <Pressable
+                        key={`${item.label}-${i}`}
+                        onPress={item.onPress}
+                        className="flex-row items-center gap-3.5 px-5 py-4 active:bg-slate-50"
+                        style={
+                          i > 0
+                            ? {
+                                borderTopWidth: 1,
+                                borderTopColor: "#F1F5F9",
+                              }
+                            : undefined
+                        }
+                      >
+                        <View className="w-6 items-center justify-center">
+                          {renderInfoBlueIcon(item.label)}
+                        </View>
+                        <View className="flex-1">
+                          <Text
+                            className="text-[15px] font-bold"
+                            style={{
+                              color: "#002D72",
+                              fontFamily: "Outfit",
+                            }}
+                          >
+                            {item.label}
+                          </Text>
+                          {item.sub ? (
+                            <Text
+                              className="text-xs mt-0.5 font-medium text-slate-500"
+                              numberOfLines={1}
+                            >
+                              {item.sub}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#8DA4C4"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <Polyline points="9 18 15 12 9 6" />
+                        </Svg>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              );
+            }
+
+            return (
             <View key={section.title}>
               <View className="flex-row items-center justify-between mb-2 px-1">
                 <Text
@@ -803,7 +971,8 @@ export function ProfileScreen({
                 </BlurView>
               </View>
             </View>
-          ))}
+            );
+          })}
 
           {/* Logout */}
           <Pressable
