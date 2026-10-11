@@ -265,8 +265,20 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             >
               <View className="flex-row items-center justify-between mb-2">
                 <View className="flex-row items-center gap-2">
-                  <Text className="text-base">📢</Text>
-                  <Text className="text-xs font-bold uppercase tracking-wider text-slate-500">Clinic Advisory</Text>
+                  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <Defs>
+                      <SvgLinearGradient id="gAdvisory" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <Stop offset="0%" stopColor="#00A3FF" />
+                        <Stop offset="100%" stopColor="#0056B3" />
+                      </SvgLinearGradient>
+                    </Defs>
+                    <Path d="M3 10.5C3 9.67 3.67 9 4.5 9H7l7.5-4.5c.8-.48 1.8.1 1.8 1.03v12.94c0 .93-1 1.51-1.8 1.03L7 15H4.5C3.67 15 3 14.33 3 13.5v-3z" fill="url(#gAdvisory)" />
+                    <Path d="M6 15v3a1.5 1.5 0 0 0 1.5 1.5h.5a1.5 1.5 0 0 0 1.5-1.5v-3" stroke="url(#gAdvisory)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <Path d="M19 8.5a5 5 0 0 1 0 7" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" />
+                    <Path d="M21.5 6a8.5 8.5 0 0 1 0 12" stroke="#00A3FF" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+                    <Circle cx="6.5" cy="12" r="1.2" fill="#FFFFFF" />
+                  </Svg>
+                  <Text className="text-xs font-bold uppercase tracking-wider" style={{ color: "#002D72" }}>Clinic Advisory</Text>
                 </View>
                 <View className={`px-3 py-1 rounded-full ${
                   advisory.status === 'Open' ? 'bg-emerald-100' :
@@ -282,7 +294,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                   </Text>
                 </View>
               </View>
-              <Text className="text-sm font-semibold text-slate-800 leading-snug">
+              <Text className="text-sm font-semibold leading-snug" style={{ color: "#002D72" }}>
                 {advisory.message}
               </Text>
             </View>
