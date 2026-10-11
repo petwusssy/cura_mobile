@@ -3337,17 +3337,14 @@ export function WelcomeScreen({
           style={{
             width: "100%",
             height: 54,
-            borderRadius: 16,
-            backgroundColor: "#1E4FD8",
+            borderRadius: 9999,
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            borderColor: "#FFFFFF",
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
             paddingHorizontal: 20,
-            shadowColor: "#1E4FD8",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.28,
-            shadowRadius: 8,
-            elevation: 4,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -3376,15 +3373,19 @@ export function WelcomeScreen({
           style={{
             width: "100%",
             height: 54,
-            borderRadius: 16,
+            borderRadius: 9999,
             backgroundColor: "#FFFFFF",
-            borderWidth: 1.5,
-            borderColor: "#1E4FD8",
+            borderWidth: 0,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
             paddingHorizontal: 20,
             marginTop: 14,
+            shadowColor: "#0A2472",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 3,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
