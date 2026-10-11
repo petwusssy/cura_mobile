@@ -515,7 +515,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 loading={isSubmitting}
                 disabled={!date.trim() || !reason.trim()}
               >
-                📅 Request Appointment
+                <Text style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  Request Appointment
+                </Text>
               </Button>
             </View>
           </View>
@@ -533,21 +535,42 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
             </View>
           ) : (
             requests.map((req) => (
-              <Card key={req.id} className="p-5 border border-slate-100">
+              <View
+                key={req.id}
+                className="p-5 rounded-[24px] relative overflow-hidden"
+                style={{
+                  borderWidth: 1,
+                  borderTopColor: "rgba(255, 255, 255, 0.45)",
+                  borderLeftColor: "rgba(255, 255, 255, 0.3)",
+                  borderRightColor: "rgba(255, 255, 255, 0.2)",
+                  borderBottomColor: "rgba(255, 255, 255, 0.15)",
+                  shadowColor: "#0A2472",
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.22,
+                  shadowRadius: 12,
+                  elevation: 4,
+                }}
+              >
+                <LinearGradient
+                  colors={ADMIN_PORTAL_GRADIENT.colors}
+                  start={ADMIN_PORTAL_GRADIENT.start}
+                  end={ADMIN_PORTAL_GRADIENT.end}
+                  style={StyleSheet.absoluteFill}
+                />
                 <View className="flex-row justify-between items-start mb-3">
                   <View>
-                    <Text className="text-sm font-bold text-slate-800 mb-1">{req.preferred_date}</Text>
-                    <Text className="text-xs text-slate-500">{formatTime12(req.preferred_time)}</Text>
+                    <Text className="text-sm font-bold text-white mb-1" style={{ fontFamily: "Outfit" }}>{req.preferred_date}</Text>
+                    <Text className="text-xs text-white/80">{formatTime12(req.preferred_time)}</Text>
                   </View>
                   {renderStatusBadge(req.status)}
                 </View>
 
-                <Text className="text-sm text-slate-600 mb-4 bg-slate-50 p-3 rounded-lg">
+                <Text className="text-sm text-white/95 mb-4 bg-white/10 p-3 rounded-xl border border-white/15">
                   <Text className="font-bold capitalize">{req.visit_type}:</Text> "{req.reason}"
                 </Text>
 
                 {req.status === "Approved" && (
-                  <View className="bg-emerald-50 rounded-xl p-4 mt-2 border border-emerald-100">
+                  <View className="bg-emerald-50 rounded-2xl p-4 mt-2 border border-emerald-100">
                     <Text className="text-xs font-bold text-emerald-800 mb-2">✅ APPOINTMENT APPROVED</Text>
                     <Text className="text-xs text-emerald-700 mb-1">
                       <Text className="font-bold">Scheduled:</Text> {req.scheduled_date || req.preferred_date} at {formatTime12(req.scheduled_time || req.preferred_time)}
@@ -561,7 +584,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                     <Text className="text-xs text-rose-700 mt-1">Please contact the clinic for more information.</Text>
                   </View>
                 )}
-              </Card>
+              </View>
             ))
           )}
         </ScrollView>

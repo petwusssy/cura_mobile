@@ -654,7 +654,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 loading={isSubmitting}
                 disabled={!date.trim() || !reason.trim()}
               >
-                📹 Submit Request
+                <Text style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  Submit Request
+                </Text>
               </Button>
             </View>
           </View>
