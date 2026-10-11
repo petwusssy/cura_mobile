@@ -10,6 +10,52 @@ import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import type { Screen, AppUser } from "../types";
 import { getManilaDate, getManilaTime, normalizeDate, formatTime12 } from "../utils/philippineTime";
+import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+
+function MorningIcon({ selected }: { selected?: boolean }) {
+  const gradId = selected ? "gMornSel" : "gMorn";
+  return (
+    <Svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={selected ? "#FFFFFF" : "#00A3FF"} />
+          <Stop offset="100%" stopColor={selected ? "#BAE6FD" : "#0056B3"} />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d="M10 20a6 6 0 0 1 12 0H10z" fill={`url(#${gradId})`} />
+      <Line x1="5" y1="21" x2="27" y2="21" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="16" y1="9" x2="16" y2="12" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="9.5" y1="12" x2="11.5" y2="14" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="22.5" y1="12" x2="20.5" y2="14" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="7" y1="17" x2="9" y2="17.5" stroke={selected ? "#BAE6FD" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="25" y1="17" x2="23" y2="17.5" stroke={selected ? "#BAE6FD" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function AfternoonIcon({ selected }: { selected?: boolean }) {
+  const gradId = selected ? "gAftSel" : "gAft";
+  return (
+    <Svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={selected ? "#FFFFFF" : "#00A3FF"} />
+          <Stop offset="100%" stopColor={selected ? "#BAE6FD" : "#0056B3"} />
+        </SvgLinearGradient>
+      </Defs>
+      <Circle cx="16" cy="16" r="6" fill={`url(#${gradId})`} />
+      <Line x1="16" y1="5" x2="16" y2="8" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="16" y1="24" x2="16" y2="27" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="5" y1="16" x2="8" y2="16" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="24" y1="16" x2="27" y2="16" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="8.2" y1="8.2" x2="10.3" y2="10.3" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="21.7" y1="21.7" x2="23.8" y2="23.8" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="8.2" y1="23.8" x2="10.3" y2="21.7" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="21.7" y1="10.3" x2="23.8" y2="8.2" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Circle cx="14" cy="14" r="1.5" fill="#FFFFFF" opacity={selected ? 0.9 : 0.8} />
+    </Svg>
+  );
+}
 
 function parseSingleTime(t: string): number | null {
   const match = t.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
@@ -386,7 +432,22 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
             className="bg-white rounded-[28px] p-4 flex-row items-center gap-3.5 border border-sky-100 mb-6 shadow-xs"
           >
             <View className="w-11 h-11 rounded-2xl bg-sky-50 items-center justify-center">
-              <Text className="text-xl">📹</Text>
+              <Svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                <Defs>
+                  <SvgLinearGradient id="gTelemedBanner" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor="#00A3FF" />
+                    <Stop offset="100%" stopColor="#0056B3" />
+                  </SvgLinearGradient>
+                  <SvgLinearGradient id="gLensBanner" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor="#38BDF8" />
+                    <Stop offset="100%" stopColor="#0284C7" />
+                  </SvgLinearGradient>
+                </Defs>
+                <Rect x="4" y="10" width="22" height="20" rx="6" fill="url(#gTelemedBanner)" />
+                <Path d="M26 16l8-4.5v17l-8-4.5v-8z" fill="url(#gLensBanner)" />
+                <Rect x="13.5" y="15" width="3" height="10" rx="1" fill="#FFFFFF" />
+                <Rect x="10" y="18.5" width="10" height="3" rx="1" fill="#FFFFFF" />
+              </Svg>
             </View>
             <View className="flex-1">
               <Text className="text-sm font-bold text-cura-900 mb-0.5" style={{ fontFamily: "Outfit" }}>
@@ -418,7 +479,19 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
               >
                 <View className="flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
-                    <Text className="text-base">📅</Text>
+                    <Svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+                      <Defs>
+                        <SvgLinearGradient id="gDateTelemed" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <Stop offset="0%" stopColor="#00A3FF" />
+                          <Stop offset="100%" stopColor="#0056B3" />
+                        </SvgLinearGradient>
+                      </Defs>
+                      <Rect x="5" y="9" width="30" height="25" rx="6" fill="url(#gDateTelemed)" />
+                      <Rect x="11" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+                      <Rect x="26" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+                      <Line x1="5" y1="16" x2="35" y2="16" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.4" />
+                      <Polyline points="14 24 18 28 26 20" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </Svg>
                   </View>
                   <Text className={`text-sm ${date ? "text-slate-800 font-bold" : "text-slate-400 font-medium"}`}>
                     {date
@@ -495,7 +568,11 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                           style={StyleSheet.absoluteFill}
                         />
                       )}
-                      <Text className="text-xl mb-1">{slot.icon}</Text>
+                      {slot.value.startsWith("Morning") ? (
+                        <MorningIcon selected={isSelected} />
+                      ) : (
+                        <AfternoonIcon selected={isSelected} />
+                      )}
                       <Text
                         className="text-sm font-black"
                         style={{

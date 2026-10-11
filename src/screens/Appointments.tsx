@@ -7,6 +7,112 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Screen, AppUser } from "../types";
 import { formatTime12 } from "../utils/philippineTime";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
+import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+
+function MorningIcon({ selected }: { selected?: boolean }) {
+  const gradId = selected ? "gMornApptSel" : "gMornAppt";
+  return (
+    <Svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={selected ? "#FFFFFF" : "#00A3FF"} />
+          <Stop offset="100%" stopColor={selected ? "#BAE6FD" : "#0056B3"} />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d="M10 20a6 6 0 0 1 12 0H10z" fill={`url(#${gradId})`} />
+      <Line x1="5" y1="21" x2="27" y2="21" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="16" y1="9" x2="16" y2="12" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="9.5" y1="12" x2="11.5" y2="14" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="22.5" y1="12" x2="20.5" y2="14" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="7" y1="17" x2="9" y2="17.5" stroke={selected ? "#BAE6FD" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="25" y1="17" x2="23" y2="17.5" stroke={selected ? "#BAE6FD" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function AfternoonIcon({ selected }: { selected?: boolean }) {
+  const gradId = selected ? "gAftApptSel" : "gAftAppt";
+  return (
+    <Svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={selected ? "#FFFFFF" : "#00A3FF"} />
+          <Stop offset="100%" stopColor={selected ? "#BAE6FD" : "#0056B3"} />
+        </SvgLinearGradient>
+      </Defs>
+      <Circle cx="16" cy="16" r="6" fill={`url(#${gradId})`} />
+      <Line x1="16" y1="5" x2="16" y2="8" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="16" y1="24" x2="16" y2="27" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="5" y1="16" x2="8" y2="16" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="24" y1="16" x2="27" y2="16" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="8.2" y1="8.2" x2="10.3" y2="10.3" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="21.7" y1="21.7" x2="23.8" y2="23.8" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="8.2" y1="23.8" x2="10.3" y2="21.7" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="21.7" y1="10.3" x2="23.8" y2="8.2" stroke={selected ? "#BAE6FD" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
+      <Circle cx="14" cy="14" r="1.5" fill="#FFFFFF" opacity={selected ? 0.9 : 0.8} />
+    </Svg>
+  );
+}
+
+function MedicalIcon({ selected }: { selected?: boolean }) {
+  const gradId = selected ? "gMedVisSel" : "gMedVis";
+  return (
+    <Svg width="24" height="24" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={selected ? "#FFFFFF" : "#00A3FF"} />
+          <Stop offset="100%" stopColor={selected ? "#BAE6FD" : "#0056B3"} />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d="M9 7v5a7 7 0 0 0 14 0V7" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2.2" strokeLinecap="round" />
+      <Circle cx="9" cy="7" r="1.5" fill={selected ? "#BAE6FD" : "#00A3FF"} />
+      <Circle cx="23" cy="7" r="1.5" fill={selected ? "#BAE6FD" : "#00A3FF"} />
+      <Path d="M16 19v4a3 3 0 0 0 3 3h2" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2.2" strokeLinecap="round" />
+      <Circle cx="23" cy="26" r="3.5" fill={`url(#${gradId})`} stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="1.5" />
+      <Circle cx="23" cy="26" r="1" fill="#FFFFFF" />
+    </Svg>
+  );
+}
+
+function DentalIcon({ selected }: { selected?: boolean }) {
+  const gradId = selected ? "gDentSel" : "gDent";
+  return (
+    <Svg width="24" height="24" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={selected ? "#FFFFFF" : "#00A3FF"} />
+          <Stop offset="100%" stopColor={selected ? "#BAE6FD" : "#0056B3"} />
+        </SvgLinearGradient>
+      </Defs>
+      <Path
+        d="M10 6c-3 0-5 3-5 7 0 4 2 8 3 13 1 1 2.5 1 3.5 0l2.5-7h4l2.5 7c1 1 2.5 1 3.5 0 1-5 3-9 3-13 0-4-2-7-5-7-2 0-3.5 1.5-5 3-1.5-1.5-3-3-5-3z"
+        fill={`url(#${gradId})`}
+        stroke={selected ? "#FFFFFF" : "#38BDF8"}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <Path d="M9 10c0-1.5 1-2.5 2.5-2.5" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" opacity={0.8} />
+    </Svg>
+  );
+}
+
+function ClearanceIcon({ selected }: { selected?: boolean }) {
+  const gradId = selected ? "gClearSel" : "gClear";
+  return (
+    <Svg width="24" height="24" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={selected ? "#FFFFFF" : "#00A3FF"} />
+          <Stop offset="100%" stopColor={selected ? "#BAE6FD" : "#0056B3"} />
+        </SvgLinearGradient>
+      </Defs>
+      <Rect x="7" y="6" width="18" height="22" rx="4" fill={`url(#${gradId})`} stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="1.5" />
+      <Rect x="12" y="4" width="8" height="4" rx="1.5" fill={selected ? "#FFFFFF" : "#38BDF8"} />
+      <Polyline points="11 17 14 20 21 13" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <Line x1="12" y1="23" x2="20" y2="23" stroke={selected ? "rgba(255,255,255,0.7)" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -153,7 +259,19 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
             className="bg-white rounded-[28px] p-4 flex-row items-center gap-3.5 border border-sky-100 mb-6 shadow-xs"
           >
             <View className="w-11 h-11 rounded-2xl bg-sky-50 items-center justify-center">
-              <Text className="text-xl">🏥</Text>
+              <Svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                <Defs>
+                  <SvgLinearGradient id="gClinicBanner" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor="#00A3FF" />
+                    <Stop offset="100%" stopColor="#0056B3" />
+                  </SvgLinearGradient>
+                </Defs>
+                <Rect x="6" y="8" width="20" height="20" rx="4" fill="url(#gClinicBanner)" />
+                <Rect x="10" y="5" width="12" height="3" rx="1.5" fill="#38BDF8" />
+                <Rect x="14.5" y="11" width="3" height="8" rx="1" fill="#FFFFFF" />
+                <Rect x="12" y="13.5" width="8" height="3" rx="1" fill="#FFFFFF" />
+                <Rect x="13" y="21" width="6" height="7" rx="1.5" fill="#38BDF8" />
+              </Svg>
             </View>
             <View className="flex-1">
               <Text className="text-sm font-bold text-cura-900 mb-0.5" style={{ fontFamily: "Outfit" }}>
@@ -206,7 +324,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                           style={StyleSheet.absoluteFill}
                         />
                       )}
-                      <Text className="text-lg mb-1">{item.icon}</Text>
+                      {item.value === "medical" && <MedicalIcon selected={isSelected} />}
+                      {item.value === "dental" && <DentalIcon selected={isSelected} />}
+                      {item.value === "clearance" && <ClearanceIcon selected={isSelected} />}
                       <Text
                         className="text-xs font-bold"
                         style={{
@@ -241,7 +361,19 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
               >
                 <View className="flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
-                    <Text className="text-base">📅</Text>
+                    <Svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+                      <Defs>
+                        <SvgLinearGradient id="gDateAppt" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <Stop offset="0%" stopColor="#00A3FF" />
+                          <Stop offset="100%" stopColor="#0056B3" />
+                        </SvgLinearGradient>
+                      </Defs>
+                      <Rect x="5" y="9" width="30" height="25" rx="6" fill="url(#gDateAppt)" />
+                      <Rect x="11" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+                      <Rect x="26" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+                      <Line x1="5" y1="16" x2="35" y2="16" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.4" />
+                      <Polyline points="14 24 18 28 26 20" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </Svg>
                   </View>
                   <Text className={`text-sm ${date ? "text-slate-800 font-bold" : "text-slate-400 font-medium"}`}>
                     {date
@@ -318,7 +450,11 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                           style={StyleSheet.absoluteFill}
                         />
                       )}
-                      <Text className="text-xl mb-1">{slot.icon}</Text>
+                      {slot.value === "morning" ? (
+                        <MorningIcon selected={isSelected} />
+                      ) : (
+                        <AfternoonIcon selected={isSelected} />
+                      )}
                       <Text
                         className="text-sm font-black"
                         style={{
