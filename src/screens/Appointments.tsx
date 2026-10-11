@@ -3,7 +3,7 @@ import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, Refresh
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Header, Button, Card, Badge } from "../components/Shell";
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import type { Screen, AppUser } from "../types";
 import { formatTime12 } from "../utils/philippineTime";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
@@ -162,29 +162,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   }, [activeTab, fetchRequests]);
 
   const handleOpenDatePicker = () => {
-    const minD = new Date();
-    minD.setHours(0, 0, 0, 0);
-    const initD = date ? new Date(date + "T00:00:00") : new Date();
-    const pickerDate = initD < minD ? minD : initD;
-
-    if (Platform.OS === "android") {
-      DateTimePickerAndroid.open({
-        value: pickerDate,
-        onChange: (event: any, selectedDate?: Date) => {
-          if (event.type === "set" && selectedDate) {
-            const year = selectedDate.getFullYear();
-            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-            const day = String(selectedDate.getDate()).padStart(2, '0');
-            setDate(`${year}-${month}-${day}`);
-          }
-        },
-        mode: "date",
-        display: "calendar",
-        minimumDate: minD,
-      });
-    } else {
-      setShowDatePicker(true);
-    }
+    setShowDatePicker(true);
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -418,88 +396,13 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                   <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
                 </View>
               </TouchableOpacity>
-              {showDatePicker && Platform.OS !== "android" && (
-                <Modal
-                  visible={showDatePicker}
-                  transparent
-                  animationType="fade"
-                  onRequestClose={() => setShowDatePicker(false)}
-                >
-                  <Pressable
-                    className="flex-1 bg-black/50 justify-center items-center px-4"
-                    onPress={() => setShowDatePicker(false)}
-                  >
-                    <Pressable
-                      className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl"
-                      onPress={(e) => e.stopPropagation()}
-                    >
-                      <View className="flex-row items-center justify-between pb-3 mb-2 border-b border-slate-100">
-                        <Text className="text-base font-bold text-[#002D72]" style={{ fontFamily: "Outfit" }}>
-                          Select Appointment Date
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => setShowDatePicker(false)}
-                          className="px-3 py-1 rounded-full bg-slate-100"
-                        >
-                          <Text className="text-xs font-bold text-slate-600">Close</Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      {Platform.OS === "web" ? (
-                        <View className="py-4">
-                          <input
-                            type="date"
-                            min={new Date().toISOString().split("T")[0]}
-                            value={date}
-                            onChange={(e: any) => {
-                              if (e.target.value) {
-                                setDate(e.target.value);
-                              }
-                              setShowDatePicker(false);
-                            }}
-                            style={{
-                              padding: "12px",
-                              fontSize: "16px",
-                              borderRadius: "12px",
-                              border: "1px solid #cbd5e1",
-                              width: "100%",
-                              fontFamily: "Outfit, sans-serif",
-                            }}
-                          />
-                        </View>
-                      ) : (
-                        <DateTimePicker
-                          value={(() => {
-                            const minD = new Date();
-                            minD.setHours(0, 0, 0, 0);
-                            const initD = date ? new Date(date + "T00:00:00") : new Date();
-                            return initD < minD ? minD : initD;
-                          })()}
-                          mode="date"
-                          display="inline"
-                          minimumDate={(() => {
-                            const minD = new Date();
-                            minD.setHours(0, 0, 0, 0);
-                            return minD;
-                          })()}
-                          onChange={onDateChange}
-                        />
-                      )}
-
-                      {Platform.OS === "ios" && (
-                        <TouchableOpacity
-                          onPress={() => setShowDatePicker(false)}
-                          className="mt-3 bg-[#002D72] py-3 rounded-2xl items-center"
-                        >
-                          <Text className="text-white font-bold text-sm" style={{ fontFamily: "Outfit" }}>
-                            Confirm Date
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </Pressable>
-                  </Pressable>
-                </Modal>
-              )}
+              <LiquidGlassDatePickerModal
+                visible={showDatePicker}
+                onClose={() => setShowDatePicker(false)}
+                selectedDate={date}
+                onSelectDate={(newDate) => setDate(newDate)}
+                title="Select Appointment Date"
+              />
             </View>
 
             {/* Preferred Time */}
