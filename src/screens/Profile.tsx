@@ -201,6 +201,27 @@ export function ProfileScreen({
   const [formDepartment, setFormDepartment] = useState("");
   const [formAddress, setFormAddress] = useState("");
 
+  // Single field edit modal state
+  interface SingleEditField {
+    key: string;
+    label: string;
+    value: string;
+    secondLabel?: string;
+    secondValue?: string;
+    type?: "text" | "phone" | "email" | "select";
+    options?: string[];
+  }
+  const [activeEditField, setActiveEditField] = useState<SingleEditField | null>(null);
+  const [singleFieldValue, setSingleFieldValue] = useState("");
+  const [singleFieldSecondaryValue, setSingleFieldSecondaryValue] = useState("");
+  const [savingSingleField, setSavingSingleField] = useState(false);
+
+  const openSingleEdit = (field: SingleEditField) => {
+    setActiveEditField(field);
+    setSingleFieldValue(field.value);
+    setSingleFieldSecondaryValue(field.secondValue || "");
+  };
+
   // Notification Preferences form state
   const [notifMedReminders, setNotifMedReminders] = useState(true);
   const [notifConsultReminders, setNotifConsultReminders] = useState(true);
@@ -436,6 +457,118 @@ export function ProfileScreen({
     }
   };
 
+  // Save single field
+  const handleSaveSingleField = async () => {
+    if (!activeEditField) return;
+    setSavingSingleField(true);
+
+    const val = singleFieldValue.trim();
+    const secVal = singleFieldSecondaryValue.trim();
+    const patientId = user.id || (user as any).id_number;
+
+    let payload: any = {};
+    let userUpdates: any = {};
+
+    switch (activeEditField.key) {
+      case "id":
+        payload = { id_number: val };
+        userUpdates = { id: val, id_number: val };
+        break;
+      case "contact":
+        payload = { contact: val, phone: val };
+        userUpdates = { contact: val, phone: val };
+        break;
+      case "email":
+        payload = { email: val };
+        userUpdates = { email: val };
+        break;
+      case "emergency":
+        payload = { emergencyContact: val.toUpperCase(), emergencyPhone: secVal };
+        userUpdates = {
+          emergencyName: val.toUpperCase(),
+          emergencyContact: val.toUpperCase(),
+          emergencyPhone: secVal,
+        };
+        break;
+      case "category":
+        payload = { studentCategory: val };
+        userUpdates = { studentCategory: val };
+        break;
+      case "course":
+        payload = { course: val };
+        userUpdates = { course: val };
+        break;
+      case "yearLevel":
+        payload = { yearLevel: val };
+        userUpdates = { yearLevel: val };
+        break;
+      case "gender":
+        payload = { gender: val, sex: val };
+        userUpdates = { gender: val, sex: val };
+        break;
+      case "dob":
+        payload = { dob: val, birthday: val };
+        userUpdates = { dob: val, birthday: val };
+        break;
+      case "gradeLevel":
+        payload = { gradeLevel: val };
+        userUpdates = { gradeLevel: val };
+        break;
+      case "position":
+        payload = { position: val };
+        userUpdates = { position: val };
+        break;
+      case "department":
+        payload = { department: val };
+        userUpdates = { department: val };
+        break;
+      case "address":
+        payload = { address: val };
+        userUpdates = { address: val };
+        break;
+      default:
+        break;
+    }
+
+    try {
+      if (patientId) {
+        await fetch(`https://cura-backend-dvj5.onrender.com/api/patients/${patientId}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      }
+
+      if (user.email) {
+        await fetch(`https://cura-backend-dvj5.onrender.com/api/patients/update-by-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, ...payload }),
+        }).catch(() => {});
+      }
+
+      const updatedUser = {
+        ...user,
+        ...userUpdates,
+      };
+
+      if (setUser) setUser(updatedUser);
+      await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
+
+      setActiveEditField(null);
+      Alert.alert(
+        "Information Updated",
+        `${activeEditField.label} has been updated.`,
+        [{ text: "OK" }]
+      );
+    } catch (e) {
+      Alert.alert("Notice", "Changes saved locally.");
+      setActiveEditField(null);
+    } finally {
+      setSavingSingleField(false);
+    }
+  };
+
   // Save Notification Preferences
   const handleSaveNotifPreferences = async () => {
     const prefs = {
@@ -531,33 +664,200 @@ export function ProfileScreen({
 
   // My Information items
   const myInfoItems = [
-    { icon: "🪪", label: "ID", sub: (user as any).id || user.id_number || "—", color: "#F3F4F6", onPress: handleOpenMyInfoEdit },
-    { icon: "👤", label: "Gender", sub: user.gender || (user as any).sex || "—", color: "#EFF8FF", onPress: handleOpenMyInfoEdit },
-    { icon: "📅", label: "Date of Birth", sub: user.dob || (user as any).birthday ? new Date(user.dob || (user as any).birthday).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" }) : "—", color: "#ECFDF5", onPress: handleOpenMyInfoEdit },
-    { icon: "📞", label: "Contact Details", sub: user.phone || (user as any).contact || "—", color: "#ECFEFF", onPress: handleOpenMyInfoEdit },
-    { icon: "📧", label: "Email", sub: user.email || "—", color: "#EFF8FF", onPress: handleOpenMyInfoEdit },
-    { icon: "🆘", label: "Emergency Contact", sub: `${user.emergencyName || (user as any).emergencyContact || "—"} (${user.emergencyPhone || "—"})`, color: "#FFF7ED", onPress: handleOpenMyInfoEdit },
+    {
+      icon: "🪪",
+      label: "ID",
+      sub: (user as any).id || user.id_number || "—",
+      color: "#F3F4F6",
+      onPress: () =>
+        openSingleEdit({
+          key: "id",
+          label: "ID",
+          value: (user as any).id || user.id_number || "",
+          type: "text",
+        }),
+    },
+    {
+      icon: "👤",
+      label: "Gender",
+      sub: user.gender || (user as any).sex || "—",
+      color: "#EFF8FF",
+      onPress: () =>
+        openSingleEdit({
+          key: "gender",
+          label: "Gender",
+          value: user.gender || (user as any).sex || "",
+          type: "select",
+          options: ["Male", "Female"],
+        }),
+    },
+    {
+      icon: "📅",
+      label: "Date of Birth",
+      sub:
+        user.dob || (user as any).birthday
+          ? new Date(user.dob || (user as any).birthday).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              timeZone: "Asia/Manila",
+            })
+          : "—",
+      color: "#ECFDF5",
+      onPress: () =>
+        openSingleEdit({
+          key: "dob",
+          label: "Date of Birth",
+          value: user.dob || (user as any).birthday || "",
+          type: "text",
+        }),
+    },
+    {
+      icon: "📞",
+      label: "Contact Details",
+      sub: user.phone || (user as any).contact || "—",
+      color: "#ECFEFF",
+      onPress: () =>
+        openSingleEdit({
+          key: "contact",
+          label: "Contact Details",
+          value: user.phone || (user as any).contact || "",
+          type: "phone",
+        }),
+    },
+    {
+      icon: "📧",
+      label: "Email",
+      sub: user.email || "—",
+      color: "#EFF8FF",
+      onPress: () =>
+        openSingleEdit({
+          key: "email",
+          label: "Email",
+          value: user.email || "",
+          type: "email",
+        }),
+    },
+    {
+      icon: "🆘",
+      label: "Emergency Contact",
+      sub: `${user.emergencyName || (user as any).emergencyContact || "—"} (${user.emergencyPhone || "—"})`,
+      color: "#FFF7ED",
+      onPress: () =>
+        openSingleEdit({
+          key: "emergency",
+          label: "Emergency Contact Person",
+          value: user.emergencyName || (user as any).emergencyContact || "",
+          secondLabel: "Emergency Contact Phone Number",
+          secondValue: user.emergencyPhone || "",
+          type: "text",
+        }),
+    },
   ];
 
   const cat = user.category?.toLowerCase() || "";
   if (cat === "student") {
-    if ((user as any).studentCategory) {
-      myInfoItems.push({ icon: "📋", label: "Category", sub: (user as any).studentCategory, color: "#FEE2E2", onPress: handleOpenMyInfoEdit });
+    myInfoItems.push({
+      icon: "📋",
+      label: "Category",
+      sub: (user as any).studentCategory || "—",
+      color: "#FEE2E2",
+      onPress: () =>
+        openSingleEdit({
+          key: "category",
+          label: "Category",
+          value: (user as any).studentCategory || "",
+          type: "select",
+          options: ["College", "Senior High", "Junior High", "Elementary"],
+        }),
+    });
+    if (
+      (user as any).gradeLevel ||
+      (user as any).studentCategory === "Senior High" ||
+      (user as any).studentCategory === "Junior High" ||
+      (user as any).studentCategory === "Elementary"
+    ) {
+      myInfoItems.push({
+        icon: "📈",
+        label: "Grade Level",
+        sub: (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : "—",
+        color: "#FEF3C7",
+        onPress: () =>
+          openSingleEdit({
+            key: "gradeLevel",
+            label: "Grade Level",
+            value: (user as any).gradeLevel ? String((user as any).gradeLevel) : "",
+            type: "text",
+          }),
+      });
     }
-    if ((user as any).gradeLevel) {
-      myInfoItems.push({ icon: "📈", label: "Grade Level", sub: `Grade ${(user as any).gradeLevel}`, color: "#FEF3C7", onPress: handleOpenMyInfoEdit });
-    }
-    if (user.course) {
-      myInfoItems.push({ icon: "🎓", label: "Course", sub: user.course, color: "#ECFDF5", onPress: handleOpenMyInfoEdit });
-    }
-    if (user.yearLevel) {
-      myInfoItems.push({ icon: "📊", label: "Year Level", sub: user.yearLevel, color: "#F5F3FF", onPress: handleOpenMyInfoEdit });
-    }
+    myInfoItems.push({
+      icon: "🎓",
+      label: "Course",
+      sub: user.course || "—",
+      color: "#ECFDF5",
+      onPress: () =>
+        openSingleEdit({
+          key: "course",
+          label: "Course",
+          value: user.course || "",
+          type: "text",
+        }),
+    });
+    myInfoItems.push({
+      icon: "📊",
+      label: "Year Level",
+      sub: user.yearLevel || "—",
+      color: "#F5F3FF",
+      onPress: () =>
+        openSingleEdit({
+          key: "yearLevel",
+          label: "Year Level",
+          value: user.yearLevel || "",
+          type: "text",
+        }),
+    });
   } else if (cat === "employee") {
-    myInfoItems.push({ icon: "💼", label: "Position", sub: user.position || "—", color: "#ECFDF5", onPress: handleOpenMyInfoEdit });
-    myInfoItems.push({ icon: "🏢", label: "Department", sub: user.department || "—", color: "#F5F3FF", onPress: handleOpenMyInfoEdit });
+    myInfoItems.push({
+      icon: "💼",
+      label: "Position",
+      sub: user.position || "—",
+      color: "#ECFDF5",
+      onPress: () =>
+        openSingleEdit({
+          key: "position",
+          label: "Position",
+          value: user.position || "",
+          type: "text",
+        }),
+    });
+    myInfoItems.push({
+      icon: "🏢",
+      label: "Department",
+      sub: user.department || "—",
+      color: "#F5F3FF",
+      onPress: () =>
+        openSingleEdit({
+          key: "department",
+          label: "Department",
+          value: user.department || "",
+          type: "text",
+        }),
+    });
   } else if (cat === "outsider") {
-    myInfoItems.push({ icon: "📍", label: "Address", sub: user.address || "—", color: "#FEE2E2", onPress: handleOpenMyInfoEdit });
+    myInfoItems.push({
+      icon: "📍",
+      label: "Address",
+      sub: user.address || "—",
+      color: "#FEE2E2",
+      onPress: () =>
+        openSingleEdit({
+          key: "address",
+          label: "Address",
+          value: user.address || "",
+          type: "text",
+        }),
+    });
   }
 
   const certItems = certificates.length > 0 ? certificates.map((cert) => ({
@@ -993,6 +1293,163 @@ export function ProfileScreen({
           </View>
         </View>
       </ScrollView>
+
+      {/* ========================================================================= */}
+      {/* 0. SINGLE FIELD EDIT MODAL (BLUE GRADIENT)                               */}
+      {/* ========================================================================= */}
+      <Modal
+        visible={!!activeEditField}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActiveEditField(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1 justify-center items-center bg-black/60 px-5"
+        >
+          <View
+            className="w-full max-w-sm rounded-[28px] overflow-hidden p-6"
+            style={{
+              borderWidth: 1,
+              borderTopColor: "rgba(255, 255, 255, 0.45)",
+              borderLeftColor: "rgba(255, 255, 255, 0.3)",
+              borderRightColor: "rgba(255, 255, 255, 0.2)",
+              borderBottomColor: "rgba(255, 255, 255, 0.15)",
+              shadowColor: "#0A2472",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.28,
+              shadowRadius: 18,
+              elevation: 8,
+            }}
+          >
+            <LinearGradient
+              colors={ADMIN_PORTAL_GRADIENT.colors}
+              start={ADMIN_PORTAL_GRADIENT.start}
+              end={ADMIN_PORTAL_GRADIENT.end}
+              style={StyleSheet.absoluteFill}
+            />
+
+            {/* Header */}
+            <View className="flex-row items-center justify-between pb-3.5 border-b border-white/15 mb-4">
+              <View className="flex-1 mr-2">
+                <Text
+                  className="text-lg font-black text-white"
+                  style={{
+                    fontFamily: "Outfit",
+                    textShadowColor: "rgba(0, 0, 0, 0.35)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 3,
+                  }}
+                >
+                  Edit {activeEditField?.label}
+                </Text>
+                <Text className="text-[11px] font-medium text-white/70 mt-0.5">
+                  Update your university clinic records
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setActiveEditField(null)}
+                className="w-8 h-8 rounded-full bg-white/20 items-center justify-center active:bg-white/30"
+              >
+                <Text className="text-white font-bold text-sm">✕</Text>
+              </Pressable>
+            </View>
+
+            {/* Inputs */}
+            {activeEditField?.options ? (
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-white mb-2">Select {activeEditField.label}</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {activeEditField.options.map((opt) => {
+                    const isSelected = singleFieldValue === opt;
+                    return (
+                      <Pressable
+                        key={opt}
+                        onPress={() => setSingleFieldValue(opt)}
+                        className={`px-4 py-2 rounded-full border ${
+                          isSelected ? "bg-white border-white" : "bg-white/15 border-white/25"
+                        }`}
+                      >
+                        <Text
+                          className={`text-xs font-bold ${
+                            isSelected ? "text-[#002D72]" : "text-white"
+                          }`}
+                          style={{ fontFamily: "Outfit" }}
+                        >
+                          {opt}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : (
+              <View className="mb-3.5">
+                <Text className="text-xs font-bold text-white mb-1.5">
+                  {activeEditField?.label}
+                </Text>
+                <TextInput
+                  value={singleFieldValue}
+                  onChangeText={setSingleFieldValue}
+                  placeholder={`Enter ${activeEditField?.label.toLowerCase()}...`}
+                  placeholderTextColor="#94A3B8"
+                  keyboardType={
+                    activeEditField?.type === "phone"
+                      ? "phone-pad"
+                      : activeEditField?.type === "email"
+                      ? "email-address"
+                      : "default"
+                  }
+                  autoCapitalize={activeEditField?.type === "email" ? "none" : "words"}
+                  className="bg-white rounded-2xl px-4 py-3 text-sm font-bold text-slate-800"
+                />
+              </View>
+            )}
+
+            {activeEditField?.secondLabel ? (
+              <View className="mb-3.5">
+                <Text className="text-xs font-bold text-white mb-1.5">
+                  {activeEditField.secondLabel}
+                </Text>
+                <TextInput
+                  value={singleFieldSecondaryValue}
+                  onChangeText={setSingleFieldSecondaryValue}
+                  placeholder="Enter contact number..."
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="phone-pad"
+                  className="bg-white rounded-2xl px-4 py-3 text-sm font-bold text-slate-800"
+                />
+              </View>
+            ) : null}
+
+            {/* Actions */}
+            <View className="flex-row gap-3 mt-2">
+              <Pressable
+                onPress={() => setActiveEditField(null)}
+                className="flex-1 py-3 rounded-2xl bg-white/20 items-center justify-center active:bg-white/30"
+              >
+                <Text className="text-xs font-bold text-white" style={{ fontFamily: "Outfit" }}>
+                  Cancel
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSaveSingleField}
+                disabled={savingSingleField}
+                className="flex-1 py-3 rounded-2xl bg-white items-center justify-center active:opacity-90 shadow-sm"
+              >
+                {savingSingleField ? (
+                  <ActivityIndicator size="small" color="#002D72" />
+                ) : (
+                  <Text className="text-xs font-black text-[#002D72]" style={{ fontFamily: "Outfit" }}>
+                    Save
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* ========================================================================= */}
       {/* 1. EDIT MY INFORMATION MODAL                                             */}
