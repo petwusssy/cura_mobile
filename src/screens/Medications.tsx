@@ -86,12 +86,6 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
     { id: "all" as const,       label: "Total Meds", count: normalizedMeds.length, dot: "#0B2136" },
   ];
 
-  const tabCounts = {
-    all: normalizedMeds.length,
-    "to-intake": toTakeList.length,
-    intaked: intakedList.length,
-  };
-
   const renderMedCard = (med: any, isToIntakeSection: boolean) => {
     const cfg = statusConfig[med.status] || (isToIntakeSection ? statusConfig["next-intake"] : statusConfig["intaked"]);
     const isExpanded = expanded === med.id;
@@ -238,46 +232,6 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                 >
                   {s.label}
                 </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Filter segmented tabs */}
-        <View className="flex-row bg-white/10 rounded-full p-1 border border-white/10 mt-2.5">
-          {(["all", "to-intake", "intaked"] as const).map((f) => {
-            const isSelected = filter === f;
-            const tabLabel = f === "all" ? "All" : f === "to-intake" ? "To Intake" : "Intaked";
-            return (
-              <Pressable
-                key={f}
-                onPress={() => setFilter(f)}
-                className={`flex-1 py-2 rounded-full items-center justify-center flex-row gap-1.5 ${
-                  isSelected ? "bg-white" : "bg-transparent active:bg-white/5"
-                }`}
-                style={isSelected ? {
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 4,
-                  elevation: 2,
-                } : {}}
-              >
-                <Text className={`text-xs font-bold ${isSelected ? "text-[#0B2136]" : "text-white/80"}`}>
-                  {tabLabel}
-                </Text>
-                <View
-                  className={`rounded-full px-1.5 py-0.5 items-center justify-center ${
-                    isSelected ? "bg-slate-100" : "bg-white/15"
-                  }`}
-                >
-                  <Text
-                    className={`font-black ${isSelected ? "text-[#0B2136]" : "text-white"}`}
-                    style={{ fontSize: 9 }}
-                  >
-                    {tabCounts[f]}
-                  </Text>
-                </View>
               </Pressable>
             );
           })}
