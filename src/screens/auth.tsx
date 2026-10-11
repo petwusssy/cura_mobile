@@ -46,6 +46,7 @@ import { MASCOTS } from "../data";
 import { useAlert } from "../components/AlertProvider";
 import { Button, Input } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -3301,21 +3302,32 @@ export function WelcomeScreen({
         onLayout={onSheetLayout}
         style={[
           {
-            backgroundColor: "#FFFFFF",
+            overflow: "hidden",
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
             paddingTop: 28,
             paddingHorizontal: 24,
             paddingBottom: Math.max(insets.bottom, 20) + 8,
-            shadowColor: "#000",
+            borderWidth: 1,
+            borderTopColor: "rgba(255, 255, 255, 0.45)",
+            borderLeftColor: "rgba(255, 255, 255, 0.3)",
+            borderRightColor: "rgba(255, 255, 255, 0.2)",
+            borderBottomColor: "rgba(255, 255, 255, 0.15)",
+            shadowColor: "#0A2472",
             shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.08,
+            shadowOpacity: 0.25,
             shadowRadius: 16,
             elevation: 8,
           },
           sheetAnimatedStyle,
         ]}
       >
+        <LinearGradient
+          colors={ADMIN_PORTAL_GRADIENT.colors}
+          start={ADMIN_PORTAL_GRADIENT.start}
+          end={ADMIN_PORTAL_GRADIENT.end}
+          style={StyleSheet.absoluteFill}
+        />
         {/* Primary: Sign In Button */}
         <TouchableOpacity
           onPress={() => openAuthModal("signin")}
@@ -3403,7 +3415,7 @@ export function WelcomeScreen({
           <Text
             style={{
               fontSize: 13,
-              color: "#64748B",
+              color: "rgba(255, 255, 255, 0.85)",
               fontWeight: "500",
               fontFamily: "Outfit",
               textAlign: "center",
