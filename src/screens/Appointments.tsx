@@ -186,13 +186,16 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                       className="flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden"
                       style={{
                         backgroundColor: isSelected ? "transparent" : "#FFFFFF",
-                        borderColor: isSelected ? "#1E3A9E" : "#E2E8F0",
-                        borderWidth: isSelected ? 2 : 1,
-                        elevation: isSelected ? 3 : 1,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: isSelected ? 0.12 : 0.04,
-                        shadowRadius: 6,
+                        borderWidth: 1,
+                        borderTopColor: isSelected ? "rgba(255, 255, 255, 0.45)" : "#E2E8F0",
+                        borderLeftColor: isSelected ? "rgba(255, 255, 255, 0.3)" : "#E2E8F0",
+                        borderRightColor: isSelected ? "rgba(255, 255, 255, 0.2)" : "#E2E8F0",
+                        borderBottomColor: isSelected ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
+                        elevation: isSelected ? 4 : 1,
+                        shadowColor: isSelected ? "#0A2472" : "#000",
+                        shadowOffset: isSelected ? { width: 0, height: 6 } : { width: 0, height: 2 },
+                        shadowOpacity: isSelected ? 0.22 : 0.04,
+                        shadowRadius: isSelected ? 12 : 6,
                       }}
                     >
                       {isSelected && (
@@ -202,9 +205,6 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                           end={ADMIN_PORTAL_GRADIENT.end}
                           style={StyleSheet.absoluteFill}
                         />
-                      )}
-                      {isSelected && (
-                        <View className="absolute top-0 left-0 right-0 h-1 bg-sky-400" />
                       )}
                       <Text className="text-lg mb-1">{item.icon}</Text>
                       <Text
@@ -298,13 +298,16 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                       className="flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden"
                       style={{
                         backgroundColor: isSelected ? "transparent" : "#FFFFFF",
-                        borderColor: isSelected ? "#1E3A9E" : "#E2E8F0",
-                        borderWidth: isSelected ? 2 : 1,
-                        elevation: isSelected ? 3 : 1,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: isSelected ? 0.12 : 0.04,
-                        shadowRadius: 6,
+                        borderWidth: 1,
+                        borderTopColor: isSelected ? "rgba(255, 255, 255, 0.45)" : "#E2E8F0",
+                        borderLeftColor: isSelected ? "rgba(255, 255, 255, 0.3)" : "#E2E8F0",
+                        borderRightColor: isSelected ? "rgba(255, 255, 255, 0.2)" : "#E2E8F0",
+                        borderBottomColor: isSelected ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
+                        elevation: isSelected ? 4 : 1,
+                        shadowColor: isSelected ? "#0A2472" : "#000",
+                        shadowOffset: isSelected ? { width: 0, height: 6 } : { width: 0, height: 2 },
+                        shadowOpacity: isSelected ? 0.22 : 0.04,
+                        shadowRadius: isSelected ? 12 : 6,
                       }}
                     >
                       {isSelected && (
@@ -314,9 +317,6 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                           end={ADMIN_PORTAL_GRADIENT.end}
                           style={StyleSheet.absoluteFill}
                         />
-                      )}
-                      {isSelected && (
-                        <View className="absolute top-0 left-0 right-0 h-1 bg-sky-400" />
                       )}
                       <Text className="text-xl mb-1">{slot.icon}</Text>
                       <Text
