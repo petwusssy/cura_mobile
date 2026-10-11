@@ -2468,24 +2468,24 @@ const WelcomeBackground = memo(function WelcomeBackground({
       pointerEvents="none"
     >
       {/* 
-        Bottom 80% height, 120% width container for the 2 large smoke and fog effects:
-        - Top 20% of screen is pristine pure white (#FFFFFF).
-        - Width is 120% (left: "-10%") extending beyond the screen edges.
+        Full-height 120% width container for the 2 large smoke and fog effects:
+        - Rises over and ahead above the CURA shield logo
+        - Width is 120% (left: "-10%") extending beyond the screen edges
       */}
       <View
         style={[
           {
             position: "absolute",
+            top: 0,
             bottom: 0,
             left: "-10%",
             width: "120%",
-            height: "80%",
             overflow: "hidden",
           },
           Platform.OS === "web" ? ({ filter: "blur(32px)" } as any) : undefined,
         ]}
       >
-        {/* Smoke and Fog Effect 1: Large Lower-Left and Center Soft Blue Smoke Cloud */}
+        {/* Smoke and Fog Effect 1: Large Soft Blue Smoke Cloud over and ahead above the shield logo (center-left) */}
         <AnimatedReanimated.View
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, fog1AnimatedStyle]}
@@ -2494,13 +2494,13 @@ const WelcomeBackground = memo(function WelcomeBackground({
             <Defs>
               <SvgRadialGradient
                 id="smokeFog1"
-                cx="35%"
-                cy="58%"
-                rx="60%"
-                ry="50%"
+                cx="34%"
+                cy="30%"
+                rx="65%"
+                ry="54%"
               >
-                <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.45" />
-                <Stop offset="35%" stopColor="#7DD3FC" stopOpacity="0.32" />
+                <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.48" />
+                <Stop offset="35%" stopColor="#7DD3FC" stopOpacity="0.34" />
                 <Stop offset="70%" stopColor="#BAE6FD" stopOpacity="0.16" />
                 <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
               </SvgRadialGradient>
@@ -2509,7 +2509,7 @@ const WelcomeBackground = memo(function WelcomeBackground({
           </Svg>
         </AnimatedReanimated.View>
 
-        {/* Smoke and Fog Effect 2: Large Lower-Right and Bottom-Haze Soft Sky-Blue Smoke Cloud */}
+        {/* Smoke and Fog Effect 2: Large Soft Sky-Blue Smoke Cloud over and ahead above the shield logo (center-right) */}
         <AnimatedReanimated.View
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, fog2AnimatedStyle]}
@@ -2519,12 +2519,12 @@ const WelcomeBackground = memo(function WelcomeBackground({
               <SvgRadialGradient
                 id="smokeFog2"
                 cx="68%"
-                cy="68%"
-                rx="62%"
-                ry="52%"
+                cy="34%"
+                rx="68%"
+                ry="58%"
               >
-                <Stop offset="0%" stopColor="#2AA8E0" stopOpacity="0.40" />
-                <Stop offset="40%" stopColor="#38BDF8" stopOpacity="0.26" />
+                <Stop offset="0%" stopColor="#2AA8E0" stopOpacity="0.42" />
+                <Stop offset="38%" stopColor="#38BDF8" stopOpacity="0.28" />
                 <Stop offset="75%" stopColor="#E0F2FE" stopOpacity="0.14" />
                 <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
               </SvgRadialGradient>
@@ -2533,16 +2533,16 @@ const WelcomeBackground = memo(function WelcomeBackground({
           </Svg>
         </AnimatedReanimated.View>
 
-        {/* Soft top atmospheric fade to seamlessly blend into the top 20% pure white */}
+        {/* Soft top atmospheric fade to seamlessly transition into pure white at the very top */}
         <LinearGradient
-          colors={["#FFFFFF", "rgba(255, 255, 255, 0.6)", "rgba(255, 255, 255, 0)"]}
+          colors={["#FFFFFF", "rgba(255, 255, 255, 0.5)", "rgba(255, 255, 255, 0)"]}
           locations={[0, 0.45, 1]}
           style={{
             position: "absolute",
             top: 0,
             left: 0,
             right: 0,
-            height: "22%",
+            height: "14%",
           }}
           pointerEvents="none"
         />
