@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Polyline } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, Header } from "../components/Shell";
 import { MEDICATIONS } from "../data";
 import { formatTime12 } from "../utils/philippineTime";
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -185,33 +187,56 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       {/* Status overview and Filter controls */}
       <View className="px-4 pt-1 pb-3">
         {/* Status metric cards */}
-        <View className="flex-row gap-2">
+        <View className="flex-row gap-2.5">
           {statusItems.map((s) => {
             const isSelected = filter === s.id;
             return (
               <Pressable
                 key={s.id}
                 onPress={() => setFilter(isSelected ? "all" : s.id)}
-                className={`flex-1 bg-white rounded-2xl pt-2.5 pb-2 px-1 items-center relative overflow-hidden active:opacity-90 ${
-                  isSelected ? "border-2 border-[#0B2136]" : "border border-slate-100"
-                }`}
+                className="flex-1 rounded-[22px] py-3.5 px-1 items-center justify-center relative overflow-hidden active:opacity-90"
                 style={{
-                  elevation: 2,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 6,
+                  borderWidth: isSelected ? 2 : 1,
+                  borderColor: isSelected ? "#FFFFFF" : undefined,
+                  borderTopColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.45)",
+                  borderLeftColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.3)",
+                  borderRightColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.2)",
+                  borderBottomColor: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.15)",
+                  shadowColor: "#0A2472",
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.22,
+                  shadowRadius: 12,
+                  elevation: 4,
                 }}
               >
-                <View className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: s.dot }} />
-                <View className="flex-row items-center gap-1 mt-0.5">
-                  <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.dot }} />
-                  <Text className="text-[10px] font-bold text-slate-500" numberOfLines={1}>
-                    {s.label}
-                  </Text>
-                </View>
-                <Text className="text-xl font-black text-[#0B2136] mt-0.5" style={{ fontFamily: "Outfit" }}>
+                <LinearGradient
+                  colors={ADMIN_PORTAL_GRADIENT.colors}
+                  start={ADMIN_PORTAL_GRADIENT.start}
+                  end={ADMIN_PORTAL_GRADIENT.end}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text
+                  className="text-[24px] font-black text-white leading-none"
+                  style={{
+                    fontFamily: "Outfit",
+                    textShadowColor: "rgba(0, 0, 0, 0.35)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 3,
+                  }}
+                >
                   {s.count}
+                </Text>
+                <Text
+                  className="text-[11px] font-bold text-white mt-1.5 tracking-tight text-center"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  style={{
+                    textShadowColor: "rgba(0, 0, 0, 0.25)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
+                  {s.label}
                 </Text>
               </Pressable>
             );
