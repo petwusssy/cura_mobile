@@ -57,23 +57,31 @@ function AfternoonIcon({ selected }: { selected?: boolean }) {
   );
 }
 
-function QueueIcon({ size = 16 }: { size?: number }) {
+function LockIcon({ size = 16 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Defs>
-        <SvgLinearGradient id="gQueueMini" x1="0%" y1="0%" x2="100%" y2="100%">
+        <SvgLinearGradient id="gLockBlue" x1="0%" y1="0%" x2="100%" y2="100%">
           <Stop offset="0%" stopColor="#00A3FF" />
           <Stop offset="100%" stopColor="#0056B3" />
         </SvgLinearGradient>
       </Defs>
-      <Rect x="4" y="9" width="32" height="22" rx="6" fill="url(#gQueueMini)" />
-      <Circle cx="4" cy="20" r="3.5" fill="#FFFFFF" />
-      <Circle cx="36" cy="20" r="3.5" fill="#FFFFFF" />
-      <Line x1="15" y1="10" x2="15" y2="30" stroke="#FFFFFF" strokeWidth="1.5" strokeDasharray="2,2" strokeOpacity="0.6" />
-      <Line x1="20" y1="15" x2="30" y2="15" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-      <Line x1="20" y1="20" x2="28" y2="20" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-      <Line x1="20" y1="25" x2="25" y2="25" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-      <Circle cx="9.5" cy="20" r="2.5" fill="#38BDF8" />
+      <Path
+        d="M7 11V7a5 5 0 0 1 10 0v4"
+        stroke="#38BDF8"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <Rect
+        x="4"
+        y="10"
+        width="16"
+        height="12"
+        rx="3"
+        fill="url(#gLockBlue)"
+      />
+      <Circle cx="12" cy="15" r="1.5" fill="#FFFFFF" />
+      <Path d="M12 16.5v2" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
     </Svg>
   );
 }
@@ -724,7 +732,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                           </View>
                         ) : (
                           <View className="flex-row items-center gap-1.5 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
-                            <QueueIcon size={12} />
+                            <LockIcon size={12} />
                             <Text className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Locked</Text>
                           </View>
                         )}
@@ -736,7 +744,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
                       {!access.canJoin && (
                         <View className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 my-2 flex-row items-center gap-2">
-                          <QueueIcon size={16} />
+                          <LockIcon size={16} />
                           <Text className="text-xs text-amber-900 font-medium flex-1">
                             {access.reason}
                           </Text>
@@ -779,7 +787,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                           className="bg-slate-200/80 rounded-xl py-3 px-4 mt-2 flex-row items-center justify-center gap-2 border border-slate-300"
                           onPress={() => Alert.alert("Consultation Locked", access.reason)}
                         >
-                          <QueueIcon size={16} />
+                          <LockIcon size={16} />
                           <Text className="text-slate-500 text-xs font-bold tracking-wide uppercase">
                             Video Call Locked Until Scheduled Time
                           </Text>
