@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Polyline } from "react-native-svg";
+import Svg, { Polyline } from "react-native-svg";
 
 interface Props {
   visible: boolean;
@@ -43,8 +43,13 @@ export function LiquidGlassDatePickerModal({
   onSelectDate,
   title = "Select Preferred Date",
 }: Props) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const getTodayStart = () => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  };
+
+  const today = getTodayStart();
 
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -53,20 +58,27 @@ export function LiquidGlassDatePickerModal({
   useEffect(() => {
     if (visible) {
       if (selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
-        const [y, m] = selectedDate.split("-").map(Number);
-        setViewYear(y);
-        setViewMonth(m - 1);
-        setTempSelected(selectedDate);
-      } else {
-        setViewYear(today.getFullYear());
-        setViewMonth(today.getMonth());
-        setTempSelected("");
+        const parts = selectedDate.split("-").map(Number);
+        if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          setViewYear(parts[0]);
+          setViewMonth(parts[1] - 1);
+          setTempSelected(selectedDate);
+          return;
+        }
       }
+      const now = new Date();
+      setViewYear(now.getFullYear());
+      setViewMonth(now.getMonth());
+      setTempSelected(selectedDate || "");
     }
   }, [visible, selectedDate]);
 
   const prevMonth = () => {
-    if (viewYear === today.getFullYear() && viewMonth <= today.getMonth()) {
+    const currentToday = getTodayStart();
+    if (
+      viewYear < currentToday.getFullYear() ||
+      (viewYear === currentToday.getFullYear() && viewMonth <= currentToday.getMonth())
+    ) {
       return;
     }
     if (viewMonth === 0) {
@@ -93,7 +105,6 @@ export function LiquidGlassDatePickerModal({
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
 
-  // Create grid cells (empty slots for offset + actual day numbers)
   const daysGrid: (number | null)[] = [];
   for (let i = 0; i < firstDayOfWeek; i++) {
     daysGrid.push(null);
@@ -108,6 +119,7 @@ export function LiquidGlassDatePickerModal({
     const dStr = String(day).padStart(2, "0");
     const dateFormatted = `${yStr}-${mStr}-${dStr}`;
     setTempSelected(dateFormatted);
+    onSelectDate(dateFormatted);
   };
 
   const handleConfirm = () => {
@@ -124,25 +136,19 @@ export function LiquidGlassDatePickerModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable
-        className="flex-1 bg-black/45 justify-center items-center px-4"
-        onPress={onClose}
-      >
+      <View style={styles.overlay}>
+        {/* Sibling backdrop - tapping outside closes modal, NO nesting or stopPropagation bugs */}
         <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+        />
+
+        {/* Modal card */}
+        <View
+          style={styles.card}
           className="w-full max-w-sm rounded-[32px] overflow-hidden"
-          style={{
-            backgroundColor: "rgba(255, 255, 255, 0.82)",
-            borderWidth: 1.5,
-            borderColor: "rgba(255, 255, 255, 0.7)",
-            shadowColor: "#002D72",
-            shadowOffset: { width: 0, height: 12 },
-            shadowOpacity: 0.18,
-            shadowRadius: 24,
-            elevation: 10,
-          }}
-          onPress={(e) => e.stopPropagation()}
         >
-          {/* Glass blur effect */}
+          {/* BlurView */}
           <BlurView
             intensity={Platform.OS === "ios" ? 45 : 30}
             tint="light"
@@ -260,7 +266,7 @@ export function LiquidGlassDatePickerModal({
 
                 return (
                   <View
-                    key={`day-${day}`}
+                    key={`day-${viewYear}-${viewMonth}-${day}`}
                     style={{ width: "14.28%", height: 40 }}
                     className="items-center justify-center p-0.5"
                   >
@@ -312,8 +318,28 @@ export function LiquidGlassDatePickerModal({
               </Text>
             </TouchableOpacity>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  card: {
+    backgroundColor: "rgba(255, 255, 255, 0.82)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.7)",
+    shadowColor: "#002D72",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+});

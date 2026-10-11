@@ -114,6 +114,25 @@ function ClearanceIcon({ selected }: { selected?: boolean }) {
   );
 }
 
+function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return "";
+  try {
+    const parts = dateStr.split("-").map(Number);
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      if (!isNaN(dt.getTime())) {
+        return dt.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+    }
+  } catch (e) {}
+  return dateStr;
+}
+
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
@@ -383,12 +402,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                   </View>
                   <Text className={`text-sm ${date ? "text-slate-800 font-bold" : "text-slate-400 font-medium"}`}>
                     {date
-                      ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
+                      ? formatDisplayDate(date)
                       : "Select appointment date..."}
                   </Text>
                 </View>
