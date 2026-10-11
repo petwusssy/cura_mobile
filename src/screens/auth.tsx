@@ -2794,6 +2794,13 @@ const curaLogo2xSource = require("../../assets/images/cura-logo-2x.webp");
 const uaSeal1xSource = require("../../assets/images/ua-seal-1x.webp");
 const uaSeal2xSource = require("../../assets/images/ua-seal-2x.webp");
 
+const resolveAssetUri = (source: any): string => {
+  if (typeof (Image as any).resolveAssetSource === "function") {
+    return (Image as any).resolveAssetSource(source)?.uri || "";
+  }
+  return typeof source === "string" ? source : source?.uri || source?.default || "";
+};
+
 let MaskedView: any = null;
 try {
   MaskedView = require("@react-native-masked-view/masked-view").default;
@@ -3111,10 +3118,10 @@ export function WelcomeScreen({
   const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
   const wordmarkSize = width < 380 || height < 700 ? 50 : 60;
   const taglineSize = width < 380 ? 14 : 16;
-  const logo1xUri = Image.resolveAssetSource(curaLogo1xSource)?.uri || "";
-  const logo2xUri = Image.resolveAssetSource(curaLogo2xSource)?.uri || "";
-  const uaSeal1xUri = Image.resolveAssetSource(uaSeal1xSource)?.uri || "";
-  const uaSeal2xUri = Image.resolveAssetSource(uaSeal2xSource)?.uri || "";
+  const logo1xUri = resolveAssetUri(curaLogo1xSource);
+  const logo2xUri = resolveAssetUri(curaLogo2xSource);
+  const uaSeal1xUri = resolveAssetUri(uaSeal1xSource);
+  const uaSeal2xUri = resolveAssetUri(uaSeal2xSource);
 
   // Modal State & Background Blur Animation
   const [authMode, setAuthMode] = useState<"signin" | "create_account" | null>(initialAuthMode ?? null);
@@ -3317,8 +3324,6 @@ export function WelcomeScreen({
                 width={48}
                 height={48}
                 loading="eager"
-                // @ts-ignore
-                fetchpriority="high"
                 fetchPriority="high"
                 style={{
                   width: 48,
@@ -3405,8 +3410,6 @@ export function WelcomeScreen({
                 width={Math.round(logoSize)}
                 height={Math.round(logoSize)}
                 loading="eager"
-                // @ts-ignore
-                fetchpriority="high"
                 fetchPriority="high"
                 style={{
                   width: logoSize,

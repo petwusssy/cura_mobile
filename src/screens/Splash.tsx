@@ -21,6 +21,13 @@ interface Props {
 const curaLogoBaseSource = require("../../assets/images/cura-logo-base.png");
 const curaLogoPlusSource = require("../../assets/images/cura-logo-plus.png");
 
+const resolveAssetUri = (source: any): string => {
+  if (typeof (Image as any).resolveAssetSource === "function") {
+    return (Image as any).resolveAssetSource(source)?.uri || "";
+  }
+  return typeof source === "string" ? source : source?.uri || source?.default || "";
+};
+
 let MaskedView: any = null;
 try {
   MaskedView = require("@react-native-masked-view/masked-view").default;
@@ -40,8 +47,8 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
   // Responsive calculations: enlarged logo (~1.8x, max 240px) & bold prominent CURA text
   const logoSize = Math.min(width * 0.58, height < 700 ? 190 : 230);
   const wordmarkSize = width < 380 || height < 700 ? 68 : 82;
-  const logoBaseUri = Image.resolveAssetSource(curaLogoBaseSource)?.uri || "";
-  const logoPlusUri = Image.resolveAssetSource(curaLogoPlusSource)?.uri || "";
+  const logoBaseUri = resolveAssetUri(curaLogoBaseSource);
+  const logoPlusUri = resolveAssetUri(curaLogoPlusSource);
 
   // Exact geometric positioning of the 300x300 plus crop inside the 760x760 canvas
   const plusSize = (logoSize * 300) / 760;

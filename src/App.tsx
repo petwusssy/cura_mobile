@@ -96,16 +96,18 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   useEffect(() => {
     // Eagerly pre-cache landing page logo assets in native/browser memory on boot to eliminate any render delay
     try {
-      const cura1x = Image.resolveAssetSource(require("../assets/images/cura-logo-1x.webp"));
-      const cura2x = Image.resolveAssetSource(require("../assets/images/cura-logo-2x.webp"));
-      const ua1x = Image.resolveAssetSource(require("../assets/images/ua-seal-1x.webp"));
-      const ua2x = Image.resolveAssetSource(require("../assets/images/ua-seal-2x.webp"));
+      if (typeof (Image as any).resolveAssetSource === "function") {
+        const cura1x = (Image as any).resolveAssetSource(require("../assets/images/cura-logo-1x.webp"));
+        const cura2x = (Image as any).resolveAssetSource(require("../assets/images/cura-logo-2x.webp"));
+        const ua1x = (Image as any).resolveAssetSource(require("../assets/images/ua-seal-1x.webp"));
+        const ua2x = (Image as any).resolveAssetSource(require("../assets/images/ua-seal-2x.webp"));
 
-      [cura1x, cura2x, ua1x, ua2x].forEach((asset) => {
-        if (asset?.uri) {
-          Image.prefetch(asset.uri).catch(() => {});
-        }
-      });
+        [cura1x, cura2x, ua1x, ua2x].forEach((asset: any) => {
+          if (asset?.uri) {
+            Image.prefetch(asset.uri).catch(() => {});
+          }
+        });
+      }
     } catch (e) {}
   }, []);
 
