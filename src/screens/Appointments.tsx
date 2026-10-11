@@ -372,7 +372,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">
+              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
                 Preferred Date
               </Text>
               <TouchableOpacity
