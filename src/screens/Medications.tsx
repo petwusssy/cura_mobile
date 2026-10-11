@@ -244,7 +244,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
           <View className="mb-5">
             <View className="flex-row items-center justify-between mb-3 px-1">
               <View className="flex-row items-center gap-2">
-                <Text className="text-base font-black text-white" style={{ fontFamily: "Outfit" }}>
+                <Text className="text-base font-black" style={{ color: "#002D72", fontFamily: "Outfit" }}>
                   To Intake
                 </Text>
                 <View className="bg-sky-500/25 border border-sky-400/40 rounded-full px-2 py-0.5">
@@ -271,7 +271,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
           <View className="mb-6">
             <View className="flex-row items-center justify-between mb-3 mt-3 px-1">
               <View className="flex-row items-center gap-2">
-                <Text className="text-base font-black text-white" style={{ fontFamily: "Outfit" }}>
+                <Text className="text-base font-black" style={{ color: "#002D72", fontFamily: "Outfit" }}>
                   Intaked
                 </Text>
                 <View className="bg-emerald-500/25 border border-emerald-400/40 rounded-full px-2 py-0.5">
