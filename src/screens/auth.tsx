@@ -2379,240 +2379,7 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
-// ── Brand-Aligned Clean Background (Deep Navy + Sky Blue + Waves) ────────────
-
-// 1) Soft Drifting & Breathing Radial Glow Blob
-interface AmbientGlowConfig {
-  id: string;
-  cxPct: string;
-  cyPct: string;
-  rxPct: string;
-  ryPct: string;
-  color: string;
-  peakOpacity: number;
-  driftX: number;
-  driftY: number;
-  targetScale: number;
-  duration: number;
-}
-
-const AMBIENT_GLOWS: AmbientGlowConfig[] = [
-  // Glow 1: Upper-Right soft sky-blue glow (balanced, doesn't interfere with header)
-  {
-    id: "glowTopRight",
-    cxPct: "82%",
-    cyPct: "16%",
-    rxPct: "45%",
-    ryPct: "28%",
-    color: "#38BDF8",
-    peakOpacity: 0.16,
-    driftX: 32,
-    driftY: -28,
-    targetScale: 1.06,
-    duration: 22000,
-  },
-  // Glow 2: Mid-Lower Left soft sky-blue glow (adds subtle warmth to lower-left)
-  {
-    id: "glowMidLeft",
-    cxPct: "14%",
-    cyPct: "64%",
-    rxPct: "48%",
-    ryPct: "32%",
-    color: "#7DD3FC",
-    peakOpacity: 0.20,
-    driftX: -36,
-    driftY: 34,
-    targetScale: 1.07,
-    duration: 28000,
-  },
-  // Glow 3: Bottom deep accent glow (under bottom sheet, gives depth when sheet slides)
-  {
-    id: "glowBottom",
-    cxPct: "50%",
-    cyPct: "86%",
-    rxPct: "55%",
-    ryPct: "35%",
-    color: "#38BDF8",
-    peakOpacity: 0.18,
-    driftX: 25,
-    driftY: -30,
-    targetScale: 1.05,
-    duration: 25000,
-  },
-];
-
-const AnimatedGlowLayer = memo(function AnimatedGlowLayer({
-  config,
-  reduceMotion,
-}: {
-  config: AmbientGlowConfig;
-  reduceMotion: boolean;
-}) {
-  const {
-    id,
-    cxPct,
-    cyPct,
-    rxPct,
-    ryPct,
-    color,
-    peakOpacity,
-    driftX,
-    driftY,
-    targetScale,
-    duration,
-  } = config;
-
-  const tx = useSharedValue(0);
-  const ty = useSharedValue(0);
-  const sc = useSharedValue(1);
-  const op = useSharedValue(peakOpacity * 0.9);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      tx.value = 0;
-      ty.value = 0;
-      sc.value = 1;
-      op.value = peakOpacity;
-      return;
-    }
-
-    tx.value = withRepeat(
-      withTiming(driftX, {
-        duration,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-
-    ty.value = withRepeat(
-      withTiming(driftY, {
-        duration: Math.round(duration * 1.14),
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-
-    sc.value = withRepeat(
-      withTiming(targetScale, {
-        duration: Math.round(duration * 0.88),
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-
-    op.value = withRepeat(
-      withTiming(peakOpacity * 1.18, {
-        duration: Math.round(duration * 0.95),
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-  }, [reduceMotion, driftX, driftY, targetScale, peakOpacity, duration]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: op.value,
-    transform: [
-      { translateX: tx.value },
-      { translateY: ty.value },
-      { scale: sc.value },
-    ],
-  }));
-
-  return (
-    <AnimatedReanimated.View
-      pointerEvents="none"
-      style={[StyleSheet.absoluteFill, animatedStyle]}
-    >
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-        <Defs>
-          <SvgRadialGradient
-            id={`grad-${id}`}
-            cx={cxPct}
-            cy={cyPct}
-            rx={rxPct}
-            ry={ryPct}
-          >
-            <Stop offset="0%" stopColor={color} stopOpacity="1" />
-            <Stop offset="55%" stopColor={color} stopOpacity="0.45" />
-            <Stop offset="100%" stopColor={color} stopOpacity="0" />
-          </SvgRadialGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill={`url(#grad-${id})`} />
-      </Svg>
-    </AnimatedReanimated.View>
-  );
-});
-
-// 2) Subtle Logo Halo Pulse (sky blue, 8-12% opacity, ~6-8s pulse)
-const LogoHaloGlow = memo(function LogoHaloGlow({
-  reduceMotion,
-}: {
-  reduceMotion: boolean;
-}) {
-  const haloScale = useSharedValue(0.96);
-  const haloOpacity = useSharedValue(0.08);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      haloScale.value = 1;
-      haloOpacity.value = 0.10;
-      return;
-    }
-
-    haloScale.value = withRepeat(
-      withTiming(1.06, {
-        duration: 3600,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-
-    haloOpacity.value = withRepeat(
-      withTiming(0.12, {
-        duration: 3600,
-        easing: ReanimatedEasing.inOut(ReanimatedEasing.sin),
-      }),
-      -1,
-      true
-    );
-  }, [reduceMotion]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: haloOpacity.value,
-    transform: [{ scale: haloScale.value }],
-  }));
-
-  return (
-    <AnimatedReanimated.View
-      pointerEvents="none"
-      style={[StyleSheet.absoluteFill, animatedStyle]}
-    >
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-        <Defs>
-          <SvgRadialGradient
-            id="logoHaloRadial"
-            cx="50%"
-            cy="32%"
-            rx="32%"
-            ry="20%"
-          >
-            <Stop offset="0%" stopColor="#7DD3FC" stopOpacity="1" />
-            <Stop offset="50%" stopColor="#38BDF8" stopOpacity="0.5" />
-            <Stop offset="100%" stopColor="#7DD3FC" stopOpacity="0" />
-          </SvgRadialGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#logoHaloRadial)" />
-      </Svg>
-    </AnimatedReanimated.View>
-  );
-});
-
-
+// ── White Background with 2 Large Smoke and Fog Effects (80% bottom height, 120% width) ──
 
 const WelcomeBackground = memo(function WelcomeBackground({
   bgBlurAnim,
@@ -2623,46 +2390,170 @@ const WelcomeBackground = memo(function WelcomeBackground({
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
+  // Smoke and Fog Layer 1: Left / Center Drift (~16s loop)
+  const fog1Tx = useSharedValue(0);
+  const fog1Ty = useSharedValue(0);
+  const fog1Scale = useSharedValue(1);
+
+  // Smoke and Fog Layer 2: Right / Bottom Counter-Drift (~21s loop)
+  const fog2Tx = useSharedValue(0);
+  const fog2Ty = useSharedValue(0);
+  const fog2Scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      fog1Tx.value = 0;
+      fog1Ty.value = 0;
+      fog1Scale.value = 1;
+      fog2Tx.value = 0;
+      fog2Ty.value = 0;
+      fog2Scale.value = 1;
+      return;
+    }
+
+    // Fog 1: slow horizontal and vertical organic mist drift
+    fog1Tx.value = withRepeat(
+      withTiming(38, { duration: 16000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      -1,
+      true
+    );
+    fog1Ty.value = withRepeat(
+      withTiming(-26, { duration: 13500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      -1,
+      true
+    );
+    fog1Scale.value = withRepeat(
+      withTiming(1.08, { duration: 15000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      -1,
+      true
+    );
+
+    // Fog 2: opposite counter organic drift
+    fog2Tx.value = withRepeat(
+      withTiming(-42, { duration: 21000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      -1,
+      true
+    );
+    fog2Ty.value = withRepeat(
+      withTiming(28, { duration: 17500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      -1,
+      true
+    );
+    fog2Scale.value = withRepeat(
+      withTiming(1.09, { duration: 19000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
+      -1,
+      true
+    );
+  }, [reduceMotion]);
+
+  const fog1AnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: fog1Tx.value },
+      { translateY: fog1Ty.value },
+      { scale: fog1Scale.value },
+    ],
+  }));
+
+  const fog2AnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: fog2Tx.value },
+      { translateY: fog2Ty.value },
+      { scale: fog2Scale.value },
+    ],
+  }));
+
   return (
     <View
-      style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}
+      style={[StyleSheet.absoluteFill, { backgroundColor: "#FFFFFF", overflow: "hidden" }]}
       pointerEvents="none"
     >
-      {/* 1) Base vertical gradient: #07173F (taas) -> #0C2A6B (gitna) -> #123C8C (ibaba) */}
-      <LinearGradient
-        colors={[
-          "#07173F",
-          "#091F53",
-          "#0C2A6B",
-          "#0F337B",
-          "#123C8C",
+      {/* 
+        Bottom 80% height, 120% width container for the 2 large smoke and fog effects:
+        - Top 20% of screen is pristine pure white (#FFFFFF).
+        - Width is 120% (left: "-10%") extending beyond the screen edges.
+      */}
+      <View
+        style={[
+          {
+            position: "absolute",
+            bottom: 0,
+            left: "-10%",
+            width: "120%",
+            height: "80%",
+            overflow: "hidden",
+          },
+          Platform.OS === "web" ? ({ filter: "blur(32px)" } as any) : undefined,
         ]}
-        locations={[0, 0.24, 0.52, 0.78, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      >
+        {/* Smoke and Fog Effect 1: Large Lower-Left and Center Soft Blue Smoke Cloud */}
+        <AnimatedReanimated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, fog1AnimatedStyle]}
+        >
+          <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <SvgRadialGradient
+                id="smokeFog1"
+                cx="35%"
+                cy="58%"
+                rx="60%"
+                ry="50%"
+              >
+                <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.45" />
+                <Stop offset="35%" stopColor="#7DD3FC" stopOpacity="0.32" />
+                <Stop offset="70%" stopColor="#BAE6FD" stopOpacity="0.16" />
+                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              </SvgRadialGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#smokeFog1)" />
+          </Svg>
+        </AnimatedReanimated.View>
 
-      {/* 2) 3 Large Soft Ambient Radial Glows (Sky Blue #7DD3FC / #38BDF8, 10-22% opacity) */}
-      {AMBIENT_GLOWS.map((config) => (
-        <AnimatedGlowLayer
-          key={config.id}
-          config={config}
-          reduceMotion={reduceMotion}
+        {/* Smoke and Fog Effect 2: Large Lower-Right and Bottom-Haze Soft Sky-Blue Smoke Cloud */}
+        <AnimatedReanimated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, fog2AnimatedStyle]}
+        >
+          <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <SvgRadialGradient
+                id="smokeFog2"
+                cx="68%"
+                cy="68%"
+                rx="62%"
+                ry="52%"
+              >
+                <Stop offset="0%" stopColor="#2AA8E0" stopOpacity="0.40" />
+                <Stop offset="40%" stopColor="#38BDF8" stopOpacity="0.26" />
+                <Stop offset="75%" stopColor="#E0F2FE" stopOpacity="0.14" />
+                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              </SvgRadialGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#smokeFog2)" />
+          </Svg>
+        </AnimatedReanimated.View>
+
+        {/* Soft top atmospheric fade to seamlessly blend into the top 20% pure white */}
+        <LinearGradient
+          colors={["#FFFFFF", "rgba(255, 255, 255, 0.6)", "rgba(255, 255, 255, 0)"]}
+          locations={[0, 0.45, 1]}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "22%",
+          }}
+          pointerEvents="none"
         />
-      ))}
+      </View>
 
-      {/* 3) Subtle Logo Halo Pulse behind logo icon (sky blue, 8-12% opacity) */}
-      <LogoHaloGlow reduceMotion={reduceMotion} />
-
-
-
-      {/* 5) Modal dimming overlay when auth sheet is open */}
+      {/* Modal dimming overlay when auth sheet is open */}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
           {
-            backgroundColor: "rgba(4, 14, 38, 0.65)",
+            backgroundColor: "rgba(15, 23, 42, 0.45)",
             opacity: bgBlurAnim,
           },
         ]}
@@ -2869,7 +2760,7 @@ export function WelcomeScreen({
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#07173F", overflow: "hidden" }}>
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF", overflow: "hidden" }}>
       {/* FULL-BLEED Brand Background - continuous across full screen, behind header, hero, and bottom sheet */}
       <WelcomeBackground bgBlurAnim={bgBlurAnim} />
 
@@ -2928,9 +2819,9 @@ export function WelcomeScreen({
           )}
           <Text
             style={{
-              color: "#FFFFFF",
+              color: "#0F2B5C",
               fontSize: 22,
-              fontWeight: "500",
+              fontWeight: "600",
               letterSpacing: 0.5,
               fontFamily: "Outfit",
               marginLeft: 14,
@@ -3113,11 +3004,11 @@ export function WelcomeScreen({
                 userSelect: "none",
               }}
             >
-              {/* Base text: pure white */}
+              {/* Base text: deep brand navy */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span
                   style={{
-                    color: "#FFFFFF",
+                    color: "#0F2B5C",
                     fontSize: wordmarkSize,
                     fontWeight: 800,
                     letterSpacing: 1.5,
@@ -3200,7 +3091,7 @@ export function WelcomeScreen({
                     </View>
                   }
                 >
-                  {/* Base text: pure white */}
+                  {/* Base text: deep brand navy */}
                   <View
                     style={{
                       flexDirection: "row",
@@ -3210,7 +3101,7 @@ export function WelcomeScreen({
                   >
                     <Text
                       style={{
-                        color: "#FFFFFF",
+                        color: "#0F2B5C",
                         fontSize: wordmarkSize,
                         fontWeight: "800",
                         letterSpacing: 1.5,
@@ -3262,7 +3153,7 @@ export function WelcomeScreen({
                 >
                   <Text
                     style={{
-                      color: "#FFFFFF",
+                      color: "#0F2B5C",
                       fontSize: wordmarkSize,
                       fontWeight: "800",
                       letterSpacing: 1.5,
@@ -3279,16 +3170,13 @@ export function WelcomeScreen({
           {/* Tagline */}
           <Text
             style={{
-              color: "#FFFFFF",
+              color: "#334155",
               fontSize: taglineSize,
               lineHeight: taglineSize + 8,
               fontWeight: "500",
               textAlign: "center",
               maxWidth: width * 0.78,
               marginTop: 12,
-              textShadowColor: "rgba(0, 0, 0, 0.35)",
-              textShadowOffset: { width: 0, height: 2 },
-              textShadowRadius: 4,
             }}
           >
             Your personal health companion for smarter, simpler campus care.
