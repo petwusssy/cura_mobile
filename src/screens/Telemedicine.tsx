@@ -57,6 +57,27 @@ function AfternoonIcon({ selected }: { selected?: boolean }) {
   );
 }
 
+function QueueIcon({ size = 16 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <Defs>
+        <SvgLinearGradient id="gQueueMini" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#00A3FF" />
+          <Stop offset="100%" stopColor="#0056B3" />
+        </SvgLinearGradient>
+      </Defs>
+      <Rect x="4" y="9" width="32" height="22" rx="6" fill="url(#gQueueMini)" />
+      <Circle cx="4" cy="20" r="3.5" fill="#FFFFFF" />
+      <Circle cx="36" cy="20" r="3.5" fill="#FFFFFF" />
+      <Line x1="15" y1="10" x2="15" y2="30" stroke="#FFFFFF" strokeWidth="1.5" strokeDasharray="2,2" strokeOpacity="0.6" />
+      <Line x1="20" y1="15" x2="30" y2="15" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+      <Line x1="20" y1="20" x2="28" y2="20" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+      <Line x1="20" y1="25" x2="25" y2="25" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+      <Circle cx="9.5" cy="20" r="2.5" fill="#38BDF8" />
+    </Svg>
+  );
+}
+
 function parseSingleTime(t: string): number | null {
   const match = t.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
   if (!match) return null;
@@ -651,16 +672,37 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
             </View>
           ) : (
             requests.map((req) => (
-              <Card key={req.id} className="p-5 border border-slate-100">
+              <View
+                key={req.id}
+                className="p-5 rounded-[24px] relative overflow-hidden"
+                style={{
+                  borderWidth: 1,
+                  borderTopColor: "rgba(255, 255, 255, 0.45)",
+                  borderLeftColor: "rgba(255, 255, 255, 0.3)",
+                  borderRightColor: "rgba(255, 255, 255, 0.2)",
+                  borderBottomColor: "rgba(255, 255, 255, 0.15)",
+                  shadowColor: "#0A2472",
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.22,
+                  shadowRadius: 12,
+                  elevation: 4,
+                }}
+              >
+                <LinearGradient
+                  colors={ADMIN_PORTAL_GRADIENT.colors}
+                  start={ADMIN_PORTAL_GRADIENT.start}
+                  end={ADMIN_PORTAL_GRADIENT.end}
+                  style={StyleSheet.absoluteFill}
+                />
                 <View className="flex-row justify-between items-start mb-3">
                   <View>
-                    <Text className="text-sm font-bold text-slate-800 mb-1">{req.preferred_date}</Text>
-                    <Text className="text-xs text-slate-500">{formatTime12(req.preferred_time)}</Text>
+                    <Text className="text-sm font-bold text-white mb-1" style={{ fontFamily: "Outfit" }}>{req.preferred_date}</Text>
+                    <Text className="text-xs text-white/80">{formatTime12(req.preferred_time)}</Text>
                   </View>
                   {renderStatusBadge(req.status)}
                 </View>
 
-                <Text className="text-sm text-slate-600 mb-4 bg-slate-50 p-3 rounded-lg">
+                <Text className="text-sm text-white/95 mb-4 bg-white/10 p-3 rounded-xl border border-white/15">
                   "{req.reason}"
                 </Text>
 
@@ -670,7 +712,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   const access = getScheduleAccess(scheduledDate, scheduledTime);
 
                   return (
-                    <View className="bg-emerald-50 rounded-xl p-4 mt-2 border border-emerald-100">
+                    <View className="bg-emerald-50 rounded-2xl p-4 mt-2 border border-emerald-100">
                       <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-xs font-bold text-emerald-800">✅ CONSULTATION APPROVED</Text>
                         {access.canJoin ? (
@@ -679,7 +721,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                             <Text className="text-[10px] font-bold text-emerald-800 uppercase tracking-wide">Live Now</Text>
                           </View>
                         ) : (
-                          <View className="flex-row items-center gap-1 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                          <View className="flex-row items-center gap-1.5 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                            <QueueIcon size={12} />
                             <Text className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Locked</Text>
                           </View>
                         )}
@@ -690,9 +733,10 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       </Text>
 
                       {!access.canJoin && (
-                        <View className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 my-2">
-                          <Text className="text-xs text-amber-900 font-medium">
-                            🔒 {access.reason}
+                        <View className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 my-2 flex-row items-center gap-2">
+                          <QueueIcon size={16} />
+                          <Text className="text-xs text-amber-900 font-medium flex-1">
+                            {access.reason}
                           </Text>
                         </View>
                       )}
@@ -730,11 +774,12 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                         </>
                       ) : (
                         <Pressable
-                          className="bg-slate-200/80 rounded-xl py-3 px-4 mt-2 items-center justify-center border border-slate-300"
+                          className="bg-slate-200/80 rounded-xl py-3 px-4 mt-2 flex-row items-center justify-center gap-2 border border-slate-300"
                           onPress={() => Alert.alert("Consultation Locked", access.reason)}
                         >
+                          <QueueIcon size={16} />
                           <Text className="text-slate-500 text-xs font-bold tracking-wide uppercase">
-                            🔒 Video Call Locked Until Scheduled Time
+                            Video Call Locked Until Scheduled Time
                           </Text>
                         </Pressable>
                       )}
@@ -748,7 +793,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                     <Text className="text-xs text-rose-700 mt-1">Please contact the clinic for more information or book an in-person appointment.</Text>
                   </View>
                 )}
-              </Card>
+              </View>
             ))
           )}
         </ScrollView>
