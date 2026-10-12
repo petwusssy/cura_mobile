@@ -226,7 +226,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   }, []);
 
   // Book Form State
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(getManilaDate());
   const [time, setTime] = useState("Morning (8AM - 12PM)");
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -396,7 +396,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       if (res.ok) {
         setIsPending(true);
         // Reset form
-        setDate("");
+        setDate(getManilaDate());
         setReason("");
       } else {
         console.error("Failed to submit request", await res.text());

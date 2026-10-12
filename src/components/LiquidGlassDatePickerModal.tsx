@@ -127,7 +127,6 @@ export function LiquidGlassDatePickerModal({
     const dStr = String(day).padStart(2, "0");
     const dateFormatted = `${yStr}-${mStr}-${dStr}`;
     setTempSelected(dateFormatted);
-    onSelectDate(dateFormatted);
   };
 
   const handleConfirm = () => {
