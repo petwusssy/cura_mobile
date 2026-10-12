@@ -51,9 +51,16 @@ export function LiquidGlassDatePickerModal({
 
   const today = getTodayStart();
 
+  const getTodayFormatted = () => {
+    const yStr = String(today.getFullYear());
+    const mStr = String(today.getMonth() + 1).padStart(2, "0");
+    const dStr = String(today.getDate()).padStart(2, "0");
+    return `${yStr}-${mStr}-${dStr}`;
+  };
+
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [tempSelected, setTempSelected] = useState(selectedDate || "");
+  const [tempSelected, setTempSelected] = useState(selectedDate || getTodayFormatted());
 
   useEffect(() => {
     if (visible) {
@@ -69,7 +76,7 @@ export function LiquidGlassDatePickerModal({
       const now = new Date();
       setViewYear(now.getFullYear());
       setViewMonth(now.getMonth());
-      setTempSelected(selectedDate || "");
+      setTempSelected(selectedDate || getTodayFormatted());
     }
   }, [visible, selectedDate]);
 
@@ -264,8 +271,6 @@ export function LiquidGlassDatePickerModal({
                         styles.dayBtn,
                         isSelected
                           ? styles.dayBtnSelected
-                          : isToday
-                          ? styles.dayBtnToday
                           : isPast
                           ? styles.dayBtnPast
                           : styles.dayBtnDefault,
@@ -276,8 +281,6 @@ export function LiquidGlassDatePickerModal({
                           styles.dayText,
                           isSelected
                             ? styles.dayTextSelected
-                            : isToday
-                            ? styles.dayTextToday
                             : isPast
                             ? styles.dayTextPast
                             : styles.dayTextDefault,
@@ -435,17 +438,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayBtnSelected: {
-    backgroundColor: "#002D72",
-    shadowColor: "#002D72",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  dayBtnToday: {
-    backgroundColor: "rgba(0, 163, 255, 0.15)",
-    borderWidth: 1,
+    backgroundColor: "rgba(0, 163, 255, 0.16)",
+    borderWidth: 1.5,
     borderColor: "#00A3FF",
+    shadowColor: "#00A3FF",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
   },
   dayBtnPast: {
     opacity: 0.25,
@@ -458,10 +458,6 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit",
   },
   dayTextSelected: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-  },
-  dayTextToday: {
     color: "#002D72",
     fontWeight: "900",
   },
