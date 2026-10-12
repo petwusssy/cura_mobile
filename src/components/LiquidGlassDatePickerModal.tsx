@@ -64,19 +64,20 @@ export function LiquidGlassDatePickerModal({
 
   useEffect(() => {
     if (visible) {
-      if (selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
-        const parts = selectedDate.split("-").map(Number);
+      const targetDate = selectedDate || getTodayFormatted();
+      if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+        const parts = targetDate.split("-").map(Number);
         if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
           setViewYear(parts[0]);
           setViewMonth(parts[1] - 1);
-          setTempSelected(selectedDate);
+          setTempSelected(targetDate);
           return;
         }
       }
       const now = new Date();
       setViewYear(now.getFullYear());
       setViewMonth(now.getMonth());
-      setTempSelected(selectedDate || getTodayFormatted());
+      setTempSelected(targetDate);
     }
   }, [visible, selectedDate]);
 
@@ -130,8 +131,9 @@ export function LiquidGlassDatePickerModal({
   };
 
   const handleConfirm = () => {
-    if (tempSelected) {
-      onSelectDate(tempSelected);
+    const finalDate = tempSelected || selectedDate || getTodayFormatted();
+    if (finalDate) {
+      onSelectDate(finalDate);
     }
     onClose();
   };
@@ -255,8 +257,8 @@ export function LiquidGlassDatePickerModal({
                 const dStr = String(day).padStart(2, "0");
                 const thisDateStr = `${yStr}-${mStr}-${dStr}`;
 
-                const isSelected = tempSelected === thisDateStr;
-                const isToday = cellDate.getTime() === today.getTime();
+                const activeSelected = tempSelected || selectedDate || getTodayFormatted();
+                const isSelected = activeSelected === thisDateStr;
 
                 return (
                   <View
