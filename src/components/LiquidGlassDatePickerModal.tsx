@@ -137,17 +137,14 @@ export function LiquidGlassDatePickerModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        {/* Sibling backdrop - tapping outside closes modal, NO nesting or stopPropagation bugs */}
+        {/* Sibling backdrop - tapping outside closes modal */}
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
         />
 
         {/* Modal card */}
-        <View
-          style={styles.card}
-          className="w-full max-w-sm rounded-[32px] overflow-hidden"
-        >
+        <View style={styles.card}>
           {/* BlurView */}
           <BlurView
             intensity={Platform.OS === "ios" ? 45 : 30}
@@ -164,35 +161,31 @@ export function LiquidGlassDatePickerModal({
             pointerEvents="none"
           />
 
-          <View className="p-5">
+          <View style={styles.content}>
             {/* Modal Header */}
-            <View className="flex-row items-center justify-between pb-3.5 mb-3 border-b border-white/40">
-              <Text
-                className="text-[17px] font-black text-[#002D72]"
-                style={{ fontFamily: "Outfit" }}
-              >
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>
                 {title}
               </Text>
               <TouchableOpacity
                 onPress={onClose}
                 activeOpacity={0.7}
-                className="w-8 h-8 rounded-full bg-white/70 border border-white items-center justify-center shadow-sm"
+                style={styles.closeBtn}
               >
-                <Text className="text-slate-600 font-bold text-xs">✕</Text>
+                <Text style={styles.closeBtnText}>✕</Text>
               </TouchableOpacity>
             </View>
 
             {/* Month & Year Navigation */}
-            <View className="flex-row items-center justify-between mb-4 px-1">
+            <View style={styles.monthRow}>
               <TouchableOpacity
                 onPress={prevMonth}
                 disabled={!canGoPrev}
                 activeOpacity={0.7}
-                className={`w-9 h-9 rounded-full items-center justify-center border ${
-                  canGoPrev
-                    ? "bg-white/80 border-white/80 active:bg-white"
-                    : "bg-slate-100/50 border-transparent opacity-30"
-                }`}
+                style={[
+                  styles.navBtn,
+                  canGoPrev ? styles.navBtnActive : styles.navBtnDisabled,
+                ]}
               >
                 <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <Polyline
@@ -205,17 +198,14 @@ export function LiquidGlassDatePickerModal({
                 </Svg>
               </TouchableOpacity>
 
-              <Text
-                className="text-base font-black text-[#002D72]"
-                style={{ fontFamily: "Outfit" }}
-              >
+              <Text style={styles.monthTitle}>
                 {MONTH_NAMES[viewMonth]} {viewYear}
               </Text>
 
               <TouchableOpacity
                 onPress={nextMonth}
                 activeOpacity={0.7}
-                className="w-9 h-9 rounded-full bg-white/80 border border-white/80 items-center justify-center active:bg-white"
+                style={[styles.navBtn, styles.navBtnActive]}
               >
                 <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <Polyline
@@ -230,13 +220,10 @@ export function LiquidGlassDatePickerModal({
             </View>
 
             {/* Day of Week Labels */}
-            <View className="flex-row mb-2">
+            <View style={styles.weekRow}>
               {DAYS_OF_WEEK.map((day) => (
-                <View key={day} className="flex-1 items-center justify-center py-1">
-                  <Text
-                    className="text-[11px] font-bold text-slate-400 uppercase tracking-wider"
-                    style={{ fontFamily: "Outfit" }}
-                  >
+                <View key={day} style={styles.weekCell}>
+                  <Text style={styles.weekText}>
                     {day}
                   </Text>
                 </View>
@@ -244,11 +231,11 @@ export function LiquidGlassDatePickerModal({
             </View>
 
             {/* Calendar Days Grid */}
-            <View className="flex-row flex-wrap">
+            <View style={styles.grid}>
               {daysGrid.map((day, idx) => {
                 if (day === null) {
                   return (
-                    <View key={`empty-${idx}`} style={{ width: "14.28%", height: 40 }} />
+                    <View key={`empty-${idx}`} style={styles.emptyCell} />
                   );
                 }
 
@@ -267,34 +254,34 @@ export function LiquidGlassDatePickerModal({
                 return (
                   <View
                     key={`day-${viewYear}-${viewMonth}-${day}`}
-                    style={{ width: "14.28%", height: 40 }}
-                    className="items-center justify-center p-0.5"
+                    style={styles.dayCell}
                   >
                     <TouchableOpacity
                       disabled={isPast}
                       onPress={() => handleDayPress(day)}
                       activeOpacity={0.7}
-                      className={`w-9 h-9 rounded-full items-center justify-center ${
+                      style={[
+                        styles.dayBtn,
                         isSelected
-                          ? "bg-[#002D72] shadow-sm shadow-[#002D72]/40"
+                          ? styles.dayBtnSelected
                           : isToday
-                          ? "bg-[#00A3FF]/15 border border-[#00A3FF]"
+                          ? styles.dayBtnToday
                           : isPast
-                          ? "opacity-25"
-                          : "active:bg-white/90"
-                      }`}
+                          ? styles.dayBtnPast
+                          : styles.dayBtnDefault,
+                      ]}
                     >
                       <Text
-                        className={`text-sm ${
+                        style={[
+                          styles.dayText,
                           isSelected
-                            ? "text-white font-black"
+                            ? styles.dayTextSelected
                             : isToday
-                            ? "text-[#002D72] font-black"
+                            ? styles.dayTextToday
                             : isPast
-                            ? "text-slate-400 font-medium"
-                            : "text-slate-800 font-bold"
-                        }`}
-                        style={{ fontFamily: "Outfit" }}
+                            ? styles.dayTextPast
+                            : styles.dayTextDefault,
+                        ]}
                       >
                         {day}
                       </Text>
@@ -308,12 +295,9 @@ export function LiquidGlassDatePickerModal({
             <TouchableOpacity
               onPress={handleConfirm}
               activeOpacity={0.85}
-              className="mt-4 bg-[#002D72] py-3.5 rounded-2xl items-center justify-center shadow-md shadow-[#002D72]/30 active:opacity-90"
+              style={styles.confirmBtn}
             >
-              <Text
-                className="text-white font-bold text-sm tracking-wide"
-                style={{ fontFamily: "Outfit" }}
-              >
+              <Text style={styles.confirmBtnText}>
                 Confirm Date
               </Text>
             </TouchableOpacity>
@@ -333,6 +317,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   card: {
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: 32,
+    overflow: "hidden",
     backgroundColor: "rgba(255, 255, 255, 0.82)",
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.7)",
@@ -342,4 +330,168 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 10,
   },
+  content: {
+    padding: 20,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 14,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.4)",
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#002D72",
+    fontFamily: "Outfit",
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeBtnText: {
+    color: "#475569",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  monthRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  monthTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#002D72",
+    fontFamily: "Outfit",
+  },
+  navBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navBtnActive: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.8)",
+  },
+  navBtnDisabled: {
+    backgroundColor: "rgba(241, 245, 249, 0.5)",
+    borderWidth: 1,
+    borderColor: "transparent",
+    opacity: 0.3,
+  },
+  weekRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  weekCell: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+  weekText: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontFamily: "Outfit",
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  emptyCell: {
+    width: "14.28%",
+    height: 40,
+  },
+  dayCell: {
+    width: "14.28%",
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 2,
+  },
+  dayBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayBtnSelected: {
+    backgroundColor: "#002D72",
+    shadowColor: "#002D72",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  dayBtnToday: {
+    backgroundColor: "rgba(0, 163, 255, 0.15)",
+    borderWidth: 1,
+    borderColor: "#00A3FF",
+  },
+  dayBtnPast: {
+    opacity: 0.25,
+  },
+  dayBtnDefault: {
+    backgroundColor: "transparent",
+  },
+  dayText: {
+    fontSize: 14,
+    fontFamily: "Outfit",
+  },
+  dayTextSelected: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+  },
+  dayTextToday: {
+    color: "#002D72",
+    fontWeight: "900",
+  },
+  dayTextPast: {
+    color: "#94A3B8",
+    fontWeight: "500",
+  },
+  dayTextDefault: {
+    color: "#1E293B",
+    fontWeight: "700",
+  },
+  confirmBtn: {
+    marginTop: 16,
+    backgroundColor: "#002D72",
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#002D72",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  confirmBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 14,
+    letterSpacing: 0.5,
+    fontFamily: "Outfit",
+  },
 });
+
