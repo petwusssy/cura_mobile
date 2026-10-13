@@ -1825,18 +1825,42 @@ export function ProfileScreen({
       {/* ========================================================================= */}
       <Modal visible={showNotifModal} transparent animationType="slide" onRequestClose={() => setShowNotifModal(false)}>
         <View className="flex-1 justify-end bg-black/60">
-          <View className="bg-white rounded-t-[36px] p-6 max-h-[85%]">
-            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <View>
-                <Text className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>Notification Preferences</Text>
-                <Text className="text-xs text-slate-400">Configure clinic alerts and reminders</Text>
+          <View className="bg-white rounded-t-[36px] max-h-[85%] overflow-hidden">
+            {/* Modal Header: Blue Gradient */}
+            <View className="relative overflow-hidden px-6 pt-6 pb-4 border-b border-sky-100/60">
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <Text
+                    className="text-lg font-black text-white"
+                    style={{
+                      fontFamily: "Outfit",
+                      textShadowColor: "rgba(0, 0, 0, 0.25)",
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 2,
+                    }}
+                  >
+                    Notification Preferences
+                  </Text>
+                  <Text className="text-xs text-white/80 mt-0.5">
+                    Configure clinic alerts and reminders
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setShowNotifModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 border border-white/30 items-center justify-center active:bg-white/30"
+                >
+                  <Text className="text-white font-bold text-sm">✕</Text>
+                </Pressable>
               </View>
-              <Pressable onPress={() => setShowNotifModal(false)} className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center">
-                <Text className="text-slate-500 font-bold text-sm">✕</Text>
-              </Pressable>
             </View>
 
-            <ScrollView className="py-4 space-y-3">
+            <ScrollView className="px-6 py-4 space-y-3">
               {[
                 {
                   label: "Medication Reminders",
@@ -1871,7 +1895,7 @@ export function ProfileScreen({
                   <Switch
                     value={item.value}
                     onValueChange={item.onChange}
-                    trackColor={{ false: "#E2E8F0", true: "#0EA5E9" }}
+                    trackColor={{ false: "#E2E8F0", true: "#0056B3" }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -1885,18 +1909,41 @@ export function ProfileScreen({
               </View>
             </ScrollView>
 
-            <View className="pt-3 border-t border-slate-100 flex-row gap-3">
+            <View className="p-6 pt-3 border-t border-slate-100 flex-row gap-3 bg-white">
               <Pressable
                 onPress={() => setShowNotifModal(false)}
-                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center"
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center active:bg-slate-200"
               >
                 <Text className="text-xs font-bold text-slate-600">Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleSaveNotifPreferences}
-                className="flex-1 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center"
+                className="flex-1 py-3.5 rounded-2xl overflow-hidden items-center justify-center flex-row gap-2 relative active:opacity-90 shadow-sm"
+                style={{
+                  shadowColor: "#0A2472",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
               >
-                <Text className="text-xs font-bold text-white">Save Preferences</Text>
+                <LinearGradient
+                  colors={ADMIN_PORTAL_GRADIENT.colors}
+                  start={ADMIN_PORTAL_GRADIENT.start}
+                  end={ADMIN_PORTAL_GRADIENT.end}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text
+                  className="text-xs font-black text-white"
+                  style={{
+                    fontFamily: "Outfit",
+                    textShadowColor: "rgba(0, 0, 0, 0.25)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
+                  Save Preferences
+                </Text>
               </Pressable>
             </View>
           </View>
