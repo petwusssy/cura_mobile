@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Polyline, Line } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, Header, EmptyState } from "../components/Shell";
 import { PRESCRIPTIONS, CERTIFICATES, TRANSFERS } from "../data";
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -356,12 +357,12 @@ export function CertificateDetailScreen({ goBack, params, certificates = [] }: P
         style={{ paddingTop: Math.max(insets.top, 12) + 8 }}
       >
         <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm" style={{ elevation: 2 }}>
-          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0994E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="15 18 9 12 15 6"/>
           </Svg>
         </Pressable>
         <View>
-          <Text className="text-slate-800 text-base font-bold">Medical Certificate</Text>
+          <Text className="text-slate-800 text-base font-bold" style={{ fontFamily: "Outfit" }}>Medical Certificate</Text>
           <Text className="text-slate-400 text-xs">View-only document</Text>
         </View>
       </LinearGradient>
@@ -369,15 +370,16 @@ export function CertificateDetailScreen({ goBack, params, certificates = [] }: P
       <ScrollView className="flex-1 p-4">
         <View
           className="bg-white rounded-3xl overflow-hidden"
-          style={{ elevation: 8, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 20, borderWidth: 1, borderColor: "#DEF0FF" }}
+          style={{ elevation: 8, shadowColor: '#0A2472', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 20, borderWidth: 1, borderColor: "#DEF0FF" }}
         >
           {/* Certificate header */}
-          <LinearGradient
-            colors={['#0994E8', '#06B6D4']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="px-6 py-6 items-center"
-          >
+          <View className="relative overflow-hidden px-6 py-6 items-center">
+            <LinearGradient
+              colors={ADMIN_PORTAL_GRADIENT.colors}
+              start={ADMIN_PORTAL_GRADIENT.start}
+              end={ADMIN_PORTAL_GRADIENT.end}
+              style={StyleSheet.absoluteFill}
+            />
             <View
               className="w-14 h-14 rounded-2xl bg-white items-center justify-center p-2 mb-3 shadow-md"
               style={{
@@ -395,9 +397,19 @@ export function CertificateDetailScreen({ goBack, params, certificates = [] }: P
               />
             </View>
             <Text className="text-white/80 text-[10px] font-bold tracking-widest uppercase mb-1">University Clinic · CURA</Text>
-            <Text className="text-white text-xl font-bold" style={{ fontFamily: "Outfit" }}>Medical Certificate</Text>
-            <Text className="text-white/70 text-xs mt-1">Date issued: {cert.date}</Text>
-          </LinearGradient>
+            <Text
+              className="text-white text-xl font-black"
+              style={{
+                fontFamily: "Outfit",
+                textShadowColor: "rgba(0, 0, 0, 0.25)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              Medical Certificate
+            </Text>
+            <Text className="text-white/80 text-xs mt-1 font-semibold">Date issued: {cert.date}</Text>
+          </View>
 
           <View className="px-5 py-5 flex-col gap-4">
             <View className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex-row items-start gap-2">
@@ -411,13 +423,29 @@ export function CertificateDetailScreen({ goBack, params, certificates = [] }: P
               { label: "Recommendations", value: cert.recommendation || cert.recommendations || "—" },
             ].map((item, i) => (
               <View key={item.label} className={`pb-3 ${i < 2 ? "border-b border-sky-50" : ""}`}>
-                <Text className="text-[10px] font-bold text-cura-500 uppercase tracking-wider mb-1">{item.label}</Text>
+                <Text
+                  className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                  style={{
+                    color: "#002D72",
+                    fontFamily: "Outfit",
+                  }}
+                >
+                  {item.label}
+                </Text>
                 <Text className="text-sm text-slate-700 leading-relaxed">{item.value}</Text>
               </View>
             ))}
 
             <View className="bg-sky-50 rounded-2xl p-4 border border-sky-100">
-              <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Attending Physician</Text>
+              <Text
+                className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                style={{
+                  color: "#002D72",
+                  fontFamily: "Outfit",
+                }}
+              >
+                Attending Physician
+              </Text>
               <Text className="text-sm font-bold text-slate-800">{cert.doctor || "Clinic Physician"}</Text>
               <Text className="text-xs text-slate-400 mt-0.5">{cert.licenseNo || "UA Clinic Health Services"}</Text>
             </View>
