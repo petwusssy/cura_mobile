@@ -11,6 +11,7 @@ import {
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Polyline } from "react-native-svg";
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 interface Props {
   visible: boolean;
@@ -301,6 +302,12 @@ export function LiquidGlassDatePickerModal({
               activeOpacity={0.85}
               style={styles.confirmBtn}
             >
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
               <Text style={styles.confirmBtnText}>
                 Confirm Date
               </Text>
@@ -472,23 +479,27 @@ const styles = StyleSheet.create({
   },
   confirmBtn: {
     marginTop: 16,
-    backgroundColor: "#002D72",
+    overflow: "hidden",
+    position: "relative",
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#002D72",
+    shadowColor: "#0A2472",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
     elevation: 4,
   },
   confirmBtnText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.5,
     fontFamily: "Outfit",
+    textShadowColor: "rgba(0, 0, 0, 0.25)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

@@ -547,7 +547,13 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       <Polyline points="14 24 18 28 26 20" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     </Svg>
                   </View>
-                  <Text className={`text-sm ${date ? "text-slate-800 font-bold" : "text-slate-400 font-medium"}`}>
+                  <Text
+                    className="text-sm font-bold"
+                    style={{
+                      color: "#002D72",
+                      fontFamily: "Outfit",
+                    }}
+                  >
                     {date
                       ? formatDisplayDate(date)
                       : "Select consultation date..."}
