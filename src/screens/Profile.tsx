@@ -1498,18 +1498,42 @@ export function ProfileScreen({
       {/* ========================================================================= */}
       <Modal visible={showInfoModal} transparent animationType="slide" onRequestClose={() => setShowInfoModal(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 justify-end bg-black/60">
-          <View className="bg-white rounded-t-[36px] max-h-[88%] p-6">
-            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <View>
-                <Text className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>Edit My Information</Text>
-                <Text className="text-xs text-slate-400">Syncs directly with University Clinic records</Text>
+          <View className="bg-white rounded-t-[36px] max-h-[88%] overflow-hidden">
+            {/* Modal Header: Blue Gradient */}
+            <View className="relative overflow-hidden px-6 pt-6 pb-4 border-b border-sky-100/60">
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <Text
+                    className="text-lg font-black text-white"
+                    style={{
+                      fontFamily: "Outfit",
+                      textShadowColor: "rgba(0, 0, 0, 0.25)",
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 2,
+                    }}
+                  >
+                    Edit My Information
+                  </Text>
+                  <Text className="text-xs text-white/80 mt-0.5">
+                    Syncs directly with University Clinic records
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setShowInfoModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 border border-white/30 items-center justify-center active:bg-white/30"
+                >
+                  <Text className="text-white font-bold text-sm">✕</Text>
+                </Pressable>
               </View>
-              <Pressable onPress={() => setShowInfoModal(false)} className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center">
-                <Text className="text-slate-500 font-bold text-sm">✕</Text>
-              </Pressable>
             </View>
 
-            <ScrollView className="py-4 space-y-4" keyboardShouldPersistTaps="handled">
+            <ScrollView className="px-6 py-4 space-y-4" keyboardShouldPersistTaps="handled">
               {/* ID Number */}
               <View className="mb-3">
                 <Text className="text-xs font-bold text-slate-600 mb-1.5">ID Number</Text>
@@ -1711,22 +1735,45 @@ export function ProfileScreen({
               </View>
             </ScrollView>
 
-            <View className="pt-3 border-t border-slate-100 flex-row gap-3">
+            <View className="p-6 pt-3 border-t border-slate-100 flex-row gap-3 bg-white">
               <Pressable
                 onPress={() => setShowInfoModal(false)}
-                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center"
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center active:bg-slate-200"
               >
                 <Text className="text-xs font-bold text-slate-600">Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleSaveMyInfo}
                 disabled={savingInfo}
-                className="flex-1 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center flex-row gap-2"
+                className="flex-1 py-3.5 rounded-2xl overflow-hidden items-center justify-center flex-row gap-2 relative active:opacity-90 shadow-sm"
+                style={{
+                  shadowColor: "#0A2472",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
               >
+                <LinearGradient
+                  colors={ADMIN_PORTAL_GRADIENT.colors}
+                  start={ADMIN_PORTAL_GRADIENT.start}
+                  end={ADMIN_PORTAL_GRADIENT.end}
+                  style={StyleSheet.absoluteFill}
+                />
                 {savingInfo ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text className="text-xs font-bold text-white">Save Changes</Text>
+                  <Text
+                    className="text-xs font-black text-white"
+                    style={{
+                      fontFamily: "Outfit",
+                      textShadowColor: "rgba(0, 0, 0, 0.25)",
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 2,
+                    }}
+                  >
+                    Save Changes
+                  </Text>
                 )}
               </Pressable>
             </View>
