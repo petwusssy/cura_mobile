@@ -287,10 +287,13 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
             </View>
 
             {toTakeList.length === 0 ? (
-              <View className="bg-white/10 rounded-2xl p-5 items-center justify-center border border-white/10 mb-2">
-                <Text className="text-2xl mb-1">🎉</Text>
-                <Text className="text-sm font-bold text-white">No medications to intake</Text>
-                <Text className="text-xs text-white/60 text-center mt-0.5">All scheduled medication intakes are completed.</Text>
+              <View className="bg-white/80 rounded-2xl p-5 items-center justify-center border border-sky-200/80 mb-2">
+                <Text className="text-sm font-bold" style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                  No medications to intake
+                </Text>
+                <Text className="text-xs text-center mt-0.5" style={{ color: "rgba(0, 45, 114, 0.65)" }}>
+                  All scheduled medication intakes are completed.
+                </Text>
               </View>
             ) : (
               toTakeList.map((med) => renderMedCard(med, true))
