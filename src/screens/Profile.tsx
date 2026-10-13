@@ -883,7 +883,7 @@ export function ProfileScreen({
       action: (
         <Pressable
           onPress={handleOpenMyInfoEdit}
-          className="px-3 py-1 rounded-full active:opacity-80"
+          className="flex-row items-center gap-1 px-3 py-1 rounded-full active:opacity-80"
           style={{
             backgroundColor: infoCooldown.active
               ? "rgba(251, 191, 36, 0.15)"
@@ -897,17 +897,43 @@ export function ProfileScreen({
             borderBottomColor: "rgba(255, 255, 255, 0.15)",
           }}
         >
-          <Text
-            className="text-[10px] font-bold"
-            style={{
-              color: infoCooldown.active ? "#FDE68A" : isDark ? "#FFFFFF" : "#0B2136",
-              textShadowColor: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)",
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 2,
-            }}
-          >
-            {infoCooldown.active ? `⏳ ${infoCooldown.days}d Cooldown` : "✏️ Edit Info"}
-          </Text>
+          {infoCooldown.active ? (
+            <Text
+              className="text-[10px] font-bold"
+              style={{
+                color: "#FDE68A",
+                textShadowColor: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              ⏳ {infoCooldown.days}d Cooldown
+            </Text>
+          ) : (
+            <>
+              <Svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#0056B3"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </Svg>
+              <Text
+                className="text-[10px] font-bold text-cura-900"
+                style={{
+                  fontFamily: "Outfit",
+                }}
+              >
+                Edit Info
+              </Text>
+            </>
+          )}
         </Pressable>
       ),
       items: myInfoItems,
