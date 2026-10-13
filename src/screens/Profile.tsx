@@ -1782,15 +1782,26 @@ export function ProfileScreen({
                     <Pressable
                       key={g}
                       onPress={() => setFormGender(g)}
-                      className="px-4 py-2 rounded-xl border flex-1 items-center"
+                      className="px-4 py-2 rounded-xl border flex-1 items-center relative overflow-hidden"
                       style={{
-                        backgroundColor: formGender === g ? "#0EA5E9" : "#F8FAFC",
-                        borderColor: formGender === g ? "#0EA5E9" : "#E2E8F0",
+                        backgroundColor: formGender === g ? "transparent" : "#F8FAFC",
+                        borderColor: formGender === g ? "#0A2472" : "#E2E8F0",
                       }}
                     >
+                      {formGender === g && (
+                        <LinearGradient
+                          colors={ADMIN_PORTAL_GRADIENT.colors}
+                          start={ADMIN_PORTAL_GRADIENT.start}
+                          end={ADMIN_PORTAL_GRADIENT.end}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      )}
                       <Text
                         className="text-xs font-bold"
-                        style={{ color: formGender === g ? "#FFFFFF" : "#475569" }}
+                        style={{
+                          color: formGender === g ? "#FFFFFF" : "#475569",
+                          fontFamily: "Outfit",
+                        }}
                       >
                         {g}
                       </Text>
@@ -1876,15 +1887,26 @@ export function ProfileScreen({
                               setFormGradeLevel("");
                             }
                           }}
-                          className="px-3 py-1.5 rounded-full border"
+                          className="px-3 py-1.5 rounded-full border relative overflow-hidden"
                           style={{
-                            backgroundColor: formStudentCategory === sc ? "#0EA5E9" : "#F8FAFC",
-                            borderColor: formStudentCategory === sc ? "#0EA5E9" : "#E2E8F0",
+                            backgroundColor: formStudentCategory === sc ? "transparent" : "#F8FAFC",
+                            borderColor: formStudentCategory === sc ? "#0A2472" : "#E2E8F0",
                           }}
                         >
+                          {formStudentCategory === sc && (
+                            <LinearGradient
+                              colors={ADMIN_PORTAL_GRADIENT.colors}
+                              start={ADMIN_PORTAL_GRADIENT.start}
+                              end={ADMIN_PORTAL_GRADIENT.end}
+                              style={StyleSheet.absoluteFill}
+                            />
+                          )}
                           <Text
                             className="text-xs font-bold"
-                            style={{ color: formStudentCategory === sc ? "#FFFFFF" : "#475569" }}
+                            style={{
+                              color: formStudentCategory === sc ? "#FFFFFF" : "#475569",
+                              fontFamily: "Outfit",
+                            }}
                           >
                             {sc}
                           </Text>
