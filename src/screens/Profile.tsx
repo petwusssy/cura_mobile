@@ -180,7 +180,22 @@ export function ProfileScreen({
     days: 0,
     date: "",
   });
-  const [prefCooldown, setPrefCooldown] = useState<{ active: boolean; days: number; date: string }>({
+  const [photoCooldown, setPhotoCooldown] = useState<{ active: boolean; days: number; date: string }>({
+    active: false,
+    days: 0,
+    date: "",
+  });
+  const [nameCooldown, setNameCooldown] = useState<{ active: boolean; days: number; date: string }>({
+    active: false,
+    days: 0,
+    date: "",
+  });
+  const [notifCooldown, setNotifCooldown] = useState<{ active: boolean; days: number; date: string }>({
+    active: false,
+    days: 0,
+    date: "",
+  });
+  const [securityCooldown, setSecurityCooldown] = useState<{ active: boolean; days: number; date: string }>({
     active: false,
     days: 0,
     date: "",
@@ -264,10 +279,18 @@ export function ProfileScreen({
 
   // Refresh cooldowns
   const refreshCooldowns = useCallback(async () => {
-    const infoCd = await checkCooldownForKey(`@cura_cooldown_my_info_${userKey}`);
-    const prefCd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
+    const [infoCd, photoCd, nameCd, notifCd, securityCd] = await Promise.all([
+      checkCooldownForKey(`@cura_cooldown_my_info_${userKey}`),
+      checkCooldownForKey(`@cura_cooldown_photo_${userKey}`),
+      checkCooldownForKey(`@cura_cooldown_display_name_${userKey}`),
+      checkCooldownForKey(`@cura_cooldown_notif_${userKey}`),
+      checkCooldownForKey(`@cura_cooldown_security_${userKey}`),
+    ]);
     setInfoCooldown(infoCd);
-    setPrefCooldown(prefCd);
+    setPhotoCooldown(photoCd);
+    setNameCooldown(nameCd);
+    setNotifCooldown(notifCd);
+    setSecurityCooldown(securityCd);
   }, [checkCooldownForKey, userKey]);
 
   useEffect(() => {
@@ -324,11 +347,11 @@ export function ProfileScreen({
   };
 
   const handleOpenNotifModal = async () => {
-    const cd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
+    const cd = await checkCooldownForKey(`@cura_cooldown_notif_${userKey}`);
     if (cd.active) {
       Alert.alert(
         "Cooldown Active (7 Days)",
-        `You recently modified your preferences. Preference changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
+        `You recently modified your notification preferences. Notification changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
         [{ text: "Understood" }]
       );
       return;
@@ -337,21 +360,36 @@ export function ProfileScreen({
   };
 
   const handleOpenMascotModal = async () => {
-    const cd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
-    if (cd.active) {
+    const [photoCd, nameCd] = await Promise.all([
+      checkCooldownForKey(`@cura_cooldown_photo_${userKey}`),
+      checkCooldownForKey(`@cura_cooldown_display_name_${userKey}`),
+    ]);
+    setPhotoCooldown(photoCd);
+    setNameCooldown(nameCd);
+
+    if (photoCd.active && nameCd.active) {
       Alert.alert(
         "Cooldown Active (7 Days)",
-        `You recently modified your profile photo or display name. Changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
+        `Both your profile photo and display name are on a 7-day cooldown.\n\n• Photo available in ${photoCd.days} day(s) (${photoCd.date})\n• Display name available in ${nameCd.days} day(s) (${nameCd.date})`,
         [{ text: "Understood" }]
       );
       return;
     }
+
     setFormDisplayName(user.displayName || user.firstName || "");
     setFormAvatarUrl(user.avatarUrl || null);
     setShowMascotModal(true);
   };
 
   const handlePickImage = async () => {
+    if (photoCooldown.active) {
+      Alert.alert(
+        "Photo Cooldown Active (7 Days)",
+        `You recently updated your profile photo. You can edit this again in ${photoCooldown.days} day(s) (available on ${photoCooldown.date}).`,
+        [{ text: "Understood" }]
+      );
+      return;
+    }
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
@@ -376,8 +414,20 @@ export function ProfileScreen({
     }
   };
 
+  const handleRemoveImage = () => {
+    if (photoCooldown.active) {
+      Alert.alert(
+        "Photo Cooldown Active (7 Days)",
+        `You recently updated your profile photo. You can edit this again in ${photoCooldown.days} day(s) (available on ${photoCooldown.date}).`,
+        [{ text: "Understood" }]
+      );
+      return;
+    }
+    setFormAvatarUrl(null);
+  };
+
   const handleOpenSecurityModal = async () => {
-    const cd = await checkCooldownForKey(`@cura_cooldown_preferences_${userKey}`);
+    const cd = await checkCooldownForKey(`@cura_cooldown_security_${userKey}`);
     if (cd.active) {
       Alert.alert(
         "Cooldown Active (7 Days)",
@@ -636,34 +686,75 @@ export function ProfileScreen({
       soundAlerts: notifSoundAlerts,
     };
     await AsyncStorage.setItem(`@cura_notif_prefs_${userKey}`, JSON.stringify(prefs)).catch(() => {});
-    await AsyncStorage.setItem(`@cura_cooldown_preferences_${userKey}`, Date.now().toString()).catch(() => {});
+    await AsyncStorage.setItem(`@cura_cooldown_notif_${userKey}`, Date.now().toString()).catch(() => {});
     await refreshCooldowns();
     setShowNotifModal(false);
     Alert.alert(
       "Preferences Saved",
-      "Notification settings updated successfully.\n\nNote: You can edit preferences again after 7 days.",
+      "Notification settings updated successfully.\n\nNote: You can edit notification preferences again after 7 days.",
       [{ text: "OK" }]
     );
   };
 
   // Save Profile Photo & Display Name
   const handleSaveMascot = async () => {
-    const cleanedName = formDisplayName.trim() || user.firstName || "PATIENT";
+    const oldName = (user.displayName || user.firstName || "").trim();
+    const newName = formDisplayName.trim();
+    const nameChanged = newName !== "" && newName !== oldName;
+
+    const oldAvatar = user.avatarUrl || null;
+    const newAvatar = formAvatarUrl || null;
+    const avatarChanged = newAvatar !== oldAvatar;
+
+    if (!nameChanged && !avatarChanged) {
+      setShowMascotModal(false);
+      return;
+    }
+
+    if (nameChanged && nameCooldown.active) {
+      Alert.alert(
+        "Display Name Cooldown Active",
+        `Display name changes are limited to once every 7 days.\n\nAvailable on ${nameCooldown.date} (${nameCooldown.days} day(s) remaining).`
+      );
+      return;
+    }
+
+    if (avatarChanged && photoCooldown.active) {
+      Alert.alert(
+        "Profile Photo Cooldown Active",
+        `Profile photo changes are limited to once every 7 days.\n\nAvailable on ${photoCooldown.date} (${photoCooldown.days} day(s) remaining).`
+      );
+      return;
+    }
 
     const updatedUser: any = {
       ...user,
-      displayName: cleanedName,
-      avatarUrl: formAvatarUrl,
+      displayName: nameChanged ? newName : (user.displayName || user.firstName || "PATIENT"),
+      avatarUrl: avatarChanged ? newAvatar : user.avatarUrl,
     };
 
     if (setUser) setUser(updatedUser);
     await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
-    await AsyncStorage.setItem(`@cura_cooldown_preferences_${userKey}`, Date.now().toString()).catch(() => {});
+
+    // Set cooldown only for what was changed
+    const nowStr = Date.now().toString();
+    if (avatarChanged) {
+      await AsyncStorage.setItem(`@cura_cooldown_photo_${userKey}`, nowStr).catch(() => {});
+    }
+    if (nameChanged) {
+      await AsyncStorage.setItem(`@cura_cooldown_display_name_${userKey}`, nowStr).catch(() => {});
+    }
+
     await refreshCooldowns();
     setShowMascotModal(false);
+
+    const changedParts: string[] = [];
+    if (avatarChanged) changedParts.push("Profile photo");
+    if (nameChanged) changedParts.push("Display name");
+
     Alert.alert(
       "Profile Updated",
-      "Display name and profile photo updated successfully.\n\nNote: You can edit preferences again after 7 days.",
+      `${changedParts.join(" and ")} updated successfully.\n\nNote: You can edit ${changedParts.length > 1 ? "these" : "this"} again after 7 days.`,
       [{ text: "OK" }]
     );
   };
@@ -706,13 +797,13 @@ export function ProfileScreen({
     }
 
     await AsyncStorage.setItem(`@cura_biometrics_${userKey}`, biometricsEnabled ? "true" : "false").catch(() => {});
-    await AsyncStorage.setItem(`@cura_cooldown_preferences_${userKey}`, Date.now().toString()).catch(() => {});
+    await AsyncStorage.setItem(`@cura_cooldown_security_${userKey}`, Date.now().toString()).catch(() => {});
     await refreshCooldowns();
     setSavingSecurity(false);
     setShowSecurityModal(false);
     Alert.alert(
       "Security Updated",
-      "Your privacy and password settings have been updated.\n\nNote: You can edit preferences again after 7 days.",
+      "Your privacy and password settings have been updated.\n\nNote: You can edit security settings again after 7 days.",
       [{ text: "OK" }]
     );
   };
@@ -1002,38 +1093,36 @@ export function ProfileScreen({
     },
     {
       title: "Preferences",
-      cooldown: prefCooldown,
-      action: prefCooldown.active ? (
-        <View
-          className="px-3 py-1 rounded-full"
-          style={{
-            backgroundColor: "rgba(251, 191, 36, 0.2)",
-            borderWidth: 1,
-            borderColor: "rgba(251, 191, 36, 0.4)",
-          }}
-        >
-          <Text className="text-[10px] font-bold text-amber-200">⏳ {prefCooldown.days}d Cooldown</Text>
-        </View>
-      ) : null,
+      action: null,
       items: [
         {
           icon: "🔔",
           label: "Notification Preferences",
-          sub: "Reminders, advisories & alerts",
+          sub: notifCooldown.active
+            ? `⏳ Cooldown (${notifCooldown.days}d) · Reminders & alerts`
+            : "Reminders, advisories & alerts",
           color: "#EFF8FF",
           onPress: handleOpenNotifModal,
         },
         {
           icon: "📷",
           label: "Profile Photo & Display Name",
-          sub: (user.displayName || user.firstName || "Patient").toUpperCase(),
+          sub: photoCooldown.active && nameCooldown.active
+            ? `⏳ Cooldown (${Math.max(photoCooldown.days, nameCooldown.days)}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
+            : photoCooldown.active
+            ? `⏳ Photo cooldown (${photoCooldown.days}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
+            : nameCooldown.active
+            ? `⏳ Name cooldown (${nameCooldown.days}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
+            : (user.displayName || user.firstName || "Patient").toUpperCase(),
           color: "#EFF6FF",
           onPress: handleOpenMascotModal,
         },
         {
           icon: "🔒",
           label: "Privacy & Security",
-          sub: "Password, biometrics & lock",
+          sub: securityCooldown.active
+            ? `⏳ Cooldown (${securityCooldown.days}d) · Password & lock`
+            : "Password, biometrics & lock",
           color: "#ECFDF5",
           onPress: handleOpenSecurityModal,
         },
@@ -2119,21 +2208,32 @@ export function ProfileScreen({
                 <View className="flex-row gap-2">
                   <Pressable
                     onPress={handlePickImage}
-                    className="flex-row items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-50 border border-sky-200 active:bg-sky-100"
+                    className={`flex-row items-center gap-1.5 px-4 py-2 rounded-xl border ${
+                      photoCooldown.active
+                        ? "bg-slate-100 border-slate-200 opacity-60"
+                        : "bg-sky-50 border-sky-200 active:bg-sky-100"
+                    }`}
                   >
-                    <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0056B3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={photoCooldown.active ? "#64748B" : "#0056B3"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                       <Circle cx="12" cy="13" r="4" />
                     </Svg>
-                    <Text className="text-xs font-bold" style={{ color: "#0056B3", fontFamily: "Outfit" }}>
-                      {formAvatarUrl ? "Change Photo" : "Upload Image"}
+                    <Text
+                      className="text-xs font-bold"
+                      style={{ color: photoCooldown.active ? "#64748B" : "#0056B3", fontFamily: "Outfit" }}
+                    >
+                      {photoCooldown.active ? `⏳ Photo (${photoCooldown.days}d)` : formAvatarUrl ? "Change Photo" : "Upload Image"}
                     </Text>
                   </Pressable>
 
                   {formAvatarUrl && (
                     <Pressable
-                      onPress={() => setFormAvatarUrl(null)}
-                      className="px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 active:bg-rose-100 items-center justify-center"
+                      onPress={handleRemoveImage}
+                      className={`px-3 py-2 rounded-xl border items-center justify-center ${
+                        photoCooldown.active
+                          ? "bg-slate-100 border-slate-200 opacity-60"
+                          : "bg-rose-50 border-rose-200 active:bg-rose-100"
+                      }`}
                     >
                       <Text className="text-xs font-bold text-rose-600">Remove</Text>
                     </Pressable>
@@ -2142,19 +2242,45 @@ export function ProfileScreen({
               </View>
 
               <View className="mb-4">
-                <Text className="text-xs font-bold text-slate-600 mb-1.5">Display Name / Preferred Nickname</Text>
+                <View className="flex-row items-center justify-between mb-1.5">
+                  <Text className="text-xs font-bold text-slate-600">Display Name / Preferred Nickname</Text>
+                  {nameCooldown.active && (
+                    <Text className="text-[10px] font-bold text-amber-600">
+                      ⏳ {nameCooldown.days}d cooldown
+                    </Text>
+                  )}
+                </View>
                 <TextInput
                   value={formDisplayName}
-                  onChangeText={setFormDisplayName}
+                  onChangeText={(text) => {
+                    if (nameCooldown.active) {
+                      Alert.alert(
+                        "Display Name Cooldown Active",
+                        `Display name was recently modified. You can edit this again in ${nameCooldown.days} day(s) (available on ${nameCooldown.date}).`
+                      );
+                      return;
+                    }
+                    setFormDisplayName(text);
+                  }}
+                  editable={!nameCooldown.active}
                   placeholder="Enter preferred display name"
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                  className={`border rounded-xl px-3.5 py-2.5 text-sm ${
+                    nameCooldown.active
+                      ? "bg-slate-100 border-slate-200 text-slate-400"
+                      : "bg-slate-50 border-slate-200 text-slate-800"
+                  }`}
                 />
+                {nameCooldown.active && (
+                  <Text className="text-[11px] text-slate-400 mt-1">
+                    Editable again on {nameCooldown.date}
+                  </Text>
+                )}
               </View>
 
               <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-2">
                 <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
                 <Text className="text-[11px] text-amber-700">
-                  Changing your profile photo or display name triggers a 7-day cooldown before it can be updated again.
+                  Profile photo and display name each have independent 7-day cooldowns. Updating one will not lock the other.
                 </Text>
               </View>
             </ScrollView>
