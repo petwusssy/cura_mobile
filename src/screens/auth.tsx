@@ -529,6 +529,24 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+function detectCategoryFromEmail(email: string): "" | "Student" | "Employee" | "Outsider" {
+  const clean = email.trim().toLowerCase();
+  if (!clean) return "";
+  if (clean.includes(".student@ua.edu.ph") || clean.endsWith(".student@ua.edu.ph")) {
+    return "Student";
+  }
+  if (clean.includes("@ua.edu.ph") || clean.endsWith("@ua.edu.ph")) {
+    return "Employee";
+  }
+  if (clean.includes("@gmail.com") || clean.endsWith("@gmail.com")) {
+    return "Outsider";
+  }
+  if (clean.includes("@") && clean.includes(".")) {
+    return "Outsider";
+  }
+  return "";
+}
+
 function GlassSelectionModal({
   visible,
   title,
@@ -1171,23 +1189,8 @@ const AuthModal = memo(function AuthModal({
     }
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
-  // Step 1 Validation & Next: Category Selection
+  // Step 1 Validation & Next: Account Email & Auto Category Identification
   const handleStep1Next = useCallback(() => {
-    const errs: Record<string, string> = {};
-    if (!createForm.category) {
-      errs.category = "Please select a patient category to proceed";
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setRegErrors(errs);
-      return;
-    }
-
-    goToCreateStep(2, "next");
-  }, [createForm.category, goToCreateStep]);
-
-  // Step 2 Validation & Next: Account Credentials
-  const handleStep2Next = useCallback(() => {
     const errs: Record<string, string> = {};
     const trimmedEmail = createForm.email.trim();
     if (!trimmedEmail) {
@@ -1196,16 +1199,9 @@ const AuthModal = memo(function AuthModal({
       errs.email = "Please enter a valid email address";
     }
 
-    if (!createForm.password) {
-      errs.password = "Password is required";
-    } else if (createForm.password.length < 6) {
-      errs.password = "Password must be at least 6 characters";
-    }
-
-    if (!createForm.confirmPassword) {
-      errs.confirmPassword = "Confirm password is required";
-    } else if (createForm.confirmPassword !== createForm.password) {
-      errs.confirmPassword = "Passwords do not match";
+    const detected = detectCategoryFromEmail(trimmedEmail);
+    if (!detected) {
+      errs.email = "Please enter a valid student (.student@ua.edu.ph), employee (@ua.edu.ph), or outsider (@gmail.com) email";
     }
 
     if (Object.keys(errs).length > 0) {
@@ -1213,11 +1209,12 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    goToCreateStep(3, "next");
-  }, [createForm.email, createForm.password, createForm.confirmPassword, goToCreateStep]);
+    setCreateForm((f) => ({ ...f, category: detected }));
+    goToCreateStep(2, "next");
+  }, [createForm.email, goToCreateStep]);
 
-  // Step 3 Validation & Next: Basic Information
-  const handleStep3Next = useCallback(() => {
+  // Step 2 Validation & Next: Basic Information
+  const handleStep2Next = useCallback(() => {
     const errs: Record<string, string> = {};
     if (!createForm.fullName.trim()) {
       errs.fullName = "Full name is required";
@@ -1261,11 +1258,11 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    goToCreateStep(4, "next");
+    goToCreateStep(3, "next");
   }, [createForm.fullName, createForm.dob, createForm.sex, createForm.contact, createForm.emergencyName, createForm.emergencyPhone, goToCreateStep]);
 
-  // Step 4 Validation & Submit: Category-Specific Details
-  const handleGetStarted = useCallback(async () => {
+  // Step 3 Validation & Next: Category-Specific Details
+  const handleStep3Next = useCallback(() => {
     const errs: Record<string, string> = {};
     const { category } = createForm;
 
@@ -1296,11 +1293,49 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
+    goToCreateStep(4, "next");
+  }, [
+    createForm.category,
+    createForm.studentId,
+    createForm.studentCategory,
+    createForm.course,
+    createForm.yearLevel,
+    createForm.gradeLevel,
+    createForm.guardianName,
+    createForm.employeeId,
+    createForm.position,
+    createForm.department,
+    createForm.address,
+    goToCreateStep,
+  ]);
+
+  // Step 4 Validation & Submit: Password & Complete Registration
+  const handleGetStarted = useCallback(async () => {
+    const errs: Record<string, string> = {};
+
+    if (!createForm.password) {
+      errs.password = "Password is required";
+    } else if (createForm.password.length < 6) {
+      errs.password = "Password must be at least 6 characters";
+    }
+
+    if (!createForm.confirmPassword) {
+      errs.confirmPassword = "Confirm password is required";
+    } else if (createForm.confirmPassword !== createForm.password) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+
     setRegErrors({});
     setRegGeneralError("");
     setRegLoading(true);
 
     try {
+      const { category } = createForm;
       const trimmedEmail = createForm.email.trim().toLowerCase();
       const trimmedName = createForm.fullName.trim().toUpperCase();
       const selectedId = category === "Student" ? createForm.studentId.trim() : category === "Employee" ? createForm.employeeId.trim() : "";
@@ -1732,7 +1767,7 @@ const AuthModal = memo(function AuthModal({
                       </View>
                     ) : null}
 
-                    {/* Step 1: Patient Category */}
+                    {/* Step 1: Account Email & Auto Category Identification */}
                     {createStep === 1 && (
                       <Animated.View
                         style={{
@@ -1743,83 +1778,97 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={1}
                           total={4}
-                          title="Patient Category"
-                          subtitle="Select your classification"
+                          title="Account Email"
+                          subtitle="Enter your email to identify your account"
                         />
 
-                        <View style={{ marginBottom: 12 }}>
-                          {[
-                            {
-                              key: "Student",
-                              title: "Student",
-                              desc: "Enrolled student at University of the Assumption",
-                              icon: "🎓",
-                            },
-                            {
-                              key: "Employee",
-                              title: "Employee",
-                              desc: "Faculty, academic personnel, or admin staff",
-                              icon: "💼",
-                            },
-                            {
-                              key: "Outsider",
-                              title: "Outsider",
-                              desc: "External guest, visitor, or non-university patient",
-                              icon: "🌐",
-                            },
-                          ].map((item) => {
-                            const isSelected = createForm.category === item.key;
-                            return (
-                              <TouchableOpacity
-                                key={item.key}
-                                onPress={() => {
-                                  triggerHaptic();
-                                  setCreateForm((f) => ({ ...f, category: item.key as any }));
-                                  if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
-                                }}
-                                activeOpacity={0.8}
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  padding: 14,
-                                  borderRadius: 14,
-                                  backgroundColor: isSelected ? "rgba(30, 79, 216, 0.40)" : "rgba(255, 255, 255, 0.12)",
-                                  borderWidth: 1.5,
-                                  borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.22)",
-                                  marginBottom: 10,
-                                  shadowColor: isSelected ? "#1E4FD8" : "transparent",
-                                  shadowOffset: { width: 0, height: 2 },
-                                  shadowOpacity: isSelected ? 0.35 : 0,
-                                  shadowRadius: 6,
-                                }}
-                              >
-                                <Text style={{ fontSize: 26, marginRight: 14 }}>{item.icon}</Text>
-                                <View style={{ flex: 1, paddingRight: 8 }}>
-                                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700", fontFamily: "Outfit" }}>
-                                    {item.title}
-                                  </Text>
-                                  <Text style={{ color: "rgba(255, 255, 255, 0.72)", fontSize: 12, fontFamily: "Outfit", marginTop: 2 }}>
-                                    {item.desc}
-                                  </Text>
-                                </View>
-                                <View
-                                  style={{
-                                    width: 22,
-                                    height: 22,
-                                    borderRadius: 11,
-                                    borderWidth: 2,
-                                    borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.4)",
-                                    backgroundColor: isSelected ? "#1E4FD8" : "transparent",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  {isSelected ? <CheckIcon color="#FFFFFF" size={12} /> : null}
-                                </View>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
+                        <GlassInput
+                          ref={emailRef}
+                          icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Email address (e.g. name.student@ua.edu.ph)"
+                          value={createForm.email}
+                          onChangeText={(t) => {
+                            const detected = detectCategoryFromEmail(t);
+                            setCreateForm((f) => ({ ...f, email: t, category: detected }));
+                            if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
+                            if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
+                          }}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          returnKeyType="done"
+                          onSubmitEditing={handleStep1Next}
+                          error={regErrors.email}
+                        />
+
+                        {/* Identified Category Indicator / Guidance */}
+                        {createForm.category ? (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              padding: 14,
+                              borderRadius: 14,
+                              backgroundColor: "rgba(30, 79, 216, 0.35)",
+                              borderWidth: 1.5,
+                              borderColor: "#60A5FA",
+                              marginBottom: 12,
+                              shadowColor: "#1E4FD8",
+                              shadowOffset: { width: 0, height: 2 },
+                              shadowOpacity: 0.3,
+                              shadowRadius: 6,
+                            }}
+                          >
+                            <Text style={{ fontSize: 26, marginRight: 12 }}>
+                              {createForm.category === "Student" ? "🎓" : createForm.category === "Employee" ? "💼" : "🌐"}
+                            </Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 11, fontFamily: "Outfit", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                Identified Category
+                              </Text>
+                              <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700", fontFamily: "Outfit", marginTop: 2 }}>
+                                {createForm.category}
+                              </Text>
+                              <Text style={{ color: "rgba(255, 255, 255, 0.72)", fontSize: 12, fontFamily: "Outfit", marginTop: 2 }}>
+                                {createForm.category === "Student"
+                                  ? "University of the Assumption Student"
+                                  : createForm.category === "Employee"
+                                  ? "UA Faculty & Personnel"
+                                  : "External Guest / Outsider"}
+                              </Text>
+                            </View>
+                            <View
+                              style={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: 11,
+                                backgroundColor: "#1E4FD8",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <CheckIcon color="#FFFFFF" size={12} />
+                            </View>
+                          </View>
+                        ) : (
+                          <View
+                            style={{
+                              padding: 12,
+                              borderRadius: 12,
+                              backgroundColor: "rgba(255, 255, 255, 0.08)",
+                              borderWidth: 1,
+                              borderColor: "rgba(255, 255, 255, 0.15)",
+                              marginBottom: 12,
+                            }}
+                          >
+                            <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 12, fontFamily: "Outfit", lineHeight: 18 }}>
+                              💡 Category is automatically identified:{"\n"}
+                              • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>.student@ua.edu.ph</Text> → Student{"\n"}
+                              • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>@ua.edu.ph</Text> → Employee{"\n"}
+                              • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>@gmail.com</Text> → Outsider
+                            </Text>
+                          </View>
+                        )}
+
                         {regErrors.category ? (
                           <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginBottom: 10, marginLeft: 4 }}>
                             {regErrors.category}
@@ -1898,7 +1947,7 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 2: Account Credentials */}
+                    {/* Step 2: Basic Information */}
                     {createStep === 2 && (
                       <Animated.View
                         style={{
@@ -1909,108 +1958,9 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={2}
                           total={4}
-                          title="Account Setup"
-                          subtitle="Enter your email and password"
-                          onBack={() => goToCreateStep(1, "back")}
-                        />
-
-                        <GlassInput
-                          ref={emailRef}
-                          icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Email address (e.g. name@ua.edu.ph)"
-                          value={createForm.email}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, email: t }));
-                            if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
-                          }}
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                          returnKeyType="next"
-                          onSubmitEditing={() => regPasswordRef.current?.focus()}
-                          blurOnSubmit={false}
-                          error={regErrors.email}
-                        />
-
-                        <GlassInput
-                          ref={regPasswordRef}
-                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Password (min 6 characters)"
-                          value={createForm.password}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, password: t }));
-                            if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
-                          }}
-                          secureTextEntry
-                          showPasswordToggle
-                          returnKeyType="next"
-                          onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                          blurOnSubmit={false}
-                          error={regErrors.password}
-                        />
-
-                        <GlassInput
-                          ref={confirmPasswordRef}
-                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Confirm Password"
-                          value={createForm.confirmPassword}
-                          onChangeText={(t) => {
-                            setCreateForm((f) => ({ ...f, confirmPassword: t }));
-                            if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
-                          }}
-                          secureTextEntry
-                          showPasswordToggle
-                          returnKeyType="done"
-                          onSubmitEditing={handleStep2Next}
-                          error={regErrors.confirmPassword}
-                        />
-
-                        <TouchableOpacity
-                          onPress={handleStep2Next}
-                          activeOpacity={0.85}
-                          style={{
-                            width: "100%",
-                            height: 50,
-                            borderRadius: 14,
-                            backgroundColor: "#1E4FD8",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginTop: 8,
-                            shadowColor: "#1E4FD8",
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.35,
-                            shadowRadius: 8,
-                            elevation: 4,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: "#FFFFFF",
-                              fontSize: 16,
-                              fontWeight: "700",
-                              fontFamily: "Outfit",
-                              letterSpacing: 0.4,
-                            }}
-                          >
-                            Next →
-                          </Text>
-                        </TouchableOpacity>
-                      </Animated.View>
-                    )}
-
-                    {/* Step 3: Basic Information */}
-                    {createStep === 3 && (
-                      <Animated.View
-                        style={{
-                          opacity: stepFadeAnim,
-                          transform: [{ translateX: stepSlideAnim }],
-                        }}
-                      >
-                        <GlassStepHeader
-                          step={3}
-                          total={4}
                           title="Basic Information"
                           subtitle="Personal and emergency details"
-                          onBack={() => goToCreateStep(2, "back")}
+                          onBack={() => goToCreateStep(1, "back")}
                         />
 
                         <GlassInput
@@ -2093,7 +2043,7 @@ const AuthModal = memo(function AuthModal({
                         />
 
                         <TouchableOpacity
-                          onPress={handleStep3Next}
+                          onPress={handleStep2Next}
                           activeOpacity={0.85}
                           style={{
                             width: "100%",
@@ -2125,8 +2075,8 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 4: Category-Specific Details */}
-                    {createStep === 4 && (
+                    {/* Step 3: Category-Specific Details */}
+                    {createStep === 3 && (
                       <Animated.View
                         style={{
                           opacity: stepFadeAnim,
@@ -2134,11 +2084,11 @@ const AuthModal = memo(function AuthModal({
                         }}
                       >
                         <GlassStepHeader
-                          step={4}
+                          step={3}
                           total={4}
                           title="Category Details"
                           subtitle="Complete your specific requirements"
-                          onBack={() => goToCreateStep(3, "back")}
+                          onBack={() => goToCreateStep(2, "back")}
                         />
 
                         {/* Student Fields */}
@@ -2280,6 +2230,88 @@ const AuthModal = memo(function AuthModal({
                             />
                           </View>
                         )}
+
+                        <TouchableOpacity
+                          onPress={handleStep3Next}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 16,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              letterSpacing: 0.4,
+                            }}
+                          >
+                            Next →
+                          </Text>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    )}
+
+                    {/* Step 4: Security & Password (Last Step) */}
+                    {createStep === 4 && (
+                      <Animated.View
+                        style={{
+                          opacity: stepFadeAnim,
+                          transform: [{ translateX: stepSlideAnim }],
+                        }}
+                      >
+                        <GlassStepHeader
+                          step={4}
+                          total={4}
+                          title="Security & Password"
+                          subtitle="Set a secure password for your account"
+                          onBack={() => goToCreateStep(3, "back")}
+                        />
+
+                        <GlassInput
+                          ref={regPasswordRef}
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Password (min 6 characters)"
+                          value={createForm.password}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, password: t }));
+                            if (regErrors.password) setRegErrors((e) => ({ ...e, password: "" }));
+                          }}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="next"
+                          onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                          blurOnSubmit={false}
+                          error={regErrors.password}
+                        />
+
+                        <GlassInput
+                          ref={confirmPasswordRef}
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Confirm Password"
+                          value={createForm.confirmPassword}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({ ...f, confirmPassword: t }));
+                            if (regErrors.confirmPassword) setRegErrors((e) => ({ ...e, confirmPassword: "" }));
+                          }}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="done"
+                          onSubmitEditing={handleGetStarted}
+                          error={regErrors.confirmPassword}
+                        />
 
                         <TouchableOpacity
                           onPress={handleGetStarted}
