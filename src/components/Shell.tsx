@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef } from "react";
-import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Animated, Easing } from "react-native";
+import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Animated, Easing, Platform } from "react-native";
 import Svg, { Path, Circle, Rect, Polyline, Line } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -121,15 +121,39 @@ function AnimatedBackground() {
 import { FogBackground } from "./FogBackground";
 
 export function MobileShell({ children, theme = 'light' }: MobileShellProps) {
+  const isWeb = Platform.OS === 'web';
   return (
     <View
-      className={`flex-1 ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
-      style={{ backgroundColor: '#FFFFFF' }}
+      style={{
+        flex: 1,
+        backgroundColor: isWeb ? '#081734' : '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+      }}
     >
-      <FogBackground />
+      <View
+        className={`flex-1 ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
+        style={{
+          width: '100%',
+          maxWidth: isWeb ? 460 : undefined,
+          height: '100%',
+          backgroundColor: '#FFFFFF',
+          overflow: 'hidden',
+          position: 'relative',
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: isWeb ? 0.35 : 0,
+          shadowRadius: isWeb ? 28 : 0,
+          elevation: isWeb ? 10 : 0,
+        }}
+      >
+        <FogBackground />
 
-      {/* Screen content */}
-      <View className="flex-1 z-10">{children}</View>
+        {/* Screen content */}
+        <View className="flex-1 z-10" style={{ width: '100%', height: '100%' }}>{children}</View>
+      </View>
     </View>
   );
 }

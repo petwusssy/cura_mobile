@@ -418,15 +418,30 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     }).catch(() => {});
   }, []);
 
+  const isAuthenticated = Boolean(user?.id || user?.email);
+
   const renderScreen = () => {
     if (!splashDone) return <SplashScreen onDone={handleSplashDone} />;
 
+    if (!isAuthenticated) {
+      switch (current.screen) {
+        case "login":
+          return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} initialAuthMode="signin" />;
+        case "register":
+          return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} initialAuthMode="create_account" />;
+        case "forgot-password":
+          return <ForgotPasswordScreen navigate={navigate} goBack={goBack} />;
+        case "welcome":
+        default:
+          return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
+      }
+    }
+
     switch (current.screen) {
       case "welcome":       return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
-      case "login":         return <LoginScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
-      case "register":      return <RegisterScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
+      case "login":         return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} initialAuthMode="signin" />;
+      case "register":      return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} initialAuthMode="create_account" />;
       case "forgot-password": return <ForgotPasswordScreen navigate={navigate} goBack={goBack} />;
-
 
       case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} medications={medications} />;
       case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} />;
@@ -441,16 +456,16 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "request-med-cert": return <RequestMedCertScreen navigate={navigate} goBack={goBack} user={user} />;
       case "profile":        return <ProfileScreen navigate={navigate} goBack={goBack} user={user} setUser={setUser} resetApp={resetApp} consultations={consultations} medications={medications} certificates={certificates} theme={theme} setTheme={handleSetTheme} />;
 
-      default: return <WelcomeScreen navigate={navigate} goBack={goBack} setUser={setUser} loadUserData={loadUserData} />;
+      default: return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} medications={medications} />;
     }
   };
 
   return (
     <AlertProvider>
-      {splashDone && <NotificationPoller user={user} setNotifications={setNotifications} />}
+      {splashDone && isAuthenticated && <NotificationPoller user={user} setNotifications={setNotifications} />}
       <MobileShell theme={theme}>
         {renderScreen()}
-        {splashDone && isMainTab && (
+        {splashDone && isAuthenticated && isMainTab && (
           <BottomNav active={current.screen} navigate={navigate} isDark={theme === 'dark'} />
         )}
       </MobileShell>
