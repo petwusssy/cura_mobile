@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Svg, { Polyline } from "react-native-svg";
+import Svg, { Polyline, Path, Line, Rect, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
 import type { Screen } from "../types";
 import { Badge, Header } from "../components/Shell";
 import { MEDICATIONS } from "../data";
@@ -17,6 +17,29 @@ interface Props {
 }
 
 type Filter = "all" | "to-intake" | "intaked";
+
+function MedicinePillIcon({ size = 26 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <Defs>
+        <SvgLinearGradient id="medPillCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#38BDF8" />
+          <Stop offset="100%" stopColor="#00A3FF" />
+        </SvgLinearGradient>
+        <SvgLinearGradient id="medPillBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#0056B3" />
+          <Stop offset="100%" stopColor="#002D72" />
+        </SvgLinearGradient>
+      </Defs>
+      <G transform="rotate(-45 20 20)">
+        <Path d="M14 11a6 6 0 0 1 12 0v8H14v-8z" fill="url(#medPillCyan)" />
+        <Path d="M14 19h12v8a6 6 0 0 1-12 0v-8z" fill="url(#medPillBlue)" />
+        <Line x1="14" y1="19" x2="26" y2="19" stroke="#FFFFFF" strokeWidth="1.5" />
+        <Rect x="16" y="11" width="2" height="6" rx="1" fill="#FFFFFF" opacity="0.7" />
+      </G>
+    </Svg>
+  );
+}
 
 const statusConfig: Record<string, { badge: "success" | "warning" | "error" | "info" | "neutral"; label: string; dot: string; bg: string; icon: string }> = {
   "next-intake": { badge: "info",    label: "Next Intake", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
@@ -119,7 +142,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
           />
           <View className="flex-row items-start gap-3">
             <View className="w-11 h-11 rounded-xl items-center justify-center bg-white/20 border border-white/30">
-              <Text className="text-xl">💊</Text>
+              <MedicinePillIcon size={26} />
             </View>
             <View className="flex-1">
               <View className="flex-row items-center justify-between gap-2 mb-0.5">
@@ -318,7 +341,9 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
 
             {intakedList.length === 0 ? (
               <View className="bg-white/10 rounded-2xl p-5 items-center justify-center border border-white/10">
-                <Text className="text-2xl mb-1">💊</Text>
+                <View className="mb-1">
+                  <MedicinePillIcon size={32} />
+                </View>
                 <Text className="text-sm font-bold text-white">No intaked medications yet</Text>
                 <Text className="text-xs text-white/60 text-center mt-0.5">Medications you mark as intaked will appear here.</Text>
               </View>
