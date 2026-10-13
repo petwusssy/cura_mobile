@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Polyline } from "react-native-svg";
 import type { Screen } from "../types";
-import { Card, Badge, Header } from "../components/Shell";
+import { Badge, Header } from "../components/Shell";
 import { MEDICATIONS } from "../data";
 import { formatTime12 } from "../utils/philippineTime";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
@@ -91,41 +91,73 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
     const isExpanded = expanded === med.id;
 
     return (
-      <Card key={med.id} onPress={() => setExpanded(isExpanded ? null : med.id)} className="relative overflow-hidden mb-3">
-        {/* Status accent line */}
-        <View className="absolute top-0 left-0 w-1.5 h-full rounded-l-full z-10" style={{ backgroundColor: cfg.dot }} />
-        
-        <View className="flex-row items-start gap-3 pl-2">
-          <View
-            className="w-11 h-11 rounded-xl items-center justify-center"
-            style={{ backgroundColor: cfg.bg }}
-          >
-            <Text className="text-xl">💊</Text>
-          </View>
-          <View className="flex-1">
-            <View className="flex-row items-center justify-between gap-2 mb-0.5">
-              <Text className="text-base font-black text-[#0B2136] flex-1" numberOfLines={1}>{med.name}</Text>
-              <Badge variant={cfg.badge}>{cfg.label}</Badge>
+      <View
+        key={med.id}
+        className="rounded-[24px] overflow-hidden mb-3 bg-white border border-sky-100/70"
+        style={{
+          shadowColor: "#0A2472",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 3,
+        }}
+      >
+        {/* Top Header Section: Blue Gradient */}
+        <Pressable
+          onPress={() => setExpanded(isExpanded ? null : med.id)}
+          className="relative overflow-hidden p-4 active:opacity-95"
+          style={{
+            borderBottomWidth: (isExpanded || isToIntakeSection) ? 1 : 0,
+            borderBottomColor: "rgba(255, 255, 255, 0.25)",
+          }}
+        >
+          <LinearGradient
+            colors={ADMIN_PORTAL_GRADIENT.colors}
+            start={ADMIN_PORTAL_GRADIENT.start}
+            end={ADMIN_PORTAL_GRADIENT.end}
+            style={StyleSheet.absoluteFill}
+          />
+          <View className="flex-row items-start gap-3">
+            <View className="w-11 h-11 rounded-xl items-center justify-center bg-white/20 border border-white/30">
+              <Text className="text-xl">💊</Text>
             </View>
-            <Text className="text-xs text-slate-400">{med.dose}</Text>
-            {med.nextDose && med.status !== "intaked" && med.status !== "taken" && (
-              <Text className="text-xs font-semibold mt-0.5" style={{ color: cfg.dot }}>
-                Next: {formatTime12(med.nextDose)}
-              </Text>
-            )}
+            <View className="flex-1">
+              <View className="flex-row items-center justify-between gap-2 mb-0.5">
+                <Text
+                  className="text-base font-black text-white flex-1"
+                  numberOfLines={1}
+                  style={{
+                    fontFamily: "Outfit",
+                    textShadowColor: "rgba(0, 0, 0, 0.25)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
+                  {med.name}
+                </Text>
+                <Badge variant={cfg.badge}>{cfg.label}</Badge>
+              </View>
+              <Text className="text-xs font-semibold text-white/80">{med.dose}</Text>
+              {med.nextDose && med.status !== "intaked" && med.status !== "taken" && (
+                <Text className="text-xs font-bold text-sky-200 mt-0.5">
+                  Next: {formatTime12(med.nextDose)}
+                </Text>
+              )}
+            </View>
+            <View className="mt-1" style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }}>
+              <Svg
+                width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              >
+                <Polyline points="6 9 12 15 18 9"/>
+              </Svg>
+            </View>
           </View>
-          <View className="mt-1" style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }}>
-            <Svg
-              width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-            >
-              <Polyline points="6 9 12 15 18 9"/>
-            </Svg>
-          </View>
-        </View>
+        </Pressable>
 
+        {/* Bottom Section: White background */}
         {isExpanded && (
-          <View className="mt-3 pt-3 border-t border-sky-100 flex-col gap-2.5 pl-2">
+          <View className="bg-white p-4 pt-3.5 flex-col gap-2.5">
             {med.instructions ? (
               <View>
                 <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions / Remarks</Text>
@@ -154,7 +186,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
 
         {/* Intake button for To Intake section */}
         {isToIntakeSection && (
-          <View className="mt-3 pt-2.5 border-t border-slate-100 pl-2">
+          <View className={`bg-white px-4 pb-4 ${isExpanded ? "pt-1" : "pt-3.5"}`}>
             <Pressable
               onPress={() => handleIntake(med.id)}
               className="w-full bg-emerald-600 active:bg-emerald-700 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 shadow-sm"
@@ -170,7 +202,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
             </Pressable>
           </View>
         )}
-      </Card>
+      </View>
     );
   };
 
