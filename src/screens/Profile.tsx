@@ -2199,7 +2199,15 @@ export function ProfileScreen({
                 />
               </View>
               <Text className="text-xl font-black text-[#0B2136]" style={{ fontFamily: "Outfit" }}>CURA e-Health</Text>
-              <Text className="text-xs font-bold text-sky-600">Version 1.0.0 (Production)</Text>
+              <Text
+                className="text-xs font-bold"
+                style={{
+                  color: "#002D72",
+                  fontFamily: "Outfit",
+                }}
+              >
+                Version 1.0.0 (Production)
+              </Text>
               <Text className="text-[11px] text-slate-400 mt-0.5">Clinical Unified Records & Access</Text>
             </View>
 
@@ -2240,9 +2248,32 @@ export function ProfileScreen({
 
             <Pressable
               onPress={() => setShowAboutModal(false)}
-              className="mt-4 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center active:opacity-90"
+              className="mt-4 py-3.5 rounded-2xl overflow-hidden items-center justify-center relative active:opacity-90 shadow-sm"
+              style={{
+                shadowColor: "#0A2472",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
             >
-              <Text className="text-xs font-bold text-white">Close</Text>
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
+              <Text
+                className="text-xs font-black text-white"
+                style={{
+                  fontFamily: "Outfit",
+                  textShadowColor: "rgba(0, 0, 0, 0.25)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                }}
+              >
+                Close
+              </Text>
             </Pressable>
           </View>
         </View>
