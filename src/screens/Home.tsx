@@ -287,9 +287,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           </View>
           <Pressable
             onPress={() => navigate("notifications")}
-            className="w-12 h-12 rounded-full border border-slate-200 bg-white items-center justify-center relative shadow-xs"
+            className="w-12 h-12 rounded-full border border-sky-100 bg-white items-center justify-center relative shadow-xs"
           >
-            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><Path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </Svg>
             {unread > 0 && (
@@ -671,8 +671,22 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
         title="Notifications"
         onBack={goBack}
         right={
-          <View className="bg-cura-500 rounded-full px-2.5 py-1">
-            <Text className="text-white text-[11px] font-bold">
+          <View className="rounded-full px-3 py-1 overflow-hidden relative shadow-xs">
+            <LinearGradient
+              colors={ADMIN_PORTAL_GRADIENT.colors}
+              start={ADMIN_PORTAL_GRADIENT.start}
+              end={ADMIN_PORTAL_GRADIENT.end}
+              style={StyleSheet.absoluteFill}
+            />
+            <Text
+              className="text-white text-[11px] font-black"
+              style={{
+                fontFamily: "Outfit",
+                textShadowColor: "rgba(0, 0, 0, 0.25)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
               {activeNotifs.length} new
             </Text>
           </View>
@@ -698,16 +712,21 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
               <View className="flex-1 pt-1">
                 <View className="flex-row items-center gap-2 mb-1">
                   <Text className="text-sm font-bold text-slate-800">{n.title || n.type}</Text>
-                  <View className="w-2 h-2 rounded-full bg-cura-500" />
+                  <View className="w-2 h-2 rounded-full bg-[#002D72]" />
                 </View>
                 <Text className="text-xs text-slate-500 leading-relaxed">{n.message}</Text>
                 <Text className="text-[10px] text-slate-400 mt-2 font-medium">{n.created_at ? formatManilaDateTime(n.created_at) : 'recently'}</Text>
               </View>
             </Pressable>
           )) : (
-            <View className="bg-white rounded-[24px] p-8 items-center justify-center mt-4 border border-slate-100">
-              <Text className="text-4xl mb-3">🔔</Text>
-              <Text className="text-base font-bold text-slate-700">No Notifications</Text>
+            <View className="bg-white rounded-[24px] p-8 items-center justify-center mt-4 border border-sky-100 shadow-sm">
+              <View className="w-16 h-16 rounded-full bg-sky-50 items-center justify-center mb-3 border border-sky-200">
+                <Svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </Svg>
+              </View>
+              <Text className="text-base font-bold text-slate-800" style={{ fontFamily: "Outfit" }}>No Notifications</Text>
               <Text className="text-sm text-slate-400 text-center mt-1">You're all caught up!</Text>
             </View>
           )}
