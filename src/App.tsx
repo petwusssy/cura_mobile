@@ -192,12 +192,20 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         const extractedMedications = userConsultations.flatMap((c: any) => 
           (c.treatments || []).map((t: any, idx: number) => {
             const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
-            const isIntaked = intakedIds.has(medId);
+            const rawRemarks = t.remarks || "";
+            const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
+            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)));
+            if (isServerIntaked) {
+              intakedIds.add(medId);
+              if (t.id) intakedIds.add(String(t.id));
+            }
             return {
               id: medId,
+              treatmentId: t.id ? String(t.id) : null,
+              rawRemarks,
               name: t.medicineName,
               dose: `${t.quantity} ${t.unit}`,
-              instructions: t.remarks || "No instructions",
+              instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
               timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
               nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
               status: isIntaked ? "intaked" : "next-intake",
@@ -205,6 +213,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
             };
           })
         );
+        AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
         setMedications(extractedMedications);
 
         const ptName = (patient.name || '').trim().toUpperCase();
@@ -250,12 +259,20 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               const extracted = userConsultations.flatMap((c: any) =>
                 (c.treatments || []).map((t: any, idx: number) => {
                   const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
-                  const isIntaked = intakedIds.has(medId);
+                  const rawRemarks = t.remarks || "";
+                  const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
+                  const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)));
+                  if (isServerIntaked) {
+                    intakedIds.add(medId);
+                    if (t.id) intakedIds.add(String(t.id));
+                  }
                   return {
                     id: medId,
+                    treatmentId: t.id ? String(t.id) : null,
+                    rawRemarks,
                     name: t.medicineName,
                     dose: `${t.quantity} ${t.unit}`,
-                    instructions: t.remarks || "No instructions",
+                    instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
                     timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
                     nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
                     status: isIntaked ? "intaked" : "next-intake",
@@ -263,6 +280,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
                   };
                 })
               );
+              AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
               setMedications(extracted);
             }
           })
@@ -367,7 +385,26 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   const handleIntakeMedication = useCallback((id: string) => {
-    setMedications(prev => prev.map(m => m.id === id ? { ...m, status: "intaked" } : m));
+    setMedications(prev => {
+      const targetMed = prev.find(m => m.id === id);
+      const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      const resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
+
+      if (resolvedTreatmentId) {
+        const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
+        const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
+        const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
+
+        fetch(`https://cura-backend-dvj5.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remarks: updatedRemarks }),
+        }).catch(() => {});
+      }
+
+      return prev.map(m => m.id === id ? { ...m, status: "intaked" } : m);
+    });
+
     AsyncStorage.getItem('@cura_intaked_meds').then(data => {
       let set = new Set<string>();
       if (data) {

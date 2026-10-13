@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Polyline, Path, Line, Rect, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
@@ -17,6 +17,32 @@ interface Props {
 }
 
 type Filter = "all" | "to-intake" | "intaked";
+
+function parseNextDoseTime(nextDoseStr?: string | null): Date | null {
+  if (!nextDoseStr) return null;
+  const str = String(nextDoseStr).trim();
+  if (!str) return null;
+
+  const dateMatch = str.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (dateMatch) {
+    const [_, datePart, hh, mm, ss] = dateMatch;
+    const [y, m, d] = datePart.split("-").map(Number);
+    return new Date(y, m - 1, d, parseInt(hh, 10), parseInt(mm, 10), ss ? parseInt(ss, 10) : 0);
+  }
+
+  const time24Match = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (time24Match) {
+    const now = new Date();
+    const hh = parseInt(time24Match[1], 10);
+    const mm = parseInt(time24Match[2], 10);
+    const ss = time24Match[3] ? parseInt(time24Match[3], 10) : 0;
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss);
+  }
+
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
+  return null;
+}
 
 function MedicinePillIcon({ size = 26 }: { size?: number }) {
   return (
@@ -55,6 +81,16 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [localIntakedIds, setLocalIntakedIds] = useState<Set<string>>(() => new Set());
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  const notifiedMedsRef = useRef<Set<string>>(new Set());
+
+  // 1-second interval for real-time countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem('@cura_intaked_meds')
@@ -71,21 +107,15 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       .catch(() => {});
   }, []);
 
-  const handleIntake = useCallback((id: string) => {
-    setLocalIntakedIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...next])).catch(() => {});
-      return next;
-    });
-    onIntake?.(id);
-  }, [onIntake]);
-
   // Normalize incoming list and sync with intaked state
   const normalizedMeds = useMemo(() => {
     const rawList = medications.length > 0 ? medications : MEDICATIONS;
     return rawList.map((m) => {
-      const isMarkedIntaked = localIntakedIds.has(m.id);
+      const isServerIntaked = Boolean(
+        (m.rawRemarks && m.rawRemarks.includes('[INTAKED]')) ||
+        (m.instructions && m.instructions.includes('[INTAKED]'))
+      );
+      const isMarkedIntaked = localIntakedIds.has(m.id) || (m.treatmentId && localIntakedIds.has(m.treatmentId)) || isServerIntaked;
       const isAlreadyIntaked = m.status === "intaked" || m.status === "taken";
       const status = (isMarkedIntaked || isAlreadyIntaked) ? "intaked" : "next-intake";
       return {
@@ -95,6 +125,33 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
     });
   }, [medications, localIntakedIds]);
 
+  const handleIntake = useCallback((id: string) => {
+    setLocalIntakedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...next])).catch(() => {});
+      return next;
+    });
+    onIntake?.(id);
+
+    // Patch directly to server so it never reverts across devices
+    const targetMed = normalizedMeds.find((m) => m.id === id);
+    const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    const resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
+
+    if (resolvedTreatmentId) {
+      const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
+      const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
+      const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
+
+      fetch(`https://cura-backend-dvj5.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remarks: updatedRemarks }),
+      }).catch(() => {});
+    }
+  }, [normalizedMeds, onIntake]);
+
   const toTakeList = useMemo(() => {
     return normalizedMeds.filter((m) => m.status !== "intaked");
   }, [normalizedMeds]);
@@ -103,6 +160,23 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
     return normalizedMeds.filter((m) => m.status === "intaked");
   }, [normalizedMeds]);
 
+  // Notify user when a pending medication reaches its scheduled time (due)
+  useEffect(() => {
+    toTakeList.forEach((med) => {
+      if (!med.nextDose) return;
+      const target = parseNextDoseTime(med.nextDose);
+      if (!target) return;
+      const diffSec = Math.floor((target.getTime() - currentTime) / 1000);
+      if (diffSec <= 0 && !notifiedMedsRef.current.has(med.id)) {
+        notifiedMedsRef.current.add(med.id);
+        Alert.alert(
+          "Oras na Para sa Intake! ⏰",
+          `Oras na para inumin ang iyong gamot: ${med.name} (${med.dose}). Mangyaring i-click ang 'Intake' pagkatapos inumin.`
+        );
+      }
+    });
+  }, [toTakeList, currentTime]);
+
   const statusItems = [
     { id: "to-intake" as const, label: "To Intake", count: toTakeList.length, dot: "#0994E8" },
     { id: "intaked" as const,   label: "Intaked",   count: intakedList.length, dot: "#10B981" },
@@ -110,7 +184,29 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
   ];
 
   const renderMedCard = (med: any, isToIntakeSection: boolean) => {
-    const cfg = statusConfig[med.status] || (isToIntakeSection ? statusConfig["next-intake"] : statusConfig["intaked"]);
+    const targetDate = med.nextDose ? parseNextDoseTime(med.nextDose) : null;
+    const diffSec = targetDate ? Math.floor((targetDate.getTime() - currentTime) / 1000) : null;
+    const isDue = diffSec !== null && diffSec <= 0;
+
+    let timeRemainingText = "";
+    if (diffSec !== null) {
+      if (diffSec > 0) {
+        const hrs = Math.floor(diffSec / 3600);
+        const mins = Math.floor((diffSec % 3600) / 60);
+        const secs = diffSec % 60;
+        if (hrs > 0) {
+          timeRemainingText = `${hrs}h ${mins}m ${secs}s`;
+        } else {
+          timeRemainingText = `${mins}m ${secs}s`;
+        }
+      } else {
+        timeRemainingText = "Due Now";
+      }
+    }
+
+    const cfg = isDue && isToIntakeSection
+      ? statusConfig["due-now"]
+      : (statusConfig[med.status] || (isToIntakeSection ? statusConfig["next-intake"] : statusConfig["intaked"]));
     const isExpanded = expanded === med.id;
 
     return (
@@ -118,9 +214,9 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
         key={med.id}
         className="rounded-[24px] overflow-hidden mb-3 bg-white border border-sky-100/70"
         style={{
-          shadowColor: "#0A2472",
+          shadowColor: isDue && isToIntakeSection ? "#D97706" : "#0A2472",
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
+          shadowOpacity: isDue && isToIntakeSection ? 0.16 : 0.08,
           shadowRadius: 12,
           elevation: 3,
         }}
@@ -158,13 +254,34 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                 >
                   {med.name}
                 </Text>
-                <Badge variant={cfg.badge}>{cfg.label}</Badge>
+                <Badge variant={cfg.badge}>
+                  {isDue && isToIntakeSection
+                    ? "⚠️ Due Now"
+                    : isToIntakeSection && diffSec !== null && diffSec > 0
+                    ? `⏳ In ${timeRemainingText}`
+                    : cfg.label}
+                </Badge>
               </View>
               <Text className="text-xs font-semibold text-white/80">{med.dose}</Text>
               {med.nextDose && med.status !== "intaked" && med.status !== "taken" && (
-                <Text className="text-xs font-bold text-sky-200 mt-0.5">
-                  Next: {formatTime12(med.nextDose)}
-                </Text>
+                <View className="flex-row items-center gap-1.5 mt-0.5 flex-wrap">
+                  <Text className="text-xs font-bold text-sky-200">
+                    Next: {formatTime12(med.nextDose)}
+                  </Text>
+                  {isDue ? (
+                    <View className="bg-amber-400 px-1.5 py-0.5 rounded-md">
+                      <Text className="text-[10px] font-black text-amber-950 uppercase tracking-wider">
+                        DUE FOR INTAKE
+                      </Text>
+                    </View>
+                  ) : timeRemainingText ? (
+                    <View className="bg-white/20 px-1.5 py-0.5 rounded-md">
+                      <Text className="text-[10px] font-black text-white">
+                        ⏳ {timeRemainingText} left
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
               )}
             </View>
             <View className="mt-1" style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }}>
@@ -178,9 +295,52 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
           </View>
         </Pressable>
 
+        {/* Timer & Due Status Section for To Intake */}
+        {isToIntakeSection && (
+          <View className="px-4 pt-3">
+            {isDue ? (
+              <View className="bg-amber-50 border border-amber-300 rounded-2xl p-3 flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2 flex-1 pr-2">
+                  <Text className="text-lg">⚠️</Text>
+                  <View className="flex-1">
+                    <Text className="text-xs font-bold text-amber-900" style={{ fontFamily: "Outfit" }}>
+                      Oras na para i-intake ang gamot!
+                    </Text>
+                    <Text className="text-[10px] text-amber-700 font-medium">
+                      Scheduled time: {formatTime12(med.nextDose)}
+                    </Text>
+                  </View>
+                </View>
+                <View className="bg-amber-500 px-2.5 py-1 rounded-xl">
+                  <Text className="text-[10px] font-black text-white">DUE</Text>
+                </View>
+              </View>
+            ) : timeRemainingText ? (
+              <View className="bg-sky-50 border border-sky-200 rounded-2xl p-3 flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-base">⏳</Text>
+                  <View>
+                    <Text className="text-xs font-bold text-[#002D72]" style={{ fontFamily: "Outfit" }}>
+                      Oras bago itake ang gamot:
+                    </Text>
+                    <Text className="text-[10px] text-slate-500 font-medium">
+                      Schedule: {formatTime12(med.nextDose)}
+                    </Text>
+                  </View>
+                </View>
+                <View className="bg-white border border-sky-300 px-2.5 py-1 rounded-xl shadow-xs">
+                  <Text className="text-xs font-black text-[#002D72]" style={{ fontFamily: "Outfit" }}>
+                    {timeRemainingText}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        )}
+
         {/* Bottom Section: White background */}
         {isExpanded && (
-          <View className="bg-white p-4 pt-3.5 flex-col gap-2.5">
+          <View className="bg-white p-4 pt-3 flex-col gap-2.5">
             {med.instructions ? (
               <View>
                 <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions / Remarks</Text>
@@ -209,19 +369,21 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
 
         {/* Intake button for To Intake section */}
         {isToIntakeSection && (
-          <View className={`bg-white px-4 pb-4 ${isExpanded ? "pt-1" : "pt-3.5"}`}>
+          <View className={`bg-white px-4 pb-4 ${isExpanded ? "pt-2" : "pt-3"}`}>
             <Pressable
               onPress={() => handleIntake(med.id)}
-              className="w-full bg-emerald-600 active:bg-emerald-700 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 shadow-sm"
+              className={`w-full ${isDue ? "bg-amber-600 active:bg-amber-700" : "bg-emerald-600 active:bg-emerald-700"} py-3 rounded-xl flex-row items-center justify-center gap-1.5 shadow-sm`}
               style={{
                 elevation: 2,
-                shadowColor: "#059669",
+                shadowColor: isDue ? "#D97706" : "#059669",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
               }}
             >
-              <Text className="text-xs font-bold text-white tracking-wide">✓ Intake</Text>
+              <Text className="text-xs font-bold text-white tracking-wide">
+                {isDue ? "✓ Intake Now (Due)" : "✓ Intake"}
+              </Text>
             </Pressable>
           </View>
         )}
