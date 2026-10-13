@@ -389,9 +389,16 @@ export function ProfileScreen({
 
     if (cat === "student") {
       if (formStudentCategory) payload.studentCategory = formStudentCategory.trim();
-      if (formGradeLevel) payload.gradeLevel = formGradeLevel.trim();
-      if (formCourse) payload.course = formCourse.trim();
-      if (formYearLevel) payload.yearLevel = formYearLevel.trim();
+      const isCol = !formStudentCategory || formStudentCategory.toLowerCase().includes("college");
+      if (isCol) {
+        payload.course = formCourse.trim();
+        payload.yearLevel = formYearLevel.trim();
+        payload.gradeLevel = "";
+      } else {
+        payload.gradeLevel = formGradeLevel.trim();
+        payload.course = "";
+        payload.yearLevel = "";
+      }
     } else if (cat === "employee") {
       if (formPosition) payload.position = formPosition.trim();
       if (formDepartment) payload.department = formDepartment.trim();
@@ -433,9 +440,17 @@ export function ProfileScreen({
         ...(cat === "student"
           ? {
               studentCategory: formStudentCategory.trim(),
-              gradeLevel: formGradeLevel.trim(),
-              course: formCourse.trim(),
-              yearLevel: formYearLevel.trim(),
+              ...((!formStudentCategory || formStudentCategory.toLowerCase().includes("college"))
+                ? {
+                    course: formCourse.trim(),
+                    yearLevel: formYearLevel.trim(),
+                    gradeLevel: "",
+                  }
+                : {
+                    gradeLevel: formGradeLevel.trim(),
+                    course: "",
+                    yearLevel: "",
+                  }),
             }
           : {}),
         ...(cat === "employee"
@@ -508,7 +523,12 @@ export function ProfileScreen({
         break;
       case "category":
         payload = { studentCategory: val };
-        userUpdates = { studentCategory: val };
+        userUpdates = {
+          studentCategory: val,
+          ...(val.toLowerCase().includes("college")
+            ? { gradeLevel: "" }
+            : { course: "", yearLevel: "" }),
+        };
         break;
       case "course":
         payload = { course: val };
@@ -772,27 +792,26 @@ export function ProfileScreen({
   ];
 
   const cat = user.category?.toLowerCase() || "";
+  const studentCat = (user as any).studentCategory || "";
+  const isCollege = !studentCat || studentCat.toLowerCase().includes("college");
+
   if (cat === "student") {
     myInfoItems.push({
       icon: "📋",
       label: "Category",
-      sub: (user as any).studentCategory || "—",
+      sub: studentCat || "—",
       color: "#FEE2E2",
       onPress: () =>
         openSingleEdit({
           key: "category",
           label: "Category",
-          value: (user as any).studentCategory || "",
+          value: studentCat || "",
           type: "select",
           options: ["College", "Senior High", "Junior High", "Elementary"],
         }),
     });
-    if (
-      (user as any).gradeLevel ||
-      (user as any).studentCategory === "Senior High" ||
-      (user as any).studentCategory === "Junior High" ||
-      (user as any).studentCategory === "Elementary"
-    ) {
+
+    if (!isCollege || (user as any).gradeLevel) {
       myInfoItems.push({
         icon: "📈",
         label: "Grade Level",
@@ -807,32 +826,35 @@ export function ProfileScreen({
           }),
       });
     }
-    myInfoItems.push({
-      icon: "🎓",
-      label: "Course",
-      sub: user.course || "—",
-      color: "#ECFDF5",
-      onPress: () =>
-        openSingleEdit({
-          key: "course",
-          label: "Course",
-          value: user.course || "",
-          type: "text",
-        }),
-    });
-    myInfoItems.push({
-      icon: "📊",
-      label: "Year Level",
-      sub: user.yearLevel || "—",
-      color: "#F5F3FF",
-      onPress: () =>
-        openSingleEdit({
-          key: "yearLevel",
-          label: "Year Level",
-          value: user.yearLevel || "",
-          type: "text",
-        }),
-    });
+
+    if (isCollege) {
+      myInfoItems.push({
+        icon: "🎓",
+        label: "Course",
+        sub: user.course || "—",
+        color: "#ECFDF5",
+        onPress: () =>
+          openSingleEdit({
+            key: "course",
+            label: "Course",
+            value: user.course || "",
+            type: "text",
+          }),
+      });
+      myInfoItems.push({
+        icon: "📊",
+        label: "Year Level",
+        sub: user.yearLevel || "—",
+        color: "#F5F3FF",
+        onPress: () =>
+          openSingleEdit({
+            key: "yearLevel",
+            label: "Year Level",
+            value: user.yearLevel || "",
+            type: "text",
+          }),
+      });
+    }
   } else if (cat === "employee") {
     myInfoItems.push({
       icon: "💼",
@@ -1060,7 +1082,9 @@ export function ProfileScreen({
               </View>
               {user.category?.toLowerCase() === "student" && (
                 <Text className="text-[10px] font-semibold text-slate-500">
-                  {[(user as any).studentCategory, user.course, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null, user.yearLevel].filter(Boolean).join(' · ')}
+                  {((user as any).studentCategory || "").toLowerCase() !== "college" && (user as any).studentCategory
+                    ? [(user as any).studentCategory, (user as any).gradeLevel ? `Grade ${(user as any).gradeLevel}` : null].filter(Boolean).join(' · ')
+                    : [(user as any).studentCategory, user.course, user.yearLevel].filter(Boolean).join(' · ')}
                 </Text>
               )}
             </View>
@@ -1638,7 +1662,15 @@ export function ProfileScreen({
                       {["College", "Senior High", "Junior High", "Elementary"].map((sc) => (
                         <Pressable
                           key={sc}
-                          onPress={() => setFormStudentCategory(sc)}
+                          onPress={() => {
+                            setFormStudentCategory(sc);
+                            if (sc !== "College") {
+                              setFormCourse("");
+                              setFormYearLevel("");
+                            } else {
+                              setFormGradeLevel("");
+                            }
+                          }}
                           className="px-3 py-1.5 rounded-full border"
                           style={{
                             backgroundColor: formStudentCategory === sc ? "#0EA5E9" : "#F8FAFC",
@@ -1656,36 +1688,43 @@ export function ProfileScreen({
                     </View>
                   </View>
 
-                  <View className="mb-3">
-                    <Text className="text-xs font-bold text-slate-600 mb-1.5">Course / Strand</Text>
-                    <TextInput
-                      value={formCourse}
-                      onChangeText={setFormCourse}
-                      placeholder="e.g. BS Information Technology"
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
-                    />
-                  </View>
+                  {/* College: Course and Year Level */}
+                  {(!formStudentCategory || formStudentCategory.toLowerCase().includes("college")) && (
+                    <>
+                      <View className="mb-3">
+                        <Text className="text-xs font-bold text-slate-600 mb-1.5">Course / Strand</Text>
+                        <TextInput
+                          value={formCourse}
+                          onChangeText={setFormCourse}
+                          placeholder="e.g. BS Information Technology"
+                          className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                        />
+                      </View>
 
-                  <View className="flex-row gap-3 mb-3">
-                    <View className="flex-1">
-                      <Text className="text-xs font-bold text-slate-600 mb-1.5">Year Level</Text>
-                      <TextInput
-                        value={formYearLevel}
-                        onChangeText={setFormYearLevel}
-                        placeholder="e.g. 1st Year, 2nd Year"
-                        className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
-                      />
-                    </View>
-                    <View className="flex-1">
+                      <View className="mb-3">
+                        <Text className="text-xs font-bold text-slate-600 mb-1.5">Year Level</Text>
+                        <TextInput
+                          value={formYearLevel}
+                          onChangeText={setFormYearLevel}
+                          placeholder="e.g. 1st Year, 2nd Year"
+                          className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                        />
+                      </View>
+                    </>
+                  )}
+
+                  {/* Non-College (Senior High, Junior High, Elementary): Grade Level */}
+                  {formStudentCategory && !formStudentCategory.toLowerCase().includes("college") && (
+                    <View className="mb-3">
                       <Text className="text-xs font-bold text-slate-600 mb-1.5">Grade Level</Text>
                       <TextInput
                         value={formGradeLevel}
                         onChangeText={setFormGradeLevel}
-                        placeholder="e.g. 11, 12"
+                        placeholder={formStudentCategory === "Senior High" ? "e.g. 11, 12" : "e.g. 7, 8, 9, 10"}
                         className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
                       />
                     </View>
-                  </View>
+                  )}
                 </>
               )}
 
