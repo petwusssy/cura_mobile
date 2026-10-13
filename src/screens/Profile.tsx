@@ -1137,9 +1137,25 @@ export function ProfileScreen({
             </Text>
             <View className="flex-row items-center gap-2 mt-1.5">
               <View
-                className="rounded-full px-2.5 py-0.5 bg-cura-900"
+                className="rounded-full px-2.5 py-0.5 overflow-hidden relative"
               >
-                <Text className="text-[10px] font-bold text-white capitalize">{user.category || "patient"}</Text>
+                <LinearGradient
+                  colors={ADMIN_PORTAL_GRADIENT.colors}
+                  start={ADMIN_PORTAL_GRADIENT.start}
+                  end={ADMIN_PORTAL_GRADIENT.end}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text
+                  className="text-[10px] font-bold text-white capitalize"
+                  style={{
+                    fontFamily: "Outfit",
+                    textShadowColor: "rgba(0, 0, 0, 0.25)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
+                  {user.category || "patient"}
+                </Text>
               </View>
               {user.category?.toLowerCase() === "student" && (
                 <Text className="text-[10px] font-semibold text-slate-500">
