@@ -190,6 +190,10 @@ export function ProfileScreen({
   });
 
   // Edit My Information form state
+  const [formId, setFormId] = useState("");
+  const [formGender, setFormGender] = useState("");
+  const [formDob, setFormDob] = useState("");
+  const [formEmail, setFormEmail] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formEmergencyName, setFormEmergencyName] = useState("");
   const [formEmergencyPhone, setFormEmergencyPhone] = useState("");
@@ -304,6 +308,10 @@ export function ProfileScreen({
     }
 
     // Populate current values
+    setFormId((user as any).id || user.id_number || "");
+    setFormGender(user.gender || (user as any).sex || "");
+    setFormDob(user.dob || (user as any).birthday || "");
+    setFormEmail(user.email || "");
     setFormPhone(user.phone || (user as any).contact || "");
     setFormEmergencyName(user.emergencyName || (user as any).emergencyContact || "");
     setFormEmergencyPhone(user.emergencyPhone || "");
@@ -369,6 +377,10 @@ export function ProfileScreen({
     const patientId = user.id || (user as any).id_number;
 
     const payload: any = {
+      ...(formId.trim() ? { id_number: formId.trim() } : {}),
+      ...(formGender.trim() ? { gender: formGender.trim(), sex: formGender.trim() } : {}),
+      ...(formDob.trim() ? { dob: formDob.trim(), birthday: formDob.trim() } : {}),
+      ...(formEmail.trim() ? { email: formEmail.trim() } : {}),
       contact: formPhone.trim(),
       phone: formPhone.trim(),
       emergencyContact: formEmergencyName.trim().toUpperCase(),
@@ -409,6 +421,10 @@ export function ProfileScreen({
       // 3. Update local session state
       const updatedUser: any = {
         ...user,
+        ...(formId.trim() ? { id: formId.trim(), id_number: formId.trim() } : {}),
+        ...(formGender.trim() ? { gender: formGender.trim(), sex: formGender.trim() } : {}),
+        ...(formDob.trim() ? { dob: formDob.trim(), birthday: formDob.trim() } : {}),
+        ...(formEmail.trim() ? { email: formEmail.trim() } : {}),
         phone: formPhone.trim(),
         contact: formPhone.trim(),
         emergencyName: formEmergencyName.trim().toUpperCase(),
@@ -1494,6 +1510,53 @@ export function ProfileScreen({
             </View>
 
             <ScrollView className="py-4 space-y-4" keyboardShouldPersistTaps="handled">
+              {/* ID Number */}
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">ID Number</Text>
+                <TextInput
+                  value={formId}
+                  onChangeText={setFormId}
+                  placeholder="e.g. 2024-00123"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              {/* Gender */}
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Gender</Text>
+                <View className="flex-row gap-2">
+                  {["Male", "Female"].map((g) => (
+                    <Pressable
+                      key={g}
+                      onPress={() => setFormGender(g)}
+                      className="px-4 py-2 rounded-xl border flex-1 items-center"
+                      style={{
+                        backgroundColor: formGender === g ? "#0EA5E9" : "#F8FAFC",
+                        borderColor: formGender === g ? "#0EA5E9" : "#E2E8F0",
+                      }}
+                    >
+                      <Text
+                        className="text-xs font-bold"
+                        style={{ color: formGender === g ? "#FFFFFF" : "#475569" }}
+                      >
+                        {g}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {/* Date of Birth */}
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Date of Birth</Text>
+                <TextInput
+                  value={formDob}
+                  onChangeText={setFormDob}
+                  placeholder="YYYY-MM-DD"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
               {/* Contact Number */}
               <View className="mb-3">
                 <Text className="text-xs font-bold text-slate-600 mb-1.5">Phone / Contact Details</Text>
@@ -1502,6 +1565,19 @@ export function ProfileScreen({
                   onChangeText={setFormPhone}
                   placeholder="e.g. 09123456789"
                   keyboardType="phone-pad"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                />
+              </View>
+
+              {/* Email Address */}
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-slate-600 mb-1.5">Email Address</Text>
+                <TextInput
+                  value={formEmail}
+                  onChangeText={setFormEmail}
+                  placeholder="e.g. name@university.edu.ph"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                   className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
                 />
               </View>
