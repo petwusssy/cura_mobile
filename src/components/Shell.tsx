@@ -121,38 +121,31 @@ function AnimatedBackground() {
 import { FogBackground } from "./FogBackground";
 
 export function MobileShell({ children, theme = 'light' }: MobileShellProps) {
-  const isWeb = Platform.OS === 'web';
   return (
     <View
+      className={`flex-1 ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
       style={{
         flex: 1,
-        backgroundColor: isWeb ? '#081734' : '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center',
         width: '100%',
-        height: '100%',
+        minHeight: '100%',
+        backgroundColor: '#FFFFFF',
       }}
     >
+      <FogBackground />
+
+      {/* Responsive screen wrapper: full width on mobile, comfortably centered on tablet/desktop */}
       <View
-        className={`flex-1 ${theme === 'dark' ? 'dark' : theme === 'ocean' ? 'ocean' : ''}`}
+        className="flex-1 z-10 w-full"
         style={{
+          flex: 1,
           width: '100%',
-          maxWidth: isWeb ? 460 : undefined,
-          height: '100%',
-          backgroundColor: '#FFFFFF',
-          overflow: 'hidden',
+          maxWidth: 640,
+          marginHorizontal: 'auto',
+          alignSelf: 'center',
           position: 'relative',
-          shadowColor: '#000000',
-          shadowOffset: { width: 0, height: 12 },
-          shadowOpacity: isWeb ? 0.35 : 0,
-          shadowRadius: isWeb ? 28 : 0,
-          elevation: isWeb ? 10 : 0,
         }}
       >
-        <FogBackground />
-
-        {/* Screen content */}
-        <View className="flex-1 z-10" style={{ width: '100%', height: '100%' }}>{children}</View>
+        {children}
       </View>
     </View>
   );

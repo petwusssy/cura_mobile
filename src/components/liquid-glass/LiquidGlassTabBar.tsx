@@ -245,11 +245,15 @@ export function LiquidGlassTabBar({
 const styles = StyleSheet.create({
   outerWrapper: {
     position: "absolute",
-    left: 16,
-    right: 16,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    paddingHorizontal: 16,
     zIndex: 999,
   },
   shadowContainer: {
+    width: "100%",
+    maxWidth: 540,
     borderRadius: 32,
     shadowOffset: { width: 0, height: 10 },
     shadowRadius: 22,

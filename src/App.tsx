@@ -421,8 +421,6 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const isAuthenticated = Boolean(user?.id || user?.email);
 
   const renderScreen = () => {
-    if (!splashDone) return <SplashScreen onDone={handleSplashDone} />;
-
     if (!isAuthenticated) {
       switch (current.screen) {
         case "login":
@@ -463,12 +461,16 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   return (
     <AlertProvider>
       {splashDone && isAuthenticated && <NotificationPoller user={user} setNotifications={setNotifications} />}
-      <MobileShell theme={theme}>
-        {renderScreen()}
-        {splashDone && isAuthenticated && isMainTab && (
-          <BottomNav active={current.screen} navigate={navigate} isDark={theme === 'dark'} />
-        )}
-      </MobileShell>
+      {!splashDone ? (
+        <SplashScreen onDone={handleSplashDone} />
+      ) : (
+        <MobileShell theme={theme}>
+          {renderScreen()}
+          {isAuthenticated && isMainTab && (
+            <BottomNav active={current.screen} navigate={navigate} isDark={theme === 'dark'} />
+          )}
+        </MobileShell>
+      )}
     </AlertProvider>
   );
 }

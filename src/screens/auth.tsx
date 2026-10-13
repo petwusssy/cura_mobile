@@ -3222,6 +3222,9 @@ export function WelcomeScreen({
         onLayout={onSheetLayout}
         style={[
           {
+            width: "100%",
+            maxWidth: 640,
+            alignSelf: "center",
             overflow: "hidden",
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
