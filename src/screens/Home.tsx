@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
-import { Card, SectionHeader, Badge, AvatarBadge, Header } from "../components/Shell";
-import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT, MASCOTS } from "../data";
+import { Card, SectionHeader, Badge, Header } from "../components/Shell";
+import { CONSULTATIONS, MEDICATIONS, NOTIFICATIONS, BED_ASSIGNMENT } from "../data";
 import { getManilaHour, formatManilaDateTime, formatTime12 } from "../utils/philippineTime";
 
 interface Props {
@@ -29,7 +29,6 @@ import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
   const unread = notifications.filter((n) => !n.read).length;
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
 
@@ -233,7 +232,50 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         {/* 1. Header Section */}
         <View className="px-6 flex-row items-center justify-between mb-6 mt-4">
           <View className="flex-row items-center gap-3">
-            <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={48} />
+            <Pressable onPress={() => navigate("profile")} className="active:opacity-85">
+              {user.avatarUrl ? (
+                <Image
+                  source={{ uri: user.avatarUrl }}
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    borderWidth: 2,
+                    borderColor: "rgba(0, 86, 179, 0.3)",
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: "#0056B3",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 2,
+                    borderColor: "rgba(0, 86, 179, 0.3)",
+                    shadowColor: "#0056B3",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 6,
+                    elevation: 3,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontSize: 20,
+                      fontWeight: "900",
+                      fontFamily: "Outfit",
+                    }}
+                  >
+                    {(user.displayName || user.firstName || "U").trim().charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
             <View>
               <Text className="text-cura-900/75 text-xs font-semibold -mb-0.5">
                 Hi, {getGreeting()}
