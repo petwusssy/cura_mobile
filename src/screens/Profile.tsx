@@ -40,6 +40,17 @@ interface Props {
 const COOLDOWN_DAYS = 7;
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
 
+function CooldownBlueIcon({ size = 12, color = "#0056B3" }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 22h14" />
+      <Path d="M5 2h14" />
+      <Path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+      <Path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+    </Svg>
+  );
+}
+
 function renderInfoBlueIcon(label: string) {
   const blue = "#0056B3";
   switch (label) {
@@ -1034,7 +1045,7 @@ export function ProfileScreen({
           className="flex-row items-center gap-1 px-3 py-1 rounded-full active:opacity-80"
           style={{
             backgroundColor: infoCooldown.active
-              ? "rgba(251, 191, 36, 0.15)"
+              ? "rgba(224, 242, 254, 0.9)"
               : isDark
               ? "rgba(255, 255, 255, 0.05)"
               : "rgba(255, 255, 255, 0.15)",
@@ -1046,17 +1057,17 @@ export function ProfileScreen({
           }}
         >
           {infoCooldown.active ? (
-            <Text
-              className="text-[10px] font-bold"
-              style={{
-                color: "#FDE68A",
-                textShadowColor: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)",
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
-              }}
-            >
-              ⏳ {infoCooldown.days}d Cooldown
-            </Text>
+            <View className="flex-row items-center gap-1">
+              <CooldownBlueIcon size={11} color="#0056B3" />
+              <Text
+                className="text-[10px] font-bold text-[#0056B3]"
+                style={{
+                  fontFamily: "Outfit",
+                }}
+              >
+                {infoCooldown.days}d Cooldown
+              </Text>
+            </View>
           ) : (
             <>
               <Svg
@@ -1093,13 +1104,31 @@ export function ProfileScreen({
     },
     {
       title: "Preferences",
-      action: null,
+      action: (photoCooldown.active || nameCooldown.active || notifCooldown.active || securityCooldown.active) ? (
+        <View
+          className="flex-row items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 border border-sky-200"
+        >
+          <CooldownBlueIcon size={11} color="#0056B3" />
+          <Text
+            className="text-[10px] font-bold text-[#0056B3]"
+            style={{ fontFamily: "Outfit" }}
+          >
+            {Math.max(
+              photoCooldown.active ? photoCooldown.days : 0,
+              nameCooldown.active ? nameCooldown.days : 0,
+              notifCooldown.active ? notifCooldown.days : 0,
+              securityCooldown.active ? securityCooldown.days : 0
+            )}d Cooldown
+          </Text>
+        </View>
+      ) : null,
       items: [
         {
           icon: "🔔",
           label: "Notification Preferences",
+          cooldownActive: notifCooldown.active,
           sub: notifCooldown.active
-            ? `⏳ Cooldown (${notifCooldown.days}d) · Reminders & alerts`
+            ? `Cooldown (${notifCooldown.days}d) · Reminders & alerts`
             : "Reminders, advisories & alerts",
           color: "#EFF8FF",
           onPress: handleOpenNotifModal,
@@ -1107,12 +1136,13 @@ export function ProfileScreen({
         {
           icon: "📷",
           label: "Profile Photo & Display Name",
+          cooldownActive: photoCooldown.active || nameCooldown.active,
           sub: photoCooldown.active && nameCooldown.active
-            ? `⏳ Cooldown (${Math.max(photoCooldown.days, nameCooldown.days)}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
+            ? `Cooldown (${Math.max(photoCooldown.days, nameCooldown.days)}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
             : photoCooldown.active
-            ? `⏳ Photo cooldown (${photoCooldown.days}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
+            ? `Photo cooldown (${photoCooldown.days}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
             : nameCooldown.active
-            ? `⏳ Name cooldown (${nameCooldown.days}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
+            ? `Name cooldown (${nameCooldown.days}d) · ${(user.displayName || user.firstName || "Patient").toUpperCase()}`
             : (user.displayName || user.firstName || "Patient").toUpperCase(),
           color: "#EFF6FF",
           onPress: handleOpenMascotModal,
@@ -1120,8 +1150,9 @@ export function ProfileScreen({
         {
           icon: "🔒",
           label: "Privacy & Security",
+          cooldownActive: securityCooldown.active,
           sub: securityCooldown.active
-            ? `⏳ Cooldown (${securityCooldown.days}d) · Password & lock`
+            ? `Cooldown (${securityCooldown.days}d) · Password & lock`
             : "Password, biometrics & lock",
           color: "#ECFDF5",
           onPress: handleOpenSecurityModal,
@@ -1129,6 +1160,7 @@ export function ProfileScreen({
         {
           icon: "ℹ️",
           label: "About CURA",
+          cooldownActive: false,
           sub: "Version 1.0.0 · Information",
           color: "#F8FAFC",
           onPress: () => setShowAboutModal(true),
@@ -1378,12 +1410,19 @@ export function ProfileScreen({
                         {item.label}
                       </Text>
                       {item.sub ? (
-                        <Text
-                          className="text-xs mt-0.5 font-medium text-slate-500"
-                          numberOfLines={1}
-                        >
-                          {item.sub}
-                        </Text>
+                        <View className="flex-row items-center gap-1 mt-0.5">
+                          {item.cooldownActive && (
+                            <CooldownBlueIcon size={11} color="#0056B3" />
+                          )}
+                          <Text
+                            className={`text-xs ${
+                              item.cooldownActive ? "font-semibold text-[#0056B3]" : "font-medium text-slate-500"
+                            }`}
+                            numberOfLines={1}
+                          >
+                            {item.sub}
+                          </Text>
+                        </View>
                       ) : null}
                     </View>
                     <Svg
@@ -2067,11 +2106,16 @@ export function ProfileScreen({
                 </View>
               ))}
 
-              <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mt-2">
-                <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
-                <Text className="text-[11px] text-amber-700">
-                  Saving changes will activate a 7-day cooldown before preferences can be edited again.
-                </Text>
+              <View className="p-3 bg-sky-50 rounded-xl border border-sky-200 mt-2 flex-row items-start gap-2">
+                <View className="mt-0.5">
+                  <CooldownBlueIcon size={14} color="#0056B3" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs font-bold text-sky-900 mb-0.5">7-Day Edit Cooldown Policy</Text>
+                  <Text className="text-[11px] text-sky-700">
+                    Saving changes will activate a 7-day cooldown before preferences can be edited again.
+                  </Text>
+                </View>
               </View>
             </ScrollView>
 
@@ -2277,11 +2321,16 @@ export function ProfileScreen({
                 )}
               </View>
 
-              <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-2">
-                <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
-                <Text className="text-[11px] text-amber-700">
-                  Profile photo and display name each have independent 7-day cooldowns. Updating one will not lock the other.
-                </Text>
+              <View className="p-3 bg-sky-50 rounded-xl border border-sky-200 mb-2 flex-row items-start gap-2">
+                <View className="mt-0.5">
+                  <CooldownBlueIcon size={14} color="#0056B3" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs font-bold text-sky-900 mb-0.5">7-Day Edit Cooldown Policy</Text>
+                  <Text className="text-[11px] text-sky-700">
+                    Profile photo and display name each have independent 7-day cooldowns. Updating one will not lock the other.
+                  </Text>
+                </View>
               </View>
             </ScrollView>
 
@@ -2416,11 +2465,16 @@ export function ProfileScreen({
                 />
               </View>
 
-              <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-2">
-                <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
-                <Text className="text-[11px] text-amber-700">
-                  Password and security changes are subject to a 7-day cooldown to prevent unauthorized tampering.
-                </Text>
+              <View className="p-3 bg-sky-50 rounded-xl border border-sky-200 mb-2 flex-row items-start gap-2">
+                <View className="mt-0.5">
+                  <CooldownBlueIcon size={14} color="#0056B3" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs font-bold text-sky-900 mb-0.5">7-Day Edit Cooldown Policy</Text>
+                  <Text className="text-[11px] text-sky-700">
+                    Password and security changes are subject to a 7-day cooldown to prevent unauthorized tampering.
+                  </Text>
+                </View>
               </View>
             </ScrollView>
 
