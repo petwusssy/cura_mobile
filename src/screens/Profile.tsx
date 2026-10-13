@@ -19,10 +19,9 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline, Rect, Circle, Line } from "react-native-svg";
+import * as ImagePicker from "expo-image-picker";
 import type { Screen, AppUser } from "../types";
-import { AvatarBadge } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MASCOTS } from "../data";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 interface Props {
@@ -114,12 +113,11 @@ function renderInfoBlueIcon(label: string) {
         </Svg>
       );
     case "Mascot & Display Name":
+    case "Profile Photo & Display Name":
       return (
         <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <Circle cx="12" cy="12" r="10" />
-          <Path d="M8 14s1.5 2 4 2 4-2 4-2" />
-          <Line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3" />
-          <Line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3" />
+          <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+          <Circle cx="12" cy="13" r="4" />
         </Svg>
       );
     case "Privacy & Security":
@@ -163,7 +161,6 @@ export function ProfileScreen({
   const insets = useSafeAreaInsets();
   const systemScheme = useColorScheme();
   const isDark = theme === "dark" || systemScheme === "dark";
-  const mascot = MASCOTS.find((m) => m.id === user.avatarId) || MASCOTS[0];
   const userKey = user.id || (user as any).id_number || user.email || "default";
 
   // Modals visibility
@@ -232,9 +229,9 @@ export function ProfileScreen({
   const [notifAdvisories, setNotifAdvisories] = useState(true);
   const [notifSoundAlerts, setNotifSoundAlerts] = useState(true);
 
-  // Mascot & Display Name state
+  // Profile Photo & Display Name state
   const [formDisplayName, setFormDisplayName] = useState("");
-  const [selectedMascotId, setSelectedMascotId] = useState(mascot.id);
+  const [formAvatarUrl, setFormAvatarUrl] = useState<string | null>(user.avatarUrl || null);
 
   // Security form state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -344,14 +341,39 @@ export function ProfileScreen({
     if (cd.active) {
       Alert.alert(
         "Cooldown Active (7 Days)",
-        `You recently modified your preferences. Mascot & Display Name changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
+        `You recently modified your profile photo or display name. Changes are limited to once every 7 days.\n\nYou can edit this again in ${cd.days} day(s) (available on ${cd.date}).`,
         [{ text: "Understood" }]
       );
       return;
     }
     setFormDisplayName(user.displayName || user.firstName || "");
-    setSelectedMascotId(user.avatarId || "pulse");
+    setFormAvatarUrl(user.avatarUrl || null);
     setShowMascotModal(true);
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Photo library access is needed to select a profile picture."
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setFormAvatarUrl(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert("Error", "Could not pick image. Please try again.");
+    }
   };
 
   const handleOpenSecurityModal = async () => {
@@ -624,17 +646,14 @@ export function ProfileScreen({
     );
   };
 
-  // Save Mascot & Display Name
+  // Save Profile Photo & Display Name
   const handleSaveMascot = async () => {
-    const targetMascot = MASCOTS.find((m) => m.id === selectedMascotId) || MASCOTS[0];
     const cleanedName = formDisplayName.trim() || user.firstName || "PATIENT";
 
     const updatedUser: any = {
       ...user,
       displayName: cleanedName,
-      avatarId: targetMascot.id,
-      avatarColor: targetMascot.color,
-      avatarEmoji: targetMascot.emoji,
+      avatarUrl: formAvatarUrl,
     };
 
     if (setUser) setUser(updatedUser);
@@ -643,8 +662,8 @@ export function ProfileScreen({
     await refreshCooldowns();
     setShowMascotModal(false);
     Alert.alert(
-      "Mascot & Name Updated",
-      `Display name and avatar updated to ${targetMascot.name}.\n\nNote: You can edit preferences again after 7 days.`,
+      "Profile Updated",
+      "Display name and profile photo updated successfully.\n\nNote: You can edit preferences again after 7 days.",
       [{ text: "OK" }]
     );
   };
@@ -1005,10 +1024,10 @@ export function ProfileScreen({
           onPress: handleOpenNotifModal,
         },
         {
-          icon: "🎨",
-          label: "Mascot & Display Name",
-          sub: `${mascot.name} · ${(user.displayName || user.firstName || "").toUpperCase()}`,
-          color: "#F5F3FF",
+          icon: "📷",
+          label: "Profile Photo & Display Name",
+          sub: (user.displayName || user.firstName || "Patient").toUpperCase(),
+          color: "#EFF6FF",
           onPress: handleOpenMascotModal,
         },
         {
@@ -1045,22 +1064,64 @@ export function ProfileScreen({
 
         <View className="flex-row items-center gap-4">
           <View className="relative">
-            <AvatarBadge emoji={mascot.emoji} color={mascot.color} bg={mascot.bg} size={66} />
+            {user.avatarUrl ? (
+              <Image
+                source={{ uri: user.avatarUrl }}
+                style={{
+                  width: 66,
+                  height: 66,
+                  borderRadius: 33,
+                  borderWidth: 2.5,
+                  borderColor: "rgba(0, 86, 179, 0.3)",
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View
+                style={{
+                  width: 66,
+                  height: 66,
+                  borderRadius: 33,
+                  backgroundColor: "#0056B3",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2.5,
+                  borderColor: "rgba(0, 86, 179, 0.3)",
+                  shadowColor: "#0056B3",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 28,
+                    fontWeight: "900",
+                    fontFamily: "Outfit",
+                  }}
+                >
+                  {(user.displayName || user.firstName || "U").trim().charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
             <Pressable
               onPress={handleOpenMascotModal}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center bg-cura-900"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full items-center justify-center bg-[#0056B3]"
               style={{
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
                 elevation: 4,
-                shadowColor: '#000',
+                shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 8,
               }}
             >
-              <Svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              <Svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <Circle cx="12" cy="13" r="4" />
               </Svg>
             </Pressable>
           </View>
@@ -1951,22 +2012,119 @@ export function ProfileScreen({
       </Modal>
 
       {/* ========================================================================= */}
-      {/* 3. MASCOT & DISPLAY NAME MODAL                                            */}
+      {/* 3. PROFILE PHOTO & DISPLAY NAME MODAL                                     */}
       {/* ========================================================================= */}
       <Modal visible={showMascotModal} transparent animationType="slide" onRequestClose={() => setShowMascotModal(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 justify-end bg-black/60">
-          <View className="bg-white rounded-t-[36px] max-h-[88%] p-6">
-            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <View>
-                <Text className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>Mascot & Display Name</Text>
-                <Text className="text-xs text-slate-400">Choose your patient avatar companion</Text>
+          <View className="bg-white rounded-t-[36px] max-h-[88%] overflow-hidden">
+            {/* Modal Header: Blue Gradient */}
+            <View className="relative overflow-hidden px-6 pt-6 pb-4 border-b border-sky-100/60">
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <Text
+                    className="text-lg font-black text-white"
+                    style={{
+                      fontFamily: "Outfit",
+                      textShadowColor: "rgba(0, 0, 0, 0.25)",
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 2,
+                    }}
+                  >
+                    Profile Photo & Display Name
+                  </Text>
+                  <Text className="text-xs text-white/80 mt-0.5">
+                    Upload your photo and set preferred nickname
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setShowMascotModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 border border-white/30 items-center justify-center active:bg-white/30"
+                >
+                  <Text className="text-white font-bold text-sm">✕</Text>
+                </Pressable>
               </View>
-              <Pressable onPress={() => setShowMascotModal(false)} className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center">
-                <Text className="text-slate-500 font-bold text-sm">✕</Text>
-              </Pressable>
             </View>
 
-            <ScrollView className="py-4" keyboardShouldPersistTaps="handled">
+            <ScrollView className="px-6 py-4" keyboardShouldPersistTaps="handled">
+              {/* Profile Photo Upload Section */}
+              <Text className="text-xs font-bold text-slate-600 mb-3">Profile Photo</Text>
+              <View className="items-center mb-5">
+                <View className="relative mb-3">
+                  {formAvatarUrl ? (
+                    <Image
+                      source={{ uri: formAvatarUrl }}
+                      style={{
+                        width: 96,
+                        height: 96,
+                        borderRadius: 48,
+                        borderWidth: 3,
+                        borderColor: "#0056B3",
+                      }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 96,
+                        height: 96,
+                        borderRadius: 48,
+                        backgroundColor: "#0056B3",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: 3,
+                        borderColor: "#0056B3",
+                        shadowColor: "#0056B3",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 10,
+                        elevation: 4,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#FFFFFF",
+                          fontSize: 42,
+                          fontWeight: "900",
+                          fontFamily: "Outfit",
+                        }}
+                      >
+                        {(formDisplayName || user.displayName || user.firstName || "U").trim().charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View className="flex-row gap-2">
+                  <Pressable
+                    onPress={handlePickImage}
+                    className="flex-row items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-50 border border-sky-200 active:bg-sky-100"
+                  >
+                    <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0056B3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <Circle cx="12" cy="13" r="4" />
+                    </Svg>
+                    <Text className="text-xs font-bold" style={{ color: "#0056B3", fontFamily: "Outfit" }}>
+                      {formAvatarUrl ? "Change Photo" : "Upload Image"}
+                    </Text>
+                  </Pressable>
+
+                  {formAvatarUrl && (
+                    <Pressable
+                      onPress={() => setFormAvatarUrl(null)}
+                      className="px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 active:bg-rose-100 items-center justify-center"
+                    >
+                      <Text className="text-xs font-bold text-rose-600">Remove</Text>
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+
               <View className="mb-4">
                 <Text className="text-xs font-bold text-slate-600 mb-1.5">Display Name / Preferred Nickname</Text>
                 <TextInput
@@ -1977,54 +2135,49 @@ export function ProfileScreen({
                 />
               </View>
 
-              <Text className="text-xs font-bold text-slate-600 mb-2">Select Your Clinic Mascot</Text>
-              <View className="flex-row flex-wrap justify-between gap-y-3 mb-4">
-                {MASCOTS.map((m) => {
-                  const isSelected = selectedMascotId === m.id;
-                  return (
-                    <Pressable
-                      key={m.id}
-                      onPress={() => setSelectedMascotId(m.id)}
-                      className="w-[23%] p-2.5 rounded-2xl items-center justify-center border-2"
-                      style={{
-                        backgroundColor: isSelected ? m.bg : "#F8FAFC",
-                        borderColor: isSelected ? m.color : "#E2E8F0",
-                        transform: [{ scale: isSelected ? 1.05 : 1 }],
-                      }}
-                    >
-                      <Text className="text-2xl mb-1">{m.emoji}</Text>
-                      <Text
-                        className="text-[10px] font-bold text-center"
-                        style={{ color: isSelected ? m.color : "#475569" }}
-                        numberOfLines={1}
-                      >
-                        {m.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
               <View className="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-2">
                 <Text className="text-xs font-bold text-amber-800 mb-0.5">⚠️ 7-Day Edit Cooldown Policy</Text>
                 <Text className="text-[11px] text-amber-700">
-                  Changing your mascot or display name triggers a 7-day cooldown before it can be updated again.
+                  Changing your profile photo or display name triggers a 7-day cooldown before it can be updated again.
                 </Text>
               </View>
             </ScrollView>
 
-            <View className="pt-3 border-t border-slate-100 flex-row gap-3">
+            <View className="p-6 pt-3 border-t border-slate-100 flex-row gap-3 bg-white">
               <Pressable
                 onPress={() => setShowMascotModal(false)}
-                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center"
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 items-center justify-center active:bg-slate-200"
               >
                 <Text className="text-xs font-bold text-slate-600">Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleSaveMascot}
-                className="flex-1 py-3.5 rounded-2xl bg-[#0B2136] items-center justify-center"
+                className="flex-1 py-3.5 rounded-2xl overflow-hidden items-center justify-center flex-row gap-2 relative active:opacity-90 shadow-sm"
+                style={{
+                  shadowColor: "#0A2472",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
               >
-                <Text className="text-xs font-bold text-white">Save Mascot & Name</Text>
+                <LinearGradient
+                  colors={ADMIN_PORTAL_GRADIENT.colors}
+                  start={ADMIN_PORTAL_GRADIENT.start}
+                  end={ADMIN_PORTAL_GRADIENT.end}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text
+                  className="text-xs font-black text-white"
+                  style={{
+                    fontFamily: "Outfit",
+                    textShadowColor: "rgba(0, 0, 0, 0.25)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
+                  Save Changes
+                </Text>
               </Pressable>
             </View>
           </View>

@@ -35,9 +35,10 @@ export interface AppUser {
   displayName: string;
   email: string;
   accessToken?: string;
-  avatarId: string;
-  avatarColor: string;
-  avatarEmoji: string;
+  avatarId?: string;
+  avatarColor?: string;
+  avatarEmoji?: string;
+  avatarUrl?: string | null;
   category: PatientCategory;
   gender: string;
   dob: string;
