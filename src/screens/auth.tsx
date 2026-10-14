@@ -2496,7 +2496,16 @@ const WelcomeBackground = memo(function WelcomeBackground({
 
   return (
     <View
-      style={[StyleSheet.absoluteFill, { backgroundColor: "#FFFFFF", overflow: "hidden" }]}
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          backgroundColor: "#FFFFFF",
+          overflow: "hidden",
+          width: "100%",
+          height: "100%",
+          minHeight: Platform.OS === "web" ? ("100dvh" as any) : "100%",
+        },
+      ]}
       pointerEvents="none"
     >
       {/* 
@@ -2625,10 +2634,10 @@ export function WelcomeScreen({
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
-  // Responsive calculations
-  const logoSize = Math.min(width * 0.40, height < 700 ? 120 : 150);
-  const wordmarkSize = width < 380 || height < 700 ? 50 : 60;
-  const taglineSize = width < 380 ? 14 : 16;
+  // Responsive calculations calibrated for mobile web and native
+  const logoSize = Math.min(width * 0.40, height < 700 ? 110 : 140);
+  const wordmarkSize = width < 380 || height < 700 ? 46 : 56;
+  const taglineSize = width < 380 || height < 700 ? 13 : 15;
   const logo1xUri = resolveAssetUri(curaLogo1xSource);
   const logo2xUri = resolveAssetUri(curaLogo2xSource);
   const uaSeal1xUri = resolveAssetUri(uaSeal1xSource);
@@ -2792,14 +2801,24 @@ export function WelcomeScreen({
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF", overflow: "hidden" }}>
+    <View
+      style={{
+        flex: 1,
+        width: "100%",
+        height: "100%",
+        minHeight: Platform.OS === "web" ? ("100dvh" as any) : "100%",
+        backgroundColor: "#FFFFFF",
+        overflow: "hidden",
+        justifyContent: "space-between",
+      }}
+    >
       {/* FULL-BLEED Brand Background - continuous across full screen, behind header, hero, and bottom sheet */}
       <WelcomeBackground bgBlurAnim={bgBlurAnim} />
 
 
 
       {/* 1) Top Section (Header + Hero) */}
-      <View style={{ flex: 1, position: "relative" }}>
+      <View style={{ flex: 1, width: "100%", position: "relative" }}>
 
         {/* 2) Header (Top-left) */}
         <View

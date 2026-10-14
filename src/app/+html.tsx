@@ -15,9 +15,11 @@ export default function Root({ children }: PropsWithChildren) {
           rel="stylesheet"
         />
         <style dangerouslySetInnerHTML={{ __html: `
-          #root, body, html {
+          html, body, #root {
             width: 100%;
             height: 100%;
+            min-height: 100%;
+            min-height: 100dvh;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
@@ -25,6 +27,23 @@ export default function Root({ children }: PropsWithChildren) {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            display: flex;
+            flex-direction: column;
+          }
+          #root {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+            min-height: 100dvh;
+          }
+          #root > div {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            min-height: 100%;
+            min-height: 100dvh;
           }
         `}} />
       </head>

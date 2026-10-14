@@ -5,7 +5,7 @@ import '../global.css';
 
 export default function Layout() {
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ flex: 1, width: '100%', height: '100%' }}>
       <StatusBar style="dark" />
       <Slot />
     </SafeAreaProvider>

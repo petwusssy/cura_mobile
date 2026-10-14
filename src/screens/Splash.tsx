@@ -44,9 +44,9 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
     typeof useReducedMotion === "function" ? useReducedMotion() : false;
   const reduceMotion = Boolean(systemReducedMotion);
 
-  // Responsive calculations: enlarged logo (~1.8x, max 240px) & bold prominent CURA text
-  const logoSize = Math.min(width * 0.58, height < 700 ? 190 : 230);
-  const wordmarkSize = width < 380 || height < 700 ? 68 : 82;
+  // Responsive calculations: enlarged logo & bold prominent CURA text calibrated for mobile and web
+  const logoSize = Math.min(width * 0.58, height < 700 ? 170 : 220);
+  const wordmarkSize = width < 380 || height < 700 ? 56 : 76;
   const logoBaseUri = resolveAssetUri(curaLogoBaseSource);
   const logoPlusUri = resolveAssetUri(curaLogoPlusSource);
 
@@ -147,7 +147,15 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
   return (
     <Pressable
       onPress={() => onDoneRef.current?.()}
-      style={[StyleSheet.absoluteFill, { backgroundColor: "#07173F" }]}
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          backgroundColor: "#07173F",
+          width: "100%",
+          height: "100%",
+          minHeight: Platform.OS === "web" ? ("100dvh" as any) : "100%",
+        },
+      ]}
     >
       <StatusBar barStyle="light-content" />
 
@@ -168,6 +176,8 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
             alignItems: "center",
             justifyContent: "center",
             paddingHorizontal: 24,
+            width: "100%",
+            height: "100%",
           },
         ]}
         pointerEvents="none"

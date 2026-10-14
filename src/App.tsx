@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Image } from "react-native";
+import { Image, View, Platform } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -460,17 +460,26 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   return (
     <AlertProvider>
-      {splashDone && isAuthenticated && <NotificationPoller user={user} setNotifications={setNotifications} />}
-      {!splashDone ? (
-        <SplashScreen onDone={handleSplashDone} />
-      ) : (
-        <MobileShell theme={theme}>
-          {renderScreen()}
-          {isAuthenticated && isMainTab && (
-            <BottomNav active={current.screen} navigate={navigate} isDark={theme === 'dark'} />
-          )}
-        </MobileShell>
-      )}
+      <View
+        style={{
+          flex: 1,
+          width: "100%",
+          height: "100%",
+          minHeight: Platform.OS === "web" ? ("100dvh" as any) : "100%",
+        }}
+      >
+        {splashDone && isAuthenticated && <NotificationPoller user={user} setNotifications={setNotifications} />}
+        {!splashDone ? (
+          <SplashScreen onDone={handleSplashDone} />
+        ) : (
+          <MobileShell theme={theme}>
+            {renderScreen()}
+            {isAuthenticated && isMainTab && (
+              <BottomNav active={current.screen} navigate={navigate} isDark={theme === 'dark'} />
+            )}
+          </MobileShell>
+        )}
+      </View>
     </AlertProvider>
   );
 }
