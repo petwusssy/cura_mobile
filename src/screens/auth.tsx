@@ -3963,7 +3963,7 @@ export function WelcomeScreen({
           )}
           <Text
             style={{
-              color: "#0F2B5C",
+              color: "#FFFFFF",
               fontSize: 22,
               fontWeight: "600",
               letterSpacing: 0.5,
@@ -4314,7 +4314,7 @@ export function WelcomeScreen({
           {/* Tagline */}
           <Text
             style={{
-              color: "#334155",
+              color: "#FFFFFF",
               fontSize: taglineSize,
               lineHeight: taglineSize + 8,
               fontWeight: "500",
