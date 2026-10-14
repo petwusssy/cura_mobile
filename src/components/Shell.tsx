@@ -432,11 +432,13 @@ export function OnboardProgress({ step, total }: { step: number; total: number }
 
 // ── Vital item ────────────────────────────────────────────────────────────────
 
-export function VitalItem({ icon, label, value }: { icon: string; label: string; value: string }) {
+export function VitalItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <View className="flex-col gap-1 bg-sky-50 rounded-xl p-3">
-      <Text className="text-lg">{icon}</Text>
-      <Text className="text-[10px] font-bold text-sky-400 uppercase tracking-wide">{label}</Text>
+      <View className="h-6 justify-center">
+        {typeof icon === 'string' ? <Text className="text-lg">{icon}</Text> : icon}
+      </View>
+      <Text className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "#002D72" }}>{label}</Text>
       <Text className="text-sm font-bold text-slate-800">{value}</Text>
     </View>
   );

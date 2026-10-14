@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Line } from "react-native-svg";
+import Svg, { Circle, Line, Path, Rect } from "react-native-svg";
 import type { Screen } from "../types";
 import { Card, Badge, VitalItem, Header, EmptyState } from "../components/Shell";
 import { CONSULTATIONS } from "../data";
 import { formatTime12, formatTimeRange12 } from "../utils/philippineTime";
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -169,11 +170,11 @@ export function HealthDetailScreen({ navigate: _navigate, goBack, params, consul
         <View className="flex-col gap-3 pb-8">
           {/* Hero card */}
           <LinearGradient
-            colors={['#0994E8', '#06B6D4']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            colors={ADMIN_PORTAL_GRADIENT.colors}
+            start={ADMIN_PORTAL_GRADIENT.start}
+            end={ADMIN_PORTAL_GRADIENT.end}
             className="rounded-2xl p-4"
-            style={{ elevation: 8, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24 }}
+            style={{ elevation: 8, shadowColor: '#0A2472', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24 }}
           >
             <View className="flex-row items-center justify-between mb-3">
               <View className="bg-white/20 rounded-full px-2.5 py-1">
@@ -204,18 +205,86 @@ export function HealthDetailScreen({ navigate: _navigate, goBack, params, consul
           {/* Vitals */}
           <Card>
             <View className="flex-row items-center gap-2 mb-3">
-              <View className="w-6 h-6 rounded-lg bg-sky-100 items-center justify-center">
-                <Text className="text-sm">📊</Text>
+              <View className="w-6 h-6 rounded-lg bg-[#002D72]/10 items-center justify-center">
+                <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </Svg>
               </View>
               <Text className="text-sm font-bold text-slate-700">Vital Signs</Text>
             </View>
             <View className="flex-row flex-wrap justify-between">
-              <View style={{ width: '31%', marginBottom: 8 }}><VitalItem icon="📏" label="Height" value={consult.vitals?.height || "—"} /></View>
-              <View style={{ width: '31%', marginBottom: 8 }}><VitalItem icon="⚖️" label="Weight" value={consult.vitals?.weight || "—"} /></View>
-              <View style={{ width: '31%', marginBottom: 8 }}><VitalItem icon="🌡️" label="Temp" value={consult.vitals?.temp || "—"} /></View>
-              <View style={{ width: '31%', marginBottom: 8 }}><VitalItem icon="💉" label="BP" value={consult.vitals?.bp || "—"} /></View>
-              <View style={{ width: '31%', marginBottom: 8 }}><VitalItem icon="❤️" label="Heart Rate" value={consult.vitals?.hr || "—"} /></View>
-              <View style={{ width: '31%', marginBottom: 8 }}><VitalItem icon="🫁" label="O₂ Sat" value={consult.vitals?.o2 || "—"} /></View>
+              <View style={{ width: '31%', marginBottom: 8 }}>
+                <VitalItem
+                  icon={
+                    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <Rect x="5" y="2" width="14" height="20" rx="2" />
+                      <Line x1="5" y1="7" x2="10" y2="7" />
+                      <Line x1="5" y1="12" x2="13" y2="12" />
+                      <Line x1="5" y1="17" x2="10" y2="17" />
+                    </Svg>
+                  }
+                  label="Height"
+                  value={consult.vitals?.height || "—"}
+                />
+              </View>
+              <View style={{ width: '31%', marginBottom: 8 }}>
+                <VitalItem
+                  icon={
+                    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <Circle cx="12" cy="12" r="9" />
+                      <Line x1="12" y1="12" x2="15" y2="9" />
+                      <Circle cx="12" cy="12" r="1.5" fill="#002D72" />
+                    </Svg>
+                  }
+                  label="Weight"
+                  value={consult.vitals?.weight || "—"}
+                />
+              </View>
+              <View style={{ width: '31%', marginBottom: 8 }}>
+                <VitalItem
+                  icon={
+                    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
+                      <Circle cx="11.5" cy="17" r="1.5" fill="#002D72" />
+                    </Svg>
+                  }
+                  label="Temp"
+                  value={consult.vitals?.temp || "—"}
+                />
+              </View>
+              <View style={{ width: '31%', marginBottom: 8 }}>
+                <VitalItem
+                  icon={
+                    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </Svg>
+                  }
+                  label="BP"
+                  value={consult.vitals?.bp || "—"}
+                />
+              </View>
+              <View style={{ width: '31%', marginBottom: 8 }}>
+                <VitalItem
+                  icon={
+                    <Svg width="18" height="18" viewBox="0 0 24 24" fill="#002D72" stroke="#002D72" strokeWidth="1">
+                      <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </Svg>
+                  }
+                  label="Heart Rate"
+                  value={consult.vitals?.hr || "—"}
+                />
+              </View>
+              <View style={{ width: '31%', marginBottom: 8 }}>
+                <VitalItem
+                  icon={
+                    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                    </Svg>
+                  }
+                  label="O₂ Sat"
+                  value={consult.vitals?.o2 || "—"}
+                />
+              </View>
             </View>
           </Card>
 
