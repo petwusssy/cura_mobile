@@ -243,7 +243,7 @@ interface GlassInputProps {
   secureTextEntry?: boolean;
   showPasswordToggle?: boolean;
   error?: string;
-  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad" | "number-pad";
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   returnKeyType?: "done" | "go" | "next" | "search" | "send";
   onSubmitEditing?: () => void;
@@ -1059,6 +1059,30 @@ const AuthModal = memo(function AuthModal({
   const [regLoading, setRegLoading] = useState(false);
   const [regGeneralError, setRegGeneralError] = useState("");
 
+  // Web Cura Account Detection & OTP Claim State
+  const [emailChecking, setEmailChecking] = useState(false);
+  const [isClaimingWebAccount, setIsClaimingWebAccount] = useState(false);
+  const [claimStep, setClaimStep] = useState<1 | 2>(1); // 1 = OTP, 2 = Set Password
+  const [claimOtp, setClaimOtp] = useState("");
+  const [claimPassword, setClaimPassword] = useState("");
+  const [claimConfirmPassword, setClaimConfirmPassword] = useState("");
+  const [claimErrors, setClaimErrors] = useState<Record<string, string>>({});
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [claimResendCooldown, setClaimResendCooldown] = useState(0);
+
+  // OTP resend cooldown timer
+  useEffect(() => {
+    let timer: any;
+    if (claimResendCooldown > 0) {
+      timer = setInterval(() => {
+        setClaimResendCooldown((c) => (c > 0 ? c - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [claimResendCooldown]);
+
   // Category select modals (Student Classification, Grade Level, Year Level)
   const [selectModalType, setSelectModalType] = useState<"studentCategory" | "gradeLevel" | "yearLevel" | null>(null);
 
@@ -1093,6 +1117,14 @@ const AuthModal = memo(function AuthModal({
       setRegErrors({});
       setRegGeneralError("");
       setCreateStep(1);
+      setIsClaimingWebAccount(false);
+      setClaimStep(1);
+      setClaimOtp("");
+      setClaimPassword("");
+      setClaimConfirmPassword("");
+      setClaimErrors({});
+      setClaimLoading(false);
+      setEmailChecking(false);
       stepFadeAnim.setValue(1);
       stepSlideAnim.setValue(0);
       contentFadeAnim.setValue(1);
@@ -1113,6 +1145,10 @@ const AuthModal = memo(function AuthModal({
       easing: Easing.in(Easing.cubic),
       useNativeDriver: true,
     }).start(() => {
+      setIsClaimingWebAccount(false);
+      setClaimStep(1);
+      setClaimOtp("");
+      setClaimErrors({});
       onClose();
     });
   }, [animVal, onClose]);
@@ -1130,6 +1166,10 @@ const AuthModal = memo(function AuthModal({
       setRegErrors({});
       setRegGeneralError("");
       setCreateStep(1);
+      setIsClaimingWebAccount(false);
+      setClaimStep(1);
+      setClaimOtp("");
+      setClaimErrors({});
     }, 110);
   }, [triggerHaptic, contentFadeAnim]);
 
@@ -1189,8 +1229,8 @@ const AuthModal = memo(function AuthModal({
     }
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
-  // Step 1 Validation & Next: Account Email & Auto Category Identification
-  const handleStep1Next = useCallback(() => {
+  // Step 1 Validation & Next: Account Email & Auto Category Identification (with Web Cura Detection)
+  const handleStep1Next = useCallback(async () => {
     const errs: Record<string, string> = {};
     const trimmedEmail = createForm.email.trim();
     if (!trimmedEmail) {
@@ -1209,9 +1249,67 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    setCreateForm((f) => ({ ...f, category: detected }));
-    goToCreateStep(2, "next");
-  }, [createForm.email, goToCreateStep]);
+    setRegErrors({});
+    setEmailChecking(true);
+
+    try {
+      const cleanEmail = trimmedEmail.toLowerCase();
+      const checkRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      const checkData = await checkRes.json().catch(() => ({}));
+
+      if (checkData.exists) {
+        if (checkData.claimed) {
+          setRegErrors({
+            email: "This email is already registered and active. Please sign in instead.",
+          });
+          setEmailChecking(false);
+          return;
+        }
+
+        // Account is already added in Web CURA! Request OTP from Render backend
+        const otpRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/request-otp/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail }),
+        });
+        const otpData = await otpRes.json().catch(() => ({}));
+
+        if (!otpRes.ok) {
+          setRegErrors({
+            email: otpData.error || "Failed to send verification code. Please try again.",
+          });
+          setEmailChecking(false);
+          return;
+        }
+
+        triggerHaptic();
+        setCreateForm((f) => ({ ...f, email: cleanEmail, category: detected }));
+        setIsClaimingWebAccount(true);
+        setClaimStep(1);
+        setClaimOtp("");
+        setClaimPassword("");
+        setClaimConfirmPassword("");
+        setClaimErrors({});
+        setClaimResendCooldown(30);
+        setEmailChecking(false);
+        return;
+      }
+
+      // Not yet added in Web CURA: proceed with normal multi-step registration
+      setCreateForm((f) => ({ ...f, email: cleanEmail, category: detected }));
+      goToCreateStep(2, "next");
+    } catch (err) {
+      setRegErrors({
+        email: "Unable to verify email with clinic servers. Please try again.",
+      });
+    } finally {
+      setEmailChecking(false);
+    }
+  }, [createForm.email, goToCreateStep, triggerHaptic]);
 
   // Step 2 Validation & Next: Basic Information
   const handleStep2Next = useCallback(() => {
@@ -1471,6 +1569,126 @@ const AuthModal = memo(function AuthModal({
       setRegLoading(false);
     }
   }, [createForm, onSuccessRegister, showAlert]);
+
+  // Web Cura OTP Claim Handlers
+  const handleVerifyClaimOTP = useCallback(async () => {
+    const cleanOtp = claimOtp.trim();
+    if (!cleanOtp) {
+      setClaimErrors({ otp: "Please enter the 6-digit OTP." });
+      return;
+    }
+    if (cleanOtp.length < 6) {
+      setClaimErrors({ otp: "OTP must be 6 digits." });
+      return;
+    }
+
+    setClaimErrors({});
+    setClaimLoading(true);
+
+    try {
+      const cleanEmail = createForm.email.trim().toLowerCase();
+      const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
+      });
+
+      if (res.ok) {
+        triggerHaptic();
+        setClaimStep(2);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setClaimErrors({ otp: errData.error || "Invalid or expired OTP." });
+      }
+    } catch (err) {
+      setClaimErrors({ otp: "Network error. Please try again." });
+    } finally {
+      setClaimLoading(false);
+    }
+  }, [claimOtp, createForm.email, triggerHaptic]);
+
+  const handleSetClaimPassword = useCallback(async () => {
+    const errs: Record<string, string> = {};
+    if (!claimPassword) {
+      errs.password = "Password is required";
+    } else if (claimPassword.length < 6) {
+      errs.password = "Password must be at least 6 characters";
+    }
+
+    if (!claimConfirmPassword) {
+      errs.confirmPassword = "Confirm password is required";
+    } else if (claimConfirmPassword !== claimPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setClaimErrors(errs);
+      return;
+    }
+
+    setClaimErrors({});
+    setClaimLoading(true);
+    const cleanEmail = createForm.email.trim().toLowerCase();
+
+    try {
+      const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/set-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, password: claimPassword }),
+      });
+
+      const resData = await res.json().catch(() => ({}));
+
+      if (res.ok && resData.access) {
+        const token = resData.access;
+        const userName = (resData.user?.name || cleanEmail.split("@")[0]).toUpperCase();
+
+        if (token) {
+          await AsyncStorage.setItem("@cura_access_token", token).catch(() => {});
+        }
+
+        onSuccessRegister(
+          cleanEmail,
+          userName,
+          token,
+          resData.user?.id || "",
+          userName
+        );
+        showAlert("Account Activated! 🎉", "Your Web CURA clinic record has been successfully verified and activated.");
+      } else {
+        setClaimErrors({ password: resData.error || "Failed to set password. Please try again." });
+      }
+    } catch (err) {
+      setClaimErrors({ password: "Network error. Please try again." });
+    } finally {
+      setClaimLoading(false);
+    }
+  }, [claimPassword, claimConfirmPassword, createForm.email, onSuccessRegister, showAlert]);
+
+  const handleResendClaimOTP = useCallback(async () => {
+    if (claimResendCooldown > 0 || claimLoading) return;
+    setClaimLoading(true);
+    setClaimErrors({});
+    try {
+      const cleanEmail = createForm.email.trim().toLowerCase();
+      const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/request-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      if (res.ok) {
+        setClaimResendCooldown(30);
+        showAlert("Code Sent", "A new 6-digit OTP has been sent to your email.");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setClaimErrors({ otp: err.error || "Failed to resend OTP." });
+      }
+    } catch {
+      setClaimErrors({ otp: "Network error. Please try again." });
+    } finally {
+      setClaimLoading(false);
+    }
+  }, [claimResendCooldown, claimLoading, createForm.email, showAlert]);
 
   return (
     <Modal
@@ -1767,144 +1985,437 @@ const AuthModal = memo(function AuthModal({
                       </View>
                     ) : null}
 
-                    {/* Step 1: Account Email & Auto Category Identification */}
-                    {createStep === 1 && (
+                    {/* Create Account Flow: Web Cura OTP Claim vs Normal Registration */}
+                    {isClaimingWebAccount ? (
                       <Animated.View
                         style={{
                           opacity: stepFadeAnim,
                           transform: [{ translateX: stepSlideAnim }],
                         }}
                       >
-                        <GlassStepHeader
-                          step={1}
-                          total={4}
-                          title="Account Email"
-                          subtitle="Enter your email to identify your account"
-                        />
+                        {claimStep === 1 ? (
+                          <>
+                            <GlassStepHeader
+                              step={1}
+                              total={2}
+                              title="Enter OTP Code"
+                              subtitle={`Verification code sent to ${createForm.email.trim()}`}
+                              onBack={() => {
+                                setIsClaimingWebAccount(false);
+                                setClaimOtp("");
+                                setClaimErrors({});
+                              }}
+                            />
 
-                        <GlassInput
-                          ref={emailRef}
-                          icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="Email address (e.g. name.student@ua.edu.ph)"
-                          value={createForm.email}
-                          onChangeText={(t) => {
-                            const detected = detectCategoryFromEmail(t);
-                            setCreateForm((f) => ({ ...f, email: t, category: detected }));
-                            if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
-                            if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
-                          }}
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                          returnKeyType="done"
-                          onSubmitEditing={handleStep1Next}
-                          error={regErrors.email}
-                        />
-
-                        {/* Identified Category Indicator / Guidance */}
-                        {createForm.category ? (
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              padding: 14,
-                              borderRadius: 14,
-                              backgroundColor: "rgba(30, 79, 216, 0.35)",
-                              borderWidth: 1.5,
-                              borderColor: "#60A5FA",
-                              marginBottom: 12,
-                              shadowColor: "#1E4FD8",
-                              shadowOffset: { width: 0, height: 2 },
-                              shadowOpacity: 0.3,
-                              shadowRadius: 6,
-                            }}
-                          >
-                            <Text style={{ fontSize: 26, marginRight: 12 }}>
-                              {createForm.category === "Student" ? "🎓" : createForm.category === "Employee" ? "💼" : "🌐"}
-                            </Text>
-                            <View style={{ flex: 1 }}>
-                              <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 11, fontFamily: "Outfit", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                                Identified Category
-                              </Text>
-                              <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700", fontFamily: "Outfit", marginTop: 2 }}>
-                                {createForm.category}
-                              </Text>
-                              <Text style={{ color: "rgba(255, 255, 255, 0.72)", fontSize: 12, fontFamily: "Outfit", marginTop: 2 }}>
-                                {createForm.category === "Student"
-                                  ? "University of the Assumption Student"
-                                  : createForm.category === "Employee"
-                                  ? "UA Faculty & Personnel"
-                                  : "External Guest / Outsider"}
-                              </Text>
-                            </View>
                             <View
                               style={{
-                                width: 22,
-                                height: 22,
-                                borderRadius: 11,
+                                flexDirection: "row",
+                                alignItems: "center",
+                                padding: 14,
+                                borderRadius: 14,
+                                backgroundColor: "rgba(16, 185, 129, 0.22)",
+                                borderWidth: 1.5,
+                                borderColor: "#34D399",
+                                marginBottom: 16,
+                                shadowColor: "#10B981",
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.25,
+                                shadowRadius: 6,
+                              }}
+                            >
+                              <Text style={{ fontSize: 26, marginRight: 12 }}>🏥</Text>
+                              <View style={{ flex: 1 }}>
+                                <Text
+                                  style={{
+                                    color: "#6EE7B7",
+                                    fontSize: 11,
+                                    fontFamily: "Outfit",
+                                    fontWeight: "700",
+                                    textTransform: "uppercase",
+                                    letterSpacing: 0.5,
+                                  }}
+                                >
+                                  Clinic Record Detected
+                                </Text>
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 13,
+                                    fontFamily: "Outfit",
+                                    marginTop: 2,
+                                    lineHeight: 18,
+                                  }}
+                                >
+                                  Nahanap ang account mo sa Web CURA! Ilagay ang 6-digit OTP code na pinadala sa iyong email para ma-verify at ma-activate ang mobile account mo.
+                                </Text>
+                              </View>
+                            </View>
+
+                            <GlassInput
+                              icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="6-Digit OTP"
+                              value={claimOtp}
+                              onChangeText={(t) => {
+                                setClaimOtp(t);
+                                if (claimErrors.otp) setClaimErrors((e) => ({ ...e, otp: "" }));
+                              }}
+                              keyboardType="number-pad"
+                              maxLength={6}
+                              error={claimErrors.otp}
+                              returnKeyType="done"
+                              onSubmitEditing={handleVerifyClaimOTP}
+                            />
+
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginTop: 4,
+                                marginBottom: 16,
+                              }}
+                            >
+                              <TouchableOpacity
+                                onPress={handleResendClaimOTP}
+                                disabled={claimResendCooldown > 0 || claimLoading}
+                                activeOpacity={0.7}
+                              >
+                                <Text
+                                  style={{
+                                    color: claimResendCooldown > 0 ? "rgba(255, 255, 255, 0.45)" : "#60A5FA",
+                                    fontSize: 13,
+                                    fontFamily: "Outfit",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {claimResendCooldown > 0 ? `Resend code in ${claimResendCooldown}s` : "Resend OTP"}
+                                </Text>
+                              </TouchableOpacity>
+
+                              <TouchableOpacity
+                                onPress={() => {
+                                  setIsClaimingWebAccount(false);
+                                  setClaimOtp("");
+                                  setClaimErrors({});
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 13, fontFamily: "Outfit" }}>
+                                  Change email
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+
+                            <TouchableOpacity
+                              onPress={handleVerifyClaimOTP}
+                              disabled={claimLoading || claimOtp.trim().length < 6}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
+                                backgroundColor: claimOtp.trim().length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.45)",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                shadowColor: "#1E4FD8",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.35,
+                                shadowRadius: 8,
+                                elevation: 4,
+                              }}
+                            >
+                              {claimLoading ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    letterSpacing: 0.4,
+                                  }}
+                                >
+                                  Verify OTP →
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          </>
+                        ) : (
+                          <>
+                            <GlassStepHeader
+                              step={2}
+                              total={2}
+                              title="Set Password"
+                              subtitle="Create a secure password to activate your account"
+                              onBack={() => {
+                                setClaimStep(1);
+                                setClaimErrors({});
+                              }}
+                            />
+
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                padding: 12,
+                                borderRadius: 12,
+                                backgroundColor: "rgba(30, 79, 216, 0.35)",
+                                borderWidth: 1,
+                                borderColor: "#60A5FA",
+                                marginBottom: 16,
+                              }}
+                            >
+                              <Text style={{ fontSize: 20, marginRight: 10 }}>🔒</Text>
+                              <Text
+                                style={{
+                                  color: "rgba(255, 255, 255, 0.9)",
+                                  fontSize: 12.5,
+                                  fontFamily: "Outfit",
+                                  lineHeight: 18,
+                                  flex: 1,
+                                }}
+                              >
+                                Verified! Set your account password to complete activation and sign in.
+                              </Text>
+                            </View>
+
+                            <GlassInput
+                              icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="New Password (min 6 characters)"
+                              value={claimPassword}
+                              onChangeText={(t) => {
+                                setClaimPassword(t);
+                                if (claimErrors.password) setClaimErrors((e) => ({ ...e, password: "" }));
+                              }}
+                              secureTextEntry
+                              showPasswordToggle
+                              error={claimErrors.password}
+                            />
+
+                            <GlassInput
+                              icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="Confirm New Password"
+                              value={claimConfirmPassword}
+                              onChangeText={(t) => {
+                                setClaimConfirmPassword(t);
+                                if (claimErrors.confirmPassword) setClaimErrors((e) => ({ ...e, confirmPassword: "" }));
+                              }}
+                              secureTextEntry
+                              showPasswordToggle
+                              error={claimErrors.confirmPassword}
+                              returnKeyType="done"
+                              onSubmitEditing={handleSetClaimPassword}
+                            />
+
+                            <TouchableOpacity
+                              onPress={handleSetClaimPassword}
+                              disabled={claimLoading}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
                                 backgroundColor: "#1E4FD8",
                                 alignItems: "center",
                                 justifyContent: "center",
+                                marginTop: 8,
+                                shadowColor: "#1E4FD8",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.35,
+                                shadowRadius: 8,
+                                elevation: 4,
                               }}
                             >
-                              <CheckIcon color="#FFFFFF" size={12} />
-                            </View>
-                          </View>
-                        ) : (
-                          <View
-                            style={{
-                              padding: 12,
-                              borderRadius: 12,
-                              backgroundColor: "rgba(255, 255, 255, 0.08)",
-                              borderWidth: 1,
-                              borderColor: "rgba(255, 255, 255, 0.15)",
-                              marginBottom: 12,
-                            }}
-                          >
-                            <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 12, fontFamily: "Outfit", lineHeight: 18 }}>
-                              💡 Category is automatically identified:{"\n"}
-                              • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>.student@ua.edu.ph</Text> → Student{"\n"}
-                              • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>@ua.edu.ph</Text> → Employee{"\n"}
-                              • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>@gmail.com</Text> → Outsider
-                            </Text>
-                          </View>
+                              {claimLoading ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    letterSpacing: 0.4,
+                                  }}
+                                >
+                                  Activate & Sign In 🎉
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          </>
                         )}
-
-                        {regErrors.category ? (
-                          <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginBottom: 10, marginLeft: 4 }}>
-                            {regErrors.category}
-                          </Text>
-                        ) : null}
-
-                        <TouchableOpacity
-                          onPress={handleStep1Next}
-                          activeOpacity={0.85}
-                          style={{
-                            width: "100%",
-                            height: 50,
-                            borderRadius: 14,
-                            backgroundColor: "#1E4FD8",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginTop: 6,
-                            shadowColor: "#1E4FD8",
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.35,
-                            shadowRadius: 8,
-                            elevation: 4,
-                          }}
-                        >
-                          <Text
+                      </Animated.View>
+                    ) : (
+                      <>
+                        {/* Step 1: Account Email & Auto Category Identification */}
+                        {createStep === 1 && (
+                          <Animated.View
                             style={{
-                              color: "#FFFFFF",
-                              fontSize: 16,
-                              fontWeight: "700",
-                              fontFamily: "Outfit",
-                              letterSpacing: 0.4,
+                              opacity: stepFadeAnim,
+                              transform: [{ translateX: stepSlideAnim }],
                             }}
                           >
-                            Next →
-                          </Text>
-                        </TouchableOpacity>
+                            <GlassStepHeader
+                              step={1}
+                              total={4}
+                              title="Account Email"
+                              subtitle="Enter your email to identify your account"
+                            />
+
+                            <GlassInput
+                              ref={emailRef}
+                              icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="Email address (e.g. name.student@ua.edu.ph)"
+                              value={createForm.email}
+                              onChangeText={(t) => {
+                                const detected = detectCategoryFromEmail(t);
+                                setCreateForm((f) => ({ ...f, email: t, category: detected }));
+                                if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
+                                if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
+                              }}
+                              keyboardType="email-address"
+                              autoCapitalize="none"
+                              returnKeyType="done"
+                              onSubmitEditing={handleStep1Next}
+                              error={regErrors.email}
+                            />
+
+                            {/* Identified Category Indicator / Guidance */}
+                            {createForm.category ? (
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  padding: 14,
+                                  borderRadius: 14,
+                                  backgroundColor: "rgba(30, 79, 216, 0.35)",
+                                  borderWidth: 1.5,
+                                  borderColor: "#60A5FA",
+                                  marginBottom: 12,
+                                  shadowColor: "#1E4FD8",
+                                  shadowOffset: { width: 0, height: 2 },
+                                  shadowOpacity: 0.3,
+                                  shadowRadius: 6,
+                                }}
+                              >
+                                <Text style={{ fontSize: 26, marginRight: 12 }}>
+                                  {createForm.category === "Student" ? "🎓" : createForm.category === "Employee" ? "💼" : "🌐"}
+                                </Text>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 11, fontFamily: "Outfit", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                    Identified Category
+                                  </Text>
+                                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700", fontFamily: "Outfit", marginTop: 2 }}>
+                                    {createForm.category}
+                                  </Text>
+                                  <Text style={{ color: "rgba(255, 255, 255, 0.72)", fontSize: 12, fontFamily: "Outfit", marginTop: 2 }}>
+                                    {createForm.category === "Student"
+                                      ? "University of the Assumption Student"
+                                      : createForm.category === "Employee"
+                                      ? "UA Faculty & Personnel"
+                                      : "External Guest / Outsider"}
+                                  </Text>
+                                </View>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: 11,
+                                    backgroundColor: "#1E4FD8",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  <CheckIcon color="#FFFFFF" size={12} />
+                                </View>
+                              </View>
+                            ) : (
+                              <View
+                                style={{
+                                  padding: 12,
+                                  borderRadius: 12,
+                                  backgroundColor: "rgba(255, 255, 255, 0.08)",
+                                  borderWidth: 1,
+                                  borderColor: "rgba(255, 255, 255, 0.15)",
+                                  marginBottom: 12,
+                                }}
+                              >
+                                <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 12, fontFamily: "Outfit", lineHeight: 18 }}>
+                                  💡 Category is automatically identified:{"\n"}
+                                  • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>.student@ua.edu.ph</Text> → Student{"\n"}
+                                  • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>@ua.edu.ph</Text> → Employee{"\n"}
+                                  • <Text style={{ color: "#93C5FD", fontWeight: "600" }}>@gmail.com</Text> → Outsider
+                                </Text>
+                              </View>
+                            )}
+
+                            {regErrors.category ? (
+                              <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginBottom: 10, marginLeft: 4 }}>
+                                {regErrors.category}
+                              </Text>
+                            ) : null}
+
+                            <TouchableOpacity
+                              onPress={handleStep1Next}
+                              disabled={emailChecking}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
+                                backgroundColor: "#1E4FD8",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginTop: 6,
+                                shadowColor: "#1E4FD8",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.35,
+                                shadowRadius: 8,
+                                elevation: 4,
+                              }}
+                            >
+                              {emailChecking ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    letterSpacing: 0.4,
+                                  }}
+                                >
+                                  Next →
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+
+                            {regErrors.email?.includes("already registered") ? (
+                              <TouchableOpacity
+                                onPress={() => {
+                                  setSignInIdentifier(createForm.email.trim());
+                                  switchAuthMode("signin");
+                                }}
+                                activeOpacity={0.7}
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  marginTop: 10,
+                                  paddingVertical: 9,
+                                  borderRadius: 12,
+                                  backgroundColor: "rgba(96, 165, 250, 0.18)",
+                                  borderWidth: 1,
+                                  borderColor: "#60A5FA",
+                                }}
+                              >
+                                <Text style={{ color: "#93C5FD", fontSize: 13.5, fontFamily: "Outfit", fontWeight: "700" }}>
+                                  Go to Sign In →
+                                </Text>
+                              </TouchableOpacity>
+                            ) : null}
 
                         {/* Sign In Link (Only on step 1) */}
                         <View
@@ -2350,8 +2861,10 @@ const AuthModal = memo(function AuthModal({
                         </TouchableOpacity>
                       </Animated.View>
                     )}
-                  </View>
+                  </>
                 )}
+              </View>
+            )}
               </Animated.View>
             </ScrollView>
           </Animated.View>
