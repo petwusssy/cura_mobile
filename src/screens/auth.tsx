@@ -3654,95 +3654,18 @@ const AuthModal = memo(function AuthModal({
   );
 });
 
-// ── White Background with 2 Large Smoke and Fog Effects (80% bottom height, 120% width) ──
+// ── Blue Gradient Background (Visits Palette: Light Blue at Top -> Dark Blue at Bottom) ──
 
 const WelcomeBackground = memo(function WelcomeBackground({
   bgBlurAnim,
 }: {
   bgBlurAnim: Animated.Value;
 }) {
-  const systemReducedMotion =
-    typeof useReducedMotion === "function" ? useReducedMotion() : false;
-  const reduceMotion = Boolean(systemReducedMotion);
-
-  // Smoke and Fog Layer 1: Left / Center Drift (~16s loop)
-  const fog1Tx = useSharedValue(0);
-  const fog1Ty = useSharedValue(0);
-  const fog1Scale = useSharedValue(1);
-
-  // Smoke and Fog Layer 2: Right / Bottom Counter-Drift (~21s loop)
-  const fog2Tx = useSharedValue(0);
-  const fog2Ty = useSharedValue(0);
-  const fog2Scale = useSharedValue(1);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      fog1Tx.value = 0;
-      fog1Ty.value = 0;
-      fog1Scale.value = 1;
-      fog2Tx.value = 0;
-      fog2Ty.value = 0;
-      fog2Scale.value = 1;
-      return;
-    }
-
-    // Fog 1: slow horizontal and vertical organic mist drift
-    fog1Tx.value = withRepeat(
-      withTiming(38, { duration: 16000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
-      -1,
-      true
-    );
-    fog1Ty.value = withRepeat(
-      withTiming(-26, { duration: 13500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
-      -1,
-      true
-    );
-    fog1Scale.value = withRepeat(
-      withTiming(1.08, { duration: 15000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
-      -1,
-      true
-    );
-
-    // Fog 2: opposite counter organic drift
-    fog2Tx.value = withRepeat(
-      withTiming(-42, { duration: 21000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
-      -1,
-      true
-    );
-    fog2Ty.value = withRepeat(
-      withTiming(28, { duration: 17500, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
-      -1,
-      true
-    );
-    fog2Scale.value = withRepeat(
-      withTiming(1.09, { duration: 19000, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }),
-      -1,
-      true
-    );
-  }, [reduceMotion]);
-
-  const fog1AnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: fog1Tx.value },
-      { translateY: fog1Ty.value },
-      { scale: fog1Scale.value },
-    ],
-  }));
-
-  const fog2AnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: fog2Tx.value },
-      { translateY: fog2Ty.value },
-      { scale: fog2Scale.value },
-    ],
-  }));
-
   return (
     <View
       style={[
         StyleSheet.absoluteFill,
         {
-          backgroundColor: "#FFFFFF",
           overflow: "hidden",
           width: "100%",
           height: "100%",
@@ -3751,86 +3674,13 @@ const WelcomeBackground = memo(function WelcomeBackground({
       ]}
       pointerEvents="none"
     >
-      {/* 
-        Full-height 120% width container for the 2 large smoke and fog effects:
-        - Rises over and ahead above the CURA shield logo
-        - Width is 120% (left: "-10%") extending beyond the screen edges
-      */}
-      <View
-        style={[
-          {
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: "-10%",
-            width: "120%",
-            overflow: "hidden",
-          },
-          Platform.OS === "web" ? ({ filter: "blur(32px)" } as any) : undefined,
-        ]}
-      >
-        {/* Smoke and Fog Effect 1: Large Soft Blue Smoke Cloud over and ahead above the shield logo (center-left) */}
-        <AnimatedReanimated.View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, fog1AnimatedStyle]}
-        >
-          <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-            <Defs>
-              <SvgRadialGradient
-                id="smokeFog1"
-                cx="34%"
-                cy="30%"
-                rx="65%"
-                ry="54%"
-              >
-                <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.48" />
-                <Stop offset="35%" stopColor="#7DD3FC" stopOpacity="0.34" />
-                <Stop offset="70%" stopColor="#BAE6FD" stopOpacity="0.16" />
-                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-              </SvgRadialGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#smokeFog1)" />
-          </Svg>
-        </AnimatedReanimated.View>
-
-        {/* Smoke and Fog Effect 2: Large Soft Sky-Blue Smoke Cloud over and ahead above the shield logo (center-right) */}
-        <AnimatedReanimated.View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, fog2AnimatedStyle]}
-        >
-          <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-            <Defs>
-              <SvgRadialGradient
-                id="smokeFog2"
-                cx="68%"
-                cy="34%"
-                rx="68%"
-                ry="58%"
-              >
-                <Stop offset="0%" stopColor="#2AA8E0" stopOpacity="0.42" />
-                <Stop offset="38%" stopColor="#38BDF8" stopOpacity="0.28" />
-                <Stop offset="75%" stopColor="#E0F2FE" stopOpacity="0.14" />
-                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-              </SvgRadialGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#smokeFog2)" />
-          </Svg>
-        </AnimatedReanimated.View>
-
-        {/* Soft top atmospheric fade to seamlessly transition into pure white at the very top */}
-        <LinearGradient
-          colors={["#FFFFFF", "rgba(255, 255, 255, 0.5)", "rgba(255, 255, 255, 0)"]}
-          locations={[0, 0.45, 1]}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: "14%",
-          }}
-          pointerEvents="none"
-        />
-      </View>
+      {/* Blue Gradient: light blue at top, transitioning to dark blue at bottom */}
+      <LinearGradient
+        colors={["#72CAEC", "#123499", "#0A2472"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
       {/* Modal dimming overlay when auth sheet is open */}
       <Animated.View
@@ -4050,7 +3900,7 @@ export function WelcomeScreen({
         width: "100%",
         height: "100%",
         minHeight: Platform.OS === "web" ? ("100dvh" as any) : "100%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "transparent",
         overflow: "hidden",
         justifyContent: "space-between",
       }}
