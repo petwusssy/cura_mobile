@@ -4136,7 +4136,7 @@ export function WelcomeScreen({
             </View>
           )}
 
-          {/* CURA Wordmark (White base with animated sky-blue color wave matching CURA Web) */}
+          {/* CURA Wordmark (Matching Shield Logo Shine Animation) */}
           {Platform.OS === "web" ? (
             <div
               style={{
@@ -4148,54 +4148,63 @@ export function WelcomeScreen({
                 userSelect: "none",
               }}
             >
-              {/* Base text: pure white */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span
-                  style={{
-                    color: "#FFFFFF",
-                    fontSize: wordmarkSize,
-                    fontWeight: 800,
-                    letterSpacing: 1.5,
-                    fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
-                    lineHeight: 1,
-                  }}
-                >
-                  CURA
-                </span>
-              </div>
-
-              {/* White color wave overlay masked strictly to text letters via background-clip: text */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  pointerEvents: "none",
-                  overflow: "hidden",
-                }}
+              <svg
+                width={wordmarkSize * 3.8}
+                height={wordmarkSize * 1.25}
+                viewBox={`0 0 ${wordmarkSize * 3.8} ${wordmarkSize * 1.25}`}
+                style={{ overflow: "hidden", display: "block" }}
               >
-                <span
-                  style={{
-                    fontSize: wordmarkSize,
-                    fontWeight: 800,
-                    letterSpacing: 1.5,
-                    fontFamily: "'Plus Jakarta Sans', Outfit, sans-serif",
-                    lineHeight: 1,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                    backgroundImage:
-                      "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 35%, #FFFFFF 50%, rgba(255,255,255,0.85) 65%, rgba(255,255,255,0) 100%)",
-                    backgroundSize: "100% 280%",
-                    animation: "curaTextShineSweep 5s ease-in-out infinite",
-                  }}
+                <defs>
+                  <mask id="curaWordmarkWebMask">
+                    <text
+                      x="50%"
+                      y="75%"
+                      textAnchor="middle"
+                      fontSize={wordmarkSize}
+                      fontWeight="800"
+                      fontFamily="'Plus Jakarta Sans', Outfit, sans-serif"
+                      letterSpacing={1.5}
+                      fill="#FFFFFF"
+                    >
+                      CURA
+                    </text>
+                  </mask>
+                  <linearGradient id="curaWordmarkWebShine" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
+                    <stop offset="30%" stopColor="#BAE6FD" stopOpacity="0.5" />
+                    <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.95" />
+                    <stop offset="70%" stopColor="#BAE6FD" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {/* Base text: pure white */}
+                <text
+                  x="50%"
+                  y="75%"
+                  textAnchor="middle"
+                  fontSize={wordmarkSize}
+                  fontWeight="800"
+                  fontFamily="'Plus Jakarta Sans', Outfit, sans-serif"
+                  letterSpacing={1.5}
+                  fill="#FFFFFF"
                 >
                   CURA
-                </span>
-              </div>
+                </text>
+                {/* Sweeping soft light band identical to the shield logo */}
+                <g mask="url(#curaWordmarkWebMask)">
+                  <rect
+                    x="0"
+                    y="0"
+                    width="100%"
+                    height={wordmarkSize * 0.45}
+                    fill="url(#curaWordmarkWebShine)"
+                    style={{
+                      animation: "curaLogoShineSweep 5s ease-in-out infinite",
+                      mixBlendMode: "screen",
+                    }}
+                  />
+                </g>
+              </svg>
             </div>
           ) : (
             <View
@@ -4256,19 +4265,19 @@ export function WelcomeScreen({
                     </Text>
                   </View>
 
-                  {/* White wave band strictly inside the text letters */}
+                  {/* Soft light band strictly matching shield logo */}
                   <Animated.View
                     pointerEvents="none"
                     style={{
                       position: "absolute",
                       left: -40,
                       right: -40,
-                      height: wordmarkSize * 0.65,
+                      height: wordmarkSize * 0.45,
                       transform: [
                         {
                           translateY: shineAnim.interpolate({
                             inputRange: [0, 1],
-                            outputRange: [-wordmarkSize * 0.75, wordmarkSize * 1.35],
+                            outputRange: [-wordmarkSize * 0.55, wordmarkSize * 1.15],
                           }),
                         },
                       ],
@@ -4277,12 +4286,12 @@ export function WelcomeScreen({
                     <LinearGradient
                       colors={[
                         "rgba(255, 255, 255, 0)",
-                        "rgba(255, 255, 255, 0.85)",
-                        "#FFFFFF",
-                        "rgba(255, 255, 255, 0.85)",
+                        "rgba(186, 230, 253, 0.4)",
+                        "rgba(255, 255, 255, 0.92)",
+                        "rgba(186, 230, 253, 0.4)",
                         "rgba(255, 255, 255, 0)",
                       ]}
-                      locations={[0, 0.25, 0.5, 0.75, 1]}
+                      locations={[0, 0.3, 0.5, 0.7, 1]}
                       style={{ width: "100%", height: "100%" }}
                     />
                   </Animated.View>
