@@ -438,6 +438,8 @@ function GlassDatePickerField({
           borderWidth: 1.5,
           borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
           paddingHorizontal: 14,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
         <Text
@@ -451,6 +453,23 @@ function GlassDatePickerField({
           {value || placeholder}
         </Text>
         <CalendarIcon color="rgba(255, 255, 255, 0.85)" size={18} />
+        {Platform.OS === "web" && (
+          <input
+            type="date"
+            value={value || ""}
+            max={new Date().toISOString().split("T")[0]}
+            onChange={(e: any) => onChange(e.target.value)}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              opacity: 0,
+              cursor: "pointer",
+            }}
+          />
+        )}
       </TouchableOpacity>
 
       {error ? (

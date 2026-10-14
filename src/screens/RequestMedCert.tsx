@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, Pressable, RefreshControl } from "react-native";
+import { View, ScrollView, Text, Pressable, RefreshControl, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge, EmptyState } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -239,17 +239,35 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
           <View className="flex-col gap-1.5">
             <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">Date of Illness / Start Date</Text>
             <Pressable
-              onPress={() => setShowStartDatePicker(true)}
-              className="w-full bg-white rounded-[32px] px-5 py-4 flex-row items-center justify-between"
+              onPress={() => {
+                if (Platform.OS !== "web") setShowStartDatePicker(true);
+              }}
+              className="w-full bg-white rounded-[32px] px-5 py-4 flex-row items-center justify-between relative overflow-hidden"
             >
               <Text className={`text-sm ${startDate ? "text-slate-800 font-bold" : "text-slate-400"}`}>
                 {startDate || "Select start date..."}
               </Text>
               <Text>📅</Text>
+              {Platform.OS === "web" && (
+                <input
+                  type="date"
+                  value={startDate || ""}
+                  onChange={(e: any) => setStartDate(e.target.value)}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    opacity: 0,
+                    cursor: "pointer",
+                  }}
+                />
+              )}
             </Pressable>
           </View>
 
-          {showStartDatePicker && (
+          {Platform.OS !== "web" && showStartDatePicker && (
             <DateTimePicker
               value={startDate ? new Date(startDate) : new Date()}
               mode="date"
@@ -262,17 +280,35 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
           <View className="flex-col gap-1.5">
             <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">End / Recovery Date (Optional)</Text>
             <Pressable
-              onPress={() => setShowEndDatePicker(true)}
-              className="w-full bg-white rounded-[32px] px-5 py-4 flex-row items-center justify-between"
+              onPress={() => {
+                if (Platform.OS !== "web") setShowEndDatePicker(true);
+              }}
+              className="w-full bg-white rounded-[32px] px-5 py-4 flex-row items-center justify-between relative overflow-hidden"
             >
               <Text className={`text-sm ${endDate ? "text-slate-800 font-bold" : "text-slate-400"}`}>
                 {endDate || "Select end date (if applicable)..."}
               </Text>
               <Text>📅</Text>
+              {Platform.OS === "web" && (
+                <input
+                  type="date"
+                  value={endDate || ""}
+                  onChange={(e: any) => setEndDate(e.target.value)}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    opacity: 0,
+                    cursor: "pointer",
+                  }}
+                />
+              )}
             </Pressable>
           </View>
 
-          {showEndDatePicker && (
+          {Platform.OS !== "web" && showEndDatePicker && (
             <DateTimePicker
               value={endDate ? new Date(endDate) : new Date()}
               mode="date"
