@@ -1070,6 +1070,42 @@ const AuthModal = memo(function AuthModal({
   const [claimLoading, setClaimLoading] = useState(false);
   const [claimResendCooldown, setClaimResendCooldown] = useState(0);
 
+  // Real-time detection for Sign In
+  const [signInCheckingEmail, setSignInCheckingEmail] = useState(false);
+  const [signInDetectedPatient, setSignInDetectedPatient] = useState<{
+    id: string;
+    name: string;
+    category: string;
+    claimed: boolean;
+  } | null>(null);
+  const [signInOtpMode, setSignInOtpMode] = useState(false);
+  const [signInOtp, setSignInOtp] = useState("");
+  const [signInOtpLoading, setSignInOtpLoading] = useState(false);
+  const [signInOtpSent, setSignInOtpSent] = useState(false);
+  const [signInOtpCooldown, setSignInOtpCooldown] = useState(0);
+
+  // Real-time detection & missing fields for Create Account
+  const [createDetectedPatient, setCreateDetectedPatient] = useState<{
+    id: string;
+    name: string;
+    category: string;
+    claimed: boolean;
+    missing_fields?: string[];
+  } | null>(null);
+  const [claimMissingFields, setClaimMissingFields] = useState<string[]>([]);
+  const [claimMissingData, setClaimMissingData] = useState({
+    contact: "",
+    dob: "",
+    sex: "",
+    emergencyName: "",
+    emergencyPhone: "",
+    course: "",
+    yearLevel: "",
+    gradeLevel: "",
+    guardianName: "",
+    address: "",
+  });
+
   // OTP resend cooldown timer
   useEffect(() => {
     let timer: any;
@@ -1082,6 +1118,142 @@ const AuthModal = memo(function AuthModal({
       if (timer) clearInterval(timer);
     };
   }, [claimResendCooldown]);
+
+  // Sign In OTP resend cooldown timer
+  useEffect(() => {
+    let timer: any;
+    if (signInOtpCooldown > 0) {
+      timer = setInterval(() => {
+        setSignInOtpCooldown((c) => (c > 0 ? c - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [signInOtpCooldown]);
+
+  const triggerHaptic = useCallback(() => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+  }, []);
+
+  // Debounced email check for Sign In while user is typing
+  useEffect(() => {
+    const trimmed = signInIdentifier.trim().toLowerCase();
+    if (!isValidEmail(trimmed)) {
+      setSignInDetectedPatient(null);
+      setSignInCheckingEmail(false);
+      return;
+    }
+
+    setSignInCheckingEmail(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: trimmed }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.exists && data.patient) {
+          triggerHaptic();
+          setSignInDetectedPatient({
+            id: data.patient.id,
+            name: data.patient.name,
+            category: data.patient.category,
+            claimed: Boolean(data.claimed),
+          });
+        } else {
+          setSignInDetectedPatient(null);
+        }
+      } catch {
+        setSignInDetectedPatient(null);
+      } finally {
+        setSignInCheckingEmail(false);
+      }
+    }, 380);
+
+    return () => clearTimeout(timer);
+  }, [signInIdentifier, triggerHaptic]);
+
+  // Debounced email check for Create Account while user is typing
+  useEffect(() => {
+    const trimmed = createForm.email.trim().toLowerCase();
+    if (!isValidEmail(trimmed)) {
+      setCreateDetectedPatient(null);
+      setEmailChecking(false);
+      return;
+    }
+
+    setEmailChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: trimmed }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.exists && data.patient) {
+          triggerHaptic();
+          const p = data.patient;
+          const missing = data.missing_fields || [];
+          setCreateDetectedPatient({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            claimed: Boolean(data.claimed),
+            missing_fields: missing,
+          });
+          setClaimMissingFields(missing);
+
+          const detectedCat = p.category || detectCategoryFromEmail(trimmed);
+          setCreateForm((prev) => ({
+            ...prev,
+            category: detectedCat,
+            fullName: p.name || prev.fullName,
+            contact: p.contact || prev.contact,
+            dob: p.birthday || prev.dob,
+            sex: p.sex || prev.sex,
+            emergencyName: p.emergencyContact || prev.emergencyName,
+            emergencyPhone: p.emergencyPhone || prev.emergencyPhone,
+            studentId: p.id || prev.studentId,
+            employeeId: p.id || prev.employeeId,
+            studentCategory: p.studentCategory || prev.studentCategory,
+            gradeLevel: p.gradeLevel || prev.gradeLevel,
+            guardianName: p.guardianName || prev.guardianName,
+            course: p.course || prev.course,
+            yearLevel: p.yearLevel || prev.yearLevel,
+            position: p.position || prev.position,
+            department: p.department || prev.department,
+            address: p.address || prev.address,
+          }));
+          setClaimMissingData({
+            contact: p.contact || "",
+            dob: p.birthday || "",
+            sex: p.sex || "",
+            emergencyName: p.emergencyContact || "",
+            emergencyPhone: p.emergencyPhone || "",
+            course: p.course || "",
+            yearLevel: p.yearLevel || "",
+            gradeLevel: p.gradeLevel || "",
+            guardianName: p.guardianName || "",
+            address: p.address || "",
+          });
+        } else {
+          setCreateDetectedPatient(null);
+          setClaimMissingFields([]);
+        }
+      } catch {
+        setCreateDetectedPatient(null);
+      } finally {
+        setEmailChecking(false);
+      }
+    }, 380);
+
+    return () => clearTimeout(timer);
+  }, [createForm.email, triggerHaptic]);
 
   // Category select modals (Student Classification, Grade Level, Year Level)
   const [selectModalType, setSelectModalType] = useState<"studentCategory" | "gradeLevel" | "yearLevel" | null>(null);
@@ -1103,12 +1275,6 @@ const AuthModal = memo(function AuthModal({
   const departmentRef = useRef<TextInput>(null);
   const addressRef = useRef<TextInput>(null);
 
-  const triggerHaptic = useCallback(() => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (e) {}
-  }, []);
-
   useEffect(() => {
     if (visible) {
       setAuthMode(initialMode);
@@ -1125,6 +1291,9 @@ const AuthModal = memo(function AuthModal({
       setClaimErrors({});
       setClaimLoading(false);
       setEmailChecking(false);
+      setSignInOtpMode(false);
+      setSignInOtpSent(false);
+      setSignInOtp("");
       stepFadeAnim.setValue(1);
       stepSlideAnim.setValue(0);
       contentFadeAnim.setValue(1);
@@ -1149,6 +1318,9 @@ const AuthModal = memo(function AuthModal({
       setClaimStep(1);
       setClaimOtp("");
       setClaimErrors({});
+      setSignInOtpMode(false);
+      setSignInOtpSent(false);
+      setSignInOtp("");
       onClose();
     });
   }, [animVal, onClose]);
@@ -1170,6 +1342,9 @@ const AuthModal = memo(function AuthModal({
       setClaimStep(1);
       setClaimOtp("");
       setClaimErrors({});
+      setSignInOtpMode(false);
+      setSignInOtpSent(false);
+      setSignInOtp("");
     }, 110);
   }, [triggerHaptic, contentFadeAnim]);
 
@@ -1192,7 +1367,7 @@ const AuthModal = memo(function AuthModal({
     });
   }, [triggerHaptic, stepFadeAnim, stepSlideAnim]);
 
-  // Sign In Handler
+  // Sign In Handlers
   const handleSignIn = useCallback(async () => {
     const errs: Record<string, string> = {};
     if (!signInIdentifier.trim()) errs.identifier = "Username or email is required";
@@ -1229,6 +1404,83 @@ const AuthModal = memo(function AuthModal({
     }
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
+  const handleSendSignInOTP = useCallback(async () => {
+    const cleanEmail = signInIdentifier.trim().toLowerCase();
+    if (!cleanEmail || !isValidEmail(cleanEmail)) {
+      setSignInErrors({ identifier: "Enter a valid email address." });
+      return;
+    }
+    setSignInErrors({});
+    setSignInGeneralError("");
+    setSignInOtpLoading(true);
+
+    try {
+      const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/request-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        triggerHaptic();
+        setSignInOtpSent(true);
+        setSignInOtpMode(true);
+        setSignInOtpCooldown(30);
+        setSignInOtp("");
+      } else {
+        setSignInGeneralError(data.error || "Failed to send OTP code.");
+      }
+    } catch {
+      setSignInGeneralError("Network error. Please try again.");
+    } finally {
+      setSignInOtpLoading(false);
+    }
+  }, [signInIdentifier, triggerHaptic]);
+
+  const handleVerifySignInOTP = useCallback(async () => {
+    const cleanOtp = signInOtp.trim();
+    if (!cleanOtp || cleanOtp.length < 6) {
+      setSignInErrors({ otp: "Enter 6-digit OTP code" });
+      return;
+    }
+    const cleanEmail = signInIdentifier.trim().toLowerCase();
+    setSignInErrors({});
+    setSignInGeneralError("");
+    setSignInOtpLoading(true);
+
+    try {
+      const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        triggerHaptic();
+        if (data.access) {
+          onSuccessSignIn(cleanEmail, data.user?.name || cleanEmail.split("@")[0], data.access);
+        } else {
+          setCreateForm((f) => ({
+            ...f,
+            email: cleanEmail,
+            fullName: data.user?.name || signInDetectedPatient?.name || "",
+            category: (signInDetectedPatient?.category as any) || "Student",
+          }));
+          setIsClaimingWebAccount(true);
+          setClaimStep(2);
+          setAuthMode("create_account");
+        }
+      } else {
+        setSignInErrors({ otp: data.error || "Invalid or expired OTP." });
+      }
+    } catch {
+      setSignInGeneralError("Network error. Please try again.");
+    } finally {
+      setSignInOtpLoading(false);
+    }
+  }, [signInOtp, signInIdentifier, signInDetectedPatient, triggerHaptic, onSuccessSignIn]);
+
   // Step 1 Validation & Next: Account Email & Auto Category Identification (with Web Cura Detection)
   const handleStep1Next = useCallback(async () => {
     const errs: Record<string, string> = {};
@@ -1240,8 +1492,8 @@ const AuthModal = memo(function AuthModal({
     }
 
     const detected = detectCategoryFromEmail(trimmedEmail);
-    if (!detected) {
-      errs.email = "Please enter a valid student (.student@ua.edu.ph), employee (@ua.edu.ph), or outsider (@gmail.com) email";
+    if (!detected && !createDetectedPatient) {
+      errs.email = "Please enter a valid student, employee, or outsider email";
     }
 
     if (Object.keys(errs).length > 0) {
@@ -1254,23 +1506,26 @@ const AuthModal = memo(function AuthModal({
 
     try {
       const cleanEmail = trimmedEmail.toLowerCase();
-      const checkRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail }),
-      });
-      const checkData = await checkRes.json().catch(() => ({}));
+      let checkData: any = createDetectedPatient;
+      if (!checkData) {
+        const checkRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail }),
+        });
+        checkData = await checkRes.json().catch(() => ({}));
+      }
 
-      if (checkData.exists) {
-        if (checkData.claimed) {
+      if (checkData?.exists || createDetectedPatient) {
+        if (checkData?.claimed || createDetectedPatient?.claimed) {
           setRegErrors({
-            email: "This email is already registered and active. Please sign in instead.",
+            email: "This account is already registered. Please sign in.",
           });
           setEmailChecking(false);
           return;
         }
 
-        // Account is already added in Web CURA! Request OTP from Render backend
+        // Account is already in Web CURA! Request OTP from Render backend
         const otpRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/request-otp/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1287,7 +1542,7 @@ const AuthModal = memo(function AuthModal({
         }
 
         triggerHaptic();
-        setCreateForm((f) => ({ ...f, email: cleanEmail, category: detected }));
+        setCreateForm((f) => ({ ...f, email: cleanEmail, category: detected || (createDetectedPatient?.category as any) || "Student" }));
         setIsClaimingWebAccount(true);
         setClaimStep(1);
         setClaimOtp("");
@@ -1309,7 +1564,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setEmailChecking(false);
     }
-  }, [createForm.email, goToCreateStep, triggerHaptic]);
+  }, [createForm.email, createDetectedPatient, goToCreateStep, triggerHaptic]);
 
   // Step 2 Validation & Next: Basic Information
   const handleStep2Next = useCallback(() => {
@@ -1621,6 +1876,23 @@ const AuthModal = memo(function AuthModal({
       errs.confirmPassword = "Passwords do not match";
     }
 
+    if (claimMissingFields.includes("contact")) {
+      const digits = (claimMissingData.contact || "").replace(/\D/g, "");
+      if (!digits) {
+        errs.contact = "Contact number is required";
+      } else if (!isValidPHPhone(claimMissingData.contact) && !/^09\d{9}$/.test(digits)) {
+        errs.contact = "Must be valid PH mobile (09XX-XXX-XXXX)";
+      }
+    }
+    if (claimMissingFields.includes("emergencyPhone")) {
+      const emDigits = (claimMissingData.emergencyPhone || "").replace(/\D/g, "");
+      if (!emDigits) {
+        errs.emergencyPhone = "Emergency phone is required";
+      } else if (!isValidPHPhone(claimMissingData.emergencyPhone) && !/^09\d{9}$/.test(emDigits)) {
+        errs.emergencyPhone = "Must be valid PH mobile";
+      }
+    }
+
     if (Object.keys(errs).length > 0) {
       setClaimErrors(errs);
       return;
@@ -1643,6 +1915,27 @@ const AuthModal = memo(function AuthModal({
         const token = resData.access;
         const userName = (resData.user?.name || cleanEmail.split("@")[0]).toUpperCase();
 
+        if (claimMissingFields.length > 0) {
+          const profilePayload: any = {};
+          if (claimMissingData.contact) profilePayload.contact = claimMissingData.contact;
+          if (claimMissingData.dob) profilePayload.birthday = claimMissingData.dob;
+          if (claimMissingData.sex) profilePayload.sex = claimMissingData.sex;
+          if (claimMissingData.emergencyName) profilePayload.emergencyContact = claimMissingData.emergencyName;
+          if (claimMissingData.emergencyPhone) profilePayload.emergencyPhone = claimMissingData.emergencyPhone;
+          if (claimMissingData.course) profilePayload.course = claimMissingData.course;
+          if (claimMissingData.yearLevel) profilePayload.yearLevel = claimMissingData.yearLevel;
+          if (claimMissingData.address) profilePayload.address = claimMissingData.address;
+
+          await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/complete-profile/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(profilePayload),
+          }).catch(() => {});
+        }
+
         if (token) {
           await AsyncStorage.setItem("@cura_access_token", token).catch(() => {});
         }
@@ -1663,7 +1956,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setClaimLoading(false);
     }
-  }, [claimPassword, claimConfirmPassword, createForm.email, onSuccessRegister, showAlert]);
+  }, [claimPassword, claimConfirmPassword, claimMissingFields, claimMissingData, createForm.email, onSuccessRegister, showAlert]);
 
   const handleResendClaimOTP = useCallback(async () => {
     if (claimResendCooldown > 0 || claimLoading) return;
@@ -1869,57 +2162,366 @@ const AuthModal = memo(function AuthModal({
                       error={signInErrors.identifier}
                     />
 
-                    <GlassInput
-                      ref={signInPasswordRef}
-                      icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Password"
-                      value={signInPassword}
-                      onChangeText={(t) => {
-                        setSignInPassword(t);
-                        if (signInErrors.password) setSignInErrors((e) => ({ ...e, password: "" }));
-                      }}
-                      secureTextEntry
-                      showPasswordToggle
-                      returnKeyType="done"
-                      onSubmitEditing={handleSignIn}
-                      error={signInErrors.password}
-                    />
+                    {/* Real-time Email Check Status */}
+                    {signInCheckingEmail ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 8, paddingLeft: 4 }}>
+                        <ActivityIndicator size="small" color="#93C5FD" />
+                        <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 12, fontFamily: "Outfit", marginLeft: 8 }}>
+                          Checking clinic records...
+                        </Text>
+                      </View>
+                    ) : null}
 
-                    <TouchableOpacity
-                      onPress={handleSignIn}
-                      disabled={signInLoading}
-                      activeOpacity={0.85}
-                      style={{
-                        width: "100%",
-                        height: 50,
-                        borderRadius: 14,
-                        backgroundColor: "#1E4FD8",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 8,
-                        shadowColor: "#1E4FD8",
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.35,
-                        shadowRadius: 8,
-                        elevation: 4,
-                      }}
-                    >
-                      {signInLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <Text
+                    {/* Detected Clinic Record Badge */}
+                    {signInDetectedPatient ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          backgroundColor: "rgba(16, 185, 129, 0.18)",
+                          borderWidth: 1.5,
+                          borderColor: "rgba(52, 211, 153, 0.55)",
+                          borderRadius: 14,
+                          padding: 12,
+                          marginTop: 4,
+                          marginBottom: 12,
+                          gap: 10,
+                        }}
+                      >
+                        <Text style={{ fontSize: 20 }}>🏥</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              color: "#6EE7B7",
+                              fontSize: 10.5,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              textTransform: "uppercase",
+                              letterSpacing: 0.5,
+                            }}
+                          >
+                            Clinic Record Found
+                          </Text>
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 13.5,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              marginTop: 1,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {signInDetectedPatient.name} • {signInDetectedPatient.category}
+                          </Text>
+                        </View>
+                        {!signInDetectedPatient.claimed && (
+                          <View
+                            style={{
+                              backgroundColor: "#059669",
+                              paddingHorizontal: 7,
+                              paddingVertical: 2,
+                              borderRadius: 6,
+                            }}
+                          >
+                            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>NEW</Text>
+                          </View>
+                        )}
+                      </View>
+                    ) : null}
+
+                    {/* Case A: Unclaimed Clinic Record -> Direct OTP flow */}
+                    {signInDetectedPatient && !signInDetectedPatient.claimed ? (
+                      <>
+                        {!signInOtpSent ? (
+                          <TouchableOpacity
+                            onPress={handleSendSignInOTP}
+                            disabled={signInOtpLoading}
+                            activeOpacity={0.85}
+                            style={{
+                              width: "100%",
+                              height: 50,
+                              borderRadius: 14,
+                              backgroundColor: "#059669",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginTop: 4,
+                              shadowColor: "#059669",
+                              shadowOffset: { width: 0, height: 4 },
+                              shadowOpacity: 0.35,
+                              shadowRadius: 8,
+                              elevation: 4,
+                            }}
+                          >
+                            {signInOtpLoading ? (
+                              <ActivityIndicator color="#FFFFFF" size="small" />
+                            ) : (
+                              <Text
+                                style={{
+                                  color: "#FFFFFF",
+                                  fontSize: 15,
+                                  fontWeight: "700",
+                                  fontFamily: "Outfit",
+                                  letterSpacing: 0.4,
+                                }}
+                              >
+                                Verify via OTP to Sign In →
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        ) : (
+                          <>
+                            <GlassInput
+                              icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="6-Digit OTP Code"
+                              value={signInOtp}
+                              onChangeText={(t) => {
+                                setSignInOtp(t);
+                                if (signInErrors.otp) setSignInErrors((e) => ({ ...e, otp: "" }));
+                              }}
+                              keyboardType="number-pad"
+                              maxLength={6}
+                              error={signInErrors.otp}
+                              returnKeyType="done"
+                              onSubmitEditing={handleVerifySignInOTP}
+                            />
+
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginVertical: 4,
+                              }}
+                            >
+                              <TouchableOpacity
+                                onPress={handleSendSignInOTP}
+                                disabled={signInOtpCooldown > 0 || signInOtpLoading}
+                                activeOpacity={0.7}
+                              >
+                                <Text
+                                  style={{
+                                    color: signInOtpCooldown > 0 ? "rgba(255, 255, 255, 0.4)" : "#60A5FA",
+                                    fontSize: 12.5,
+                                    fontFamily: "Outfit",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {signInOtpCooldown > 0 ? `Resend in ${signInOtpCooldown}s` : "Resend OTP"}
+                                </Text>
+                              </TouchableOpacity>
+
+                              <TouchableOpacity
+                                onPress={() => {
+                                  setSignInOtpSent(false);
+                                  setSignInOtp("");
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: 12.5, fontFamily: "Outfit" }}>
+                                  Cancel
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+
+                            <TouchableOpacity
+                              onPress={handleVerifySignInOTP}
+                              disabled={signInOtpLoading || signInOtp.trim().length < 6}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
+                                backgroundColor: signInOtp.trim().length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.45)",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginTop: 6,
+                                shadowColor: "#1E4FD8",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.35,
+                                shadowRadius: 8,
+                                elevation: 4,
+                              }}
+                            >
+                              {signInOtpLoading ? (
+                                <ActivityIndicator color="#FFFFFF" size="small" />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 15,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    letterSpacing: 0.4,
+                                  }}
+                                >
+                                  Verify & Sign In →
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </>
+                    ) : signInOtpMode ? (
+                      /* Case B: Claimed account chose OTP sign in */
+                      <>
+                        <GlassInput
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="6-Digit OTP Code"
+                          value={signInOtp}
+                          onChangeText={(t) => {
+                            setSignInOtp(t);
+                            if (signInErrors.otp) setSignInErrors((e) => ({ ...e, otp: "" }));
+                          }}
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          error={signInErrors.otp}
+                          returnKeyType="done"
+                          onSubmitEditing={handleVerifySignInOTP}
+                        />
+
+                        <View
                           style={{
-                            color: "#FFFFFF",
-                            fontSize: 16,
-                            fontWeight: "700",
-                            fontFamily: "Outfit",
-                            letterSpacing: 0.4,
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginVertical: 4,
                           }}
                         >
-                          Sign In
-                        </Text>
-                      )}
-                    </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={handleSendSignInOTP}
+                            disabled={signInOtpCooldown > 0 || signInOtpLoading}
+                            activeOpacity={0.7}
+                          >
+                            <Text
+                              style={{
+                                color: signInOtpCooldown > 0 ? "rgba(255, 255, 255, 0.4)" : "#60A5FA",
+                                fontSize: 12.5,
+                                fontFamily: "Outfit",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {signInOtpCooldown > 0 ? `Resend in ${signInOtpCooldown}s` : "Resend OTP"}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => setSignInOtpMode(false)}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: 12.5, fontFamily: "Outfit" }}>
+                              Use Password
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                          onPress={handleVerifySignInOTP}
+                          disabled={signInOtpLoading || signInOtp.trim().length < 6}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: signInOtp.trim().length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.45)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 6,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {signInOtpLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 15,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              Verify & Sign In →
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      /* Case C: Standard Password Login */
+                      <>
+                        <GlassInput
+                          ref={signInPasswordRef}
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Password"
+                          value={signInPassword}
+                          onChangeText={(t) => {
+                            setSignInPassword(t);
+                            if (signInErrors.password) setSignInErrors((e) => ({ ...e, password: "" }));
+                          }}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="done"
+                          onSubmitEditing={handleSignIn}
+                          error={signInErrors.password}
+                        />
+
+                        <TouchableOpacity
+                          onPress={handleSignIn}
+                          disabled={signInLoading}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 8,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {signInLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 16,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              Sign In
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+
+                        {signInDetectedPatient?.claimed ? (
+                          <TouchableOpacity
+                            onPress={() => {
+                              setSignInOtpMode(true);
+                              handleSendSignInOTP();
+                            }}
+                            activeOpacity={0.7}
+                            style={{ alignItems: "center", marginTop: 12, paddingVertical: 4 }}
+                          >
+                            <Text style={{ color: "#60A5FA", fontSize: 13, fontFamily: "Outfit", fontWeight: "600" }}>
+                              Or Sign In with OTP Code
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </>
+                    )}
 
                     {/* Switcher */}
                     <View
@@ -2011,24 +2613,21 @@ const AuthModal = memo(function AuthModal({
                               style={{
                                 flexDirection: "row",
                                 alignItems: "center",
-                                padding: 14,
-                                borderRadius: 14,
-                                backgroundColor: "rgba(16, 185, 129, 0.22)",
-                                borderWidth: 1.5,
-                                borderColor: "#34D399",
-                                marginBottom: 16,
-                                shadowColor: "#10B981",
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.25,
-                                shadowRadius: 6,
+                                padding: 12,
+                                borderRadius: 12,
+                                backgroundColor: "rgba(16, 185, 129, 0.18)",
+                                borderWidth: 1,
+                                borderColor: "rgba(52, 211, 153, 0.45)",
+                                marginBottom: 14,
+                                gap: 10,
                               }}
                             >
-                              <Text style={{ fontSize: 26, marginRight: 12 }}>🏥</Text>
+                              <Text style={{ fontSize: 20 }}>🏥</Text>
                               <View style={{ flex: 1 }}>
                                 <Text
                                   style={{
                                     color: "#6EE7B7",
-                                    fontSize: 11,
+                                    fontSize: 10.5,
                                     fontFamily: "Outfit",
                                     fontWeight: "700",
                                     textTransform: "uppercase",
@@ -2040,13 +2639,13 @@ const AuthModal = memo(function AuthModal({
                                 <Text
                                   style={{
                                     color: "#FFFFFF",
-                                    fontSize: 13,
+                                    fontSize: 13.5,
                                     fontFamily: "Outfit",
-                                    marginTop: 2,
-                                    lineHeight: 18,
+                                    fontWeight: "600",
+                                    marginTop: 1,
                                   }}
                                 >
-                                  Nahanap ang account mo sa Web CURA! Ilagay ang 6-digit OTP code na pinadala sa iyong email para ma-verify at ma-activate ang mobile account mo.
+                                  {createForm.fullName || "Patient Record"} • {createForm.category}
                                 </Text>
                               </View>
                             </View>
@@ -2163,10 +2762,11 @@ const AuthModal = memo(function AuthModal({
                                 backgroundColor: "rgba(30, 79, 216, 0.35)",
                                 borderWidth: 1,
                                 borderColor: "#60A5FA",
-                                marginBottom: 16,
+                                marginBottom: 14,
+                                gap: 10,
                               }}
                             >
-                              <Text style={{ fontSize: 20, marginRight: 10 }}>🔒</Text>
+                              <Text style={{ fontSize: 20 }}>🔒</Text>
                               <Text
                                 style={{
                                   color: "rgba(255, 255, 255, 0.9)",
@@ -2176,9 +2776,40 @@ const AuthModal = memo(function AuthModal({
                                   flex: 1,
                                 }}
                               >
-                                Verified! Set your account password to complete activation and sign in.
+                                Verified! Set your password to complete activation.
                               </Text>
                             </View>
+
+                            {/* Missing Profile Fields (if nurse did not fill them on web) */}
+                            {claimMissingFields.includes("contact") && (
+                              <GlassInput
+                                icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                                placeholder="Mobile Number (09XXXXXXXXX)"
+                                value={claimMissingData.contact}
+                                onChangeText={(t) => {
+                                  setClaimMissingData((d) => ({ ...d, contact: t }));
+                                  if (claimErrors.contact) setClaimErrors((e) => ({ ...e, contact: "" }));
+                                }}
+                                keyboardType="phone-pad"
+                                maxLength={11}
+                                error={claimErrors.contact}
+                              />
+                            )}
+
+                            {claimMissingFields.includes("emergencyPhone") && (
+                              <GlassInput
+                                icon={<PhoneIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                                placeholder="Emergency Phone (09XXXXXXXXX)"
+                                value={claimMissingData.emergencyPhone}
+                                onChangeText={(t) => {
+                                  setClaimMissingData((d) => ({ ...d, emergencyPhone: t }));
+                                  if (claimErrors.emergencyPhone) setClaimErrors((e) => ({ ...e, emergencyPhone: "" }));
+                                }}
+                                keyboardType="phone-pad"
+                                maxLength={11}
+                                error={claimErrors.emergencyPhone}
+                              />
+                            )}
 
                             <GlassInput
                               icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
@@ -2281,8 +2912,72 @@ const AuthModal = memo(function AuthModal({
                               error={regErrors.email}
                             />
 
-                            {/* Identified Category Indicator / Guidance */}
-                            {createForm.category ? (
+                            {/* Real-time Email Check Status */}
+                            {emailChecking ? (
+                              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 8, paddingLeft: 4 }}>
+                                <ActivityIndicator size="small" color="#93C5FD" />
+                                <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 12, fontFamily: "Outfit", marginLeft: 8 }}>
+                                  Checking clinic records...
+                                </Text>
+                              </View>
+                            ) : null}
+
+                            {/* Clinic Record Detected vs Category Indicator */}
+                            {createDetectedPatient ? (
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  backgroundColor: "rgba(16, 185, 129, 0.18)",
+                                  borderWidth: 1.5,
+                                  borderColor: "rgba(52, 211, 153, 0.55)",
+                                  borderRadius: 14,
+                                  padding: 12,
+                                  marginBottom: 12,
+                                  gap: 10,
+                                }}
+                              >
+                                <Text style={{ fontSize: 20 }}>🏥</Text>
+                                <View style={{ flex: 1 }}>
+                                  <Text
+                                    style={{
+                                      color: "#6EE7B7",
+                                      fontSize: 10.5,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      textTransform: "uppercase",
+                                      letterSpacing: 0.5,
+                                    }}
+                                  >
+                                    Clinic Record Detected
+                                  </Text>
+                                  <Text
+                                    style={{
+                                      color: "#FFFFFF",
+                                      fontSize: 13.5,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      marginTop: 1,
+                                    }}
+                                    numberOfLines={1}
+                                  >
+                                    {createDetectedPatient.name} • {createDetectedPatient.category}
+                                  </Text>
+                                  <Text
+                                    style={{
+                                      color: "rgba(255, 255, 255, 0.7)",
+                                      fontSize: 11.5,
+                                      fontFamily: "Outfit",
+                                      marginTop: 2,
+                                    }}
+                                  >
+                                    {createDetectedPatient.claimed
+                                      ? "Account already active. Please sign in."
+                                      : "Registered at UA Clinic. Claim your account."}
+                                  </Text>
+                                </View>
+                              </View>
+                            ) : createForm.category ? (
                               <View
                                 style={{
                                   flexDirection: "row",
@@ -2356,41 +3051,76 @@ const AuthModal = memo(function AuthModal({
                               </Text>
                             ) : null}
 
-                            <TouchableOpacity
-                              onPress={handleStep1Next}
-                              disabled={emailChecking}
-                              activeOpacity={0.85}
-                              style={{
-                                width: "100%",
-                                height: 50,
-                                borderRadius: 14,
-                                backgroundColor: "#1E4FD8",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                marginTop: 6,
-                                shadowColor: "#1E4FD8",
-                                shadowOffset: { width: 0, height: 4 },
-                                shadowOpacity: 0.35,
-                                shadowRadius: 8,
-                                elevation: 4,
-                              }}
-                            >
-                              {emailChecking ? (
-                                <ActivityIndicator size="small" color="#FFFFFF" />
-                              ) : (
+                            {createDetectedPatient && createDetectedPatient.claimed ? (
+                              <TouchableOpacity
+                                onPress={() => {
+                                  setSignInIdentifier(createForm.email.trim());
+                                  switchAuthMode("signin");
+                                }}
+                                activeOpacity={0.85}
+                                style={{
+                                  width: "100%",
+                                  height: 50,
+                                  borderRadius: 14,
+                                  backgroundColor: "#1E4FD8",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  marginTop: 6,
+                                  shadowColor: "#1E4FD8",
+                                  shadowOffset: { width: 0, height: 4 },
+                                  shadowOpacity: 0.35,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }}
+                              >
                                 <Text
                                   style={{
                                     color: "#FFFFFF",
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: "700",
                                     fontFamily: "Outfit",
-                                    letterSpacing: 0.4,
                                   }}
                                 >
-                                  Next →
+                                  Go to Sign In →
                                 </Text>
-                              )}
-                            </TouchableOpacity>
+                              </TouchableOpacity>
+                            ) : (
+                              <TouchableOpacity
+                                onPress={handleStep1Next}
+                                disabled={emailChecking}
+                                activeOpacity={0.85}
+                                style={{
+                                  width: "100%",
+                                  height: 50,
+                                  borderRadius: 14,
+                                  backgroundColor: createDetectedPatient ? "#059669" : "#1E4FD8",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  marginTop: 6,
+                                  shadowColor: createDetectedPatient ? "#059669" : "#1E4FD8",
+                                  shadowOffset: { width: 0, height: 4 },
+                                  shadowOpacity: 0.35,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }}
+                              >
+                                {emailChecking ? (
+                                  <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                  <Text
+                                    style={{
+                                      color: "#FFFFFF",
+                                      fontSize: 15,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      letterSpacing: 0.4,
+                                    }}
+                                  >
+                                    {createDetectedPatient ? "Claim Account (Send OTP) →" : "Next →"}
+                                  </Text>
+                                )}
+                              </TouchableOpacity>
+                            )}
 
                             {regErrors.email?.includes("already registered") ? (
                               <TouchableOpacity
@@ -3901,10 +4631,123 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
 
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [detectedPatient, setDetectedPatient] = useState<any>(null);
+  const [otpMode, setOtpMode] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+
+  // Debounced email check for clinic patient records (380ms)
+  useEffect(() => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes("@") || !trimmed.includes(".")) {
+      setCheckingEmail(false);
+      setDetectedPatient(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setCheckingEmail(true);
+      try {
+        const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/?email=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.exists) {
+            setDetectedPatient(data);
+            if (!data.claimed) {
+              setOtpMode(true);
+            }
+          } else {
+            setDetectedPatient(null);
+          }
+        }
+      } catch (err) {
+        // quiet error
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 380);
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  // Cooldown countdown
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setOtpCooldown(c => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [otpCooldown]);
+
+  const handleSendOTP = async () => {
+    if (!email.trim()) {
+      setError("Please enter your email first.");
+      return;
+    }
+    setError("");
+    setOtpLoading(true);
+    try {
+      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/auth/request-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOtpSent(true);
+        setOtpCooldown(60);
+      } else {
+        setError(data.error || "Failed to send OTP code.");
+      }
+    } catch {
+      setError("Failed to send verification code. Please check connection.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!otp.trim() || otp.trim().length < 6) {
+      setError("Please enter the 6-digit OTP code.");
+      return;
+    }
+    setError("");
+    setOtpLoading(true);
+    try {
+      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/auth/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), otp: otp.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.access) {
+          const userEmail = data.user?.email || email.trim();
+          const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
+          if (setUser) {
+            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access }));
+          }
+          AsyncStorage.setItem('@cura_access_token', data.access).catch(() => {});
+          if (loadUserData) loadUserData(userEmail);
+          navigate("home");
+        } else {
+          navigate("register");
+        }
+      } else {
+        setError(data.error || "Invalid verification code.");
+      }
+    } catch {
+      setError("Network error verifying code.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const mockGoogleSignIn = async () => {
     setLoading(true);
     if (loadUserData) {
-      await loadUserData("jdelacruz.student@ua.edu.ph"); // Using a sample email for mock
+      await loadUserData("jdelacruz.student@ua.edu.ph");
     }
     setLoading(false);
     navigate("home");
@@ -3998,43 +4841,115 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
           </View>
         ) : null}
 
-        <Input
-          label="Email address"
-          placeholder="you@university.edu"
-          value={email}
-          onChangeText={(val) => { setError(""); setEmail(val); }}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        <View>
+          <Input
+            label="Email address"
+            placeholder="you@university.edu"
+            value={email}
+            onChangeText={(val) => { setError(""); setEmail(val); }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {checkingEmail ? (
+            <View className="flex-row items-center gap-1.5 mt-1.5 ml-1">
+              <ActivityIndicator size="small" color="#0284c7" />
+              <Text className="text-[11px] text-sky-600 font-medium">Checking clinic records...</Text>
+            </View>
+          ) : detectedPatient ? (
+            <View className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3 mt-2 flex-row items-center justify-between">
+              <View className="flex-1 mr-2">
+                <View className="flex-row items-center gap-1.5">
+                  <Text className="text-xs">🏥</Text>
+                  <Text className="text-xs font-bold text-emerald-800">Clinic Record Found</Text>
+                </View>
+                <Text className="text-[11px] text-emerald-600 font-medium mt-0.5" numberOfLines={1}>
+                  {detectedPatient.patient?.full_name ? `${detectedPatient.patient.full_name} (${detectedPatient.patient.patient_id})` : 'Linked to University Clinic'}
+                </Text>
+              </View>
+              <View className="bg-emerald-100/80 px-2.5 py-1 rounded-full">
+                <Text className="text-[10px] font-bold text-emerald-700">
+                  {detectedPatient.claimed ? 'Registered' : 'Unclaimed'}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
 
-        <View className="flex-col gap-1.5">
-          <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</Text>
-          <View className="relative justify-center">
+        {otpMode ? (
+          <View className="flex-col gap-2.5 bg-sky-50/70 border border-sky-100 rounded-2xl p-4 mt-1">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xs font-bold text-slate-700">6-Digit OTP Code</Text>
+              {otpCooldown > 0 ? (
+                <Text className="text-xs text-slate-400 font-semibold">{otpCooldown}s</Text>
+              ) : (
+                <Pressable onPress={handleSendOTP} disabled={otpLoading}>
+                  <Text className="text-xs font-bold text-cura-500">
+                    {otpSent ? 'Resend Code' : 'Send Code'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
             <TextInput
-              secureTextEntry={!showPass}
-              placeholder="••••••••"
-              placeholderTextColor="#CBD5E1"
-              value={password}
-              onChangeText={(val) => { setError(""); setPassword(val); }}
-              className="w-full bg-white border border-sky-200 rounded-2xl px-4 py-3.5 text-sm text-slate-800 pr-12"
+              placeholder="000000"
+              placeholderTextColor="#94A3B8"
+              value={otp}
+              onChangeText={(val) => { setError(""); setOtp(val); }}
+              keyboardType="number-pad"
+              maxLength={6}
+              className="w-full bg-white border border-sky-200 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-800"
             />
-            <Pressable onPress={() => setShowPass(!showPass)} className="absolute right-4 p-2">
-              <Svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><Circle cx="12" cy="12" r="3"/>
-              </Svg>
-            </Pressable>
+            {otpSent ? (
+              <Text className="text-[11px] text-emerald-600 font-medium text-center">
+                Code generated. Ready to verify!
+              </Text>
+            ) : null}
+            <Button fullWidth onPress={handleVerifyOTP} loading={otpLoading} className="mt-1">
+              Verify & Sign In
+            </Button>
+            {detectedPatient?.claimed ? (
+              <Pressable onPress={() => setOtpMode(false)} className="py-1 items-center">
+                <Text className="text-xs font-semibold text-slate-400">Use password instead</Text>
+              </Pressable>
+            ) : null}
           </View>
-        </View>
+        ) : (
+          <>
+            <View className="flex-col gap-1.5">
+              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</Text>
+              <View className="relative justify-center">
+                <TextInput
+                  secureTextEntry={!showPass}
+                  placeholder="••••••••"
+                  placeholderTextColor="#CBD5E1"
+                  value={password}
+                  onChangeText={(val) => { setError(""); setPassword(val); }}
+                  className="w-full bg-white border border-sky-200 rounded-2xl px-4 py-3.5 text-sm text-slate-800 pr-12"
+                />
+                <Pressable onPress={() => setShowPass(!showPass)} className="absolute right-4 p-2">
+                  <Svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><Circle cx="12" cy="12" r="3"/>
+                  </Svg>
+                </Pressable>
+              </View>
+            </View>
 
-        <View className="items-end">
-          <Pressable onPress={() => navigate("forgot-password")} className="py-2">
-            <Text className="text-sm text-cura-500 font-semibold">Forgot password?</Text>
-          </Pressable>
-        </View>
+            <View className="items-end">
+              <Pressable onPress={() => navigate("forgot-password")} className="py-2">
+                <Text className="text-sm text-cura-500 font-semibold">Forgot password?</Text>
+              </Pressable>
+            </View>
 
-        <Button fullWidth onPress={handleLogin} loading={loading} className="mt-1">
-          Sign In
-        </Button>
+            <Button fullWidth onPress={handleLogin} loading={loading} className="mt-1">
+              Sign In
+            </Button>
+
+            {detectedPatient ? (
+              <Pressable onPress={() => { setOtpMode(true); if (!otpSent) handleSendOTP(); }} className="py-1 items-center">
+                <Text className="text-xs font-bold text-cura-500">Sign in with OTP code instead →</Text>
+              </Pressable>
+            ) : null}
+          </>
+        )}
 
         <View className="flex-row items-center gap-3 my-1">
           <View className="flex-1 h-px bg-sky-100" />
