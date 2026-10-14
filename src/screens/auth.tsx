@@ -4340,25 +4340,20 @@ export function WelcomeScreen({
             overflow: "hidden",
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
+            backgroundColor: "#FFFFFF",
             paddingTop: 28,
             paddingHorizontal: 24,
             paddingBottom: Math.max(insets.bottom, 20) + 8,
             shadowColor: "#0A2472",
             shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.12,
             shadowRadius: 16,
             elevation: 8,
           },
           sheetAnimatedStyle,
         ]}
       >
-        <LinearGradient
-          colors={ADMIN_PORTAL_GRADIENT.colors}
-          start={ADMIN_PORTAL_GRADIENT.start}
-          end={ADMIN_PORTAL_GRADIENT.end}
-          style={StyleSheet.absoluteFill}
-        />
-        {/* Primary: Sign In Button */}
+        {/* Primary: Sign In Button with Blue Gradient Background */}
         <TouchableOpacity
           onPress={() => openAuthModal("signin")}
           activeOpacity={0.85}
@@ -4368,15 +4363,24 @@ export function WelcomeScreen({
             width: "100%",
             height: 54,
             borderRadius: 9999,
-            backgroundColor: "transparent",
-            borderWidth: 2,
-            borderColor: "#FFFFFF",
+            overflow: "hidden",
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
             paddingHorizontal: 20,
+            shadowColor: "#0A2472",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 3,
           }}
         >
+          <LinearGradient
+            colors={ADMIN_PORTAL_GRADIENT.colors}
+            start={ADMIN_PORTAL_GRADIENT.start}
+            end={ADMIN_PORTAL_GRADIENT.end}
+            style={StyleSheet.absoluteFill}
+          />
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <PersonIcon color="#FFFFFF" size={20} />
             <Text
@@ -4394,7 +4398,7 @@ export function WelcomeScreen({
           <ArrowRightIcon color="#FFFFFF" size={20} />
         </TouchableOpacity>
 
-        {/* Secondary: Create Account Button */}
+        {/* Secondary: Create Account Button with Blue Gradient Border */}
         <TouchableOpacity
           onPress={() => openAuthModal("create_account")}
           activeOpacity={0.85}
@@ -4404,35 +4408,44 @@ export function WelcomeScreen({
             width: "100%",
             height: 54,
             borderRadius: 9999,
-            backgroundColor: "#FFFFFF",
-            borderWidth: 0,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 20,
             marginTop: 14,
-            shadowColor: "#0A2472",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 8,
-            elevation: 3,
+            padding: 2,
+            overflow: "hidden",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <PencilIcon color="#1E4FD8" size={20} />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: "#1E4FD8",
-                fontSize: 16,
-                fontWeight: "600",
-                fontFamily: "Outfit",
-              }}
-            >
-              Create Account
-            </Text>
+          <LinearGradient
+            colors={ADMIN_PORTAL_GRADIENT.colors}
+            start={ADMIN_PORTAL_GRADIENT.start}
+            end={ADMIN_PORTAL_GRADIENT.end}
+            style={StyleSheet.absoluteFill}
+          />
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 9999,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 18,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <PencilIcon color="#0056B3" size={20} />
+              <Text
+                style={{
+                  marginLeft: 12,
+                  color: "#002D72",
+                  fontSize: 16,
+                  fontWeight: "600",
+                  fontFamily: "Outfit",
+                }}
+              >
+                Create Account
+              </Text>
+            </View>
+            <ArrowRightIcon color="#0056B3" size={20} />
           </View>
-          <ArrowRightIcon color="#1E4FD8" size={20} />
         </TouchableOpacity>
 
         {/* Footer */}
@@ -4446,7 +4459,7 @@ export function WelcomeScreen({
           <Text
             style={{
               fontSize: 13,
-              color: "rgba(255, 255, 255, 0.85)",
+              color: "#64748B",
               fontWeight: "500",
               fontFamily: "Outfit",
               textAlign: "center",
