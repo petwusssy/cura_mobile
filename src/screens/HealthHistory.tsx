@@ -39,43 +39,93 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         {/* Tabs for Consultation / Non-Consultation */}
-        <View className="flex-row bg-white/10 rounded-full p-1 mb-5">
+        <View className="flex-row rounded-full p-1 mb-5" style={{ backgroundColor: "transparent" }}>
           <Pressable
             onPress={() => setActiveTab("consultations")}
-            className={`flex-1 py-2.5 rounded-full items-center justify-center flex-row gap-1.5 ${
-              activeTab === "consultations" ? "bg-white" : "bg-transparent"
-            }`}
+            className="flex-1 py-2.5 rounded-full items-center justify-center flex-row gap-2 active:opacity-85"
+            style={{
+              backgroundColor: activeTab === "consultations" ? "rgba(0, 122, 255, 0.12)" : "transparent",
+              borderColor: activeTab === "consultations" ? "rgba(0, 122, 255, 0.25)" : "transparent",
+              borderWidth: 1,
+            }}
           >
-            <Text className={`text-xs font-bold ${activeTab === "consultations" ? "text-[#0B2136]" : "text-white/80"}`}>
-              🩺 Consultation ({consultationList.length})
+            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
+              <Path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
+              <Circle cx="20" cy="10" r="2" />
+            </Svg>
+            <Text
+              className="text-xs font-bold"
+              style={{
+                color: "#002D72",
+                opacity: activeTab === "consultations" ? 1 : 0.65,
+                fontFamily: "Outfit",
+              }}
+            >
+              Consultation ({consultationList.length})
             </Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("non-consultations")}
-            className={`flex-1 py-2.5 rounded-full items-center justify-center flex-row gap-1.5 ${
-              activeTab === "non-consultations" ? "bg-white" : "bg-transparent"
-            }`}
+            className="flex-1 py-2.5 rounded-full items-center justify-center flex-row gap-2 active:opacity-85"
+            style={{
+              backgroundColor: activeTab === "non-consultations" ? "rgba(0, 122, 255, 0.12)" : "transparent",
+              borderColor: activeTab === "non-consultations" ? "rgba(0, 122, 255, 0.25)" : "transparent",
+              borderWidth: 1,
+            }}
           >
-            <Text className={`text-xs font-bold ${activeTab === "non-consultations" ? "text-[#0B2136]" : "text-white/80"}`}>
-              🏥 Non-Consultation ({nonConsultationList.length})
+            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M3 21h18" />
+              <Path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+              <Path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+              <Path d="M10 9h4" />
+              <Path d="M12 7v4" />
+            </Svg>
+            <Text
+              className="text-xs font-bold"
+              style={{
+                color: "#002D72",
+                opacity: activeTab === "non-consultations" ? 1 : 0.65,
+                fontFamily: "Outfit",
+              }}
+            >
+              Non-Consultation ({nonConsultationList.length})
             </Text>
           </Pressable>
         </View>
 
         {/* Summary row */}
         <View className="flex-row gap-2 mb-5 flex-wrap">
-          {[
-            { label: `${currentList.length} ${activeTab === "consultations" ? "Consultation" : "Non-Consultation"} visits`, icon: activeTab === "consultations" ? "🩺" : "🏥", bg: "#EFF8FF", color: "#0994E8" },
-          ].map((chip) => (
-            <View
-              key={chip.label}
-              className="flex-row items-center gap-1.5 rounded-full px-3 py-2 border border-white"
-              style={{ backgroundColor: chip.bg, elevation: 1, shadowColor: '#0994E8', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 }}
-            >
-              <Text className="text-xs">{chip.icon}</Text>
-              <Text className="text-xs font-bold" style={{ color: chip.color }}>{chip.label}</Text>
-            </View>
-          ))}
+          <View
+            className="flex-row items-center gap-1.5 rounded-full px-3 py-2 border border-white"
+            style={{
+              backgroundColor: "rgba(0, 122, 255, 0.08)",
+              elevation: 1,
+              shadowColor: "#002D72",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+            }}
+          >
+            {activeTab === "consultations" ? (
+              <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
+                <Path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
+                <Circle cx="20" cy="10" r="2" />
+              </Svg>
+            ) : (
+              <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M3 21h18" />
+                <Path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+                <Path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+                <Path d="M10 9h4" />
+                <Path d="M12 7v4" />
+              </Svg>
+            )}
+            <Text className="text-xs font-bold" style={{ color: "#002D72" }}>
+              {currentList.length} {activeTab === "consultations" ? "Consultation" : "Non-Consultation"} visits
+            </Text>
+          </View>
         </View>
 
         {/* Timeline */}
@@ -89,16 +139,37 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
                 {/* Timeline */}
                 <View className="flex-col items-center w-9">
                   <LinearGradient
-                    colors={['#0B2136', '#0B2136']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+                    colors={ADMIN_PORTAL_GRADIENT.colors}
+                    start={ADMIN_PORTAL_GRADIENT.start}
+                    end={ADMIN_PORTAL_GRADIENT.end}
                     className="w-9 h-9 rounded-full items-center justify-center z-10 mt-3.5"
-                    style={{ borderWidth: 3, borderColor: "#DEF0FF" }}
+                    style={{
+                      borderWidth: 2.5,
+                      borderColor: "rgba(255, 255, 255, 0.85)",
+                      shadowColor: "#0A2472",
+                      shadowOffset: { width: 0, height: 3 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 6,
+                      elevation: 3,
+                    }}
                   >
-                    <Text className="text-white text-xs font-extrabold">{currentList.length - i}</Text>
+                    <Text
+                      className="text-white text-xs font-extrabold"
+                      style={{
+                        fontFamily: "Outfit",
+                        textShadowColor: "rgba(0, 0, 0, 0.25)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      {currentList.length - i}
+                    </Text>
                   </LinearGradient>
                   {i < currentList.length - 1 && (
-                    <View className="w-0.5 bg-sky-200 flex-1 mt-1 min-h-[28px]" />
+                    <View
+                      className="w-0.5 flex-1 mt-1 min-h-[28px]"
+                      style={{ backgroundColor: "rgba(0, 45, 114, 0.18)" }}
+                    />
                   )}
                 </View>
 
@@ -106,7 +177,7 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
                   <Card onPress={() => navigate("health-detail", { id: c.id })}>
                     <View className="flex-row items-start justify-between gap-2 mb-2">
                       <View className="flex-1">
-                        <Text className="text-xs font-bold text-cura-500 mb-0.5">
+                        <Text className="text-xs font-bold mb-0.5" style={{ color: "#002D72" }}>
                           {new Date(c.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" })}
                         </Text>
                         <Text className="text-sm font-black text-[#0B2136] leading-tight">{c.complaint}</Text>
@@ -122,8 +193,25 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Pr
                       )}
                     </View>
                     <View className="flex-row items-center gap-2 mt-3">
-                      <View className="w-5 h-5 rounded-full bg-sky-100 items-center justify-center">
-                        <Text className="text-xs">{activeTab === "consultations" ? "👩‍⚕️" : "🏥"}</Text>
+                      <View
+                        className="w-5 h-5 rounded-full items-center justify-center"
+                        style={{ backgroundColor: "rgba(0, 122, 255, 0.08)" }}
+                      >
+                        {activeTab === "consultations" ? (
+                          <Svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
+                            <Path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
+                            <Circle cx="20" cy="10" r="2" />
+                          </Svg>
+                        ) : (
+                          <Svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M3 21h18" />
+                            <Path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+                            <Path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+                            <Path d="M10 9h4" />
+                            <Path d="M12 7v4" />
+                          </Svg>
+                        )}
                       </View>
                       <Text className="text-xs text-slate-500">{c.doctorName || (activeTab === "consultations" ? "Consultation" : "Non-Consultation")}</Text>
                     </View>
