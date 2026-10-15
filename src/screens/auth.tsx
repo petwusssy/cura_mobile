@@ -265,6 +265,7 @@ interface GlassInputProps {
   placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
+  editable?: boolean;
   secureTextEntry?: boolean;
   showPasswordToggle?: boolean;
   error?: string;
@@ -286,6 +287,7 @@ const GlassInput = memo(
       placeholder,
       value,
       onChangeText,
+      editable = true,
       secureTextEntry = false,
       showPasswordToggle = false,
       error,
@@ -331,6 +333,7 @@ const GlassInput = memo(
             borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
             paddingHorizontal: 14,
             paddingVertical: multiline ? 10 : 0,
+            opacity: editable ? 1 : 0.75,
           }}
         >
           {icon ? <View style={{ marginRight: 10, marginTop: multiline ? 2 : 0 }} pointerEvents="none">{icon}</View> : null}
@@ -350,7 +353,7 @@ const GlassInput = memo(
             multiline={multiline}
             numberOfLines={numberOfLines}
             textAlignVertical={multiline ? "top" : "center"}
-            editable={true}
+            editable={editable}
             style={{
               flex: 1,
               color: "#FFFFFF",
@@ -1136,6 +1139,8 @@ const AuthModal = memo(function AuthModal({
     missing_fields?: string[];
   } | null>(null);
   const [claimMissingFields, setClaimMissingFields] = useState<string[]>([]);
+  const [isCategoryLocked, setIsCategoryLocked] = useState(false);
+  const [isGooglePrefilled, setIsGooglePrefilled] = useState(false);
   const [claimMissingData, setClaimMissingData] = useState({
     contact: "",
     dob: "",
@@ -1337,6 +1342,8 @@ const AuthModal = memo(function AuthModal({
       setSignInOtpMode(false);
       setSignInOtpSent(false);
       setSignInOtp("");
+      setIsCategoryLocked(false);
+      setIsGooglePrefilled(false);
       stepFadeAnim.setValue(1);
       stepSlideAnim.setValue(0);
       contentFadeAnim.setValue(1);
@@ -1364,6 +1371,8 @@ const AuthModal = memo(function AuthModal({
       setSignInOtpMode(false);
       setSignInOtpSent(false);
       setSignInOtp("");
+      setIsCategoryLocked(false);
+      setIsGooglePrefilled(false);
       onClose();
     });
   }, [animVal, onClose]);
@@ -1388,6 +1397,8 @@ const AuthModal = memo(function AuthModal({
       setSignInOtpMode(false);
       setSignInOtpSent(false);
       setSignInOtp("");
+      setIsCategoryLocked(false);
+      setIsGooglePrefilled(false);
     }, 110);
   }, [triggerHaptic, contentFadeAnim]);
 
@@ -1457,7 +1468,42 @@ const AuthModal = memo(function AuthModal({
   const onModalGoogleSuccess = useCallback(async (idToken: string, fallbackEmail?: string, fallbackName?: string) => {
     try {
       setModalGoogleLoading(true);
-      const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName);
+
+      // Mode A: User registers from Create Account
+      if (authMode === "create_account") {
+        try {
+          const regData = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName, undefined, "register");
+          const email = (regData.email || fallbackEmail || "").trim().toLowerCase();
+          const name = (regData.name || fallbackName || "").trim().toUpperCase();
+          const cat = detectCategoryFromEmail(email) || (regData.category as any) || "Outsider";
+
+          setCreateForm((prev) => ({
+            ...prev,
+            email,
+            fullName: name || prev.fullName,
+            category: cat,
+          }));
+          setIsCategoryLocked(true);
+          setIsGooglePrefilled(true);
+          setModalGooglePendingToken(idToken);
+          setRegGeneralError("");
+          setRegErrors({});
+          goToCreateStep(2, "next");
+          return;
+        } catch (err: any) {
+          if (err?.already_exists) {
+            showAlert("Account Exists", "An account with this Google email already exists. Please sign in.");
+            switchAuthMode("signin");
+            setSignInIdentifier(fallbackEmail || err?.data?.email || "");
+            return;
+          }
+          setRegGeneralError(err?.message || "Google registration verification failed.");
+          return;
+        }
+      }
+
+      // Mode B: User logs in from Sign In
+      const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName, undefined, "login");
       if (data.require_otp) {
         setModalGooglePendingToken(idToken);
         if (data.email) {
@@ -1492,13 +1538,39 @@ const AuthModal = memo(function AuthModal({
 
       onSuccessSignIn(userEmail, userName, data.access || "");
     } catch (err: any) {
+      if (err?.not_found) {
+        const targetEmail = (err?.data?.email || fallbackEmail || "").trim().toLowerCase();
+        const targetName = (err?.data?.name || fallbackName || "").trim().toUpperCase();
+        const detectedCat = detectCategoryFromEmail(targetEmail) || (err?.data?.category as any) || "Outsider";
+
+        showAlert(
+          "Account Not Found",
+          "No clinic account found for this Google email. Please create an account first."
+        );
+
+        setAuthMode("create_account");
+        setCreateForm((prev) => ({
+          ...prev,
+          email: targetEmail,
+          fullName: targetName || prev.fullName,
+          category: detectedCat,
+        }));
+        setIsCategoryLocked(true);
+        setIsGooglePrefilled(true);
+        setModalGooglePendingToken(idToken);
+        setSignInGeneralError("");
+        setRegGeneralError("No clinic account found for this Google email. Please create an account first.");
+        goToCreateStep(2, "next");
+        return;
+      }
+
       const msg = err?.message || "Google authentication failed. Please try again.";
       setSignInGeneralError(msg);
       setRegGeneralError(msg);
     } finally {
       setModalGoogleLoading(false);
     }
-  }, [onSuccessSignIn]);
+  }, [authMode, onSuccessSignIn, goToCreateStep, switchAuthMode, showAlert]);
 
   useEffect(() => {
     if (modalGoogleResponse?.type === "success" && modalGoogleResponse.params?.id_token) {
@@ -1796,6 +1868,11 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
+    if (isGooglePrefilled) {
+      handleGetStarted();
+      return;
+    }
+
     goToCreateStep(4, "next");
   }, [
     createForm.category,
@@ -1809,6 +1886,7 @@ const AuthModal = memo(function AuthModal({
     createForm.position,
     createForm.department,
     createForm.address,
+    isGooglePrefilled,
     goToCreateStep,
   ]);
 
@@ -1816,16 +1894,27 @@ const AuthModal = memo(function AuthModal({
   const handleGetStarted = useCallback(async () => {
     const errs: Record<string, string> = {};
 
-    if (!createForm.password) {
-      errs.password = "Password is required";
-    } else if (createForm.password.length < 6) {
-      errs.password = "Password must be at least 6 characters";
-    }
+    if (!isGooglePrefilled) {
+      if (!createForm.password) {
+        errs.password = "Password is required";
+      } else if (createForm.password.length < 6) {
+        errs.password = "Password must be at least 6 characters";
+      }
 
-    if (!createForm.confirmPassword) {
-      errs.confirmPassword = "Confirm password is required";
-    } else if (createForm.confirmPassword !== createForm.password) {
-      errs.confirmPassword = "Passwords do not match";
+      if (!createForm.confirmPassword) {
+        errs.confirmPassword = "Confirm password is required";
+      } else if (createForm.confirmPassword !== createForm.password) {
+        errs.confirmPassword = "Passwords do not match";
+      }
+    } else {
+      if (createForm.password) {
+        if (createForm.password.length < 6) {
+          errs.password = "Password must be at least 6 characters";
+        }
+        if (createForm.confirmPassword && createForm.confirmPassword !== createForm.password) {
+          errs.confirmPassword = "Passwords do not match";
+        }
+      }
     }
 
     if (Object.keys(errs).length > 0) {
@@ -1842,6 +1931,7 @@ const AuthModal = memo(function AuthModal({
       const trimmedEmail = createForm.email.trim().toLowerCase();
       const trimmedName = createForm.fullName.trim().toUpperCase();
       const selectedId = category === "Student" ? createForm.studentId.trim() : category === "Employee" ? createForm.employeeId.trim() : "";
+      const finalPassword = createForm.password || `Ggl_${Math.random().toString(36).slice(2)}${Date.now()}!`;
 
       // Step A: Register API call
       const regRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/register/`, {
@@ -1849,7 +1939,7 @@ const AuthModal = memo(function AuthModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: trimmedEmail,
-          password: createForm.password,
+          password: finalPassword,
           username: trimmedEmail,
           name: trimmedName,
           id_number: selectedId,
@@ -3118,15 +3208,70 @@ const AuthModal = memo(function AuthModal({
                               step={1}
                               total={4}
                               title="Account Email"
-                              subtitle="Enter your email to identify your account"
+                              subtitle={isCategoryLocked ? `Category locked to ${createForm.category}` : "Enter your email to identify your account"}
                             />
+
+                            {isCategoryLocked && (
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  backgroundColor: "rgba(59, 130, 246, 0.20)",
+                                  borderWidth: 1.5,
+                                  borderColor: "rgba(96, 165, 250, 0.6)",
+                                  borderRadius: 14,
+                                  padding: 12,
+                                  marginBottom: 12,
+                                  gap: 10,
+                                }}
+                              >
+                                <Text style={{ fontSize: 20 }}>🔒</Text>
+                                <View style={{ flex: 1 }}>
+                                  <Text
+                                    style={{
+                                      color: "#93C5FD",
+                                      fontSize: 10.5,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      textTransform: "uppercase",
+                                      letterSpacing: 0.5,
+                                    }}
+                                  >
+                                    Domain Verified • Category Locked
+                                  </Text>
+                                  <Text
+                                    style={{
+                                      color: "#FFFFFF",
+                                      fontSize: 13.5,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      marginTop: 1,
+                                    }}
+                                  >
+                                    Category: {createForm.category}
+                                  </Text>
+                                  <Text
+                                    style={{
+                                      color: "rgba(255, 255, 255, 0.75)",
+                                      fontSize: 11.5,
+                                      fontFamily: "Outfit",
+                                      marginTop: 2,
+                                    }}
+                                  >
+                                    Auto-detected from {createForm.email}
+                                  </Text>
+                                </View>
+                              </View>
+                            )}
 
                             <GlassInput
                               ref={emailRef}
                               icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
                               placeholder="Email address (e.g. name.student@ua.edu.ph)"
                               value={createForm.email}
+                              editable={!isCategoryLocked}
                               onChangeText={(t) => {
+                                if (isCategoryLocked) return;
                                 const detected = detectCategoryFromEmail(t);
                                 setCreateForm((f) => ({ ...f, email: t, category: detected }));
                                 if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
@@ -3703,18 +3848,34 @@ const AuthModal = memo(function AuthModal({
                             elevation: 4,
                           }}
                         >
-                          <Text
-                            style={{
-                              color: "#FFFFFF",
-                              fontSize: 16,
-                              fontWeight: "700",
-                              fontFamily: "Outfit",
-                              letterSpacing: 0.4,
-                            }}
-                          >
-                            Next →
-                          </Text>
+                          {regLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 16,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              {isGooglePrefilled ? "Finalize Clinic Account 🎉" : "Next →"}
+                            </Text>
+                          )}
                         </TouchableOpacity>
+
+                        {isGooglePrefilled ? (
+                          <TouchableOpacity
+                            onPress={() => goToCreateStep(4, "next")}
+                            activeOpacity={0.7}
+                            style={{ alignItems: "center", marginTop: 10, paddingVertical: 4 }}
+                          >
+                            <Text style={{ color: "#93C5FD", fontSize: 13, fontFamily: "Outfit", fontWeight: "600" }}>
+                              Or set a password (optional) →
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null}
                       </Animated.View>
                     )}
 
@@ -3798,7 +3959,7 @@ const AuthModal = memo(function AuthModal({
                                 letterSpacing: 0.4,
                               }}
                             >
-                              Create Account
+                              {isGooglePrefilled ? "Finalize Clinic Account 🎉" : "Create Account"}
                             </Text>
                           )}
                         </TouchableOpacity>
@@ -4905,6 +5066,10 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       }
       navigate("home");
     } catch (err: any) {
+      if (err?.not_found) {
+        setError("No clinic account found for this Google email. Please create an account first.");
+        return;
+      }
       setError(err?.message || "Google authentication failed. Please try again.");
     } finally {
       setGoogleLoading(false);

@@ -51,7 +51,8 @@ export async function authenticateWithCuraBackend(
   idToken: string,
   fallbackEmail?: string,
   fallbackName?: string,
-  otp?: string
+  otp?: string,
+  action: "login" | "register" = "login"
 ): Promise<{
   require_otp?: boolean;
   message?: string;
@@ -61,6 +62,15 @@ export async function authenticateWithCuraBackend(
   user?: any;
   roles?: string[];
   username?: string;
+  not_found?: boolean;
+  error?: string;
+  details?: string;
+  category?: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  verified?: boolean;
+  already_exists?: boolean;
 }> {
   let lastError: any = null;
 
@@ -71,7 +81,13 @@ export async function authenticateWithCuraBackend(
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id_token: idToken, otp: otp || "" }),
+        body: JSON.stringify({
+          id_token: idToken,
+          otp: otp || "",
+          action: action,
+          email: fallbackEmail || "",
+          name: fallbackName || "",
+        }),
       });
 
       const resText = await response.text();
@@ -82,14 +98,19 @@ export async function authenticateWithCuraBackend(
 
       if (!response.ok) {
         const errorMsg = data.error || data.details || "Backend authentication failed.";
-        throw new Error(errorMsg);
+        const customError: any = new Error(errorMsg);
+        customError.data = data;
+        customError.status = response.status;
+        customError.not_found = Boolean(data.not_found || response.status === 404);
+        customError.already_exists = Boolean(data.already_exists);
+        throw customError;
       }
 
       return data;
     } catch (err: any) {
       lastError = err;
       if (err?.message && !err.message.includes("Failed to fetch") && !err.message.includes("NetworkError")) {
-        // Business logic error from server (e.g. invalid OTP, expired) -> don't retry
+        // Business logic error from server (e.g. not_found, invalid OTP, expired) -> don't retry
         throw err;
       }
       // If network failure / cold-start, wait and retry
