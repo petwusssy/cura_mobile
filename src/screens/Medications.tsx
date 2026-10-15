@@ -304,7 +304,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                   <Text className="text-lg">⚠️</Text>
                   <View className="flex-1">
                     <Text className="text-xs font-bold text-amber-900" style={{ fontFamily: "Outfit" }}>
-                      Oras na para i-take ang gamot!
+                      Time to take your medication!
                     </Text>
                     <Text className="text-[10px] text-amber-700 font-medium">
                       Scheduled time: {formatTime12(med.nextDose)}
