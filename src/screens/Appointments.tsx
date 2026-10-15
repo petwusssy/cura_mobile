@@ -143,7 +143,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const insets = useSafeAreaInsets();
 
   const [visitType, setVisitType] = useState("medical");
-  const [time, setTime] = useState("morning");
+  const [time, setTime] = useState("");
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
 
@@ -208,7 +208,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
           patient: user.id,
           visit_type: visitType,
           preferred_date: date,
-          preferred_time: time === "morning" ? "Morning (8AM - 12PM)" : "Afternoon (1PM - 5PM)",
+          preferred_time: time === "morning" ? "Morning (8AM - 12PM)" : time === "afternoon" ? "Afternoon (1PM - 5PM)" : "",
           reason: reason,
           status: "Pending"
         }),
@@ -217,6 +217,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       if (res.ok) {
         setIsPending(true);
         setDate("");
+        setTime("");
         setReason("");
       } else {
         console.error("Failed to submit request", await res.text());
@@ -537,7 +538,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
-                disabled={!date.trim() || !reason.trim()}
+                disabled={!date.trim() || !time || !reason.trim()}
               >
                 <Text style={{ color: "#002D72", fontFamily: "Outfit" }}>
                   Request Appointment

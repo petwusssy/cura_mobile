@@ -226,8 +226,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   }, []);
 
   // Book Form State
-  const [date, setDate] = useState(getManilaDate());
-  const [time, setTime] = useState("Morning (8AM - 12PM)");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -396,7 +396,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       if (res.ok) {
         setIsPending(true);
         // Reset form
-        setDate(getManilaDate());
+        setDate("");
+        setTime("");
         setReason("");
       } else {
         console.error("Failed to submit request", await res.text());
@@ -684,7 +685,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
-                disabled={!date.trim() || !reason.trim()}
+                disabled={!date.trim() || !time || !reason.trim()}
               >
                 <Text style={{ color: "#002D72", fontFamily: "Outfit" }}>
                   Submit Request
