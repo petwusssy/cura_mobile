@@ -68,12 +68,12 @@ function MedicinePillIcon({ size = 26 }: { size?: number }) {
 }
 
 const statusConfig: Record<string, { badge: "success" | "warning" | "error" | "info" | "neutral"; label: string; dot: string; bg: string; icon: string }> = {
-  "next-intake": { badge: "info",    label: "Next Intake", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
-  "to-intake":   { badge: "info",    label: "Next Intake", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
-  "intaked":     { badge: "success", label: "Intaked",     dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
+  "next-intake": { badge: "info",    label: "To Take",     dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "to-intake":   { badge: "info",    label: "To Take",     dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "intaked":     { badge: "success", label: "Taken",       dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
   "due-now":     { badge: "warning", label: "Due Now",     dot: "#F59E0B", bg: "#FFFBEB", icon: "⚠️" },
-  "upcoming":    { badge: "info",    label: "Next Intake", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
-  "taken":       { badge: "success", label: "Intaked",     dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
+  "upcoming":    { badge: "info",    label: "To Take",     dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "taken":       { badge: "success", label: "Taken",       dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
   "missed":      { badge: "error",   label: "Missed",      dot: "#F43F5E", bg: "#FFF1F2", icon: "❌" },
 };
 
@@ -170,16 +170,16 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       if (diffSec <= 0 && !notifiedMedsRef.current.has(med.id)) {
         notifiedMedsRef.current.add(med.id);
         Alert.alert(
-          "Oras na Para sa Intake! ⏰",
-          `Oras na para inumin ang iyong gamot: ${med.name} (${med.dose}). Mangyaring i-click ang 'Intake' pagkatapos inumin.`
+          "Oras na Para Uminom! ⏰",
+          `Oras na para inumin ang iyong gamot: ${med.name} (${med.dose}). Mangyaring i-click ang 'Taken' pagkatapos inumin.`
         );
       }
     });
   }, [toTakeList, currentTime]);
 
   const statusItems = [
-    { id: "to-intake" as const, label: "To Intake", count: toTakeList.length, dot: "#0994E8" },
-    { id: "intaked" as const,   label: "Intaked",   count: intakedList.length, dot: "#10B981" },
+    { id: "to-intake" as const, label: "To Take", count: toTakeList.length, dot: "#0994E8" },
+    { id: "intaked" as const,   label: "Taken",   count: intakedList.length, dot: "#10B981" },
     { id: "all" as const,       label: "Total Meds", count: normalizedMeds.length, dot: "#0B2136" },
   ];
 
@@ -271,7 +271,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                   {isDue ? (
                     <View className="bg-amber-400 px-1.5 py-0.5 rounded-md">
                       <Text className="text-[10px] font-black text-amber-950 uppercase tracking-wider">
-                        DUE FOR INTAKE
+                        DUE TO TAKE
                       </Text>
                     </View>
                   ) : timeRemainingText ? (
@@ -304,7 +304,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                   <Text className="text-lg">⚠️</Text>
                   <View className="flex-1">
                     <Text className="text-xs font-bold text-amber-900" style={{ fontFamily: "Outfit" }}>
-                      Oras na para i-intake ang gamot!
+                      Oras na para i-take ang gamot!
                     </Text>
                     <Text className="text-[10px] text-amber-700 font-medium">
                       Scheduled time: {formatTime12(med.nextDose)}
@@ -355,13 +355,13 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
             ) : null}
             {med.nextDose ? (
               <View>
-                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next Intake</Text>
+                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next Dose</Text>
                 <Text className="text-xs font-bold text-[#0994E8] mt-0.5">{formatTime12(med.nextDose)}</Text>
               </View>
             ) : null}
             {!isToIntakeSection && (
               <View className="mt-1 bg-emerald-50 border border-emerald-200/60 rounded-xl py-2 px-3 items-center">
-                <Text className="text-xs font-bold text-emerald-700">✓ Completed / Intaked</Text>
+                <Text className="text-xs font-bold text-emerald-700">✓ Completed / Taken</Text>
               </View>
             )}
           </View>
@@ -382,7 +382,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
               }}
             >
               <Text className="text-xs font-bold text-white tracking-wide">
-                {isDue ? "✓ Intake Now (Due)" : "✓ Intake"}
+                {isDue ? "✓ Take Now (Due)" : "✓ Taken"}
               </Text>
             </Pressable>
           </View>
@@ -456,13 +456,13 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       </View>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 8, paddingBottom: 120 }}>
-        {/* Section 1: TO INTAKE */}
+        {/* Section 1: TO TAKE */}
         {(filter === "all" || filter === "to-intake") && (
           <View className="mb-5">
             <View className="flex-row items-center justify-between mb-3 px-1">
               <View className="flex-row items-center gap-2">
                 <Text className="text-base font-black" style={{ color: "#002D72", fontFamily: "Outfit" }}>
-                  To Intake
+                  To Take
                 </Text>
                 <View className="bg-sky-500/25 border border-sky-400/40 rounded-full px-2 py-0.5">
                   <Text className="text-[11px] font-bold text-sky-200">{toTakeList.length}</Text>
@@ -474,10 +474,10 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
             {toTakeList.length === 0 ? (
               <View className="bg-white/80 rounded-2xl p-5 items-center justify-center border border-sky-200/80 mb-2">
                 <Text className="text-sm font-bold" style={{ color: "#002D72", fontFamily: "Outfit" }}>
-                  No medications to intake
+                  No medications to take
                 </Text>
                 <Text className="text-xs text-center mt-0.5" style={{ color: "rgba(0, 45, 114, 0.65)" }}>
-                  All scheduled medication intakes are completed.
+                  All scheduled medications are taken.
                 </Text>
               </View>
             ) : (
@@ -486,13 +486,13 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
           </View>
         )}
 
-        {/* Section 2: INTAKED */}
+        {/* Section 2: TAKEN */}
         {(filter === "all" || filter === "intaked") && (
           <View className="mb-6">
             <View className="flex-row items-center justify-between mb-3 mt-3 px-1">
               <View className="flex-row items-center gap-2">
                 <Text className="text-base font-black" style={{ color: "#002D72", fontFamily: "Outfit" }}>
-                  Intaked
+                  Taken
                 </Text>
                 <View className="bg-emerald-500/25 border border-emerald-400/40 rounded-full px-2 py-0.5">
                   <Text className="text-[11px] font-bold text-emerald-200">{intakedList.length}</Text>
@@ -506,8 +506,8 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                 <View className="mb-1">
                   <MedicinePillIcon size={32} />
                 </View>
-                <Text className="text-sm font-bold text-white">No intaked medications yet</Text>
-                <Text className="text-xs text-white/60 text-center mt-0.5">Medications you mark as intaked will appear here.</Text>
+                <Text className="text-sm font-bold text-white">No taken medications yet</Text>
+                <Text className="text-xs text-white/60 text-center mt-0.5">Medications you mark as taken will appear here.</Text>
               </View>
             ) : (
               intakedList.map((med) => renderMedCard(med, false))
