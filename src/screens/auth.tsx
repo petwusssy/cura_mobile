@@ -276,23 +276,19 @@ const GlassInput = memo(
     ref
   ) {
     const [isSecured, setIsSecured] = useState(secureTextEntry);
-    const [isFocused, setIsFocused] = useState(false);
 
     return (
       <View style={{ marginBottom: 12 }}>
         {label ? (
           <Text
             style={{
-              color: "rgba(255, 255, 255, 0.85)",
+              color: "rgba(255, 255, 255, 0.75)",
               fontSize: 11.5,
               fontWeight: "700",
               textTransform: "uppercase",
               letterSpacing: 0.6,
               fontFamily: "Outfit",
               marginBottom: 5,
-              textShadowColor: "rgba(0, 0, 0, 0.3)",
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 2,
             }}
           >
             {label}
@@ -304,69 +300,21 @@ const GlassInput = memo(
             alignItems: multiline ? "flex-start" : "center",
             height: multiline ? undefined : 48,
             minHeight: multiline ? 72 : undefined,
-            borderRadius: 14,
-            backgroundColor: error
-              ? "rgba(239, 68, 68, 0.12)"
-              : isFocused
-              ? "rgba(255, 255, 255, 0.13)"
-              : "rgba(255, 255, 255, 0.08)",
-            borderWidth: 1.2,
-            borderColor: error
-              ? "rgba(248, 113, 113, 0.85)"
-              : isFocused
-              ? "#38BDF8"
-              : "rgba(255, 255, 255, 0.20)",
-            borderTopColor: error
-              ? "rgba(248, 113, 113, 0.95)"
-              : isFocused
-              ? "#7DD3FC"
-              : "rgba(255, 255, 255, 0.38)",
-            borderBottomColor: error
-              ? "rgba(248, 113, 113, 0.6)"
-              : isFocused
-              ? "rgba(56, 189, 248, 0.7)"
-              : "rgba(255, 255, 255, 0.12)",
+            borderRadius: 12,
+            backgroundColor: "rgba(255, 255, 255, 0.18)",
+            borderWidth: 1.5,
+            borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
             paddingHorizontal: 14,
             paddingVertical: multiline ? 10 : 0,
-            overflow: "hidden",
-            position: "relative",
-            ...(Platform.OS === "web"
-              ? {
-                  backdropFilter: "blur(14px)",
-                  WebkitBackdropFilter: "blur(14px)",
-                  boxShadow: error
-                    ? "0 0 0 3px rgba(239, 68, 68, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.3)"
-                    : isFocused
-                    ? "0 0 0 3px rgba(56, 189, 248, 0.28), inset 0 1px 1.5px rgba(255, 255, 255, 0.45), 0 4px 12px rgba(56, 189, 248, 0.18)"
-                    : "0 2px 8px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.22)",
-                  transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                }
-              : {}),
           }}
         >
-          {/* Top specular reflection sheen inside liquid glass groove */}
-          <LinearGradient
-            colors={["rgba(255, 255, 255, 0.16)", "transparent"]}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 18,
-              borderTopLeftRadius: 13,
-              borderTopRightRadius: 13,
-            }}
-            pointerEvents="none"
-          />
           {icon ? <View style={{ marginRight: 10, marginTop: multiline ? 2 : 0 }} pointerEvents="none">{icon}</View> : null}
           <TextInput
             ref={ref}
             value={value}
             onChangeText={onChangeText}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
-            placeholderTextColor="rgba(255, 255, 255, 0.58)"
+            placeholderTextColor="rgba(255, 255, 255, 0.62)"
             secureTextEntry={isSecured}
             keyboardType={keyboardType}
             autoCapitalize={autoCapitalize}
@@ -378,18 +326,15 @@ const GlassInput = memo(
             numberOfLines={numberOfLines}
             textAlignVertical={multiline ? "top" : "center"}
             editable={true}
-            style={[
-              {
-                flex: 1,
-                color: "#FFFFFF",
-                fontSize: 14,
-                fontFamily: "Outfit",
-                paddingVertical: 0,
-                height: multiline ? undefined : "100%",
-                minHeight: multiline ? 52 : undefined,
-              },
-              Platform.OS === "web" ? ({ outlineStyle: "none" } as any) : null,
-            ]}
+            style={{
+              flex: 1,
+              color: "#FFFFFF",
+              fontSize: 14,
+              fontFamily: "Outfit",
+              paddingVertical: 0,
+              height: multiline ? undefined : "100%",
+              minHeight: multiline ? 52 : undefined,
+            }}
           />
           {showPasswordToggle ? (
             <TouchableOpacity
@@ -469,16 +414,13 @@ function GlassDatePickerField({
     <View style={{ marginBottom: 12 }}>
       <Text
         style={{
-          color: "rgba(255, 255, 255, 0.85)",
+          color: "rgba(255, 255, 255, 0.75)",
           fontSize: 11.5,
           fontWeight: "700",
           textTransform: "uppercase",
           letterSpacing: 0.6,
           fontFamily: "Outfit",
           marginBottom: 5,
-          textShadowColor: "rgba(0, 0, 0, 0.3)",
-          textShadowOffset: { width: 0, height: 1 },
-          textShadowRadius: 2,
         }}
       >
         {label}
@@ -491,38 +433,15 @@ function GlassDatePickerField({
           alignItems: "center",
           justifyContent: "space-between",
           height: 48,
-          borderRadius: 14,
-          backgroundColor: error ? "rgba(239, 68, 68, 0.12)" : "rgba(255, 255, 255, 0.08)",
-          borderWidth: 1.2,
-          borderColor: error ? "rgba(248, 113, 113, 0.85)" : "rgba(255, 255, 255, 0.20)",
-          borderTopColor: error ? "rgba(248, 113, 113, 0.95)" : "rgba(255, 255, 255, 0.40)",
-          borderBottomColor: error ? "rgba(248, 113, 113, 0.6)" : "rgba(255, 255, 255, 0.12)",
+          borderRadius: 12,
+          backgroundColor: "rgba(255, 255, 255, 0.18)",
+          borderWidth: 1.5,
+          borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
           paddingHorizontal: 14,
           position: "relative",
           overflow: "hidden",
-          ...(Platform.OS === "web"
-            ? {
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.22)",
-                cursor: "pointer",
-              }
-            : {}),
         }}
       >
-        <LinearGradient
-          colors={["rgba(255, 255, 255, 0.16)", "transparent"]}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 18,
-            borderTopLeftRadius: 13,
-            borderTopRightRadius: 13,
-          }}
-          pointerEvents="none"
-        />
         <Text
           style={{
             color: value ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)",
@@ -544,8 +463,6 @@ function GlassDatePickerField({
               position: "absolute",
               top: 0,
               left: 0,
-              right: 0,
-              bottom: 0,
               width: "100%",
               height: "100%",
               opacity: 0,
@@ -573,25 +490,11 @@ function GlassDatePickerField({
 
       {Platform.OS === "ios" && (
         <Modal visible={showPicker} transparent animationType="fade" onRequestClose={() => setShowPicker(false)}>
-          <View style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.65)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
-            <View
-              style={{
-                width: "100%",
-                maxWidth: 380,
-                backgroundColor: "rgba(8, 22, 54, 0.85)",
-                borderRadius: 24,
-                borderWidth: 1,
-                borderColor: "rgba(255, 255, 255, 0.25)",
-                borderTopColor: "rgba(255, 255, 255, 0.55)",
-                padding: 20,
-                overflow: "hidden",
-                position: "relative",
-              }}
-            >
-              <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12, position: "relative", zIndex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.70)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+            <View style={{ width: "100%", maxWidth: 380, backgroundColor: "rgba(10, 24, 58, 0.96)", borderRadius: 24, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.3)", padding: 20 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "700", fontFamily: "Outfit" }}>Select Birthday</Text>
-                <TouchableOpacity onPress={handleIOSDone} style={{ backgroundColor: "#2563EB", paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12 }}>
+                <TouchableOpacity onPress={handleIOSDone} style={{ backgroundColor: "#1E4FD8", paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12 }}>
                   <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700", fontFamily: "Outfit" }}>Done</Text>
                 </TouchableOpacity>
               </View>
@@ -604,7 +507,7 @@ function GlassDatePickerField({
                 onChange={(_, d) => {
                   if (d) setTempDate(d);
                 }}
-                style={{ height: 180, width: "100%", position: "relative", zIndex: 1 }}
+                style={{ height: 180, width: "100%" }}
               />
             </View>
           </View>
@@ -680,48 +583,32 @@ function GlassSelectionModal({
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.65)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.70)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
         <View
           style={{
             width: "100%",
             maxWidth: 380,
             maxHeight: "80%",
             borderRadius: 24,
-            borderWidth: 1.2,
-            borderColor: "rgba(255, 255, 255, 0.25)",
-            borderTopColor: "rgba(255, 255, 255, 0.60)",
-            backgroundColor: "rgba(8, 22, 54, 0.75)",
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.30)",
+            backgroundColor: "rgba(10, 24, 58, 0.96)",
             padding: 20,
-            overflow: "hidden",
-            position: "relative",
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: 16 },
-            shadowOpacity: 0.5,
-            shadowRadius: 28,
-            elevation: 14,
-            ...(Platform.OS === "web"
-              ? {
-                  backdropFilter: "blur(28px) saturate(190%) contrast(105%)",
-                  WebkitBackdropFilter: "blur(28px) saturate(190%) contrast(105%)",
-                  boxShadow: "0 28px 65px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.40)",
-                }
-              : {}),
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: 0.4,
+            shadowRadius: 24,
+            elevation: 12,
           }}
           onStartShouldSetResponder={() => true}
         >
-          <BlurView intensity={Platform.OS === "ios" ? 95 : 85} tint="dark" style={StyleSheet.absoluteFill} />
-          <LinearGradient
-            colors={["rgba(255, 255, 255, 0.16)", "transparent"]}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.15)", marginBottom: 10, position: "relative", zIndex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.15)", marginBottom: 10 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "700", fontFamily: "Outfit" }}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={{ backgroundColor: "rgba(255, 255, 255, 0.12)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.22)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
+            <TouchableOpacity onPress={onClose} style={{ backgroundColor: "rgba(255, 255, 255, 0.15)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
               <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Outfit" }}>Close</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView showsVerticalScrollIndicator={false} style={{ position: "relative", zIndex: 1 }}>
+          <ScrollView showsVerticalScrollIndicator={false}>
             {options.map((opt) => {
               const isSel = selected === opt;
               return (
@@ -738,11 +625,10 @@ function GlassSelectionModal({
                     justifyContent: "space-between",
                     paddingVertical: 12,
                     paddingHorizontal: 14,
-                    borderRadius: 14,
-                    backgroundColor: isSel ? "rgba(37, 99, 235, 0.45)" : "rgba(255, 255, 255, 0.08)",
+                    borderRadius: 12,
+                    backgroundColor: isSel ? "rgba(30, 79, 216, 0.4)" : "rgba(255, 255, 255, 0.08)",
                     borderWidth: 1,
-                    borderColor: isSel ? "#60A5FA" : "rgba(255, 255, 255, 0.15)",
-                    borderTopColor: isSel ? "#93C5FD" : "rgba(255, 255, 255, 0.30)",
+                    borderColor: isSel ? "#60A5FA" : "rgba(255, 255, 255, 0.12)",
                     marginVertical: 3,
                   }}
                 >
@@ -787,66 +673,47 @@ function GlassLocationModalPicker({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.65)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+      <View style={{ flex: 1, backgroundColor: "rgba(3, 10, 26, 0.70)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
         <View
           style={{
             width: "100%",
             maxWidth: 400,
             maxHeight: "80%",
             borderRadius: 24,
-            borderWidth: 1.2,
-            borderColor: "rgba(255, 255, 255, 0.25)",
-            borderTopColor: "rgba(255, 255, 255, 0.60)",
-            backgroundColor: "rgba(8, 22, 54, 0.75)",
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.30)",
+            backgroundColor: "rgba(10, 24, 58, 0.96)",
             overflow: "hidden",
-            position: "relative",
             paddingTop: 18,
             paddingBottom: 16,
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: 16 },
-            shadowOpacity: 0.5,
-            shadowRadius: 28,
-            elevation: 14,
-            ...(Platform.OS === "web"
-              ? {
-                  backdropFilter: "blur(28px) saturate(190%) contrast(105%)",
-                  WebkitBackdropFilter: "blur(28px) saturate(190%) contrast(105%)",
-                  boxShadow: "0 28px 65px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.40)",
-                }
-              : {}),
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: 0.4,
+            shadowRadius: 24,
+            elevation: 12,
           }}
         >
-          <BlurView intensity={Platform.OS === "ios" ? 95 : 85} tint="dark" style={StyleSheet.absoluteFill} />
-          <LinearGradient
-            colors={["rgba(255, 255, 255, 0.16)", "transparent"]}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-
           {/* Header */}
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.12)", position: "relative", zIndex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.12)" }}>
             <View>
               <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700", fontFamily: "Outfit" }}>{title}</Text>
-              <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: 11, fontFamily: "Outfit" }}>{options.length} options available</Text>
+              <Text style={{ color: "rgba(255, 255, 255, 0.6)", fontSize: 11, fontFamily: "Outfit" }}>{options.length} options available</Text>
             </View>
-            <TouchableOpacity onPress={() => { setSearch(""); onClose(); }} style={{ backgroundColor: "rgba(255, 255, 255, 0.12)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.22)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
+            <TouchableOpacity onPress={() => { setSearch(""); onClose(); }} style={{ backgroundColor: "rgba(255, 255, 255, 0.15)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
               <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Outfit" }}>Close</Text>
             </TouchableOpacity>
           </View>
 
           {/* Search Box */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8, position: "relative", zIndex: 1 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255, 255, 255, 0.10)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.20)", borderTopColor: "rgba(255, 255, 255, 0.35)", paddingHorizontal: 12, height: 42 }}>
+          <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255, 255, 255, 0.12)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.20)", paddingHorizontal: 12, height: 42 }}>
               <Text style={{ marginRight: 8, fontSize: 13 }}>🔍</Text>
               <TextInput
                 placeholder="Search..."
-                placeholderTextColor="rgba(255, 255, 255, 0.55)"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
                 value={search}
                 onChangeText={setSearch}
-                style={[
-                  { flex: 1, color: "#FFFFFF", fontSize: 13.5, fontFamily: "Outfit", paddingVertical: 0 },
-                  Platform.OS === "web" ? ({ outlineStyle: "none" } as any) : null,
-                ]}
+                style={{ flex: 1, color: "#FFFFFF", fontSize: 13.5, fontFamily: "Outfit", paddingVertical: 0 }}
                 autoCorrect={false}
               />
               {search.length > 0 && (
@@ -858,7 +725,7 @@ function GlassLocationModalPicker({
           </View>
 
           {/* Options List */}
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12 }} style={{ position: "relative", zIndex: 1 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12 }}>
             {filtered.map((item: any) => {
               const isSel = item.value === selected || item.label === selected;
               return (
@@ -876,12 +743,11 @@ function GlassLocationModalPicker({
                     justifyContent: "space-between",
                     paddingVertical: 12,
                     paddingHorizontal: 14,
-                    borderRadius: 14,
+                    borderRadius: 12,
                     marginTop: 6,
-                    backgroundColor: isSel ? "rgba(37, 99, 235, 0.45)" : "rgba(255, 255, 255, 0.08)",
+                    backgroundColor: isSel ? "rgba(30, 79, 216, 0.55)" : "rgba(255, 255, 255, 0.08)",
                     borderWidth: 1,
-                    borderColor: isSel ? "#60A5FA" : "rgba(255, 255, 255, 0.15)",
-                    borderTopColor: isSel ? "#93C5FD" : "rgba(255, 255, 255, 0.30)",
+                    borderColor: isSel ? "#60A5FA" : "rgba(255, 255, 255, 0.12)",
                   }}
                 >
                   <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: isSel ? "700" : "500", fontFamily: "Outfit", flex: 1, paddingRight: 8 }} numberOfLines={1}>
@@ -922,16 +788,13 @@ function GlassSelectRow({
     <View style={{ marginBottom: 12 }}>
       <Text
         style={{
-          color: "rgba(255, 255, 255, 0.85)",
+          color: "rgba(255, 255, 255, 0.75)",
           fontSize: 11.5,
           fontWeight: "700",
           textTransform: "uppercase",
           letterSpacing: 0.6,
           fontFamily: "Outfit",
           marginBottom: 5,
-          textShadowColor: "rgba(0, 0, 0, 0.3)",
-          textShadowOffset: { width: 0, height: 1 },
-          textShadowRadius: 2,
         }}
       >
         {label}
@@ -944,38 +807,13 @@ function GlassSelectRow({
           alignItems: "center",
           justifyContent: "space-between",
           height: 48,
-          borderRadius: 14,
-          backgroundColor: error ? "rgba(239, 68, 68, 0.12)" : "rgba(255, 255, 255, 0.08)",
-          borderWidth: 1.2,
-          borderColor: error ? "rgba(248, 113, 113, 0.85)" : "rgba(255, 255, 255, 0.20)",
-          borderTopColor: error ? "rgba(248, 113, 113, 0.95)" : "rgba(255, 255, 255, 0.40)",
-          borderBottomColor: error ? "rgba(248, 113, 113, 0.6)" : "rgba(255, 255, 255, 0.12)",
+          borderRadius: 12,
+          backgroundColor: "rgba(255, 255, 255, 0.18)",
+          borderWidth: 1.5,
+          borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
           paddingHorizontal: 14,
-          position: "relative",
-          overflow: "hidden",
-          ...(Platform.OS === "web"
-            ? {
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.22)",
-                cursor: "pointer",
-              }
-            : {}),
         }}
       >
-        <LinearGradient
-          colors={["rgba(255, 255, 255, 0.16)", "transparent"]}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 18,
-            borderTopLeftRadius: 13,
-            borderTopRightRadius: 13,
-          }}
-          pointerEvents="none"
-        />
         <Text
           numberOfLines={1}
           style={{
@@ -1016,16 +854,13 @@ function GlassSexChips({
     <View style={{ marginBottom: 12 }}>
       <Text
         style={{
-          color: "rgba(255, 255, 255, 0.85)",
+          color: "rgba(255, 255, 255, 0.75)",
           fontSize: 11.5,
           fontWeight: "700",
           textTransform: "uppercase",
           letterSpacing: 0.6,
           fontFamily: "Outfit",
           marginBottom: 6,
-          textShadowColor: "rgba(0, 0, 0, 0.3)",
-          textShadowOffset: { width: 0, height: 1 },
-          textShadowRadius: 2,
         }}
       >
         Sex
@@ -1041,49 +876,19 @@ function GlassSexChips({
               style={{
                 flex: 1,
                 height: 44,
-                borderRadius: 14,
+                borderRadius: 12,
                 alignItems: "center",
                 justifyContent: "center",
-                overflow: "hidden",
-                position: "relative",
-                backgroundColor: isSelected ? "rgba(37, 99, 235, 0.75)" : "rgba(255, 255, 255, 0.08)",
-                borderWidth: 1.2,
-                borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.20)",
-                borderTopColor: isSelected ? "#93C5FD" : "rgba(255, 255, 255, 0.40)",
-                shadowColor: isSelected ? "#2563EB" : "#000",
+                backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.14)",
+                borderWidth: 1.5,
+                borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
+                shadowColor: isSelected ? "#1E4FD8" : "transparent",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isSelected ? 0.45 : 0.15,
+                shadowOpacity: isSelected ? 0.35 : 0,
                 shadowRadius: 6,
-                elevation: isSelected ? 4 : 1,
-                ...(Platform.OS === "web"
-                  ? {
-                      backdropFilter: "blur(14px)",
-                      WebkitBackdropFilter: "blur(14px)",
-                      boxShadow: isSelected
-                        ? "0 4px 14px rgba(37, 99, 235, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5)"
-                        : "0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.22)",
-                      cursor: "pointer",
-                    }
-                  : {}),
+                elevation: isSelected ? 3 : 0,
               }}
             >
-              <LinearGradient
-                colors={
-                  isSelected
-                    ? ["rgba(255, 255, 255, 0.30)", "transparent"]
-                    : ["rgba(255, 255, 255, 0.16)", "transparent"]
-                }
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 18,
-                  borderTopLeftRadius: 13,
-                  borderTopRightRadius: 13,
-                }}
-                pointerEvents="none"
-              />
               <Text
                 style={{
                   color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
@@ -1132,71 +937,37 @@ function GlassStepHeader({
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              width: 30,
+              height: 30,
+              borderRadius: 15,
+              backgroundColor: "rgba(255, 255, 255, 0.16)",
               borderWidth: 1,
               borderColor: "rgba(255, 255, 255, 0.28)",
-              borderTopColor: "rgba(255, 255, 255, 0.55)",
               alignItems: "center",
               justifyContent: "center",
-              overflow: "hidden",
-              position: "relative",
-              ...(Platform.OS === "web"
-                ? {
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
-                    cursor: "pointer",
-                  }
-                : {}),
             }}
           >
-            <LinearGradient
-              colors={["rgba(255, 255, 255, 0.22)", "transparent"]}
-              style={StyleSheet.absoluteFill}
-              pointerEvents="none"
-            />
             <ChevronLeftIcon color="#FFFFFF" size={16} />
           </TouchableOpacity>
         ) : null}
 
-        <View style={{ flex: 1, flexDirection: "row", gap: 6 }}>
+        <View style={{ flex: 1, flexDirection: "row", gap: 5 }}>
           {Array.from({ length: total }).map((_, i) => {
             const isActive = i + 1 <= step;
             return (
               <View
                 key={i}
                 style={{
-                  height: 5,
+                  height: 4,
                   flex: 1,
-                  borderRadius: 3,
-                  backgroundColor: isActive ? "transparent" : "rgba(255, 255, 255, 0.16)",
-                  borderWidth: isActive ? 0 : 0.5,
-                  borderColor: "rgba(255, 255, 255, 0.20)",
-                  overflow: "hidden",
+                  borderRadius: 2,
+                  backgroundColor: isActive ? "#38BDF8" : "rgba(255, 255, 255, 0.20)",
                   shadowColor: isActive ? "#38BDF8" : "transparent",
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: isActive ? 0.85 : 0,
-                  shadowRadius: 8,
-                  elevation: isActive ? 4 : 0,
-                  ...(Platform.OS === "web" && isActive
-                    ? {
-                        boxShadow: "0 0 10px rgba(56, 189, 248, 0.70)",
-                      }
-                    : {}),
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: isActive ? 0.6 : 0,
+                  shadowRadius: 3,
                 }}
-              >
-                {isActive && (
-                  <LinearGradient
-                    colors={["#38BDF8", "#2563EB"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={{ flex: 1, height: "100%", borderRadius: 3 }}
-                  />
-                )}
-              </View>
+              />
             );
           })}
         </View>
@@ -1205,7 +976,7 @@ function GlassStepHeader({
       <Text
         style={{
           color: "#FFFFFF",
-          fontSize: 23,
+          fontSize: 22,
           fontWeight: "700",
           fontFamily: "Outfit",
           letterSpacing: 0.3,
@@ -1219,7 +990,7 @@ function GlassStepHeader({
       <Text
         style={{
           color: "rgba(255, 255, 255, 0.82)",
-          fontSize: 13.5,
+          fontSize: 13,
           fontFamily: "Outfit",
           marginTop: 3,
           textShadowColor: "rgba(0, 0, 0, 0.3)",
@@ -1230,130 +1001,6 @@ function GlassStepHeader({
         {subtitle}
       </Text>
     </View>
-  );
-}
-
-// ── Liquid Glass Action Button ───────────────────────────────────────────────
-
-interface GlassActionButtonProps {
-  onPress: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  variant?: "primary" | "success" | "emerald";
-  title?: string;
-  children?: React.ReactNode;
-  style?: any;
-}
-
-function GlassActionButton({
-  onPress,
-  disabled = false,
-  loading = false,
-  variant = "primary",
-  title,
-  children,
-  style,
-}: GlassActionButtonProps) {
-  const isSuccess = variant === "success" || variant === "emerald";
-  const bgColors = isSuccess
-    ? (["#059669", "#047857"] as const)
-    : (["#2563EB", "#1D4ED8"] as const);
-  const shadowCol = isSuccess ? "#059669" : "#1D4ED8";
-  const glowCol = isSuccess ? "rgba(16, 185, 129, 0.55)" : "rgba(29, 78, 216, 0.60)";
-
-  const content = title ? (
-    <Text
-      style={{
-        color: "#FFFFFF",
-        fontSize: 15.5,
-        fontWeight: "700",
-        fontFamily: "Outfit",
-        letterSpacing: 0.4,
-        textShadowColor: "rgba(0, 0, 0, 0.35)",
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 3,
-      }}
-    >
-      {title}
-    </Text>
-  ) : typeof children === "string" ? (
-    <Text
-      style={{
-        color: "#FFFFFF",
-        fontSize: 15.5,
-        fontWeight: "700",
-        fontFamily: "Outfit",
-        letterSpacing: 0.4,
-        textShadowColor: "rgba(0, 0, 0, 0.35)",
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 3,
-      }}
-    >
-      {children}
-    </Text>
-  ) : (
-    children
-  );
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.82}
-      style={[
-        {
-          width: "100%",
-          height: 50,
-          borderRadius: 16,
-          overflow: "hidden",
-          alignItems: "center",
-          justifyContent: "center",
-          marginTop: 10,
-          borderWidth: 1,
-          borderColor: isSuccess ? "rgba(52, 211, 153, 0.35)" : "rgba(255, 255, 255, 0.28)",
-          borderTopColor: isSuccess ? "rgba(167, 243, 208, 0.75)" : "rgba(255, 255, 255, 0.65)",
-          shadowColor: shadowCol,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: disabled ? 0.2 : 0.52,
-          shadowRadius: 18,
-          elevation: disabled ? 2 : 6,
-          opacity: disabled ? 0.6 : 1,
-          position: "relative",
-          ...(Platform.OS === "web"
-            ? {
-                boxShadow: disabled
-                  ? "none"
-                  : `0 8px 24px -2px ${glowCol}, inset 0 1.5px 1.5px rgba(255, 255, 255, 0.55), inset 0 -1.5px 2px rgba(0, 0, 0, 0.25)`,
-                cursor: disabled ? "not-allowed" : "pointer",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
-              }
-            : {}),
-        },
-        style,
-      ]}
-    >
-      <LinearGradient
-        colors={disabled ? ["rgba(30, 79, 216, 0.45)", "rgba(30, 79, 216, 0.35)"] : bgColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Specular reflection sheen across top half of button */}
-      <LinearGradient
-        colors={["rgba(255, 255, 255, 0.36)", "rgba(255, 255, 255, 0.0)"]}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 22,
-          borderTopLeftRadius: 15,
-          borderTopRightRadius: 15,
-        }}
-        pointerEvents="none"
-      />
-      {loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : content}
-    </TouchableOpacity>
   );
 }
 
@@ -2375,19 +2022,11 @@ const AuthModal = memo(function AuthModal({
             style={[
               StyleSheet.absoluteFill,
               {
-                backgroundColor: "rgba(2, 6, 23, 0.62)",
+                backgroundColor: "rgba(3, 10, 26, 0.50)",
                 opacity: animVal,
-                ...(Platform.OS === "web"
-                  ? {
-                      backdropFilter: "blur(18px)",
-                      WebkitBackdropFilter: "blur(18px)",
-                    }
-                  : {}),
               },
             ]}
-          >
-            <BlurView intensity={Platform.OS === "ios" ? 40 : 25} tint="dark" style={StyleSheet.absoluteFill} />
-          </Animated.View>
+          />
         </Pressable>
 
         {/* 2) Centered Modal inside KeyboardAvoidingView */}
@@ -2402,103 +2041,52 @@ const AuthModal = memo(function AuthModal({
           }}
           pointerEvents="box-none"
         >
-          {/* 3) Modal Card - Pure Apple-grade Liquid Glass */}
+          {/* 3) Modal Card */}
           <Animated.View
             style={{
               width: "100%",
-              maxWidth: 430,
-              maxHeight: "92%",
-              borderRadius: 28,
-              borderWidth: 1.2,
-              borderColor: "rgba(255, 255, 255, 0.28)",
-              backgroundColor: "rgba(10, 25, 60, 0.65)",
+              maxWidth: 420,
+              maxHeight: "90%",
+              borderRadius: 24,
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.32)",
+              backgroundColor: "rgba(10, 24, 58, 0.94)",
               overflow: "hidden",
               shadowColor: "#000",
-              shadowOffset: { width: 0, height: 22 },
-              shadowOpacity: 0.55,
-              shadowRadius: 36,
-              elevation: 16,
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.35,
+              shadowRadius: 24,
+              elevation: 10,
               opacity: animVal,
-              ...(Platform.OS === "web"
-                ? {
-                    backdropFilter: "blur(40px) saturate(210%) contrast(105%)",
-                    WebkitBackdropFilter: "blur(40px) saturate(210%) contrast(105%)",
-                    boxShadow:
-                      "0 25px 60px -12px rgba(0, 0, 0, 0.75), inset 0 1px 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.45)",
-                  }
-                : {}),
             }}
           >
-            {/* Native blur layer */}
-            <BlurView
-              intensity={95}
-              tint="dark"
-              style={StyleSheet.absoluteFill}
-            />
-
-            {/* Specular Diagonal Refraction Sheen */}
+            {/* Decorative gradient */}
             <LinearGradient
-              colors={[
-                "rgba(255, 255, 255, 0.18)",
-                "rgba(59, 130, 246, 0.08)",
-                "rgba(15, 23, 42, 0.45)",
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={["rgba(255, 255, 255, 0.16)", "rgba(255, 255, 255, 0.04)"]}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
 
-            {/* Top Lip Specular Reflection Beam */}
-            <LinearGradient
-              colors={[
-                "rgba(255, 255, 255, 0)",
-                "rgba(255, 255, 255, 0.85)",
-                "rgba(147, 197, 253, 0.9)",
-                "rgba(255, 255, 255, 0)",
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 20,
-                right: 20,
-                height: 1.5,
-                zIndex: 10,
-              }}
-              pointerEvents="none"
-            />
-
-            {/* Close Button X - Frosted Glass Orb */}
+            {/* Close Button X */}
             <TouchableOpacity
               onPress={handleClose}
               activeOpacity={0.7}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               style={{
                 position: "absolute",
-                top: 18,
-                right: 18,
+                top: 16,
+                right: 16,
                 zIndex: 30,
-                width: 34,
-                height: 34,
-                borderRadius: 17,
-                backgroundColor: "rgba(255, 255, 255, 0.14)",
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: "rgba(255, 255, 255, 0.22)",
                 borderWidth: 1,
                 borderColor: "rgba(255, 255, 255, 0.35)",
                 alignItems: "center",
                 justifyContent: "center",
-                overflow: "hidden",
-                ...(Platform.OS === "web"
-                  ? {
-                      backdropFilter: "blur(16px)",
-                      WebkitBackdropFilter: "blur(16px)",
-                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.5)",
-                    }
-                  : {}),
               }}
             >
-              <BlurView intensity={50} tint="light" style={StyleSheet.absoluteFill} />
               <CloseIcon color="#FFFFFF" size={15} />
             </TouchableOpacity>
 
@@ -2510,40 +2098,19 @@ const AuthModal = memo(function AuthModal({
               contentContainerStyle={{
                 flexGrow: 1,
                 paddingHorizontal: 22,
-                paddingTop: 22,
-                paddingBottom: 24,
+                paddingTop: 20,
+                paddingBottom: 22,
               }}
             >
-              {/* University Clinic Header + Seal inside Frosted Glass Capsule */}
-              <View
-                style={{
-                  alignSelf: "flex-start",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 16,
-                  paddingRight: 14,
-                  paddingLeft: 6,
-                  paddingVertical: 5,
-                  borderRadius: 20,
-                  backgroundColor: "rgba(255, 255, 255, 0.08)",
-                  borderWidth: 1,
-                  borderColor: "rgba(255, 255, 255, 0.22)",
-                  ...(Platform.OS === "web"
-                    ? {
-                        backdropFilter: "blur(12px)",
-                        WebkitBackdropFilter: "blur(12px)",
-                        boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.35)",
-                      }
-                    : {}),
-                }}
-              >
+              {/* University Clinic Header + Logo inside Card */}
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12, paddingRight: 40 }}>
                 <Image
                   source={require("../../assets/images/ua-seal.png")}
-                  style={{ width: 26, height: 26, borderRadius: 13 }}
+                  style={{ width: 28, height: 28, borderRadius: 14 }}
                   resizeMode="contain"
                 />
-                <View style={{ width: 1, height: 14, backgroundColor: "rgba(255, 255, 255, 0.35)", marginHorizontal: 8 }} />
-                <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "600", fontFamily: "Outfit", letterSpacing: 0.3 }}>
+                <View style={{ width: 1, height: 16, backgroundColor: "rgba(255, 255, 255, 0.4)", marginHorizontal: 8 }} />
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Outfit", letterSpacing: 0.3 }}>
                   University Clinic
                 </Text>
               </View>
@@ -2664,7 +2231,7 @@ const AuthModal = memo(function AuthModal({
                             }}
                             numberOfLines={1}
                           >
-                            {signInDetectedPatient.name} • {signInDetectedPatient.category}
+                            {signInDetectedPatient.name}
                           </Text>
                         </View>
                         {!signInDetectedPatient.claimed && (
@@ -2686,13 +2253,41 @@ const AuthModal = memo(function AuthModal({
                     {signInDetectedPatient && !signInDetectedPatient.claimed ? (
                       <>
                         {!signInOtpSent ? (
-                          <GlassActionButton
-                            title="Verify via OTP to Sign In →"
+                          <TouchableOpacity
                             onPress={handleSendSignInOTP}
-                            loading={signInOtpLoading}
-                            variant="emerald"
-                            style={{ marginTop: 6 }}
-                          />
+                            disabled={signInOtpLoading}
+                            activeOpacity={0.85}
+                            style={{
+                              width: "100%",
+                              height: 50,
+                              borderRadius: 14,
+                              backgroundColor: "#059669",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginTop: 4,
+                              shadowColor: "#059669",
+                              shadowOffset: { width: 0, height: 4 },
+                              shadowOpacity: 0.35,
+                              shadowRadius: 8,
+                              elevation: 4,
+                            }}
+                          >
+                            {signInOtpLoading ? (
+                              <ActivityIndicator color="#FFFFFF" size="small" />
+                            ) : (
+                              <Text
+                                style={{
+                                  color: "#FFFFFF",
+                                  fontSize: 15,
+                                  fontWeight: "700",
+                                  fontFamily: "Outfit",
+                                  letterSpacing: 0.4,
+                                }}
+                              >
+                                Verify via OTP to Sign In →
+                              </Text>
+                            )}
+                          </TouchableOpacity>
                         ) : (
                           <>
                             <GlassInput
@@ -2748,14 +2343,41 @@ const AuthModal = memo(function AuthModal({
                               </TouchableOpacity>
                             </View>
 
-                            <GlassActionButton
-                              title="Verify & Sign In →"
+                            <TouchableOpacity
                               onPress={handleVerifySignInOTP}
-                              loading={signInOtpLoading}
-                              disabled={signInOtp.trim().length < 6}
-                              variant="emerald"
-                              style={{ marginTop: 6 }}
-                            />
+                              disabled={signInOtpLoading || signInOtp.trim().length < 6}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
+                                backgroundColor: signInOtp.trim().length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.45)",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginTop: 6,
+                                shadowColor: "#1E4FD8",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.35,
+                                shadowRadius: 8,
+                                elevation: 4,
+                              }}
+                            >
+                              {signInOtpLoading ? (
+                                <ActivityIndicator color="#FFFFFF" size="small" />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 15,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    letterSpacing: 0.4,
+                                  }}
+                                >
+                                  Verify & Sign In →
+                                </Text>
+                              )}
+                            </TouchableOpacity>
                           </>
                         )}
                       </>
@@ -2812,14 +2434,41 @@ const AuthModal = memo(function AuthModal({
                           </TouchableOpacity>
                         </View>
 
-                        <GlassActionButton
-                          title="Verify & Sign In →"
+                        <TouchableOpacity
                           onPress={handleVerifySignInOTP}
-                          loading={signInOtpLoading}
-                          disabled={signInOtp.trim().length < 6}
-                          variant="primary"
-                          style={{ marginTop: 6 }}
-                        />
+                          disabled={signInOtpLoading || signInOtp.trim().length < 6}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: signInOtp.trim().length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.45)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 6,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {signInOtpLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 15,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              Verify & Sign In →
+                            </Text>
+                          )}
+                        </TouchableOpacity>
                       </>
                     ) : (
                       /* Case C: Standard Password Login */
@@ -2840,13 +2489,41 @@ const AuthModal = memo(function AuthModal({
                           error={signInErrors.password}
                         />
 
-                        <GlassActionButton
-                          title="Sign In"
+                        <TouchableOpacity
                           onPress={handleSignIn}
-                          loading={signInLoading}
-                          variant="primary"
-                          style={{ marginTop: 8 }}
-                        />
+                          disabled={signInLoading}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 8,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {signInLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 16,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              Sign In
+                            </Text>
+                          )}
+                        </TouchableOpacity>
 
                         {signInDetectedPatient?.claimed ? (
                           <TouchableOpacity
@@ -2987,7 +2664,7 @@ const AuthModal = memo(function AuthModal({
                                     marginTop: 1,
                                   }}
                                 >
-                                  {createForm.fullName || "Patient Record"} • {createForm.category}
+                                  {createForm.fullName || "Patient Record"}
                                 </Text>
                               </View>
                             </View>
@@ -3047,14 +2724,40 @@ const AuthModal = memo(function AuthModal({
                               </TouchableOpacity>
                             </View>
 
-                            <GlassActionButton
-                              title="Verify OTP →"
+                            <TouchableOpacity
                               onPress={handleVerifyClaimOTP}
-                              loading={claimLoading}
-                              disabled={claimOtp.trim().length < 6}
-                              variant="primary"
-                              style={{ marginTop: 6 }}
-                            />
+                              disabled={claimLoading || claimOtp.trim().length < 6}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
+                                backgroundColor: claimOtp.trim().length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.45)",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                shadowColor: "#1E4FD8",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.35,
+                                shadowRadius: 8,
+                                elevation: 4,
+                              }}
+                            >
+                              {claimLoading ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    letterSpacing: 0.4,
+                                  }}
+                                >
+                                  Verify OTP →
+                                </Text>
+                              )}
+                            </TouchableOpacity>
                           </>
                         ) : (
                           <>
@@ -3155,13 +2858,41 @@ const AuthModal = memo(function AuthModal({
                               onSubmitEditing={handleSetClaimPassword}
                             />
 
-                            <GlassActionButton
-                              title="Activate & Sign In 🎉"
+                            <TouchableOpacity
                               onPress={handleSetClaimPassword}
-                              loading={claimLoading}
-                              variant="emerald"
-                              style={{ marginTop: 8 }}
-                            />
+                              disabled={claimLoading}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
+                                backgroundColor: "#1E4FD8",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginTop: 8,
+                                shadowColor: "#1E4FD8",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.35,
+                                shadowRadius: 8,
+                                elevation: 4,
+                              }}
+                            >
+                              {claimLoading ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    letterSpacing: 0.4,
+                                  }}
+                                >
+                                  Activate & Sign In 🎉
+                                </Text>
+                              )}
+                            </TouchableOpacity>
                           </>
                         )}
                       </Animated.View>
@@ -3249,7 +2980,7 @@ const AuthModal = memo(function AuthModal({
                                     }}
                                     numberOfLines={1}
                                   >
-                                    {createDetectedPatient.name} • {createDetectedPatient.category}
+                                    {createDetectedPatient.name}
                                   </Text>
                                   <Text
                                     style={{
@@ -3265,267 +2996,77 @@ const AuthModal = memo(function AuthModal({
                                   </Text>
                                 </View>
                               </View>
-                            ) : createForm.category ? (
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  padding: 14,
-                                  borderRadius: 16,
-                                  backgroundColor: "rgba(30, 79, 216, 0.28)",
-                                  borderWidth: 1.2,
-                                  borderColor: "rgba(147, 197, 253, 0.6)",
-                                  marginBottom: 14,
-                                  overflow: "hidden",
-                                  shadowColor: "#1E4FD8",
-                                  shadowOffset: { width: 0, height: 4 },
-                                  shadowOpacity: 0.35,
-                                  shadowRadius: 10,
-                                  elevation: 5,
-                                  ...(Platform.OS === "web"
-                                    ? {
-                                        backdropFilter: "blur(20px)",
-                                        WebkitBackdropFilter: "blur(20px)",
-                                        boxShadow:
-                                          "inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 8px 24px -4px rgba(30, 79, 216, 0.35)",
-                                      }
-                                    : {}),
-                                }}
-                              >
-                                <LinearGradient
-                                  colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.02)"]}
-                                  start={{ x: 0, y: 0 }}
-                                  end={{ x: 1, y: 1 }}
-                                  style={StyleSheet.absoluteFill}
-                                  pointerEvents="none"
-                                />
-                                <Text style={{ fontSize: 26, marginRight: 12 }}>
-                                  {createForm.category === "Student" ? "🎓" : createForm.category === "Employee" ? "💼" : "🌐"}
-                                </Text>
-                                <View style={{ flex: 1 }}>
-                                  <Text style={{ color: "#93C5FD", fontSize: 11, fontFamily: "Outfit", fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6 }}>
-                                    Identified Category
-                                  </Text>
-                                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700", fontFamily: "Outfit", marginTop: 2 }}>
-                                    {createForm.category}
-                                  </Text>
-                                  <Text style={{ color: "rgba(255, 255, 255, 0.8)", fontSize: 12, fontFamily: "Outfit", marginTop: 2 }}>
-                                    {createForm.category === "Student"
-                                      ? "University of the Assumption Student"
-                                      : createForm.category === "Employee"
-                                      ? "UA Faculty & Personnel"
-                                      : "External Guest / Outsider"}
-                                  </Text>
-                                </View>
-                                <View
-                                  style={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: 12,
-                                    backgroundColor: "rgba(59, 130, 246, 0.45)",
-                                    borderWidth: 1,
-                                    borderColor: "rgba(147, 197, 253, 0.8)",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <CheckIcon color="#FFFFFF" size={13} />
-                                </View>
-                              </View>
-                            ) : (
-                              <View
-                                style={{
-                                  borderRadius: 16,
-                                  borderWidth: 1.2,
-                                  borderColor: "rgba(255, 255, 255, 0.22)",
-                                  backgroundColor: "rgba(255, 255, 255, 0.08)",
-                                  padding: 13,
-                                  marginBottom: 14,
-                                  overflow: "hidden",
-                                  ...(Platform.OS === "web"
-                                    ? {
-                                        backdropFilter: "blur(20px)",
-                                        WebkitBackdropFilter: "blur(20px)",
-                                        boxShadow:
-                                          "inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 20px -4px rgba(0, 0, 0, 0.3)",
-                                      }
-                                    : {}),
-                                }}
-                              >
-                                <LinearGradient
-                                  colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.02)"]}
-                                  start={{ x: 0, y: 0 }}
-                                  end={{ x: 1, y: 1 }}
-                                  style={StyleSheet.absoluteFill}
-                                  pointerEvents="none"
-                                />
-
-                                {/* Header */}
-                                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 8 }}>
-                                  <View
-                                    style={{
-                                      width: 24,
-                                      height: 24,
-                                      borderRadius: 12,
-                                      backgroundColor: "rgba(245, 158, 11, 0.22)",
-                                      borderWidth: 1,
-                                      borderColor: "rgba(251, 191, 36, 0.45)",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                    }}
-                                  >
-                                    <Text style={{ fontSize: 12 }}>💡</Text>
-                                  </View>
-                                  <Text
-                                    style={{
-                                      color: "#FFFFFF",
-                                      fontSize: 12.5,
-                                      fontWeight: "700",
-                                      fontFamily: "Outfit",
-                                      letterSpacing: 0.2,
-                                      textShadowColor: "rgba(0,0,0,0.3)",
-                                      textShadowOffset: { width: 0, height: 1 },
-                                      textShadowRadius: 2,
-                                    }}
-                                  >
-                                    Category is automatically identified:
-                                  </Text>
-                                </View>
-
-                                {/* 3 Refractive Category Rows */}
-                                <View style={{ gap: 6 }}>
-                                  <View
-                                    style={{
-                                      flexDirection: "row",
-                                      alignItems: "center",
-                                      justifyContent: "space-between",
-                                      backgroundColor: "rgba(255, 255, 255, 0.06)",
-                                      borderWidth: 1,
-                                      borderColor: "rgba(255, 255, 255, 0.12)",
-                                      borderRadius: 10,
-                                      paddingHorizontal: 10,
-                                      paddingVertical: 6,
-                                    }}
-                                  >
-                                    <Text style={{ color: "#93C5FD", fontSize: 12, fontFamily: "Outfit", fontWeight: "600" }}>
-                                      .student@ua.edu.ph
-                                    </Text>
-                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                                      <Text style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: 11 }}>→</Text>
-                                      <View
-                                        style={{
-                                          backgroundColor: "rgba(59, 130, 246, 0.3)",
-                                          borderWidth: 1,
-                                          borderColor: "rgba(96, 165, 250, 0.55)",
-                                          borderRadius: 6,
-                                          paddingHorizontal: 7,
-                                          paddingVertical: 1.5,
-                                        }}
-                                      >
-                                        <Text style={{ color: "#BFDBFE", fontSize: 11, fontWeight: "700", fontFamily: "Outfit" }}>
-                                          Student
-                                        </Text>
-                                      </View>
-                                    </View>
-                                  </View>
-
-                                  <View
-                                    style={{
-                                      flexDirection: "row",
-                                      alignItems: "center",
-                                      justifyContent: "space-between",
-                                      backgroundColor: "rgba(255, 255, 255, 0.06)",
-                                      borderWidth: 1,
-                                      borderColor: "rgba(255, 255, 255, 0.12)",
-                                      borderRadius: 10,
-                                      paddingHorizontal: 10,
-                                      paddingVertical: 6,
-                                    }}
-                                  >
-                                    <Text style={{ color: "#93C5FD", fontSize: 12, fontFamily: "Outfit", fontWeight: "600" }}>
-                                      @ua.edu.ph
-                                    </Text>
-                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                                      <Text style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: 11 }}>→</Text>
-                                      <View
-                                        style={{
-                                          backgroundColor: "rgba(147, 51, 234, 0.3)",
-                                          borderWidth: 1,
-                                          borderColor: "rgba(192, 132, 252, 0.55)",
-                                          borderRadius: 6,
-                                          paddingHorizontal: 7,
-                                          paddingVertical: 1.5,
-                                        }}
-                                      >
-                                        <Text style={{ color: "#E9D5FF", fontSize: 11, fontWeight: "700", fontFamily: "Outfit" }}>
-                                          Employee
-                                        </Text>
-                                      </View>
-                                    </View>
-                                  </View>
-
-                                  <View
-                                    style={{
-                                      flexDirection: "row",
-                                      alignItems: "center",
-                                      justifyContent: "space-between",
-                                      backgroundColor: "rgba(255, 255, 255, 0.06)",
-                                      borderWidth: 1,
-                                      borderColor: "rgba(255, 255, 255, 0.12)",
-                                      borderRadius: 10,
-                                      paddingHorizontal: 10,
-                                      paddingVertical: 6,
-                                    }}
-                                  >
-                                    <Text style={{ color: "#93C5FD", fontSize: 12, fontFamily: "Outfit", fontWeight: "600" }}>
-                                      @gmail.com
-                                    </Text>
-                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                                      <Text style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: 11 }}>→</Text>
-                                      <View
-                                        style={{
-                                          backgroundColor: "rgba(14, 165, 233, 0.28)",
-                                          borderWidth: 1,
-                                          borderColor: "rgba(56, 189, 248, 0.55)",
-                                          borderRadius: 6,
-                                          paddingHorizontal: 7,
-                                          paddingVertical: 1.5,
-                                        }}
-                                      >
-                                        <Text style={{ color: "#BAE6FD", fontSize: 11, fontWeight: "700", fontFamily: "Outfit" }}>
-                                          Outsider
-                                        </Text>
-                                      </View>
-                                    </View>
-                                  </View>
-                                </View>
-                              </View>
-                            )}
-
-                            {regErrors.category ? (
-                              <Text style={{ color: "#FCA5A5", fontSize: 12, fontFamily: "Outfit", marginBottom: 10, marginLeft: 4 }}>
-                                {regErrors.category}
-                              </Text>
                             ) : null}
 
                             {createDetectedPatient && createDetectedPatient.claimed ? (
-                              <GlassActionButton
-                                title="Go to Sign In →"
+                              <TouchableOpacity
                                 onPress={() => {
                                   setSignInIdentifier(createForm.email.trim());
                                   switchAuthMode("signin");
                                 }}
-                                variant="primary"
-                                style={{ marginTop: 6 }}
-                              />
+                                activeOpacity={0.85}
+                                style={{
+                                  width: "100%",
+                                  height: 50,
+                                  borderRadius: 14,
+                                  backgroundColor: "#1E4FD8",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  marginTop: 6,
+                                  shadowColor: "#1E4FD8",
+                                  shadowOffset: { width: 0, height: 4 },
+                                  shadowOpacity: 0.35,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: "#FFFFFF",
+                                    fontSize: 15,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                  }}
+                                >
+                                  Go to Sign In →
+                                </Text>
+                              </TouchableOpacity>
                             ) : (
-                              <GlassActionButton
-                                title={createDetectedPatient ? "Claim Account (Send OTP) →" : "Next →"}
+                              <TouchableOpacity
                                 onPress={handleStep1Next}
-                                loading={emailChecking}
-                                variant={createDetectedPatient ? "emerald" : "primary"}
-                                style={{ marginTop: 6 }}
-                              />
+                                disabled={emailChecking}
+                                activeOpacity={0.85}
+                                style={{
+                                  width: "100%",
+                                  height: 50,
+                                  borderRadius: 14,
+                                  backgroundColor: createDetectedPatient ? "#059669" : "#1E4FD8",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  marginTop: 6,
+                                  shadowColor: createDetectedPatient ? "#059669" : "#1E4FD8",
+                                  shadowOffset: { width: 0, height: 4 },
+                                  shadowOpacity: 0.35,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }}
+                              >
+                                {emailChecking ? (
+                                  <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                  <Text
+                                    style={{
+                                      color: "#FFFFFF",
+                                      fontSize: 15,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      letterSpacing: 0.4,
+                                    }}
+                                  >
+                                    {createDetectedPatient ? "Claim Account (Send OTP) →" : "Next →"}
+                                  </Text>
+                                )}
+                              </TouchableOpacity>
                             )}
 
                             {regErrors.email?.includes("already registered") ? (
@@ -3689,12 +3230,36 @@ const AuthModal = memo(function AuthModal({
                           error={regErrors.emergencyPhone}
                         />
 
-                        <GlassActionButton
-                          title="Next →"
+                        <TouchableOpacity
                           onPress={handleStep2Next}
-                          variant="primary"
-                          style={{ marginTop: 10 }}
-                        />
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 16,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              letterSpacing: 0.4,
+                            }}
+                          >
+                            Next →
+                          </Text>
+                        </TouchableOpacity>
                       </Animated.View>
                     )}
 
@@ -3854,12 +3419,36 @@ const AuthModal = memo(function AuthModal({
                           </View>
                         )}
 
-                        <GlassActionButton
-                          title="Next →"
+                        <TouchableOpacity
                           onPress={handleStep3Next}
-                          variant="primary"
-                          style={{ marginTop: 10 }}
-                        />
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 16,
+                              fontWeight: "700",
+                              fontFamily: "Outfit",
+                              letterSpacing: 0.4,
+                            }}
+                          >
+                            Next →
+                          </Text>
+                        </TouchableOpacity>
                       </Animated.View>
                     )}
 
@@ -3912,13 +3501,41 @@ const AuthModal = memo(function AuthModal({
                           error={regErrors.confirmPassword}
                         />
 
-                        <GlassActionButton
-                          title="Create Account"
+                        <TouchableOpacity
                           onPress={handleGetStarted}
-                          loading={regLoading}
-                          variant="primary"
-                          style={{ marginTop: 10 }}
-                        />
+                          disabled={regLoading}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {regLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 16,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              Create Account
+                            </Text>
+                          )}
+                        </TouchableOpacity>
                       </Animated.View>
                     )}
                   </>
