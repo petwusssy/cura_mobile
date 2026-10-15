@@ -42,7 +42,9 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
 
   useEffect(() => {
     const userId = user?.id;
-    if (!userId) return;
+    const idNumber = (user as any)?.id_number;
+    const userName = (user?.displayName || `${user?.firstName || ''} ${user?.lastName || ''}`).trim().toUpperCase();
+    if (!userId && !idNumber && !userName) return;
 
     knownIdsRef.current = new Set();
     isInitialFetchRef.current = true;
@@ -52,7 +54,13 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
         const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/`);
         if (res.ok) {
           const data = await res.json();
-          const myNotifs = data.filter((n: any) => n.patient_id === userId);
+          const myNotifs = Array.isArray(data) ? data.filter((n: any) => {
+            if (userId && (String(n.patient_id) === String(userId) || String(n.patient) === String(userId))) return true;
+            if (idNumber && (String(n.patient_id) === String(idNumber) || String(n.patient) === String(idNumber))) return true;
+            if (userName && n.patientName && n.patientName.trim().toUpperCase() === userName) return true;
+            if (userName && n.patient_name && n.patient_name.trim().toUpperCase() === userName) return true;
+            return false;
+          }) : [];
           setNotifications(myNotifs);
           AsyncStorage.setItem('@cura_cached_notifications', JSON.stringify(myNotifs)).catch(() => {});
           
@@ -79,7 +87,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 1500);
     return () => clearInterval(interval);
-  }, [user?.id, setNotifications, showAlert]);
+  }, [user?.id, (user as any)?.id_number, user?.displayName, user?.firstName, user?.lastName, setNotifications, showAlert]);
 
   return null;
 }
@@ -242,8 +250,8 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   useEffect(() => {
     const pId = user?.id || (user as any)?.id_number;
     const uName = ((user as any)?.name || '').trim().toUpperCase();
-    if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents' || current?.screen === 'medications')) {
-      if (current?.screen === 'medications' || current?.screen === 'profile') {
+    if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents' || current?.screen === 'medications' || current?.screen === 'notifications')) {
+      if (current?.screen === 'medications' || current?.screen === 'profile' || current?.screen === 'notifications') {
         safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/consultations/`)
           .then(async (allConsultations) => {
             if (Array.isArray(allConsultations)) {
@@ -485,7 +493,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "forgot-password": return <ForgotPasswordScreen navigate={navigate} goBack={goBack} />;
 
       case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} medications={medications} />;
-      case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} />;
+      case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} medications={medications} />;
       case "telemedicine":   return <TelemedicineScreen navigate={navigate} goBack={goBack} user={user} />;
       case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
       case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;

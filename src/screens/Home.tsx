@@ -29,11 +29,24 @@ import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const unread = notifications.filter((n) => !n.read).length;
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
 
-
   const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
+
+  const pendingMedsCount = useMemo(() => {
+    if (!medications || medications.length === 0) return 0;
+    return medications.filter(
+      (m: any) =>
+        m.status !== "intaked" &&
+        m.status !== "taken" &&
+        !intakedIds.has(String(m.id)) &&
+        !intakedIds.has(m.id) &&
+        !(m.rawRemarks && m.rawRemarks.includes('[INTAKED]')) &&
+        !(m.instructions && m.instructions.includes('[INTAKED]'))
+    ).length;
+  }, [medications, intakedIds]);
+
+  const unread = notifications.filter((n) => !n.read).length + pendingMedsCount;
 
   useEffect(() => {
     const fetchIntaked = () => {
@@ -639,30 +652,128 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   );
 }
 
-export function NotificationsScreen({ navigate, goBack, notifications = [], setNotifications }: { navigate: Props["navigate"]; goBack: () => void; notifications?: any[]; setNotifications?: any }) {
-  const icons: Record<string, string> = { medication: "💊", appointment: "📅", result: "📋", info: "ℹ️", telemedicine_update: "📹", appointment_update: "📅" };
-  const bgs: Record<string, string> = { medication: "#ECFDF5", appointment: "#EFF6FF", result: "#FDF4FF", info: "#F8FAFC", telemedicine_update: "#EFF6FF", appointment_update: "#FDF4FF" };
+export function NotificationsScreen({
+  navigate,
+  goBack,
+  notifications = [],
+  setNotifications,
+  medications = [],
+}: {
+  navigate: Props["navigate"];
+  goBack: () => void;
+  notifications?: any[];
+  setNotifications?: any;
+  medications?: any[];
+}) {
+  const icons: Record<string, string> = {
+    medication: "💊",
+    appointment: "📅",
+    appointment_request: "📅",
+    appointment_update: "📅",
+    telemedicine: "📹",
+    telemedicine_request: "📹",
+    telemedicine_update: "📹",
+    result: "📋",
+    medcert_request: "📋",
+    general: "📢",
+    bed: "🛏️",
+    info: "ℹ️",
+  };
+  const bgs: Record<string, string> = {
+    medication: "#ECFDF5",
+    appointment: "#EFF6FF",
+    appointment_request: "#EFF6FF",
+    appointment_update: "#EFF6FF",
+    telemedicine: "#F0F9FF",
+    telemedicine_request: "#F0F9FF",
+    telemedicine_update: "#F0F9FF",
+    result: "#FDF4FF",
+    medcert_request: "#FDF4FF",
+    general: "#FEF3C7",
+    bed: "#F5F3FF",
+    info: "#F8FAFC",
+  };
 
-  const activeNotifs = notifications.filter(n => !n.read);
+  const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    AsyncStorage.getItem("@cura_intaked_meds")
+      .then((data) => {
+        if (data) {
+          try {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) setIntakedIds(new Set(parsed));
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const pendingMeds = useMemo(() => {
+    return (medications || []).filter(
+      (m: any) =>
+        m.status !== "intaked" &&
+        m.status !== "taken" &&
+        !intakedIds.has(String(m.id)) &&
+        !intakedIds.has(m.id) &&
+        !(m.rawRemarks && m.rawRemarks.includes("[INTAKED]")) &&
+        !(m.instructions && m.instructions.includes("[INTAKED]"))
+    );
+  }, [medications, intakedIds]);
+
+  const allDisplayNotifs = useMemo(() => {
+    const medItems = pendingMeds.map((m: any) => {
+      const targetTime = m.nextDose ? formatTime12(m.nextDose) : null;
+      return {
+        id: `med-${m.id}`,
+        type: "medication",
+        title: `Medication to Take: ${m.name || m.medicineName || "Scheduled Dose"}`,
+        message: targetTime
+          ? `Next scheduled intake at ${targetTime}${m.dose ? ` (${m.dose})` : ""}. ${m.instructions || "Please take your medication as prescribed."}`
+          : `${m.dose ? `Dose: ${m.dose}. ` : ""}${m.instructions || "Please take your scheduled medication."}`,
+        created_at: targetTime ? `Scheduled: ${targetTime}` : "Due Today",
+        read: false,
+        isMedication: true,
+      };
+    });
+
+    const combined = [...medItems, ...notifications];
+    return combined.sort((a: any, b: any) => {
+      if (!a.read && b.read) return -1;
+      if (a.read && !b.read) return 1;
+      return 0;
+    });
+  }, [pendingMeds, notifications]);
+
+  const unreadCount = allDisplayNotifs.filter((n: any) => !n.read).length;
 
   const handlePress = async (n: any) => {
+    if (n.isMedication) {
+      navigate("medications");
+      return;
+    }
+
     // Mark as read in backend
-    try {
-      await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/${n.id}/`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ read: true })
-      });
-      if (setNotifications) {
-         setNotifications((prev: any[]) => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
-      }
-    } catch (e) {}
+    if (!n.read && n.id) {
+      try {
+        await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/${n.id}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ read: true }),
+        });
+        if (setNotifications) {
+          setNotifications((prev: any[]) =>
+            prev.map((item) => (item.id === n.id ? { ...item, read: true } : item))
+          );
+        }
+      } catch (e) {}
+    }
 
     // Navigate
-    if (n.type.includes('telemedicine')) navigate('telemedicine');
-    else if (n.type.includes('appointment')) navigate('appointment');
-    else if (n.type === 'medication') navigate('medications');
-    else if (n.type === 'result') navigate('documents');
+    if (n.type.includes("telemedicine")) navigate("telemedicine");
+    else if (n.type.includes("appointment")) navigate("appointment");
+    else if (n.type === "medication") navigate("medications");
+    else if (n.type.includes("medcert") || n.type === "result") navigate("documents");
   };
 
   return (
@@ -687,7 +798,7 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
                 textShadowRadius: 2,
               }}
             >
-              {activeNotifs.length} new
+              {unreadCount} new
             </Text>
           </View>
         }
@@ -695,15 +806,16 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
       
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
         <View className="flex-col gap-3 pb-8">
-          {activeNotifs.length > 0 ? activeNotifs.map((n) => (
+          {allDisplayNotifs.length > 0 ? allDisplayNotifs.map((n) => (
             <Pressable
               key={n.id}
               onPress={() => handlePress(n)}
-              className="bg-white rounded-[24px] p-4 flex-row items-start gap-4"
+              className="bg-white rounded-[24px] p-4 flex-row items-start gap-4 active:opacity-90"
               style={{
                 elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8,
                 borderWidth: 1,
-                borderColor: "#EFF6FF",
+                borderColor: !n.read ? "#DBEAFE" : "#EFF6FF",
+                opacity: n.read ? 0.8 : 1,
               }}
             >
               <View className="w-12 h-12 rounded-full items-center justify-center" style={{ backgroundColor: bgs[n.type] || '#F8FAFC' }}>
@@ -711,11 +823,18 @@ export function NotificationsScreen({ navigate, goBack, notifications = [], setN
               </View>
               <View className="flex-1 pt-1">
                 <View className="flex-row items-center gap-2 mb-1">
-                  <Text className="text-sm font-bold text-slate-800">{n.title || n.type}</Text>
-                  <View className="w-2 h-2 rounded-full bg-[#002D72]" />
+                  <Text className="text-sm font-bold text-slate-800 flex-1" numberOfLines={1}>{n.title || n.type}</Text>
+                  {!n.read && <View className="w-2.5 h-2.5 rounded-full bg-[#002D72]" />}
                 </View>
                 <Text className="text-xs text-slate-500 leading-relaxed">{n.message}</Text>
-                <Text className="text-[10px] text-slate-400 mt-2 font-medium">{n.created_at ? formatManilaDateTime(n.created_at) : 'recently'}</Text>
+                <View className="flex-row items-center justify-between mt-2">
+                  <Text className="text-[10px] text-slate-400 font-medium">
+                    {n.created_at ? (typeof n.created_at === 'string' && n.created_at.includes('T') ? formatManilaDateTime(n.created_at) : n.created_at) : 'recently'}
+                  </Text>
+                  {n.isMedication && (
+                    <Text className="text-[10px] font-bold text-[#002D72]">Tap to take →</Text>
+                  )}
+                </View>
               </View>
             </Pressable>
           )) : (
