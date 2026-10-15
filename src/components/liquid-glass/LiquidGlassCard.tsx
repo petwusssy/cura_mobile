@@ -1,5 +1,7 @@
 import React from "react";
-import { Pressable, StyleSheet, ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, ViewStyle, Platform } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -27,7 +29,6 @@ export function LiquidGlassCard({
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
-    // Requirement 8: press animation na scale 0.96 gamit ang spring
     scale.value = withSpring(0.96, SPRING_PRESS_IN);
   };
 
@@ -41,10 +42,41 @@ export function LiquidGlassCard({
     };
   });
 
+  const webGlassStyle: ViewStyle = Platform.OS === "web" ? {
+    backdropFilter: "blur(24px) saturate(180%)",
+    WebkitBackdropFilter: "blur(24px) saturate(180%)",
+    boxShadow: isDark
+      ? "0 16px 36px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(255, 255, 255, 0.06)"
+      : "0 16px 36px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 1px rgba(255, 255, 255, 0.2)",
+  } as ViewStyle : {};
+
   const cardStyle: ViewStyle = {
-    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-    borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+    backgroundColor: isDark ? "rgba(28, 28, 30, 0.65)" : "rgba(255, 255, 255, 0.65)",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.60)",
+    borderTopColor: isDark ? "rgba(255, 255, 255, 0.38)" : "rgba(255, 255, 255, 0.85)",
   };
+
+  const content = (
+    <>
+      <BlurView
+        intensity={Platform.OS === "ios" ? 80 : 65}
+        tint={isDark ? "dark" : "light"}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        colors={
+          isDark
+            ? ["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.02)", "transparent"]
+            : ["rgba(255, 255, 255, 0.45)", "rgba(255, 255, 255, 0.10)", "transparent"]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.8, y: 0.8 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <View style={{ position: "relative", zIndex: 1 }}>{children}</View>
+    </>
+  );
 
   if (onPress) {
     return (
@@ -55,9 +87,9 @@ export function LiquidGlassCard({
       >
         <Animated.View
           className={className}
-          style={[styles.card, cardStyle, animatedStyle, style]}
+          style={[styles.card, cardStyle, webGlassStyle, animatedStyle, style]}
         >
-          {children}
+          {content}
         </Animated.View>
       </Pressable>
     );
@@ -66,25 +98,26 @@ export function LiquidGlassCard({
   return (
     <Animated.View
       className={className}
-      style={[styles.card, cardStyle, animatedStyle, style]}
+      style={[styles.card, cardStyle, webGlassStyle, animatedStyle, style]}
     >
-      {children}
+      {content}
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20, // Requirement 8: radius 20
+    borderRadius: 20,
     borderWidth: 1,
     overflow: "hidden",
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
     elevation: 4,
     marginVertical: 8,
     marginHorizontal: 16,
     padding: 16,
+    position: "relative",
   },
 });
