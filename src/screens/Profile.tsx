@@ -823,16 +823,25 @@ export function ProfileScreen({
   const myInfoItems = [
     {
       icon: "🪪",
-      label: "ID",
+      label: "ID Number",
       sub: (user as any).id || user.id_number || "—",
       color: "#F3F4F6",
-      onPress: () =>
-        openSingleEdit({
-          key: "id",
-          label: "ID",
-          value: (user as any).id || user.id_number || "",
-          type: "text",
-        }),
+      onPress: () => {
+        const currentId = (user as any).id || user.id_number;
+        if (currentId) {
+          Alert.alert(
+            "Permanent Record ID",
+            "Student and Employee IDs cannot be modified once set. Please visit the University Clinic for official record corrections."
+          );
+        } else {
+          openSingleEdit({
+            key: "id",
+            label: "ID Number",
+            value: "",
+            type: "text",
+          });
+        }
+      },
     },
     {
       icon: "👤",
@@ -1765,13 +1774,28 @@ export function ProfileScreen({
             <ScrollView className="px-6 py-4 space-y-4" keyboardShouldPersistTaps="handled">
               {/* ID Number */}
               <View className="mb-3">
-                <Text className="text-xs font-bold text-slate-600 mb-1.5">ID Number</Text>
+                <View className="flex-row items-center justify-between mb-1.5">
+                  <Text className="text-xs font-bold text-slate-600">ID Number</Text>
+                  {formId ? (
+                    <Text className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      🔒 Permanent
+                    </Text>
+                  ) : null}
+                </View>
                 <TextInput
                   value={formId}
+                  editable={!formId}
                   onChangeText={setFormId}
                   placeholder="e.g. 2024-00123"
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                  className={`rounded-xl px-3.5 py-2.5 text-sm ${
+                    formId ? "bg-slate-100 border border-slate-200 text-slate-500" : "bg-slate-50 border border-slate-200 text-slate-800"
+                  }`}
                 />
+                {formId ? (
+                  <Text className="text-[11px] text-slate-400 mt-1">
+                    Student and Employee IDs cannot be modified once set.
+                  </Text>
+                ) : null}
               </View>
 
               {/* Gender */}

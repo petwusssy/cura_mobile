@@ -575,20 +575,19 @@ function isValidEmail(email: string): boolean {
 
 function detectCategoryFromEmail(email: string): "" | "Student" | "Employee" | "Outsider" {
   const clean = email.trim().toLowerCase();
-  if (!clean) return "";
-  if (clean.includes(".student@ua.edu.ph") || clean.endsWith(".student@ua.edu.ph")) {
+  if (!clean || !clean.includes("@")) return "";
+  if (
+    clean.includes(".student@ua.edu.ph") ||
+    clean.endsWith(".student@ua.edu.ph") ||
+    clean.includes("student@ua.edu.ph") ||
+    clean.endsWith("@student.ua.edu.ph")
+  ) {
     return "Student";
   }
   if (clean.includes("@ua.edu.ph") || clean.endsWith("@ua.edu.ph")) {
     return "Employee";
   }
-  if (clean.includes("@gmail.com") || clean.endsWith("@gmail.com")) {
-    return "Outsider";
-  }
-  if (clean.includes("@") && clean.includes(".")) {
-    return "Outsider";
-  }
-  return "";
+  return "Outsider";
 }
 
 function GlassSelectionModal({
@@ -3238,6 +3237,64 @@ const AuthModal = memo(function AuthModal({
                                 </Text>
                               </TouchableOpacity>
                             ) : null}
+
+                            {/* Divider */}
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 14,
+                                marginBottom: 8,
+                                gap: 10,
+                              }}
+                            >
+                              <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255, 255, 255, 0.2)" }} />
+                              <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: 11, fontFamily: "Outfit", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                or
+                              </Text>
+                              <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255, 255, 255, 0.2)" }} />
+                            </View>
+
+                            {/* Google Sign In/Up Button in Step 1 */}
+                            <TouchableOpacity
+                              onPress={handleModalGoogleSignIn}
+                              disabled={modalGoogleLoading || emailChecking}
+                              activeOpacity={0.85}
+                              style={{
+                                width: "100%",
+                                height: 50,
+                                borderRadius: 14,
+                                backgroundColor: "#FFFFFF",
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 10,
+                                shadowColor: "#000",
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.15,
+                                shadowRadius: 6,
+                                elevation: 3,
+                              }}
+                            >
+                              {modalGoogleLoading ? (
+                                <ActivityIndicator color="#0284c7" size="small" />
+                              ) : (
+                                <>
+                                  <GoogleLogoIcon size={20} />
+                                  <Text
+                                    style={{
+                                      color: "#1E293B",
+                                      fontSize: 15,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      letterSpacing: 0.2,
+                                    }}
+                                  >
+                                    Continue with Google
+                                  </Text>
+                                </>
+                              )}
+                            </TouchableOpacity>
 
                         {/* Sign In Link (Only on step 1) */}
                         <View
