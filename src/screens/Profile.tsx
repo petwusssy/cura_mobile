@@ -465,10 +465,8 @@ export function ProfileScreen({
     const patientId = user.id || (user as any).id_number;
 
     const payload: any = {
-      ...(formId.trim() ? { id_number: formId.trim() } : {}),
       ...(formGender.trim() ? { gender: formGender.trim(), sex: formGender.trim() } : {}),
       ...(formDob.trim() ? { dob: formDob.trim(), birthday: formDob.trim() } : {}),
-      ...(formEmail.trim() ? { email: formEmail.trim() } : {}),
       contact: formPhone.trim(),
       phone: formPhone.trim(),
       emergencyContact: formEmergencyName.trim().toUpperCase(),
@@ -516,10 +514,8 @@ export function ProfileScreen({
       // 3. Update local session state
       const updatedUser: any = {
         ...user,
-        ...(formId.trim() ? { id: formId.trim(), id_number: formId.trim() } : {}),
         ...(formGender.trim() ? { gender: formGender.trim(), sex: formGender.trim() } : {}),
         ...(formDob.trim() ? { dob: formDob.trim(), birthday: formDob.trim() } : {}),
-        ...(formEmail.trim() ? { email: formEmail.trim() } : {}),
         phone: formPhone.trim(),
         contact: formPhone.trim(),
         emergencyName: formEmergencyName.trim().toUpperCase(),
@@ -579,6 +575,10 @@ export function ProfileScreen({
   // Save single field
   const handleSaveSingleField = async () => {
     if (!activeEditField) return;
+    if (activeEditField.key === "id" || activeEditField.key === "email") {
+      setActiveEditField(null);
+      return;
+    }
     setSavingSingleField(true);
 
     const val = singleFieldValue.trim();
@@ -589,17 +589,9 @@ export function ProfileScreen({
     let userUpdates: any = {};
 
     switch (activeEditField.key) {
-      case "id":
-        payload = { id_number: val };
-        userUpdates = { id: val, id_number: val };
-        break;
       case "contact":
         payload = { contact: val, phone: val };
         userUpdates = { contact: val, phone: val };
-        break;
-      case "email":
-        payload = { email: val };
-        userUpdates = { email: val };
         break;
       case "emergency":
         payload = { emergencyContact: val.toUpperCase(), emergencyPhone: secVal };
@@ -853,20 +845,10 @@ export function ProfileScreen({
       sub: (user as any).id || user.id_number || "—",
       color: "#F3F4F6",
       onPress: () => {
-        const currentId = (user as any).id || user.id_number;
-        if (currentId) {
-          Alert.alert(
-            "Permanent Record ID",
-            "Student and Employee IDs cannot be modified once set. Please visit the University Clinic for official record corrections."
-          );
-        } else {
-          openSingleEdit({
-            key: "id",
-            label: "ID Number",
-            value: "",
-            type: "text",
-          });
-        }
+        Alert.alert(
+          "Permanent Record ID",
+          "Student and Employee IDs cannot be modified. Please visit the University Clinic for official record corrections."
+        );
       },
     },
     {
@@ -922,13 +904,12 @@ export function ProfileScreen({
       label: "Email",
       sub: user.email || "—",
       color: "#EFF8FF",
-      onPress: () =>
-        openSingleEdit({
-          key: "email",
-          label: "Email",
-          value: user.email || "",
-          type: "email",
-        }),
+      onPress: () => {
+        Alert.alert(
+          "Permanent Account Email",
+          "Account email addresses cannot be modified. Your records are permanently linked to this email address."
+        );
+      },
     },
     {
       icon: "🆘",
@@ -1802,26 +1783,19 @@ export function ProfileScreen({
               <View className="mb-3">
                 <View className="flex-row items-center justify-between mb-1.5">
                   <Text className="text-xs font-bold text-slate-600">ID Number</Text>
-                  {formId ? (
-                    <Text className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                      🔒 Permanent
-                    </Text>
-                  ) : null}
+                  <Text className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                    🔒 Permanent
+                  </Text>
                 </View>
                 <TextInput
                   value={formId}
-                  editable={!formId}
-                  onChangeText={setFormId}
+                  editable={false}
                   placeholder="e.g. 2024-00123"
-                  className={`rounded-xl px-3.5 py-2.5 text-sm ${
-                    formId ? "bg-slate-100 border border-slate-200 text-slate-500" : "bg-slate-50 border border-slate-200 text-slate-800"
-                  }`}
+                  className="bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-500"
                 />
-                {formId ? (
-                  <Text className="text-[11px] text-slate-400 mt-1">
-                    Student and Employee IDs cannot be modified once set.
-                  </Text>
-                ) : null}
+                <Text className="text-[11px] text-slate-400 mt-1">
+                  Student and Employee IDs cannot be modified.
+                </Text>
               </View>
 
               {/* Gender */}
@@ -1885,15 +1859,21 @@ export function ProfileScreen({
 
               {/* Email Address */}
               <View className="mb-3">
-                <Text className="text-xs font-bold text-slate-600 mb-1.5">Email Address</Text>
+                <View className="flex-row items-center justify-between mb-1.5">
+                  <Text className="text-xs font-bold text-slate-600">Email Address</Text>
+                  <Text className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                    🔒 Permanent
+                  </Text>
+                </View>
                 <TextInput
                   value={formEmail}
-                  onChangeText={setFormEmail}
+                  editable={false}
                   placeholder="e.g. name@university.edu.ph"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800"
+                  className="bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-500"
                 />
+                <Text className="text-[11px] text-slate-400 mt-1">
+                  Account email address cannot be modified.
+                </Text>
               </View>
 
               {/* Emergency Contact Name */}
