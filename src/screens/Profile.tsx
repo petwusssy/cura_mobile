@@ -414,11 +414,16 @@ export function ProfileScreen({
         mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.5,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setFormAvatarUrl(result.assets[0].uri);
+        const asset = result.assets[0];
+        const formattedUri = asset.base64
+          ? `data:image/jpeg;base64,${asset.base64}`
+          : asset.uri;
+        setFormAvatarUrl(formattedUri);
       }
     } catch {
       Alert.alert("Error", "Could not pick image. Please try again.");
@@ -742,10 +747,31 @@ export function ProfileScreen({
       ...user,
       displayName: nameChanged ? newName : (user.displayName || user.firstName || "PATIENT"),
       avatarUrl: avatarChanged ? newAvatar : user.avatarUrl,
+      avatar: avatarChanged ? newAvatar : (user as any).avatar,
     };
 
     if (setUser) setUser(updatedUser);
     await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
+
+    // Sync avatar to backend database so it persists across all devices
+    const patientId = user.id || (user as any).id_number;
+    if (avatarChanged) {
+      const avatarPayload = { avatar: newAvatar || "" };
+      if (patientId) {
+        fetch(`https://cura-backend-dvj5.onrender.com/api/patients/${patientId}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(avatarPayload),
+        }).catch(() => {});
+      }
+      if (user.email) {
+        fetch(`https://cura-backend-dvj5.onrender.com/api/patients/update-by-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, ...avatarPayload }),
+        }).catch(() => {});
+      }
+    }
 
     // Set cooldown only for what was changed
     const nowStr = Date.now().toString();

@@ -151,6 +151,8 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
             displayName: upperName || prev?.displayName || '',
             category: (patient.category || prev?.category || 'outsider').toLowerCase(),
             accessToken: token,
+            avatarUrl: patient.avatar || patient.avatarUrl || prev?.avatarUrl || null,
+            avatar: patient.avatar || patient.avatarUrl || prev?.avatar || null,
           };
           AsyncStorage.setItem('@cura_user_session', JSON.stringify(updated)).catch(() => {});
           if (token) {
