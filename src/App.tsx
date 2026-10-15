@@ -54,6 +54,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
           const data = await res.json();
           const myNotifs = data.filter((n: any) => n.patient_id === userId);
           setNotifications(myNotifs);
+          AsyncStorage.setItem('@cura_cached_notifications', JSON.stringify(myNotifs)).catch(() => {});
           
           if (isInitialFetchRef.current) {
             // Seed known IDs without spamming alerts for existing past notifications
@@ -178,6 +179,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         });
         
         setConsultations(userConsultations);
+        AsyncStorage.setItem('@cura_cached_consultations', JSON.stringify(userConsultations)).catch(() => {});
 
         // Extract medications from treatments
         const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
@@ -215,6 +217,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         );
         AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
         setMedications(extractedMedications);
+        AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(extractedMedications)).catch(() => {});
 
         const ptName = (patient.name || '').trim().toUpperCase();
         const userCertificates = allCertificates.filter((c: any) =>
@@ -224,6 +227,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
           (ptName && (c.patient_name || c.patientName || '').trim().toUpperCase() === ptName)
         );
         setCertificates(userCertificates);
+        AsyncStorage.setItem('@cura_cached_certificates', JSON.stringify(userCertificates)).catch(() => {});
       }
     } catch (err) {
       console.error("Failed to load user data:", err);
@@ -246,6 +250,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               userConsultationsRaw.forEach((c: any) => userConsultationsMap.set(c.id, c));
               const userConsultations = Array.from(userConsultationsMap.values());
               setConsultations(userConsultations);
+              AsyncStorage.setItem('@cura_cached_consultations', JSON.stringify(userConsultations)).catch(() => {});
 
               const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
               let intakedIds = new Set<string>();
@@ -282,6 +287,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               );
               AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
               setMedications(extracted);
+              AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(extracted)).catch(() => {});
             }
           })
           .catch(() => {});
@@ -295,6 +301,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               (uName && (c.patient_name || c.patientName || '').trim().toUpperCase() === uName)
             );
             setCertificates(userCerts);
+            AsyncStorage.setItem('@cura_cached_certificates', JSON.stringify(userCerts)).catch(() => {});
           }
         })
         .catch(() => {});
@@ -319,9 +326,20 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   }, []);
 
   const resetApp = useCallback(() => {
-    AsyncStorage.removeItem('@cura_user_session').catch(() => {});
-    AsyncStorage.removeItem('@cura_access_token').catch(() => {});
+    AsyncStorage.multiRemove([
+      '@cura_user_session',
+      '@cura_access_token',
+      '@cura_cached_consultations',
+      '@cura_cached_medications',
+      '@cura_cached_certificates',
+      '@cura_cached_notifications',
+      '@cura_intaked_meds',
+    ]).catch(() => {});
     setUser(DEFAULT_USER);
+    setConsultations([]);
+    setMedications([]);
+    setCertificates([]);
+    setNotifications([]);
     setStack([{ screen: "welcome" }]);
   }, []);
 
@@ -330,6 +348,27 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
       const storedTheme = await AsyncStorage.getItem('@cura_theme').catch(() => null);
       if (storedTheme) setTheme(storedTheme);
+
+      // Instantly hydrate offline cache so counts and records show immediately without 0 flashing
+      const [cachedConsults, cachedMeds, cachedCerts, cachedNotifs] = await Promise.all([
+        AsyncStorage.getItem('@cura_cached_consultations').catch(() => null),
+        AsyncStorage.getItem('@cura_cached_medications').catch(() => null),
+        AsyncStorage.getItem('@cura_cached_certificates').catch(() => null),
+        AsyncStorage.getItem('@cura_cached_notifications').catch(() => null),
+      ]);
+
+      if (cachedConsults) {
+        try { const d = JSON.parse(cachedConsults); if (Array.isArray(d)) setConsultations(d); } catch (e) {}
+      }
+      if (cachedMeds) {
+        try { const d = JSON.parse(cachedMeds); if (Array.isArray(d)) setMedications(d); } catch (e) {}
+      }
+      if (cachedCerts) {
+        try { const d = JSON.parse(cachedCerts); if (Array.isArray(d)) setCertificates(d); } catch (e) {}
+      }
+      if (cachedNotifs) {
+        try { const d = JSON.parse(cachedNotifs); if (Array.isArray(d)) setNotifications(d); } catch (e) {}
+      }
       
       if (stored) {
         try {
@@ -402,7 +441,9 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         }).catch(() => {});
       }
 
-      return prev.map(m => m.id === id ? { ...m, status: "intaked" } : m);
+      const updatedMeds = prev.map(m => m.id === id ? { ...m, status: "intaked" } : m);
+      AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(updatedMeds)).catch(() => {});
+      return updatedMeds;
     });
 
     AsyncStorage.getItem('@cura_intaked_meds').then(data => {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import type { Screen, AppUser } from "../types";
@@ -155,6 +156,21 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Instantly hydrate cached appointments
+  useEffect(() => {
+    if (!user?.id) return;
+    AsyncStorage.getItem(`@cura_cached_appointments_${user.id}`).then((stored) => {
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setRequests(parsed);
+          }
+        } catch (e) {}
+      }
+    }).catch(() => {});
+  }, [user?.id]);
+
   const fetchRequests = useCallback(async (background = false) => {
     if (!user?.id) return;
     if (!background) setIsLoading(true);
@@ -164,6 +180,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         const data = await res.json();
         const myRequests = data.filter((r: any) => r.patient === user.id);
         setRequests(myRequests);
+        AsyncStorage.setItem(`@cura_cached_appointments_${user.id}`, JSON.stringify(myRequests)).catch(() => {});
       }
     } catch (err) {
       console.error("Failed to fetch appointment requests", err);
