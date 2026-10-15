@@ -1,8 +1,15 @@
-import { useState } from "react";
-import { View, Text, ScrollView, Pressable, Image, StyleSheet } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, ScrollView, Pressable, Image, StyleSheet, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Polyline, Line } from "react-native-svg";
+import Svg, { Path, Circle, Line, Polyline } from "react-native-svg";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import type { Screen } from "../types";
 import { Card, Badge, Header, EmptyState } from "../components/Shell";
 import { PRESCRIPTIONS, CERTIFICATES, TRANSFERS } from "../data";
@@ -17,53 +24,235 @@ interface Props {
 
 type Tab = "prescriptions" | "certificates" | "transfers";
 
+const SPRING_CONFIG = {
+  damping: 18,
+  stiffness: 190,
+  mass: 0.8,
+};
+
+const TAP_SPRING = {
+  damping: 12,
+  stiffness: 350,
+};
+
+interface TabItemData {
+  id: Tab;
+  label: string;
+  count: number;
+}
+
+function TabItemButton({
+  tab,
+  isActive,
+  onPress,
+}: {
+  tab: TabItemData;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withSpring(0.92, TAP_SPRING),
+      withSpring(1.0, { damping: 14, stiffness: 220 })
+    );
+
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+
+    onPress();
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const iconColor = isActive ? "#FFFFFF" : "#007AFF";
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      onHoverIn={() => setIsHovered(true)}
+      onHoverOut={() => setIsHovered(false)}
+      className="flex-1 items-center justify-center py-2.5 relative z-10 rounded-2xl"
+      style={{
+        backgroundColor: isHovered && !isActive ? "rgba(0, 122, 255, 0.08)" : "transparent",
+        borderColor: isHovered && !isActive ? "rgba(0, 122, 255, 0.18)" : "transparent",
+        borderWidth: 1,
+      }}
+    >
+      <Animated.View style={[{ alignItems: "center" }, animatedStyle]}>
+        <View className="relative">
+          {tab.id === "prescriptions" && (
+            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
+              <Path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
+              <Circle cx="20" cy="10" r="2" />
+            </Svg>
+          )}
+          {tab.id === "certificates" && (
+            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <Polyline points="14 2 14 8 20 8" />
+              <Line x1="16" y1="13" x2="8" y2="13" />
+              <Line x1="16" y1="17" x2="8" y2="17" />
+              <Polyline points="10 9 9 9 8 9" />
+            </Svg>
+          )}
+          {tab.id === "transfers" && (
+            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M10 17h4V5H2v12h3" />
+              <Path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1" />
+              <Circle cx="7.5" cy="17.5" r="2.5" />
+              <Circle cx="17.5" cy="17.5" r="2.5" />
+              <Line x1="6" y1="9" x2="10" y2="9" />
+              <Line x1="8" y1="7" x2="8" y2="11" />
+            </Svg>
+          )}
+
+          {/* Badge with Visits Gradient */}
+          <View
+            className="absolute -top-1.5 -right-3 rounded-full items-center justify-center overflow-hidden"
+            style={{
+              width: 17,
+              height: 17,
+              backgroundColor: isActive ? "#FFFFFF" : undefined,
+              shadowColor: "#0A2472",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.2,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
+          >
+            {!isActive && (
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
+            <Text
+              style={{
+                fontSize: 8.5,
+                fontWeight: "800",
+                color: isActive ? "#0A2472" : "#FFFFFF",
+                fontFamily: "Outfit",
+              }}
+            >
+              {tab.count}
+            </Text>
+          </View>
+        </View>
+
+        <Text
+          style={{
+            marginTop: 4,
+            fontSize: 11,
+            fontWeight: isActive ? "800" : "600",
+            color: isActive ? "#FFFFFF" : isHovered ? "#007AFF" : "#0B2136",
+            fontFamily: "Outfit",
+            textShadowColor: isActive ? "rgba(0, 0, 0, 0.3)" : "transparent",
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 2,
+          }}
+          numberOfLines={1}
+        >
+          {tab.label}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 // ── Documents ─────────────────────────────────────────────────────────────────
 
 export function DocumentsScreen({ navigate, goBack, params, certificates }: Props) {
   const [tab, setTab] = useState<Tab>((params?.tab as Tab) || "prescriptions");
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  const tabs: { id: Tab; label: string; icon: string; count: number }[] = [
-    { id: "prescriptions", label: "Prescriptions", icon: "🩺", count: PRESCRIPTIONS.length },
-    { id: "certificates",  label: "Certificates",  icon: "📄", count: (certificates && certificates.length > 0) ? certificates.length : CERTIFICATES.length },
-    { id: "transfers",     label: "Transfers",     icon: "🚑", count: TRANSFERS.length },
+  const tabs: TabItemData[] = [
+    { id: "prescriptions", label: "Prescriptions", count: PRESCRIPTIONS.length },
+    { id: "certificates",  label: "Certificates",  count: (certificates && certificates.length > 0) ? certificates.length : CERTIFICATES.length },
+    { id: "transfers",     label: "Transfers",     count: TRANSFERS.length },
   ];
+
+  const activeIndex = Math.max(0, tabs.findIndex((t) => t.id === tab));
+  const indicatorX = useSharedValue(0);
+
+  useEffect(() => {
+    if (containerWidth > 0 && tabs.length > 0) {
+      const tabWidth = (containerWidth - 8) / tabs.length;
+      const targetX = 4 + activeIndex * tabWidth;
+      indicatorX.value = withSpring(targetX, SPRING_CONFIG);
+    }
+  }, [activeIndex, containerWidth]);
+
+  const animatedIndicatorStyle = useAnimatedStyle(() => {
+    const tabWidth = containerWidth > 0 && tabs.length > 0 ? (containerWidth - 8) / tabs.length : 0;
+    return {
+      transform: [{ translateX: indicatorX.value }],
+      width: Math.max(0, tabWidth),
+    };
+  });
 
   return (
     <View className="flex-1 bg-transparent">
       <Header title="My Documents" onBack={goBack} />
 
-      {/* Tabs */}
-      <View className="bg-white border-b border-sky-100">
-        <View className="flex-row">
-          {tabs.map((t) => (
-            <Pressable
-              key={t.id}
-              onPress={() => setTab(t.id)}
-              className="flex-1 items-center gap-1 py-3 relative"
+      {/* Tabs with Visits Blue Gradient Hover / Active Spring Slider */}
+      <View
+        className="bg-white border-b border-sky-100 px-2 py-2"
+        onLayout={(e) => {
+          const w = e.nativeEvent.layout.width;
+          if (w > 0 && w !== containerWidth) {
+            setContainerWidth(w);
+            const tabWidth = (w - 8) / tabs.length;
+            indicatorX.value = 4 + activeIndex * tabWidth;
+          }
+        }}
+      >
+        <View className="flex-row relative items-center" style={{ minHeight: 56 }}>
+          {/* Sliding Pill with Visits Blue Gradient */}
+          {containerWidth > 0 && (
+            <Animated.View
+              style={[
+                {
+                  position: "absolute",
+                  top: 2,
+                  bottom: 2,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  shadowColor: "#0A2472",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 8,
+                  elevation: 4,
+                  borderWidth: 1,
+                  borderColor: "rgba(255, 255, 255, 0.45)",
+                },
+                animatedIndicatorStyle,
+              ]}
             >
-              <View className="relative">
-                <Text className="text-lg">{t.icon}</Text>
-                <View
-                  className="absolute -top-1 -right-2 rounded-full items-center justify-center"
-                  style={{ backgroundColor: tab === t.id ? "#0B2136" : "#CBD5E1", width: 16, height: 16 }}
-                >
-                  <Text className="text-white font-extrabold" style={{ fontSize: 8 }}>{t.count}</Text>
-                </View>
-              </View>
-              <Text 
-                className={`mt-0.5 text-[10px] font-bold ${tab === t.id ? "text-[#0B2136]" : "text-slate-400"}`}
-              >
-                {t.label}
-              </Text>
-              {tab === t.id && (
-                <LinearGradient
-                  colors={['#0B2136', '#0B2136']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full"
-                />
-              )}
-            </Pressable>
+              <LinearGradient
+                colors={ADMIN_PORTAL_GRADIENT.colors}
+                start={ADMIN_PORTAL_GRADIENT.start}
+                end={ADMIN_PORTAL_GRADIENT.end}
+                style={StyleSheet.absoluteFill}
+              />
+            </Animated.View>
+          )}
+
+          {tabs.map((t) => (
+            <TabItemButton
+              key={t.id}
+              tab={t}
+              isActive={tab === t.id}
+              onPress={() => setTab(t.id)}
+            />
           ))}
         </View>
       </View>
@@ -108,7 +297,7 @@ function PrescriptionList({ navigate }: { navigate: Props["navigate"] }) {
               </View>
             </View>
             <View className="mt-1">
-              <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BAE6FD" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <Polyline points="9 18 15 12 9 6"/>
               </Svg>
             </View>
@@ -131,8 +320,13 @@ function CertificateList({ navigate, certificates = [] }: { navigate: Props["nav
         style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 }}
       >
         <View className="flex-row items-center gap-3">
-          <View className="w-10 h-10 rounded-2xl bg-sky-50 items-center justify-center">
-            <Text className="text-xl">📝</Text>
+          <View className="w-10 h-10 rounded-2xl bg-sky-50 items-center justify-center border border-sky-100">
+            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <Polyline points="14 2 14 8 20 8" />
+              <Line x1="12" y1="18" x2="12" y2="12" />
+              <Line x1="9" y1="15" x2="15" y2="15" />
+            </Svg>
           </View>
           <View>
             <Text className="text-slate-800 font-bold text-sm">Request Medical Certificate</Text>
@@ -140,7 +334,7 @@ function CertificateList({ navigate, certificates = [] }: { navigate: Props["nav
           </View>
         </View>
         <View className="w-8 h-8 rounded-full bg-slate-50 items-center justify-center">
-          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="9 18 15 12 9 6"/>
           </Svg>
         </View>
@@ -154,14 +348,14 @@ function CertificateList({ navigate, certificates = [] }: { navigate: Props["nav
         certsToDisplay.map((c) => (
         <Card key={c.id} onPress={() => navigate("cert-detail", { id: c.id, cert: c })}>
           <View className="flex-row items-start gap-3">
-            <LinearGradient
-              colors={['#ECFEFF', '#BAE6FD']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="w-11 h-11 rounded-xl items-center justify-center"
-            >
-              <Text className="text-xl">📄</Text>
-            </LinearGradient>
+            <View className="w-11 h-11 rounded-xl items-center justify-center bg-sky-50 border border-sky-100">
+              <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <Polyline points="14 2 14 8 20 8" />
+                <Line x1="16" y1="13" x2="8" y2="13" />
+                <Line x1="16" y1="17" x2="8" y2="17" />
+              </Svg>
+            </View>
             <View className="flex-1">
               <View className="flex-row items-center justify-between mb-1">
                 <Badge variant="info">Medical Certificate</Badge>
@@ -172,7 +366,7 @@ function CertificateList({ navigate, certificates = [] }: { navigate: Props["nav
               <Text className="text-xs text-slate-500 mt-1 italic" numberOfLines={1}>{c.diagnosis || "No diagnosis specified"}</Text>
             </View>
             <View className="mt-1">
-              <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BAE6FD" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <Polyline points="9 18 15 12 9 6"/>
               </Svg>
             </View>
@@ -204,17 +398,24 @@ function TransferList() {
         return (
           <Card key={t.id} className="relative">
             <LinearGradient
-              colors={['#F43F5E', '#FB7185']}
+              colors={['#0A2472', '#72caec']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
             />
             <View className="flex-row items-start justify-between mb-3 mt-1">
               <View className="flex-row items-center gap-2">
-                <View className="w-8 h-8 rounded-xl bg-rose-50 items-center justify-center">
-                  <Text className="text-lg">🚑</Text>
+                <View className="w-8 h-8 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+                  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M10 17h4V5H2v12h3" />
+                    <Path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1" />
+                    <Circle cx="7.5" cy="17.5" r="2.5" />
+                    <Circle cx="17.5" cy="17.5" r="2.5" />
+                    <Line x1="6" y1="9" x2="10" y2="9" />
+                    <Line x1="8" y1="7" x2="8" y2="11" />
+                  </Svg>
                 </View>
-                <Text className="text-xs font-bold text-rose-500 uppercase tracking-wide">Hospital Transfer</Text>
+                <Text className="text-xs font-bold text-[#007AFF] uppercase tracking-wide">Hospital Transfer</Text>
               </View>
               <Badge variant={cfg.badge}>{cfg.label}</Badge>
             </View>
@@ -222,7 +423,7 @@ function TransferList() {
             <Text className="text-xs text-slate-400 mb-2">
               {t.date} · {t.time} · {t.transport}
             </Text>
-            <View className="bg-rose-50 rounded-xl p-3 border border-rose-100">
+            <View className="bg-sky-50 rounded-xl p-3 border border-sky-100">
               <Text className="text-xs text-slate-600 leading-relaxed">{t.reason}</Text>
             </View>
             <Text className="text-xs text-slate-400 mt-2">Attended by {t.attendingDoctor}</Text>
