@@ -144,6 +144,42 @@ function formatDisplayDate(dateStr: string): string {
   return dateStr;
 }
 
+function BlueMailboxIcon({ size = 44 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 44 44" fill="none" style={{ marginBottom: 12 }}>
+      <Defs>
+        <SvgLinearGradient id="gMailboxBlueAppt" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#38BDF8" />
+          <Stop offset="100%" stopColor="#0284C7" />
+        </SvgLinearGradient>
+        <SvgLinearGradient id="gMailboxPostAppt" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#0369A1" />
+          <Stop offset="100%" stopColor="#0B2136" />
+        </SvgLinearGradient>
+      </Defs>
+      <Rect x="20" y="30" width="4" height="10" rx="1.5" fill="url(#gMailboxPostAppt)" />
+      <Path
+        d="M10 17 C10 10.5 15.5 6 22 6 C28.5 6 34 10.5 34 17 L34 29 C34 30.1 33.1 31 32 31 L12 31 C10.9 31 10 30.1 10 29 Z"
+        fill="url(#gMailboxBlueAppt)"
+      />
+      <Path
+        d="M13 18 C13 13 17 9.5 22 9.5 C27 9.5 31 13 31 18 L31 28 C31 29 30 29.5 29 29.5 L15 29.5 C14 29.5 13 29 13 28 Z"
+        fill="#002D72"
+        opacity={0.85}
+      />
+      <Rect x="34" y="16" width="6" height="2.5" rx="1" fill="#BAE6FD" />
+      <Rect x="37" y="18.5" width="4" height="6" rx="1" fill="#38BDF8" />
+      <Path
+        d="M14 15 C15.5 11 18.5 8.5 22 8.5"
+        stroke="#FFFFFF"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        opacity={0.6}
+      />
+    </Svg>
+  );
+}
+
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
@@ -583,7 +619,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         >
           {requests.length === 0 && !isLoading ? (
             <View className="items-center justify-center py-12">
-              <Text className="text-4xl mb-4">📭</Text>
+              <BlueMailboxIcon size={44} />
               <Text className="text-white/80 text-center">No appointment requests found.</Text>
             </View>
           ) : (
