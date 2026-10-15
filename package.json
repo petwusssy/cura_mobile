@@ -25,6 +25,7 @@
     "expo-symbols": "~57.0.2",
     "expo-system-ui": "~57.0.3",
     "expo-web-browser": "~57.0.2",
+    "firebase": "^13.0.0",
     "nativewind": "^4.2.6",
     "psgc": "^2.2.0",
     "react": "19.2.3",

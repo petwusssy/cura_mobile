@@ -48,9 +48,34 @@ import { Button, Input } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
+import { signInWithGooglePopup, authenticateWithCuraBackend } from "../services/firebase";
+
 WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_CLIENT_ID = "289437991360-4ge9cgmpvjmr68pfprsvfimau1i4batr.apps.googleusercontent.com";
+
+function GoogleLogoIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <Path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <Path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+        fill="#FBBC05"
+      />
+      <Path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+        fill="#EA4335"
+      />
+    </Svg>
+  );
+}
 
 interface NavProps {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -1423,6 +1448,68 @@ const AuthModal = memo(function AuthModal({
     }
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
+  const [modalGoogleLoading, setModalGoogleLoading] = useState(false);
+  const [, modalGoogleResponse, modalGooglePromptAsync] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_CLIENT_ID,
+    webClientId: GOOGLE_CLIENT_ID,
+  });
+
+  const onModalGoogleSuccess = useCallback(async (idToken: string, fallbackEmail?: string, fallbackName?: string) => {
+    try {
+      setModalGoogleLoading(true);
+      const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName);
+      const userEmail = data.user?.email || fallbackEmail || "user@ua.edu.ph";
+      const userName = (data.user?.first_name || data.user?.name || fallbackName || userEmail.split("@")[0]).toUpperCase();
+
+      if (data.access) {
+        await AsyncStorage.setItem("@cura_access_token", data.access).catch(() => {});
+      }
+      const sessionUser = {
+        email: userEmail,
+        firstName: userName,
+        displayName: userName,
+        lastName: data.user?.last_name || "",
+        accessToken: data.access,
+        role: data.user?.category || "Student",
+        id: data.user?.patient_id,
+      };
+      await AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
+
+      onSuccessSignIn(userEmail, userName, data.access || "");
+    } catch (err: any) {
+      setSignInGeneralError(err?.message || "Google authentication failed. Please try again.");
+    } finally {
+      setModalGoogleLoading(false);
+    }
+  }, [onSuccessSignIn]);
+
+  useEffect(() => {
+    if (modalGoogleResponse?.type === "success" && modalGoogleResponse.params?.id_token) {
+      onModalGoogleSuccess(modalGoogleResponse.params.id_token);
+    }
+  }, [modalGoogleResponse, onModalGoogleSuccess]);
+
+  const handleModalGoogleSignIn = async () => {
+    setSignInGeneralError("");
+    if (Platform.OS === "web") {
+      setModalGoogleLoading(true);
+      try {
+        const res = await signInWithGooglePopup();
+        await onModalGoogleSuccess(res.idToken, res.email, res.displayName);
+      } catch (err: any) {
+        if (err?.code !== "auth/popup-closed-by-user" && err?.code !== "auth/cancelled-popup-request") {
+          setSignInGeneralError(err?.message || "Google Sign-In failed. Please try again.");
+        }
+      } finally {
+        setModalGoogleLoading(false);
+      }
+    } else {
+      if (modalGooglePromptAsync) {
+        modalGooglePromptAsync();
+      }
+    }
+  };
+
   const handleSendSignInOTP = useCallback(async () => {
     const cleanEmail = signInIdentifier.trim().toLowerCase();
     if (!cleanEmail || !isValidEmail(cleanEmail)) {
@@ -2522,6 +2609,64 @@ const AuthModal = memo(function AuthModal({
                             >
                               Sign In
                             </Text>
+                          )}
+                        </TouchableOpacity>
+
+                        {/* Divider */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 14,
+                            marginBottom: 8,
+                            gap: 10,
+                          }}
+                        >
+                          <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255, 255, 255, 0.2)" }} />
+                          <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: 11, fontFamily: "Outfit", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                            or
+                          </Text>
+                          <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255, 255, 255, 0.2)" }} />
+                        </View>
+
+                        {/* Google Sign In Button in AuthModal */}
+                        <TouchableOpacity
+                          onPress={handleModalGoogleSignIn}
+                          disabled={modalGoogleLoading || signInLoading}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: "#FFFFFF",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 10,
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 6,
+                            elevation: 3,
+                          }}
+                        >
+                          {modalGoogleLoading ? (
+                            <ActivityIndicator color="#0284c7" size="small" />
+                          ) : (
+                            <>
+                              <GoogleLogoIcon size={20} />
+                              <Text
+                                style={{
+                                  color: "#1E293B",
+                                  fontSize: 15,
+                                  fontWeight: "700",
+                                  fontFamily: "Outfit",
+                                  letterSpacing: 0.2,
+                                }}
+                              >
+                                Continue with Google
+                              </Text>
+                            </>
                           )}
                         </TouchableOpacity>
 
@@ -4563,13 +4708,72 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     }
   };
 
-  const mockGoogleSignIn = async () => {
-    setLoading(true);
-    if (loadUserData) {
-      await loadUserData("jdelacruz.student@ua.edu.ph");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_CLIENT_ID,
+    webClientId: GOOGLE_CLIENT_ID,
+  });
+
+  const onGoogleSuccess = useCallback(async (idToken: string, fallbackEmail?: string, fallbackName?: string) => {
+    try {
+      setGoogleLoading(true);
+      const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName);
+      const userEmail = data.user?.email || fallbackEmail || "user@ua.edu.ph";
+      const userName = (data.user?.first_name || data.user?.name || fallbackName || userEmail.split("@")[0]).toUpperCase();
+
+      if (data.access) {
+        await AsyncStorage.setItem("@cura_access_token", data.access).catch(() => {});
+      }
+      const sessionUser = {
+        email: userEmail,
+        firstName: userName,
+        displayName: userName,
+        lastName: data.user?.last_name || "",
+        accessToken: data.access,
+        role: data.user?.category || "Student",
+        id: data.user?.patient_id,
+      };
+      await AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
+
+      if (setUser) {
+        setUser(sessionUser);
+      }
+      if (loadUserData) {
+        await loadUserData(userEmail);
+      }
+      navigate("home");
+    } catch (err: any) {
+      setError(err?.message || "Google authentication failed. Please try again.");
+    } finally {
+      setGoogleLoading(false);
     }
-    setLoading(false);
-    navigate("home");
+  }, [setUser, loadUserData, navigate]);
+
+  useEffect(() => {
+    if (googleResponse?.type === "success" && googleResponse.params?.id_token) {
+      onGoogleSuccess(googleResponse.params.id_token);
+    }
+  }, [googleResponse, onGoogleSuccess]);
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    if (Platform.OS === "web") {
+      setGoogleLoading(true);
+      try {
+        const res = await signInWithGooglePopup();
+        await onGoogleSuccess(res.idToken, res.email, res.displayName);
+      } catch (err: any) {
+        if (err?.code !== "auth/popup-closed-by-user" && err?.code !== "auth/cancelled-popup-request") {
+          setError(err?.message || "Google Sign-In failed. Please try again.");
+        }
+      } finally {
+        setGoogleLoading(false);
+      }
+    } else {
+      if (googlePromptAsync) {
+        googlePromptAsync();
+      }
+    }
   };
 
   const handleLogin = async () => {
@@ -4772,18 +4976,25 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
 
         <View className="flex-row items-center gap-3 my-1">
           <View className="flex-1 h-px bg-sky-100" />
-          <Text className="text-xs text-slate-300 font-medium">or</Text>
+          <Text className="text-xs text-slate-400 font-medium uppercase tracking-wider">or continue with</Text>
           <View className="flex-1 h-px bg-sky-100" />
         </View>
 
-        <Button 
-          fullWidth 
-          variant="secondary" 
-          onPress={mockGoogleSignIn} 
-          className="mb-4"
+        <Pressable 
+          onPress={handleGoogleSignIn} 
+          disabled={googleLoading || loading}
+          className="w-full bg-white border border-slate-200 active:bg-slate-50 rounded-2xl py-3.5 px-4 flex-row items-center justify-center gap-3 mb-4 shadow-sm"
+          style={{ elevation: 1 }}
         >
-          <Text className="text-cura-500 font-bold text-sm">Continue with Google (Mock)</Text>
-        </Button>
+          {googleLoading ? (
+            <ActivityIndicator size="small" color="#0284c7" />
+          ) : (
+            <>
+              <GoogleLogoIcon size={20} />
+              <Text className="text-slate-700 font-bold text-sm tracking-wide">Continue with Google</Text>
+            </>
+          )}
+        </Pressable>
 
         <View className="flex-row justify-center items-center pb-8">
           <Text className="text-sm text-slate-400">{"Don't have an account? "}</Text>
