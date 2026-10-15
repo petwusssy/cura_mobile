@@ -1448,6 +1448,7 @@ const AuthModal = memo(function AuthModal({
   }, [signInIdentifier, signInPassword, onSuccessSignIn]);
 
   const [modalGoogleLoading, setModalGoogleLoading] = useState(false);
+  const [modalGooglePendingToken, setModalGooglePendingToken] = useState("");
   const [, modalGoogleResponse, modalGooglePromptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
     webClientId: GOOGLE_CLIENT_ID,
@@ -1457,6 +1458,19 @@ const AuthModal = memo(function AuthModal({
     try {
       setModalGoogleLoading(true);
       const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName);
+      if (data.require_otp) {
+        setModalGooglePendingToken(idToken);
+        if (data.email) {
+          setSignInIdentifier(data.email);
+        }
+        setAuthMode("signin");
+        setSignInOtpMode(true);
+        setSignInOtpSent(true);
+        setSignInOtpCooldown(60);
+        setSignInGeneralError("");
+        return;
+      }
+
       const userEmail = data.user?.email || fallbackEmail || "user@ua.edu.ph";
       const userName = (data.user?.first_name || data.user?.name || fallbackName || userEmail.split("@")[0]).toUpperCase();
 
@@ -1523,14 +1537,14 @@ const AuthModal = memo(function AuthModal({
       const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail }),
+        body: JSON.stringify({ email: cleanEmail, is_google: Boolean(modalGooglePendingToken) }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         triggerHaptic();
         setSignInOtpSent(true);
         setSignInOtpMode(true);
-        setSignInOtpCooldown(30);
+        setSignInOtpCooldown(60);
         setSignInOtp("");
       } else {
         setSignInGeneralError(data.error || "Failed to send OTP code.");
@@ -1540,7 +1554,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setSignInOtpLoading(false);
     }
-  }, [signInIdentifier, triggerHaptic]);
+  }, [signInIdentifier, triggerHaptic, modalGooglePendingToken]);
 
   const handleVerifySignInOTP = useCallback(async () => {
     const cleanOtp = signInOtp.trim();
@@ -1554,6 +1568,27 @@ const AuthModal = memo(function AuthModal({
     setSignInOtpLoading(true);
 
     try {
+      if (modalGooglePendingToken) {
+        const data = await authenticateWithCuraBackend(modalGooglePendingToken, cleanEmail, undefined, cleanOtp);
+        if (data.access) {
+          triggerHaptic();
+          const userEmail = data.user?.email || cleanEmail;
+          const userName = (data.user?.first_name || data.user?.name || userEmail.split("@")[0]).toUpperCase();
+          await AsyncStorage.setItem("@cura_access_token", data.access).catch(() => {});
+          await AsyncStorage.setItem("@cura_user_session", JSON.stringify({
+            email: userEmail,
+            firstName: userName,
+            displayName: userName,
+            lastName: data.user?.last_name || "",
+            accessToken: data.access,
+            role: data.user?.category || "Student",
+            id: data.user?.patient_id,
+          })).catch(() => {});
+          onSuccessSignIn(userEmail, userName, data.access);
+          return;
+        }
+      }
+
       const res = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1579,12 +1614,12 @@ const AuthModal = memo(function AuthModal({
       } else {
         setSignInErrors({ otp: data.error || "Invalid or expired OTP." });
       }
-    } catch {
-      setSignInGeneralError("Network error. Please try again.");
+    } catch (err: any) {
+      setSignInErrors({ otp: err?.message || "Invalid verification code." });
     } finally {
       setSignInOtpLoading(false);
     }
-  }, [signInOtp, signInIdentifier, signInDetectedPatient, triggerHaptic, onSuccessSignIn]);
+  }, [signInOtp, signInIdentifier, signInDetectedPatient, triggerHaptic, onSuccessSignIn, modalGooglePendingToken]);
 
   // Step 1 Validation & Next: Account Email & Auto Category Identification (with Web Cura Detection)
   const handleStep1Next = useCallback(async () => {
@@ -2468,8 +2503,24 @@ const AuthModal = memo(function AuthModal({
                         )}
                       </>
                     ) : signInOtpMode ? (
-                      /* Case B: Claimed account chose OTP sign in */
+                      /* Case B: Claimed account chose OTP sign in OR Google OTP pending */
                       <>
+                        {modalGooglePendingToken ? (
+                          <View
+                            style={{
+                              backgroundColor: "rgba(56, 189, 248, 0.15)",
+                              borderWidth: 1,
+                              borderColor: "rgba(56, 189, 248, 0.4)",
+                              borderRadius: 12,
+                              padding: 10,
+                              marginBottom: 10,
+                            }}
+                          >
+                            <Text style={{ color: "#E0F2FE", fontSize: 12, fontFamily: "Outfit", textAlign: "center" }}>
+                              📧 Verification code sent to {signInIdentifier}. Check your Gmail inbox or spam.
+                            </Text>
+                          </View>
+                        ) : null}
                         <GlassInput
                           icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
                           placeholder="6-Digit OTP Code"
@@ -2511,11 +2562,14 @@ const AuthModal = memo(function AuthModal({
                           </TouchableOpacity>
 
                           <TouchableOpacity
-                            onPress={() => setSignInOtpMode(false)}
+                            onPress={() => {
+                              setSignInOtpMode(false);
+                              setModalGooglePendingToken("");
+                            }}
                             activeOpacity={0.7}
                           >
                             <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: 12.5, fontFamily: "Outfit" }}>
-                              Use Password
+                              {modalGooglePendingToken ? "Cancel" : "Use Password"}
                             </Text>
                           </TouchableOpacity>
                         </View>
@@ -4701,6 +4755,13 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     return () => clearInterval(interval);
   }, [otpCooldown]);
 
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googlePendingToken, setGooglePendingToken] = useState("");
+  const [, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_CLIENT_ID,
+    webClientId: GOOGLE_CLIENT_ID,
+  });
+
   const handleSendOTP = async () => {
     if (!email.trim()) {
       setError("Please enter your email first.");
@@ -4712,7 +4773,10 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: JSON.stringify({ 
+          email: email.trim().toLowerCase(),
+          is_google: Boolean(googlePendingToken)
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -4729,17 +4793,43 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   };
 
   const handleVerifyOTP = async () => {
-    if (!otp.trim() || otp.trim().length < 6) {
+    const cleanOtp = otp.trim();
+    if (!cleanOtp || cleanOtp.length < 6) {
       setError("Please enter the 6-digit OTP code.");
       return;
     }
     setError("");
     setOtpLoading(true);
     try {
+      if (googlePendingToken) {
+        const data = await authenticateWithCuraBackend(googlePendingToken, email.trim(), undefined, cleanOtp);
+        const userEmail = data.user?.email || email.trim();
+        const userName = (data.user?.first_name || data.user?.name || userEmail.split('@')[0]).toUpperCase();
+
+        if (data.access) {
+          await AsyncStorage.setItem('@cura_access_token', data.access).catch(() => {});
+        }
+        const sessionUser = {
+          email: userEmail,
+          firstName: userName,
+          displayName: userName,
+          lastName: data.user?.last_name || '',
+          accessToken: data.access,
+          role: data.user?.category || 'Student',
+          id: data.user?.patient_id,
+        };
+        await AsyncStorage.setItem('@cura_user_session', JSON.stringify(sessionUser)).catch(() => {});
+
+        if (setUser) setUser(sessionUser);
+        if (loadUserData) await loadUserData(userEmail);
+        navigate("home");
+        return;
+      }
+
       const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), otp: otp.trim() }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), otp: cleanOtp }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -4758,23 +4848,28 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       } else {
         setError(data.error || "Invalid verification code.");
       }
-    } catch {
-      setError("Network error verifying code.");
+    } catch (err: any) {
+      setError(err?.message || "Network error verifying code.");
     } finally {
       setOtpLoading(false);
     }
   };
 
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    webClientId: GOOGLE_CLIENT_ID,
-  });
-
   const onGoogleSuccess = useCallback(async (idToken: string, fallbackEmail?: string, fallbackName?: string) => {
     try {
       setGoogleLoading(true);
       const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName);
+
+      if (data?.require_otp) {
+        setGooglePendingToken(idToken);
+        if (data.email) setEmail(data.email);
+        setOtpMode(true);
+        setOtpSent(true);
+        setOtpCooldown(60);
+        setError("");
+        return;
+      }
+
       const userEmail = data.user?.email || fallbackEmail || "user@ua.edu.ph";
       const userName = (data.user?.first_name || data.user?.name || fallbackName || userEmail.split("@")[0]).toUpperCase();
 
@@ -4957,6 +5052,14 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
 
         {otpMode ? (
           <View className="flex-col gap-2.5 bg-sky-50/70 border border-sky-100 rounded-2xl p-4 mt-1">
+            {googlePendingToken ? (
+              <View className="bg-sky-100/80 border border-sky-200 rounded-xl px-3 py-2 flex-row items-center gap-2 mb-1">
+                <Text>📧</Text>
+                <Text className="text-xs text-sky-900 font-medium flex-1">
+                  We sent a 6-digit verification code to <Text className="font-bold">{email}</Text>. Please check your Gmail inbox or spam.
+                </Text>
+              </View>
+            ) : null}
             <View className="flex-row items-center justify-between">
               <Text className="text-xs font-bold text-slate-700">6-Digit OTP Code</Text>
               {otpCooldown > 0 ? (
@@ -4978,7 +5081,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
               maxLength={6}
               className="w-full bg-white border border-sky-200 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-800"
             />
-            {otpSent ? (
+            {otpSent && !googlePendingToken ? (
               <Text className="text-[11px] text-emerald-600 font-medium text-center">
                 Code generated. Ready to verify!
               </Text>
@@ -4986,9 +5089,11 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
             <Button fullWidth onPress={handleVerifyOTP} loading={otpLoading} className="mt-1">
               Verify & Sign In
             </Button>
-            {detectedPatient?.claimed ? (
-              <Pressable onPress={() => setOtpMode(false)} className="py-1 items-center">
-                <Text className="text-xs font-semibold text-slate-400">Use password instead</Text>
+            {detectedPatient?.claimed || googlePendingToken ? (
+              <Pressable onPress={() => { setOtpMode(false); setGooglePendingToken(""); }} className="py-1 items-center">
+                <Text className="text-xs font-semibold text-slate-400">
+                  {googlePendingToken ? "Cancel" : "Use password instead"}
+                </Text>
               </Pressable>
             ) : null}
           </View>

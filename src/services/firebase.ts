@@ -45,16 +45,20 @@ export async function signInWithGooglePopup(): Promise<GoogleAuthResult> {
 }
 
 /**
- * Exchanges Google or Firebase ID token with CURA backend JWT
+ * Exchanges Google or Firebase ID token with CURA backend JWT (with Gmail OTP)
  */
 export async function authenticateWithCuraBackend(
   idToken: string,
   fallbackEmail?: string,
-  fallbackName?: string
+  fallbackName?: string,
+  otp?: string
 ): Promise<{
-  access: string;
-  refresh: string;
-  user: any;
+  require_otp?: boolean;
+  message?: string;
+  email?: string;
+  access?: string;
+  refresh?: string;
+  user?: any;
   roles?: string[];
   username?: string;
 }> {
@@ -63,7 +67,7 @@ export async function authenticateWithCuraBackend(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ id_token: idToken }),
+    body: JSON.stringify({ id_token: idToken, otp: otp || "" }),
   });
 
   const resText = await response.text();
@@ -72,7 +76,7 @@ export async function authenticateWithCuraBackend(
     data = resText ? JSON.parse(resText) : {};
   } catch {}
 
-  if (!response.ok || !data.access) {
+  if (!response.ok) {
     const errorMsg = data.error || data.details || "Backend authentication failed.";
     throw new Error(errorMsg);
   }
