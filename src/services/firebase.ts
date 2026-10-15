@@ -62,24 +62,42 @@ export async function authenticateWithCuraBackend(
   roles?: string[];
   username?: string;
 }> {
-  const response = await fetch("https://cura-backend-dvj5.onrender.com/api/auth/google/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ id_token: idToken, otp: otp || "" }),
-  });
+  let lastError: any = null;
 
-  const resText = await response.text();
-  let data: any = {};
-  try {
-    data = resText ? JSON.parse(resText) : {};
-  } catch {}
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch("https://cura-backend-dvj5.onrender.com/api/auth/google/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id_token: idToken, otp: otp || "" }),
+      });
 
-  if (!response.ok) {
-    const errorMsg = data.error || data.details || "Backend authentication failed.";
-    throw new Error(errorMsg);
+      const resText = await response.text();
+      let data: any = {};
+      try {
+        data = resText ? JSON.parse(resText) : {};
+      } catch {}
+
+      if (!response.ok) {
+        const errorMsg = data.error || data.details || "Backend authentication failed.";
+        throw new Error(errorMsg);
+      }
+
+      return data;
+    } catch (err: any) {
+      lastError = err;
+      if (err?.message && !err.message.includes("Failed to fetch") && !err.message.includes("NetworkError")) {
+        // Business logic error from server (e.g. invalid OTP, expired) -> don't retry
+        throw err;
+      }
+      // If network failure / cold-start, wait and retry
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    }
   }
 
-  return data;
+  throw new Error(lastError?.message || "Server connection failed. Please check connection and try again.");
 }
