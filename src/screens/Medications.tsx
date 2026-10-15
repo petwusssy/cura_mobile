@@ -360,8 +360,14 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
               </View>
             ) : null}
             {!isToIntakeSection && (
-              <View className="mt-1 bg-emerald-50 border border-emerald-200/60 rounded-xl py-2 px-3 items-center">
-                <Text className="text-xs font-bold text-emerald-700">✓ Completed / Taken</Text>
+              <View
+                className="mt-1 rounded-xl py-2 px-3 items-center border"
+                style={{
+                  backgroundColor: "rgba(16, 185, 129, 0.16)",
+                  borderColor: "rgba(16, 185, 129, 0.38)",
+                }}
+              >
+                <Text className="text-xs font-bold" style={{ color: "#047857" }}>✓ Completed / Taken</Text>
               </View>
             )}
           </View>
@@ -372,16 +378,23 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
           <View className={`bg-white px-4 pb-4 ${isExpanded ? "pt-2" : "pt-3"}`}>
             <Pressable
               onPress={() => handleIntake(med.id)}
-              className={`w-full ${isDue ? "bg-amber-600 active:bg-amber-700" : "bg-emerald-600 active:bg-emerald-700"} py-3 rounded-xl flex-row items-center justify-center gap-1.5 shadow-sm`}
+              className="w-full py-3 rounded-xl flex-row items-center justify-center gap-1.5 border active:opacity-80"
               style={{
-                elevation: 2,
+                backgroundColor: isDue ? "rgba(245, 158, 11, 0.16)" : "rgba(16, 185, 129, 0.16)",
+                borderColor: isDue ? "rgba(245, 158, 11, 0.38)" : "rgba(16, 185, 129, 0.38)",
                 shadowColor: isDue ? "#D97706" : "#059669",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 3,
+                elevation: 1,
               }}
             >
-              <Text className="text-xs font-bold text-white tracking-wide">
+              <Text
+                className="text-xs font-bold tracking-wide"
+                style={{
+                  color: isDue ? "#B45309" : "#047857",
+                }}
+              >
                 {isDue ? "✓ Take Now (Due)" : "✓ Taken"}
               </Text>
             </Pressable>
