@@ -4392,19 +4392,23 @@ export function WelcomeScreen({
   }, [bgBlurAnim, initialAuthMode, goBack]);
 
   const handleSignInSuccess = useCallback((userEmail: string, userName: string, accessToken: string) => {
+    const sessionUser = {
+      email: userEmail,
+      firstName: userName,
+      displayName: userName,
+      lastName: "",
+      accessToken,
+    };
     if (setUser) {
       setUser((prev: any) => ({
         ...prev,
-        email: userEmail,
-        firstName: userName,
-        displayName: userName,
-        lastName: "",
-        accessToken,
+        ...sessionUser,
       }));
     }
     if (accessToken) {
       AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
     }
+    AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
     if (loadUserData) {
       loadUserData(userEmail);
     }
@@ -4413,26 +4417,23 @@ export function WelcomeScreen({
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   const handleRegisterSuccess = useCallback((userEmail: string, userName: string, accessToken: string, idNumber: string, fullName: string, finalUser?: any) => {
+    const sessionUser = finalUser || {
+      id: idNumber,
+      id_number: idNumber,
+      email: userEmail,
+      name: fullName,
+      firstName: userName,
+      displayName: userName,
+      lastName: "",
+      accessToken,
+    };
     if (setUser) {
-      if (finalUser) {
-        setUser(finalUser);
-      } else {
-        setUser((prev: any) => ({
-          ...prev,
-          id: idNumber,
-          id_number: idNumber,
-          email: userEmail,
-          name: fullName,
-          firstName: userName,
-          displayName: userName,
-          lastName: "",
-          accessToken,
-        }));
-      }
+      setUser(sessionUser);
     }
     if (accessToken) {
       AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
     }
+    AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
     if (loadUserData) {
       loadUserData(userEmail);
     }
@@ -5180,10 +5181,19 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         if (data.access) {
           const userEmail = data.user?.email || email.trim();
           const userName = (data.user?.name || userEmail.split('@')[0]).toUpperCase();
+          const sessionUser = {
+            email: userEmail,
+            firstName: userName,
+            displayName: userName,
+            lastName: '',
+            accessToken: data.access,
+            id: data.user?.id || data.user?.patient_id,
+          };
           if (setUser) {
-            setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: data.access }));
+            setUser((prev: any) => ({ ...prev, ...sessionUser }));
           }
           AsyncStorage.setItem('@cura_access_token', data.access).catch(() => {});
+          AsyncStorage.setItem('@cura_user_session', JSON.stringify(sessionUser)).catch(() => {});
           if (loadUserData) loadUserData(userEmail);
           navigate("home");
         } else {
@@ -5322,13 +5332,22 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       if (loginRes.ok) {
         const userEmail = loginData.user?.email || email.trim();
         const userName = (loginData.user?.name || userEmail.split('@')[0]).toUpperCase();
+        const sessionUser = {
+          email: userEmail,
+          firstName: userName,
+          displayName: userName,
+          lastName: '',
+          accessToken: loginData.access,
+          id: loginData.user?.id || loginData.user?.patient_id,
+        };
         
         if (setUser) {
-          setUser((prev: any) => ({ ...prev, email: userEmail, firstName: userName, displayName: userName, lastName: '', accessToken: loginData.access }));
+          setUser((prev: any) => ({ ...prev, ...sessionUser }));
         }
         if (loginData.access) {
           AsyncStorage.setItem('@cura_access_token', loginData.access).catch(() => {});
         }
+        AsyncStorage.setItem('@cura_user_session', JSON.stringify(sessionUser)).catch(() => {});
         if (loadUserData) {
           loadUserData(userEmail);
         }

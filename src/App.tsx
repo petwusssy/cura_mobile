@@ -353,55 +353,112 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     setStack([{ screen: "welcome" }]);
   }, []);
 
+  // Auto-persist active user session to AsyncStorage whenever user changes
   useEffect(() => {
-    AsyncStorage.getItem('@cura_user_session').then(async (stored) => {
-      const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
-      const storedTheme = await AsyncStorage.getItem('@cura_theme').catch(() => null);
-      if (storedTheme) setTheme(storedTheme);
+    if (user && (user.id || user.email)) {
+      AsyncStorage.setItem('@cura_user_session', JSON.stringify(user)).catch(() => {});
+      if (user.accessToken) {
+        AsyncStorage.setItem('@cura_access_token', user.accessToken).catch(() => {});
+      }
+    }
+  }, [user]);
 
-      // Instantly hydrate offline cache so counts and records show immediately without 0 flashing
-      const [cachedConsults, cachedMeds, cachedCerts, cachedNotifs] = await Promise.all([
-        AsyncStorage.getItem('@cura_cached_consultations').catch(() => null),
-        AsyncStorage.getItem('@cura_cached_medications').catch(() => null),
-        AsyncStorage.getItem('@cura_cached_certificates').catch(() => null),
-        AsyncStorage.getItem('@cura_cached_notifications').catch(() => null),
-      ]);
+  useEffect(() => {
+    let isMounted = true;
+    const restoreSession = async () => {
+      try {
+        const [stored, storedToken, storedTheme] = await Promise.all([
+          AsyncStorage.getItem('@cura_user_session').catch(() => null),
+          AsyncStorage.getItem('@cura_access_token').catch(() => null),
+          AsyncStorage.getItem('@cura_theme').catch(() => null),
+        ]);
 
-      if (cachedConsults) {
-        try { const d = JSON.parse(cachedConsults); if (Array.isArray(d)) setConsultations(d); } catch (e) {}
-      }
-      if (cachedMeds) {
-        try { const d = JSON.parse(cachedMeds); if (Array.isArray(d)) setMedications(d); } catch (e) {}
-      }
-      if (cachedCerts) {
-        try { const d = JSON.parse(cachedCerts); if (Array.isArray(d)) setCertificates(d); } catch (e) {}
-      }
-      if (cachedNotifs) {
-        try { const d = JSON.parse(cachedNotifs); if (Array.isArray(d)) setNotifications(d); } catch (e) {}
-      }
-      
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed?.id || parsed?.email) {
-            if (storedToken && !parsed.accessToken) {
-              parsed.accessToken = storedToken;
+        if (storedTheme && isMounted) setTheme(storedTheme);
+
+        // Instantly hydrate offline cache so counts and records show immediately without 0 flashing
+        const [cachedConsults, cachedMeds, cachedCerts, cachedNotifs] = await Promise.all([
+          AsyncStorage.getItem('@cura_cached_consultations').catch(() => null),
+          AsyncStorage.getItem('@cura_cached_medications').catch(() => null),
+          AsyncStorage.getItem('@cura_cached_certificates').catch(() => null),
+          AsyncStorage.getItem('@cura_cached_notifications').catch(() => null),
+        ]);
+
+        if (cachedConsults && isMounted) {
+          try { const d = JSON.parse(cachedConsults); if (Array.isArray(d)) setConsultations(d); } catch (e) {}
+        }
+        if (cachedMeds && isMounted) {
+          try { const d = JSON.parse(cachedMeds); if (Array.isArray(d)) setMedications(d); } catch (e) {}
+        }
+        if (cachedCerts && isMounted) {
+          try { const d = JSON.parse(cachedCerts); if (Array.isArray(d)) setCertificates(d); } catch (e) {}
+        }
+        if (cachedNotifs && isMounted) {
+          try { const d = JSON.parse(cachedNotifs); if (Array.isArray(d)) setNotifications(d); } catch (e) {}
+        }
+        
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed?.id || parsed?.email) {
+              if (storedToken && !parsed.accessToken) {
+                parsed.accessToken = storedToken;
+              }
+              if (isMounted) {
+                setUser(parsed);
+                setStack([{ screen: initialScreen || "home" }]);
+              }
+              if (parsed.email) {
+                loadUserData(parsed.email);
+              }
+              return;
             }
-            setUser(parsed);
-            setStack([{ screen: initialScreen || "home" }]);
-            if (parsed.email) {
-              loadUserData(parsed.email);
+          } catch (e) {}
+        }
+
+        // Secondary fallback: recover session from JWT if user session was missing
+        if (storedToken) {
+          try {
+            const parts = storedToken.split('.');
+            if (parts.length === 3) {
+              const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(
+                atob(base64)
+                  .split('')
+                  .map((c: string) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                  .join('')
+              );
+              const payload = JSON.parse(jsonPayload);
+              if (payload?.email || payload?.user_id) {
+                const recovered = {
+                  id: String(payload.user_id || ''),
+                  email: payload.email || '',
+                  accessToken: storedToken,
+                };
+                if (isMounted) {
+                  setUser(recovered);
+                  setStack([{ screen: initialScreen || "home" }]);
+                }
+                if (recovered.email) {
+                  loadUserData(recovered.email);
+                }
+                return;
+              }
             }
-          }
-        } catch (e) {}
-      } else if (initialScreen) {
-        setStack([{ screen: initialScreen }]);
+          } catch (e) {}
+        }
+
+        if (initialScreen && isMounted) {
+          setStack([{ screen: initialScreen }]);
+        }
+      } catch (err) {
+        if (initialScreen && isMounted) {
+          setStack([{ screen: initialScreen }]);
+        }
       }
-    }).catch(() => {
-      if (initialScreen) {
-        setStack([{ screen: initialScreen }]);
-      }
-    });
+    };
+
+    restoreSession();
+    return () => { isMounted = false; };
   }, [initialScreen, loadUserData]);
 
   useEffect(() => {
