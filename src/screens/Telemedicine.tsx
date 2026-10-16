@@ -9,6 +9,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import { LiquidGlassTimePicker } from "../components/LiquidGlassTimePicker";
+import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
 import type { Screen, AppUser } from "../types";
 import { getManilaDate, getManilaTime, normalizeDate, formatTime12 } from "../utils/philippineTime";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
@@ -222,7 +223,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, setIsPending] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedDetails, setConfirmedDetails] = useState<{ date: string; time: string }>({ date: "", time: "" });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
@@ -422,11 +424,13 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       });
 
       if (res.ok) {
-        setIsPending(true);
+        setConfirmedDetails({ date, time });
+        setShowConfirmation(true);
         // Reset form
         setDate("");
         setTime("");
         setReason("");
+        fetchRequests(true);
       } else {
         console.error("Failed to submit request", await res.text());
       }
@@ -436,26 +440,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       setIsSubmitting(false);
     }
   };
-
-  if (isPending) {
-    return (
-      <View className="flex-1 bg-transparent">
-        <Header title="Telemedicine" onBack={goBack} />
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-6xl mb-6">⏳</Text>
-          <Text className="text-xl font-bold text-white text-center mb-2" style={{ fontFamily: "Outfit" }}>
-            Request Sent
-          </Text>
-          <Text className="text-sm text-white/80 text-center mb-8 px-4 leading-relaxed">
-            Your telemedicine request has been sent to the clinic. Please wait for a doctor or admin to approve your request.
-          </Text>
-          <Button fullWidth onPress={() => { setIsPending(false); setActiveTab("history"); }}>
-            View My Requests
-          </Button>
-        </View>
-      </View>
-    );
-  }
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
@@ -893,6 +877,19 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           )}
         </SafeAreaView>
       </Modal>
+
+      {/* Confirmation Modal */}
+      <RequestConfirmationModal
+        visible={showConfirmation}
+        type="telemed"
+        date={confirmedDetails.date}
+        time={confirmedDetails.time}
+        onClose={() => setShowConfirmation(false)}
+        onViewRequests={() => {
+          setShowConfirmation(false);
+          setActiveTab("history");
+        }}
+      />
     </View>
   );
 }

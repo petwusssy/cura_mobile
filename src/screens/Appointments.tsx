@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import { LiquidGlassTimePicker } from "../components/LiquidGlassTimePicker";
+import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
 import type { Screen, AppUser } from "../types";
 import { formatTime12 } from "../utils/philippineTime";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
@@ -154,7 +155,8 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [reason, setReason] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, setIsPending] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedDetails, setConfirmedDetails] = useState<{ date: string; time: string }>({ date: "", time: "" });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
@@ -271,11 +273,13 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       });
 
       if (res.ok) {
-        setIsPending(true);
+        setConfirmedDetails({ date, time });
+        setShowConfirmation(true);
         setVisitType("");
         setDate("");
         setTime("");
         setReason("");
+        fetchRequests(true);
       } else {
         console.error("Failed to submit request", await res.text());
       }
@@ -285,26 +289,6 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       setIsSubmitting(false);
     }
   };
-
-  if (isPending) {
-    return (
-      <View className="flex-1 bg-transparent">
-        <Header title="Appointment" onBack={goBack} />
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-6xl mb-6">📅</Text>
-          <Text className="text-xl font-bold text-cura-900 text-center mb-2" style={{ fontFamily: "Outfit" }}>
-            Booking Sent
-          </Text>
-          <Text className="text-sm text-slate-600 text-center mb-8 px-4 leading-relaxed">
-            Your appointment request for {date || "the selected date"} has been sent. Please wait for confirmation from the clinic admin.
-          </Text>
-          <Button fullWidth onPress={() => { setIsPending(false); setActiveTab("history"); }}>
-            View My Requests
-          </Button>
-        </View>
-      </View>
-    );
-  }
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
@@ -604,6 +588,19 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
           )}
         </ScrollView>
       )}
+
+      {/* Confirmation Modal */}
+      <RequestConfirmationModal
+        visible={showConfirmation}
+        type="appointment"
+        date={confirmedDetails.date}
+        time={confirmedDetails.time}
+        onClose={() => setShowConfirmation(false)}
+        onViewRequests={() => {
+          setShowConfirmation(false);
+          setActiveTab("history");
+        }}
+      />
     </View>
   );
 }
