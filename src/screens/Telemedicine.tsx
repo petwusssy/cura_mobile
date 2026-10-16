@@ -9,6 +9,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import { LiquidGlassTimePicker } from "../components/LiquidGlassTimePicker";
+import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
 import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
 import type { Screen, AppUser } from "../types";
 import { getManilaDate, getManilaTime, normalizeDate, formatTime12 } from "../utils/philippineTime";
@@ -226,6 +227,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedDetails, setConfirmedDetails] = useState<{ date: string; time: string }>({ date: "", time: "" });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
 
@@ -587,12 +589,60 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
             </View>
 
-            {/* Preferred Time Window */}
-            <LiquidGlassTimePicker
-              value={time}
-              onChange={setTime}
-              label="Preferred Consultation Time"
-            />
+            {/* Preferred Time */}
+            <View className="flex-col gap-1.5">
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Preferred Time
+                </Text>
+                {time ? (
+                  <TouchableOpacity onPress={() => setTime("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text className="text-[11px] font-semibold text-rose-500">Reset Time</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowTimePicker(true)}
+                activeOpacity={0.75}
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
+                style={{
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                }}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
+                    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <Circle cx="12" cy="12" r="9" stroke="#00A3FF" strokeWidth="2.2" />
+                      <Polyline points="12 7 12 12 15 15" stroke="#0056B3" strokeWidth="2.2" strokeLinecap="round" />
+                    </Svg>
+                  </View>
+                  <Text
+                    className="text-sm font-bold"
+                    style={{
+                      color: "#002D72",
+                      fontFamily: "Outfit",
+                    }}
+                  >
+                    {time ? time : "Select consultation time..."}
+                  </Text>
+                </View>
+                <View className="px-3 py-1 rounded-full bg-slate-100">
+                  <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
+                </View>
+              </TouchableOpacity>
+              <LiquidGlassTimePickerModal
+                visible={showTimePicker}
+                onClose={() => setShowTimePicker(false)}
+                selectedTime={time}
+                onSelectTime={(newTime) => setTime(newTime)}
+                title="Select Consultation Time"
+                unavailableTimes={unavailableTimes}
+              />
+            </View>
 
 
             {/* Reason for Consult */}
