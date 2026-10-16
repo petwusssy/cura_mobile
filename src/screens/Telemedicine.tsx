@@ -582,8 +582,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">
               <View className="flex-row items-center justify-between pl-1">
-                <Text className={`text-xs font-bold uppercase tracking-wider ${errors.date ? "text-rose-600" : "text-slate-700"}`}>
-                  Preferred Date {errors.date && <Text className="text-rose-500">* Required</Text>}
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Preferred Date
                 </Text>
                 {date ? (
                   <TouchableOpacity
@@ -600,25 +600,24 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
               <TouchableOpacity
                 onPress={handleOpenDatePicker}
                 activeOpacity={0.75}
-                className="w-full rounded-[24px] px-5 py-4 flex-row items-center justify-between"
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
                 style={{
-                  backgroundColor: errors.date ? "#FFF5F5" : "#FFFFFF",
-                  borderWidth: errors.date ? 2 : 0,
-                  borderColor: errors.date ? "#EF4444" : "transparent",
+                  borderWidth: 1.5,
+                  borderColor: errors.date ? "#F87171" : "#E2E8F0",
                   elevation: 2,
-                  shadowColor: errors.date ? "#EF4444" : "#000",
+                  shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: errors.date ? 0.2 : 0.05,
+                  shadowOpacity: 0.05,
                   shadowRadius: 8,
                 }}
               >
                 <View className="flex-row items-center gap-3">
-                  <View className={`w-9 h-9 rounded-xl items-center justify-center ${errors.date ? "bg-rose-100" : "bg-sky-50"}`}>
+                  <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
                     <Svg width="20" height="20" viewBox="0 0 40 40" fill="none">
                       <Defs>
                         <SvgLinearGradient id="gDateTelemed" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <Stop offset="0%" stopColor={errors.date ? "#F43F5E" : "#00A3FF"} />
-                          <Stop offset="100%" stopColor={errors.date ? "#BE123C" : "#0056B3"} />
+                          <Stop offset="0%" stopColor="#00A3FF" />
+                          <Stop offset="100%" stopColor="#0056B3" />
                         </SvgLinearGradient>
                       </Defs>
                       <Rect x="5" y="9" width="30" height="25" rx="6" fill="url(#gDateTelemed)" />
@@ -631,7 +630,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   <Text
                     className="text-sm font-bold"
                     style={{
-                      color: errors.date ? "#E11D48" : "#002D72",
+                      color: "#002D72",
                       fontFamily: "Outfit",
                     }}
                   >
@@ -640,15 +639,10 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                       : "Select consultation date..."}
                   </Text>
                 </View>
-                <View className={`px-3 py-1 rounded-full ${errors.date ? "bg-rose-100" : "bg-slate-100"}`}>
-                  <Text className={`text-[11px] font-bold ${errors.date ? "text-rose-700" : "text-slate-600"}`}>Choose</Text>
+                <View className="px-3 py-1 rounded-full bg-slate-100">
+                  <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
                 </View>
               </TouchableOpacity>
-              {errors.date && (
-                <Text className="text-[11px] font-bold text-rose-500 pl-2">
-                  ⚠️ Please select your preferred consultation date
-                </Text>
-              )}
               <LiquidGlassDatePickerModal
                 visible={showDatePicker}
                 onClose={() => setShowDatePicker(false)}
@@ -665,8 +659,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
             {/* Preferred Time */}
             <View className="flex-col gap-1.5">
               <View className="flex-row items-center justify-between pl-1">
-                <Text className={`text-xs font-bold uppercase tracking-wider ${errors.time ? "text-rose-600" : "text-slate-700"}`}>
-                  Preferred Time {errors.time && <Text className="text-rose-500">* Required</Text>}
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Preferred Time
                 </Text>
                 {time ? (
                   <TouchableOpacity
@@ -683,44 +677,38 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
               <TouchableOpacity
                 onPress={() => setShowTimePicker(true)}
                 activeOpacity={0.75}
-                className="w-full rounded-[24px] px-5 py-4 flex-row items-center justify-between"
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
                 style={{
-                  backgroundColor: errors.time ? "#FFF5F5" : "#FFFFFF",
-                  borderWidth: errors.time ? 2 : 0,
-                  borderColor: errors.time ? "#EF4444" : "transparent",
+                  borderWidth: 1.5,
+                  borderColor: errors.time ? "#F87171" : "#E2E8F0",
                   elevation: 2,
-                  shadowColor: errors.time ? "#EF4444" : "#000",
+                  shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: errors.time ? 0.2 : 0.05,
+                  shadowOpacity: 0.05,
                   shadowRadius: 8,
                 }}
               >
                 <View className="flex-row items-center gap-3">
-                  <View className={`w-9 h-9 rounded-xl items-center justify-center ${errors.time ? "bg-rose-100" : "bg-sky-50"}`}>
+                  <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
                     <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <Circle cx="12" cy="12" r="9" stroke={errors.time ? "#E11D48" : "#00A3FF"} strokeWidth="2.2" />
-                      <Polyline points="12 7 12 12 15 15" stroke={errors.time ? "#BE123C" : "#0056B3"} strokeWidth="2.2" strokeLinecap="round" />
+                      <Circle cx="12" cy="12" r="9" stroke="#00A3FF" strokeWidth="2.2" />
+                      <Polyline points="12 7 12 12 15 15" stroke="#0056B3" strokeWidth="2.2" strokeLinecap="round" />
                     </Svg>
                   </View>
                   <Text
                     className="text-sm font-bold"
                     style={{
-                      color: errors.time ? "#E11D48" : "#002D72",
+                      color: "#002D72",
                       fontFamily: "Outfit",
                     }}
                   >
                     {time ? time : "Select consultation time..."}
                   </Text>
                 </View>
-                <View className={`px-3 py-1 rounded-full ${errors.time ? "bg-rose-100" : "bg-slate-100"}`}>
-                  <Text className={`text-[11px] font-bold ${errors.time ? "text-rose-700" : "text-slate-600"}`}>Choose</Text>
+                <View className="px-3 py-1 rounded-full bg-slate-100">
+                  <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
                 </View>
               </TouchableOpacity>
-              {errors.time && (
-                <Text className="text-[11px] font-bold text-rose-500 pl-2">
-                  ⚠️ Please select your preferred consultation time slot
-                </Text>
-              )}
               <LiquidGlassTimePickerModal
                 visible={showTimePicker}
                 onClose={() => setShowTimePicker(false)}
@@ -736,19 +724,18 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
             {/* Reason for Consult */}
             <View className="flex-col gap-1.5">
-              <Text className={`text-xs font-bold uppercase tracking-wider pl-1 ${errors.reason ? "text-rose-600" : "text-slate-700"}`}>
-                Reason for Consult {errors.reason && <Text className="text-rose-500">* Required</Text>}
+              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
+                Reason for Consult
               </Text>
               <View
-                className="rounded-[24px] px-4 py-3.5"
+                className="bg-white rounded-[24px] px-4 py-3.5"
                 style={{
-                  backgroundColor: errors.reason ? "#FFF5F5" : "#FFFFFF",
-                  borderWidth: errors.reason ? 2 : 0,
-                  borderColor: errors.reason ? "#EF4444" : "transparent",
+                  borderWidth: 1.5,
+                  borderColor: errors.reason ? "#F87171" : "#E2E8F0",
                   elevation: 2,
-                  shadowColor: errors.reason ? "#EF4444" : "#000",
+                  shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: errors.reason ? 0.2 : 0.05,
+                  shadowOpacity: 0.05,
                   shadowRadius: 8,
                 }}
               >
@@ -768,11 +755,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   style={{ minHeight: 85, textAlignVertical: "top" }}
                 />
               </View>
-              {errors.reason && (
-                <Text className="text-[11px] font-bold text-rose-500 pl-2">
-                  ⚠️ Please describe your symptoms or reason for consult
-                </Text>
-              )}
             </View>
 
             {/* Submit Button */}
