@@ -36,3 +36,13 @@ html, body, #root {
   min-height: 100%;
   min-height: 100dvh;
 }
+
+/* Remove aggressive browser focus outline ring on inputs in web preview */
+input, textarea, select {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}

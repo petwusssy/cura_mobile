@@ -2520,6 +2520,27 @@ const AuthModal = memo(function AuthModal({
                       </View>
                     ) : null}
 
+                    {/* Small text above Username/Email input (no box) */}
+                    {signInCheckingEmail ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6, paddingLeft: 2 }}>
+                        <ActivityIndicator size="small" color="#93C5FD" style={{ transform: [{ scale: 0.7 }], marginRight: 6 }} />
+                        <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 12, fontFamily: "Outfit" }}>
+                          Checking clinic records...
+                        </Text>
+                      </View>
+                    ) : signInDetectedPatient ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6, paddingLeft: 2 }}>
+                        <Text style={{ color: "#6EE7B7", fontSize: 12, fontFamily: "Outfit", fontWeight: "600" }}>
+                          ✓ Clinic Record: <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>{signInDetectedPatient.name}</Text>
+                        </Text>
+                        {!signInDetectedPatient.claimed && (
+                          <Text style={{ color: "#6EE7B7", fontSize: 10.5, fontFamily: "Outfit", fontWeight: "700", textTransform: "uppercase" }}>
+                            • Unclaimed
+                          </Text>
+                        )}
+                      </View>
+                    ) : null}
+
                     <GlassInput
                       icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
                       placeholder="Username or Email"
@@ -2534,74 +2555,6 @@ const AuthModal = memo(function AuthModal({
                       blurOnSubmit={false}
                       error={signInErrors.identifier}
                     />
-
-                    {/* Real-time Email Check Status */}
-                    {signInCheckingEmail ? (
-                      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 8, paddingLeft: 4 }}>
-                        <ActivityIndicator size="small" color="#93C5FD" />
-                        <Text style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: 12, fontFamily: "Outfit", marginLeft: 8 }}>
-                          Checking clinic records...
-                        </Text>
-                      </View>
-                    ) : null}
-
-                    {/* Detected Clinic Record Badge */}
-                    {signInDetectedPatient ? (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          backgroundColor: "rgba(16, 185, 129, 0.18)",
-                          borderWidth: 1.5,
-                          borderColor: "rgba(52, 211, 153, 0.55)",
-                          borderRadius: 14,
-                          padding: 12,
-                          marginTop: 4,
-                          marginBottom: 12,
-                          gap: 10,
-                        }}
-                      >
-                        <Text style={{ fontSize: 20 }}>🏥</Text>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              color: "#6EE7B7",
-                              fontSize: 10.5,
-                              fontWeight: "700",
-                              fontFamily: "Outfit",
-                              textTransform: "uppercase",
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            Clinic Record Found
-                          </Text>
-                          <Text
-                            style={{
-                              color: "#FFFFFF",
-                              fontSize: 13.5,
-                              fontWeight: "700",
-                              fontFamily: "Outfit",
-                              marginTop: 1,
-                            }}
-                            numberOfLines={1}
-                          >
-                            {signInDetectedPatient.name}
-                          </Text>
-                        </View>
-                        {!signInDetectedPatient.claimed && (
-                          <View
-                            style={{
-                              backgroundColor: "#059669",
-                              paddingHorizontal: 7,
-                              paddingVertical: 2,
-                              borderRadius: 6,
-                            }}
-                          >
-                            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>NEW</Text>
-                          </View>
-                        )}
-                      </View>
-                    ) : null}
 
                     {/* Case A: Unclaimed Clinic Record -> Direct OTP flow */}
                     {signInDetectedPatient && !signInDetectedPatient.claimed ? (
