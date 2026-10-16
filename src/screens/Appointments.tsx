@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, StyleSheet } from "react-native";
+import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, Button, Card, Badge } from "../components/Shell";
@@ -197,6 +198,26 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+
+  const fetchAvailability = async () => {
+    try {
+      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/appointments/availability/`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.unavailable_dates)) {
+          setUnavailableDates(data.unavailable_dates);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch appointment availability:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailability();
+  }, []);
+
 
   const [activeTab, setActiveTab] = useState<"book" | "history">("book");
   const [requests, setRequests] = useState<any[]>([]);
@@ -244,6 +265,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   }, [activeTab, fetchRequests]);
 
   const handleOpenDatePicker = () => {
+    fetchAvailability();
     setShowDatePicker(true);
   };
 
@@ -261,7 +283,12 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   const handleSubmit = async () => {
     if (!user?.id || !visitType) return;
+    if (date && unavailableDates.includes(date)) {
+      Alert.alert("Date Unavailable", "The selected date is currently unavailable for in-person appointments. Please select an available date.");
+      return;
+    }
     setIsSubmitting(true);
+
     
     try {
       const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/appointments/`, {
@@ -487,7 +514,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 selectedDate={date}
                 onSelectDate={(newDate) => setDate(newDate)}
                 title="Select Appointment Date"
+                unavailableDates={unavailableDates}
               />
+
             </View>
 
             {/* Preferred Time */}
