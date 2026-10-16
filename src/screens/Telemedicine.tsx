@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, PermissionsAndroid, Alert, StyleSheet } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,7 +10,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import { LiquidGlassTimePicker } from "../components/LiquidGlassTimePicker";
-import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
+import { LiquidGlassTimePickerModal, TELEMEDICINE_TIME_SLOTS } from "../components/LiquidGlassTimePickerModal";
 import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
 import type { Screen, AppUser } from "../types";
 import { getManilaDate, getManilaTime, normalizeDate, formatTime12 } from "../utils/philippineTime";
@@ -232,12 +232,17 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
+  const [allTelemedRequests, setAllTelemedRequests] = useState<any[]>([]);
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/availability/`);
-      if (res.ok) {
-        const data = await res.json();
+      const [availRes, telemedRes] = await Promise.allSettled([
+        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/availability/`),
+        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/`),
+      ]);
+
+      if (availRes.status === "fulfilled" && availRes.value.ok) {
+        const data = await availRes.value.json();
         if (Array.isArray(data.unavailable_dates)) {
           setUnavailableDates(data.unavailable_dates);
         }
@@ -245,11 +250,17 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           setUnavailableTimes(data.unavailable_times);
         }
       }
+
+      if (telemedRes.status === "fulfilled" && telemedRes.value.ok) {
+        const allData = await telemedRes.value.json();
+        if (Array.isArray(allData)) {
+          setAllTelemedRequests(allData);
+        }
+      }
     } catch (err) {
       console.warn("Failed to fetch telemedicine availability:", err);
     }
   };
-
 
   useEffect(() => {
     fetchAvailability();
@@ -259,6 +270,82 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     fetchAvailability();
     setShowDatePicker(true);
   };
+
+  const handleOpenTimePicker = () => {
+    fetchAvailability();
+    setShowTimePicker(true);
+  };
+
+  // Dynamically compute booked/locked times for the selected date
+  const bookedTimesForSelectedDate = useMemo(() => {
+    if (!date) return [];
+    const targetDate = String(date).trim();
+    const booked = new Set<string>();
+
+    allTelemedRequests.forEach((req: any) => {
+      const st = String(req.status || "").toLowerCase();
+      // Only Pending and Approved requests lock the slot
+      if (st === "rejected" || st === "completed" || st === "cancelled") {
+        return;
+      }
+
+      const reqDate = String(req.scheduled_date || req.preferred_date || "").trim();
+      if (reqDate === targetDate) {
+        const reqTime = String(req.scheduled_time || req.preferred_time || "").trim();
+        if (reqTime) {
+          booked.add(reqTime);
+        }
+      }
+    });
+
+    return Array.from(booked);
+  }, [date, allTelemedRequests]);
+
+  // Combined unavailable times for the time picker (Manual clinic overrides + Auto-booked slots)
+  const activeUnavailableTimes = useMemo(() => {
+    return Array.from(new Set([...unavailableTimes, ...bookedTimesForSelectedDate]));
+  }, [unavailableTimes, bookedTimesForSelectedDate]);
+
+  // If a date has all slots booked, mark the date as unavailable too
+  const fullyBookedDates = useMemo(() => {
+    const dateCounts: Record<string, Set<string>> = {};
+    allTelemedRequests.forEach((req: any) => {
+      const st = String(req.status || "").toLowerCase();
+      if (st === "rejected" || st === "completed" || st === "cancelled") return;
+      const reqDate = String(req.scheduled_date || req.preferred_date || "").trim();
+      const reqTime = String(req.scheduled_time || req.preferred_time || "").trim();
+      if (reqDate && reqTime) {
+        if (!dateCounts[reqDate]) dateCounts[reqDate] = new Set();
+        dateCounts[reqDate].add(reqTime);
+      }
+    });
+
+    const fullDates: string[] = [];
+    Object.entries(dateCounts).forEach(([d, slots]) => {
+      if (slots.size >= TELEMEDICINE_TIME_SLOTS.length) {
+        fullDates.push(d);
+      }
+    });
+    return Array.from(new Set([...unavailableDates, ...fullDates]));
+  }, [unavailableDates, allTelemedRequests]);
+
+  // Auto-reset time if patient changes date to a date where the selected time is already booked
+  useEffect(() => {
+    if (time && date && bookedTimesForSelectedDate.length > 0) {
+      const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
+      const isBooked = bookedTimesForSelectedDate.some((b) => {
+        const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
+        return cleanB === cleanTime || cleanB.includes(cleanTime) || cleanTime.includes(cleanB);
+      });
+      if (isBooked) {
+        setTime("");
+        Alert.alert(
+          "Slot Already Booked",
+          `The time slot "${time}" on ${formatDisplayDate(date)} is already taken. Please choose another time.`
+        );
+      }
+    }
+  }, [date, bookedTimesForSelectedDate, time]);
 
 
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -365,6 +452,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
+            setAllTelemedRequests(data);
             const uIds = [
               String(user?.id || ""),
               String((user as any)?.id_number || ""),
@@ -446,8 +534,23 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       return;
     }
 
-    if (date && unavailableDates.includes(date)) {
-      Alert.alert("Date Unavailable", "The selected date is currently unavailable for telemedicine consultations. Please select an available date.");
+    if (date && fullyBookedDates.includes(date)) {
+      Alert.alert("Date Fully Booked", "The selected date is fully booked for telemedicine consultations. Please select another date.");
+      return;
+    }
+
+    const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
+    const isSlotTaken = bookedTimesForSelectedDate.some((b) => {
+      const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
+      return cleanB === cleanTime || cleanB.includes(cleanTime) || cleanTime.includes(cleanB);
+    });
+
+    if (isSlotTaken) {
+      Alert.alert(
+        "Time Slot Locked",
+        "This time slot has already been booked by another patient. Please choose an available time."
+      );
+      setTime("");
       return;
     }
 
@@ -469,6 +572,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       if (res.ok) {
         const createdReq = await res.json();
         if (createdReq && createdReq.id) {
+          setAllTelemedRequests((prev) => [createdReq, ...prev]);
           setRequests((prev) => {
             const updated = [createdReq, ...prev.filter((r) => r.id !== createdReq.id)];
             if (user?.id) {
@@ -656,7 +760,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   setErrors((prev) => ({ ...prev, date: false }));
                 }}
                 title="Select Consultation Date"
-                unavailableDates={unavailableDates}
+                unavailableDates={fullyBookedDates}
               />
             </View>
 
@@ -679,7 +783,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 ) : null}
               </View>
               <TouchableOpacity
-                onPress={() => setShowTimePicker(true)}
+                onPress={handleOpenTimePicker}
                 activeOpacity={0.75}
                 className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
                 style={{
@@ -722,7 +826,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   setErrors((prev) => ({ ...prev, time: false }));
                 }}
                 title="Select Consultation Time"
-                unavailableTimes={unavailableTimes}
+                unavailableTimes={activeUnavailableTimes}
               />
             </View>
 

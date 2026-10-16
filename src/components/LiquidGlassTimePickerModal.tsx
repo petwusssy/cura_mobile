@@ -43,9 +43,37 @@ function isSlotUnavailable(slot: string, unavailableList: string[] = []): boolea
   if (!unavailableList || unavailableList.length === 0) return false;
   const clean = (s: string) => s.toLowerCase().replace(/[\s:-]/g, "");
   const target = clean(slot);
+  const targetStart = clean(slot.split("-")[0] || "");
+
   return unavailableList.some((item) => {
+    if (!item) return false;
     const norm = clean(item);
-    return norm === target || target.includes(norm) || norm.includes(target);
+    if (!norm) return false;
+
+    // 1. Direct or exact clean match
+    if (norm === target) return true;
+
+    // 2. Start time matches start time (e.g., "9:00 AM" matches "9:00 AM - 10:00 AM")
+    const itemStart = clean(item.split("-")[0] || "");
+    if (itemStart && itemStart === targetStart) return true;
+
+    // 3. Legacy macro block handling (e.g., "Morning (8AM - 12PM)")
+    const itemLower = item.toLowerCase();
+    const slotLower = slot.toLowerCase();
+    if (
+      itemLower.includes("morning") &&
+      (slotLower.includes("8:00 am") || slotLower.includes("9:00 am") || slotLower.includes("10:00 am") || slotLower.includes("11:00 am"))
+    ) {
+      return true;
+    }
+    if (
+      itemLower.includes("afternoon") &&
+      (slotLower.includes("1:00 pm") || slotLower.includes("2:00 pm") || slotLower.includes("3:00 pm") || slotLower.includes("4:00 pm"))
+    ) {
+      return true;
+    }
+
+    return false;
   });
 }
 
@@ -163,7 +191,7 @@ export function LiquidGlassTimePickerModal({
                       </Text>
                       {isUnavailable && (
                         <View style={styles.redBadge}>
-                          <Text style={styles.redBadgeText}>Unavailable</Text>
+                          <Text style={styles.redBadgeText}>Booked / Closed</Text>
                         </View>
                       )}
                     </View>
@@ -181,7 +209,7 @@ export function LiquidGlassTimePickerModal({
               <View style={styles.legendItem}>
                 <View style={styles.legendDotUnavailable} />
                 <Text style={[styles.legendText, { color: "#EF4444" }]}>
-                  Unavailable (Red)
+                  Booked / Closed (Red)
                 </Text>
               </View>
             </View>
