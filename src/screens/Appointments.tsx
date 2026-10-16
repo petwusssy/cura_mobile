@@ -199,6 +199,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [isPending, setIsPending] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+  const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
 
   const fetchAvailability = async () => {
     try {
@@ -208,11 +209,15 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         if (Array.isArray(data.unavailable_dates)) {
           setUnavailableDates(data.unavailable_dates);
         }
+        if (Array.isArray(data.unavailable_times)) {
+          setUnavailableTimes(data.unavailable_times);
+        }
       }
     } catch (err) {
       console.warn("Failed to fetch appointment availability:", err);
     }
   };
+
 
   useEffect(() => {
     fetchAvailability();
@@ -287,7 +292,15 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       Alert.alert("Date Unavailable", "The selected date is currently unavailable for in-person appointments. Please select an available date.");
       return;
     }
+    const isSlotBlocked = 
+      (time && unavailableTimes.includes(time)) ||
+      (date && time && unavailableTimes.includes(`${date}__${time}`));
+    if (isSlotBlocked) {
+      Alert.alert("Time Slot Unavailable", "The selected time slot is currently unavailable for appointments. Please choose an available time.");
+      return;
+    }
     setIsSubmitting(true);
+
 
     
     try {
@@ -539,20 +552,30 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                     value: "afternoon",
                   },
                 ].map((slot) => {
-                  const isSelected = time === slot.value;
+                  const isUnavailable =
+                    unavailableTimes.includes(slot.value) ||
+                    (Boolean(date) && unavailableTimes.includes(`${date}__${slot.value}`)) ||
+                    (Boolean(date) && unavailableDates.includes(date));
+                  const isSelected = !isUnavailable && time === slot.value;
                   return (
                     <TouchableOpacity
                       key={slot.value}
+                      disabled={isUnavailable}
                       onPress={() => setTime(slot.value)}
                       activeOpacity={0.75}
                       className="flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden"
                       style={{
-                        backgroundColor: isSelected ? "transparent" : "#FFFFFF",
-                        borderWidth: 1,
-                        borderTopColor: isSelected ? "rgba(255, 255, 255, 0.45)" : "#E2E8F0",
-                        borderLeftColor: isSelected ? "rgba(255, 255, 255, 0.3)" : "#E2E8F0",
-                        borderRightColor: isSelected ? "rgba(255, 255, 255, 0.2)" : "#E2E8F0",
-                        borderBottomColor: isSelected ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
+                        backgroundColor: isUnavailable
+                          ? "rgba(239, 68, 68, 0.08)"
+                          : isSelected
+                          ? "transparent"
+                          : "#FFFFFF",
+                        borderWidth: isUnavailable ? 1.5 : 1,
+                        borderColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : undefined,
+                        borderTopColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.45)" : "#E2E8F0",
+                        borderLeftColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.3)" : "#E2E8F0",
+                        borderRightColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.2)" : "#E2E8F0",
+                        borderBottomColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
                         elevation: isSelected ? 4 : 1,
                         shadowColor: isSelected ? "#0A2472" : "#000",
                         shadowOffset: isSelected ? { width: 0, height: 6 } : { width: 0, height: 2 },
@@ -576,7 +599,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                       <Text
                         className="text-sm font-black"
                         style={{
-                          color: isSelected ? "#FFFFFF" : "#0B2136",
+                          color: isUnavailable ? "#EF4444" : isSelected ? "#FFFFFF" : "#0B2136",
                           fontFamily: "Outfit",
                         }}
                       >
@@ -585,16 +608,17 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                       <Text
                         className="text-[10px] font-semibold mt-0.5"
                         style={{
-                          color: isSelected ? "rgba(255, 255, 255, 0.75)" : "#64748B",
+                          color: isUnavailable ? "#EF4444" : isSelected ? "rgba(255, 255, 255, 0.75)" : "#64748B",
                         }}
                       >
-                        {slot.timeRange}
+                        {isUnavailable ? "Closed / Unavailable" : slot.timeRange}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
             </View>
+
 
             {/* Reason for Visit */}
             <View className="flex-col gap-1.5">
