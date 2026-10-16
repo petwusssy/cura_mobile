@@ -20,6 +20,7 @@ interface Props {
   onSelectTime: (timeStr: string) => void;
   title?: string;
   unavailableTimes?: string[];
+  selectedDate?: string;
 }
 
 export const TELEMEDICINE_TIME_SLOTS = [
@@ -50,12 +51,12 @@ function isSlotUnavailable(slot: string, unavailableList: string[] = []): boolea
     const norm = clean(item);
     if (!norm) return false;
 
-    // 1. Direct or exact clean match
-    if (norm === target) return true;
+    // 1. Direct match or substring match
+    if (norm === target || target.includes(norm) || norm.includes(target)) return true;
 
-    // 2. Start time matches start time (e.g., "9:00 AM" matches "9:00 AM - 10:00 AM")
+    // 2. Start time matches start time (e.g. "7:00 PM" matches "7:00 PM - 8:00 PM")
     const itemStart = clean(item.split("-")[0] || "");
-    if (itemStart && itemStart === targetStart) return true;
+    if (itemStart && (itemStart === targetStart || targetStart.includes(itemStart) || itemStart.includes(targetStart))) return true;
 
     // 3. Legacy macro block handling (e.g., "Morning (8AM - 12PM)")
     const itemLower = item.toLowerCase();
@@ -84,6 +85,7 @@ export function LiquidGlassTimePickerModal({
   onSelectTime,
   title = "Select Consultation Time",
   unavailableTimes = [],
+  selectedDate,
 }: Props) {
   const [tempSelected, setTempSelected] = useState(selectedTime);
 
@@ -138,7 +140,7 @@ export function LiquidGlassTimePickerModal({
               <View>
                 <Text style={styles.headerTitle}>{title}</Text>
                 <Text style={styles.headerSubtitle}>
-                  Choose an available 1-hour slot
+                  {selectedDate ? `Showing slots for ${selectedDate}` : "Choose an available 1-hour slot"}
                 </Text>
               </View>
               <TouchableOpacity
@@ -191,7 +193,7 @@ export function LiquidGlassTimePickerModal({
                       </Text>
                       {isUnavailable && (
                         <View style={styles.redBadge}>
-                          <Text style={styles.redBadgeText}>Booked / Closed</Text>
+                          <Text style={styles.redBadgeText}>🔒 CLOSED</Text>
                         </View>
                       )}
                     </View>
@@ -326,9 +328,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   slotItemUnavailable: {
-    backgroundColor: "#FFF1F2",
-    borderColor: "#FDA4AF",
-    opacity: 0.85,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#EF4444",
+    borderWidth: 1.5,
+    opacity: 0.95,
   },
   slotTextRow: {
     flexDirection: "row",
@@ -347,21 +350,23 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   slotTextUnavailable: {
-    color: "#E11D48",
+    color: "#DC2626",
+    fontWeight: "800",
   },
   redBadge: {
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "#EF4444",
     borderWidth: 1,
-    borderColor: "#FECDD3",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    borderColor: "#DC2626",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 8,
   },
   redBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "800",
-    color: "#E11D48",
+    color: "#FFFFFF",
     textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   legendContainer: {
     flexDirection: "row",

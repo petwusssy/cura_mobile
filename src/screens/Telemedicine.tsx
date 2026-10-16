@@ -221,7 +221,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   }, []);
 
   // Book Form State
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(() => getManilaDate());
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
   const [errors, setErrors] = useState<{ date?: boolean; time?: boolean; reason?: boolean }>({});
@@ -234,11 +234,29 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
   const [allTelemedRequests, setAllTelemedRequests] = useState<any[]>([]);
 
+  // Instantly hydrate cached all-requests for immediate slot locking
+  useEffect(() => {
+    AsyncStorage.getItem("@cura_cached_telemed_all_requests").then((stored) => {
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAllTelemedRequests(parsed);
+          }
+        } catch (e) {}
+      }
+    }).catch(() => {});
+  }, []);
+
   const fetchAvailability = async () => {
     try {
       const [availRes, telemedRes] = await Promise.allSettled([
-        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/availability/`),
-        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/`),
+        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/availability/?t=${Date.now()}`, {
+          headers: { "Cache-Control": "no-cache" }
+        }),
+        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/?t=${Date.now()}`, {
+          headers: { "Accept": "application/json", "Cache-Control": "no-cache" }
+        }),
       ]);
 
       if (availRes.status === "fulfilled" && availRes.value.ok) {
@@ -255,6 +273,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         const allData = await telemedRes.value.json();
         if (Array.isArray(allData)) {
           setAllTelemedRequests(allData);
+          AsyncStorage.setItem("@cura_cached_telemed_all_requests", JSON.stringify(allData)).catch(() => {});
         }
       }
     } catch (err) {
@@ -264,6 +283,10 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   useEffect(() => {
     fetchAvailability();
+    const interval = setInterval(() => {
+      fetchAvailability();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleOpenDatePicker = () => {
@@ -272,14 +295,17 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   };
 
   const handleOpenTimePicker = () => {
+    if (!date) {
+      setDate(getManilaDate());
+    }
     fetchAvailability();
     setShowTimePicker(true);
   };
 
   // Dynamically compute booked/locked times for the selected date
   const bookedTimesForSelectedDate = useMemo(() => {
-    if (!date) return [];
-    const targetDate = String(date).trim();
+    const targetDate = normalizeDate(date || getManilaDate());
+    if (!targetDate) return [];
     const booked = new Set<string>();
 
     allTelemedRequests.forEach((req: any) => {
@@ -289,8 +315,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         return;
       }
 
-      const reqDate = String(req.scheduled_date || req.preferred_date || "").trim();
-      if (reqDate === targetDate) {
+      const rawReqDate = req.scheduled_date || req.preferred_date || "";
+      const reqDate = normalizeDate(rawReqDate);
+      if (reqDate && reqDate === targetDate) {
         const reqTime = String(req.scheduled_time || req.preferred_time || "").trim();
         if (reqTime) {
           booked.add(reqTime);
@@ -312,7 +339,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     allTelemedRequests.forEach((req: any) => {
       const st = String(req.status || "").toLowerCase();
       if (st === "rejected" || st === "completed" || st === "cancelled") return;
-      const reqDate = String(req.scheduled_date || req.preferred_date || "").trim();
+      const rawReqDate = req.scheduled_date || req.preferred_date || "";
+      const reqDate = normalizeDate(rawReqDate);
       const reqTime = String(req.scheduled_time || req.preferred_time || "").trim();
       if (reqDate && reqTime) {
         if (!dateCounts[reqDate]) dateCounts[reqDate] = new Set();
@@ -583,8 +611,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         }
         setConfirmedDetails({ date, time });
         setShowConfirmation(true);
-        // Reset form
-        setDate("");
+        // Keep date selected so the newly booked slot remains visible as locked
         setTime("");
         setReason("");
         setErrors({});
@@ -827,6 +854,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 }}
                 title="Select Consultation Time"
                 unavailableTimes={activeUnavailableTimes}
+                selectedDate={formatDisplayDate(date || getManilaDate())}
               />
             </View>
 

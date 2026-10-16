@@ -134,6 +134,7 @@ export function LiquidGlassDatePickerModal({
       return;
     }
     setTempSelected(dateFormatted);
+    onSelectDate(dateFormatted);
   };
 
   const handleConfirm = () => {
