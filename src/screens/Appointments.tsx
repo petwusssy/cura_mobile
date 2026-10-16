@@ -402,35 +402,6 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-          {/* Info Banner */}
-          <View
-            className="bg-white rounded-[28px] p-4 flex-row items-center gap-3.5 border border-sky-100 mb-6 shadow-xs"
-          >
-            <View className="w-11 h-11 rounded-2xl bg-sky-50 items-center justify-center">
-              <Svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                <Defs>
-                  <SvgLinearGradient id="gClinicBanner" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <Stop offset="0%" stopColor="#00A3FF" />
-                    <Stop offset="100%" stopColor="#0056B3" />
-                  </SvgLinearGradient>
-                </Defs>
-                <Rect x="6" y="8" width="20" height="20" rx="4" fill="url(#gClinicBanner)" />
-                <Rect x="10" y="5" width="12" height="3" rx="1.5" fill="#38BDF8" />
-                <Rect x="14.5" y="11" width="3" height="8" rx="1" fill="#FFFFFF" />
-                <Rect x="12" y="13.5" width="8" height="3" rx="1" fill="#FFFFFF" />
-                <Rect x="13" y="21" width="6" height="7" rx="1.5" fill="#38BDF8" />
-              </Svg>
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-cura-900 mb-0.5" style={{ fontFamily: "Outfit" }}>
-                In-Person Clinic Visit
-              </Text>
-              <Text className="text-xs text-slate-500 leading-relaxed">
-                Schedule an in-person appointment at the clinic. Your request will be reviewed for confirmation.
-              </Text>
-            </View>
-          </View>
-
           <View className="flex-col gap-6">
             {/* Type of Visit */}
             <View className="flex-col gap-1.5">

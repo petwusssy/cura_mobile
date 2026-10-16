@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Modal, TouchableOpacity, Pressable } from "react-native";
+import Svg, { Line } from "react-native-svg";
 
 interface RequestConfirmationModalProps {
   visible: boolean;
@@ -39,7 +40,7 @@ export function RequestConfirmationModal({
       >
         <Pressable
           onPress={(e) => e.stopPropagation()}
-          className="w-full bg-white rounded-[28px] p-6 items-center"
+          className="w-full bg-white rounded-[28px] p-6 items-center relative"
           style={{
             maxWidth: 340,
             shadowColor: "#0A2472",
@@ -49,6 +50,31 @@ export function RequestConfirmationModal({
             elevation: 12,
           }}
         >
+          {/* Top-Right Close Button */}
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            style={({ pressed }) => ({
+              position: "absolute",
+              top: 16,
+              right: 16,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: "#F1F5F9",
+              borderWidth: 1,
+              borderColor: "#CBD5E1",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 20,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <Line x1="18" y1="6" x2="6" y2="18" />
+              <Line x1="6" y1="6" x2="18" y2="18" />
+            </Svg>
+          </Pressable>
           {/* Success Icon */}
           <View
             className="w-14 h-14 rounded-2xl items-center justify-center mb-3.5 border"

@@ -681,38 +681,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-          {/* Info Banner */}
-          <View
-            className="bg-white rounded-[28px] p-4 flex-row items-center gap-3.5 border border-sky-100 mb-6 shadow-xs"
-          >
-            <View className="w-11 h-11 rounded-2xl bg-sky-50 items-center justify-center">
-              <Svg width="26" height="26" viewBox="0 0 40 40" fill="none">
-                <Defs>
-                  <SvgLinearGradient id="gTelemedBanner" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <Stop offset="0%" stopColor="#00A3FF" />
-                    <Stop offset="100%" stopColor="#0056B3" />
-                  </SvgLinearGradient>
-                  <SvgLinearGradient id="gLensBanner" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <Stop offset="0%" stopColor="#38BDF8" />
-                    <Stop offset="100%" stopColor="#0284C7" />
-                  </SvgLinearGradient>
-                </Defs>
-                <Rect x="4" y="10" width="22" height="20" rx="6" fill="url(#gTelemedBanner)" />
-                <Path d="M26 16l8-4.5v17l-8-4.5v-8z" fill="url(#gLensBanner)" />
-                <Rect x="13.5" y="15" width="3" height="10" rx="1" fill="#FFFFFF" />
-                <Rect x="10" y="18.5" width="10" height="3" rx="1" fill="#FFFFFF" />
-              </Svg>
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-cura-900 mb-0.5" style={{ fontFamily: "Outfit" }}>
-                Online Video Consultation
-              </Text>
-              <Text className="text-xs text-slate-500 leading-relaxed">
-                Request an online video consultation. The clinic will review your request and provide a meeting link if approved.
-              </Text>
-            </View>
-          </View>
-
           <View className="flex-col gap-6">
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">

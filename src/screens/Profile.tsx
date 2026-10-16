@@ -2110,9 +2110,10 @@ export function ProfileScreen({
                 </View>
                 <Pressable
                   onPress={() => setShowNotifModal(false)}
-                  className="w-8 h-8 rounded-full bg-white/20 border border-white/30 items-center justify-center active:bg-white/30"
+                  className="w-8 h-8 rounded-full bg-white items-center justify-center active:bg-slate-100 shadow-sm"
+                  hitSlop={8}
                 >
-                  <Text className="text-white font-bold text-sm">✕</Text>
+                  <Text className="text-[#002D72] font-black text-sm">✕</Text>
                 </Pressable>
               </View>
             </View>

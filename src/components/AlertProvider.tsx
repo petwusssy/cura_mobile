@@ -29,7 +29,7 @@ export function AlertProvider({ children }: { children: ReactNode }) {
       <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
         <View className="flex-1 justify-center items-center px-6" style={{ backgroundColor: 'rgba(11, 33, 54, 0.65)' }}>
           <View
-            className="w-full max-w-[340px] bg-white rounded-[32px] p-6 border border-sky-100/80"
+            className="w-full max-w-[340px] bg-white rounded-[32px] p-6 border border-sky-100/80 relative"
             style={{
               shadowColor: '#0B2136',
               shadowOffset: { width: 0, height: 14 },
@@ -38,6 +38,32 @@ export function AlertProvider({ children }: { children: ReactNode }) {
               elevation: 10,
             }}
           >
+            {/* Top-Right Close Button */}
+            <Pressable
+              onPress={() => setIsOpen(false)}
+              hitSlop={12}
+              style={({ pressed }) => ({
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: '#F1F5F9',
+                borderWidth: 1,
+                borderColor: '#CBD5E1',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 20,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <Line x1="18" y1="6" x2="6" y2="18" />
+                <Line x1="6" y1="6" x2="18" y2="18" />
+              </Svg>
+            </Pressable>
+
             {/* Top Decorative Pill Accent */}
             <View
               style={{
