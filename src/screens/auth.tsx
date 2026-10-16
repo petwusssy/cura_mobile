@@ -48,7 +48,7 @@ import { Button, Input } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 
-import { signInWithGooglePopup, authenticateWithCuraBackend } from "../services/firebase";
+import { signInWithGooglePopup, authenticateWithCuraBackend, parseGoogleIdToken } from "../services/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -1399,6 +1399,9 @@ const AuthModal = memo(function AuthModal({
       setSignInOtp("");
       setIsCategoryLocked(false);
       setIsGooglePrefilled(false);
+      setIsGoogleSignup(false);
+      setGoogleVerifiedEmail("");
+      setModalGooglePendingToken("");
     }, 110);
   }, [triggerHaptic, contentFadeAnim]);
 
@@ -1460,140 +1463,208 @@ const AuthModal = memo(function AuthModal({
 
   const [modalGoogleLoading, setModalGoogleLoading] = useState(false);
   const [modalGooglePendingToken, setModalGooglePendingToken] = useState("");
+  const [modalGoogleTargetMode, setModalGoogleTargetMode] = useState<"signin" | "create_account">("signin");
+  const [isGoogleSignup, setIsGoogleSignup] = useState(false);
+  const [googleVerifiedEmail, setGoogleVerifiedEmail] = useState("");
   const [, modalGoogleResponse, modalGooglePromptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
     webClientId: GOOGLE_CLIENT_ID,
   });
 
-  const onModalGoogleSuccess = useCallback(async (idToken: string, fallbackEmail?: string, fallbackName?: string) => {
+  const onModalGoogleSuccess = useCallback(async (
+    idToken: string,
+    fallbackEmail?: string,
+    fallbackName?: string,
+    modeOverride?: "signin" | "create_account"
+  ) => {
+    const targetMode = modeOverride || modalGoogleTargetMode || authMode || "signin";
     try {
-      setModalGoogleLoading(true);
+      setSignInGeneralError("");
+      setRegGeneralError("");
 
-      // Mode A: User registers from Create Account
-      if (authMode === "create_account") {
-        try {
-          const regData = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName, undefined, "register");
-          const email = (regData.email || fallbackEmail || "").trim().toLowerCase();
-          const name = (regData.name || fallbackName || "").trim().toUpperCase();
-          const cat = detectCategoryFromEmail(email) || (regData.category as any) || "Outsider";
-
-          setCreateForm((prev) => ({
-            ...prev,
-            email,
-            fullName: name || prev.fullName,
-            category: cat,
-          }));
-          setIsCategoryLocked(true);
-          setIsGooglePrefilled(true);
-          setModalGooglePendingToken(idToken);
-          setRegGeneralError("");
-          setRegErrors({});
-          goToCreateStep(2, "next");
-          return;
-        } catch (err: any) {
-          if (err?.already_exists) {
-            showAlert("Account Exists", "An account with this Google email already exists. Please sign in.");
-            switchAuthMode("signin");
-            setSignInIdentifier(fallbackEmail || err?.data?.email || "");
-            return;
-          }
-          setRegGeneralError(err?.message || "Google registration verification failed.");
-          return;
-        }
+      // 1. Resolve email and name from token or fallback parameters
+      let cleanEmail = (fallbackEmail || "").trim().toLowerCase();
+      let cleanName = (fallbackName || "").trim();
+      if (!cleanEmail) {
+        const parsed = parseGoogleIdToken(idToken);
+        if (parsed?.email) cleanEmail = parsed.email.trim().toLowerCase();
+        if (parsed?.name && !cleanName) cleanName = parsed.name.trim();
       }
 
-      // Mode B: User logs in from Sign In
-      const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName, undefined, "login");
-      if (data.require_otp) {
-        setModalGooglePendingToken(idToken);
-        if (data.email) {
-          setSignInIdentifier(data.email);
+      // 2. Check email against database
+      let checkData: any = null;
+      if (cleanEmail) {
+        try {
+          const checkRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cleanEmail }),
+          });
+          checkData = await checkRes.json().catch(() => ({}));
+        } catch (e) {}
+      }
+
+      // =========================================================================
+      // CASE 1: SIGN IN MODE ("ito ay sa sign in ah")
+      // If no account exists for this Google email:
+      // Tell user no account found, do NOT log in, do NOT create account.
+      // =========================================================================
+      if (targetMode === "signin") {
+        if (checkData && !checkData.claimed) {
+          const msg = `No account found for this Google account (${cleanEmail || "unregistered"}). Please create an account first.`;
+          setSignInGeneralError(msg);
+          showAlert("Account Not Found", msg);
+          setModalGoogleLoading(false);
+          return;
         }
-        setAuthMode("signin");
-        setSignInOtpMode(true);
-        setSignInOtpSent(true);
-        setSignInOtpCooldown(60);
-        setSignInGeneralError("");
-        setRegGeneralError("");
-        setModalGoogleLoading(false);
+
+        const data = await authenticateWithCuraBackend(idToken, cleanEmail, cleanName, undefined, "signin");
+        if (data.require_otp) {
+          setModalGooglePendingToken(idToken);
+          if (data.email) {
+            setSignInIdentifier(data.email);
+          }
+          setAuthMode("signin");
+          setSignInOtpMode(true);
+          setSignInOtpSent(true);
+          setSignInOtpCooldown(60);
+          setSignInGeneralError("");
+          setRegGeneralError("");
+          setModalGoogleLoading(false);
+          return;
+        }
+
+        const userEmail = data.user?.email || cleanEmail || "user@ua.edu.ph";
+        const userName = (data.user?.first_name || data.user?.name || cleanName || userEmail.split("@")[0]).toUpperCase();
+
+        if (data.access) {
+          await AsyncStorage.setItem("@cura_access_token", data.access).catch(() => {});
+        }
+        const sessionUser = {
+          email: userEmail,
+          firstName: userName,
+          displayName: userName,
+          lastName: data.user?.last_name || "",
+          accessToken: data.access,
+          role: data.user?.category || "Student",
+          id: data.user?.patient_id,
+        };
+        await AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
+
+        onSuccessSignIn(userEmail, userName, data.access || "");
         return;
       }
 
-      const userEmail = data.user?.email || fallbackEmail || "user@ua.edu.ph";
-      const userName = (data.user?.first_name || data.user?.name || fallbackName || userEmail.split("@")[0]).toUpperCase();
+      // =========================================================================
+      // CASE 2: CREATE ACCOUNT MODE ("tapos pag sa create account naman")
+      // If user continues with Google and has no account:
+      // Fill up the registration form based on Google account (Student, Employee, Outsider),
+      // do NOT automatically finish/create the account without filling the form!
+      // =========================================================================
+      if (targetMode === "create_account") {
+        if (checkData?.claimed) {
+          const msg = `This Google account (${cleanEmail}) is already registered. Please sign in instead.`;
+          setRegGeneralError(msg);
+          setRegErrors({ email: msg });
+          showAlert("Account Already Registered", msg);
+          setModalGoogleLoading(false);
+          return;
+        }
 
-      if (data.access) {
-        await AsyncStorage.setItem("@cura_access_token", data.access).catch(() => {});
-      }
-      const sessionUser = {
-        email: userEmail,
-        firstName: userName,
-        displayName: userName,
-        lastName: data.user?.last_name || "",
-        accessToken: data.access,
-        role: data.user?.category || "Student",
-        id: data.user?.patient_id,
-      };
-      await AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
+        // Auto-infer category based on email domain
+        let detectedCat: any = detectCategoryFromEmail(cleanEmail);
+        if (!detectedCat && checkData?.patient?.category) {
+          detectedCat = checkData.patient.category;
+        }
+        if (!detectedCat) {
+          detectedCat = "Outsider";
+        }
 
-      onSuccessSignIn(userEmail, userName, data.access || "");
-    } catch (err: any) {
-      if (err?.not_found) {
-        const targetEmail = (err?.data?.email || fallbackEmail || "").trim().toLowerCase();
-        const targetName = (err?.data?.name || fallbackName || "").trim().toUpperCase();
-        const detectedCat = detectCategoryFromEmail(targetEmail) || (err?.data?.category as any) || "Outsider";
+        const displayName = (cleanName || checkData?.patient?.name || cleanEmail.split("@")[0]).toUpperCase();
 
-        showAlert(
-          "Account Not Found",
-          "No clinic account found for this Google email. Please create an account first."
-        );
-
-        setAuthMode("create_account");
+        // Populate createForm with Google details + any existing clinic masterlist data
         setCreateForm((prev) => ({
           ...prev,
-          email: targetEmail,
-          fullName: targetName || prev.fullName,
+          email: cleanEmail,
+          fullName: displayName,
           category: detectedCat,
+          studentId: checkData?.patient?.studentId || checkData?.patient?.id || prev.studentId,
+          studentCategory: checkData?.patient?.studentCategory || prev.studentCategory,
+          course: checkData?.patient?.course || prev.course,
+          yearLevel: checkData?.patient?.yearLevel || prev.yearLevel,
+          gradeLevel: checkData?.patient?.gradeLevel || prev.gradeLevel,
+          guardianName: checkData?.patient?.guardianName || prev.guardianName,
+          employeeId: checkData?.patient?.employeeId || checkData?.patient?.id || prev.employeeId,
+          position: checkData?.patient?.position || prev.position,
+          department: checkData?.patient?.department || prev.department,
+          contact: checkData?.patient?.contact || prev.contact,
+          dob: checkData?.patient?.birthday || prev.dob,
+          sex: checkData?.patient?.sex || prev.sex,
+          address: checkData?.patient?.address || prev.address,
+          emergencyName: checkData?.patient?.emergencyContact || prev.emergencyName,
+          emergencyPhone: checkData?.patient?.emergencyPhone || prev.emergencyPhone,
         }));
-        setIsCategoryLocked(true);
-        setIsGooglePrefilled(true);
-        setModalGooglePendingToken(idToken);
-        setSignInGeneralError("");
-        setRegGeneralError("No clinic account found for this Google email. Please create an account first.");
-        goToCreateStep(2, "next");
-        return;
-      }
 
+        setIsGoogleSignup(true);
+        setGoogleVerifiedEmail(cleanEmail);
+        setModalGooglePendingToken(idToken);
+        setRegErrors({});
+        setRegGeneralError("");
+        goToCreateStep(2, "next");
+        showAlert(
+          "Google Account Connected",
+          `Google account verified (${cleanEmail}). Please fill out your profile details for ${detectedCat}.`
+        );
+      }
+    } catch (err: any) {
+      const isNotFound = Boolean(err?.not_found || err?.code === "ACCOUNT_NOT_FOUND" || err?.status === 404);
+      const isAlreadyExists = Boolean(err?.already_exists || err?.code === "ACCOUNT_ALREADY_EXISTS");
       const msg = err?.message || "Google authentication failed. Please try again.";
-      setSignInGeneralError(msg);
-      setRegGeneralError(msg);
+
+      if (targetMode === "signin") {
+        const notFoundMsg = isNotFound
+          ? "No account found for this Google account. Please create an account first."
+          : msg;
+        setSignInGeneralError(notFoundMsg);
+        showAlert("Account Not Found", notFoundMsg);
+      } else {
+        const existsMsg = isAlreadyExists
+          ? "This Google account is already registered. Please sign in."
+          : msg;
+        setRegGeneralError(existsMsg);
+        showAlert(isAlreadyExists ? "Account Already Registered" : "Registration Failed", existsMsg);
+      }
     } finally {
       setModalGoogleLoading(false);
     }
-  }, [authMode, onSuccessSignIn, goToCreateStep, switchAuthMode, showAlert]);
+  }, [modalGoogleTargetMode, authMode, onSuccessSignIn, goToCreateStep, showAlert, switchAuthMode]);
 
   useEffect(() => {
     if (modalGoogleResponse?.type === "success" && modalGoogleResponse.params?.id_token) {
-      onModalGoogleSuccess(modalGoogleResponse.params.id_token);
+      onModalGoogleSuccess(modalGoogleResponse.params.id_token, undefined, undefined, modalGoogleTargetMode);
     }
-  }, [modalGoogleResponse, onModalGoogleSuccess]);
+  }, [modalGoogleResponse, onModalGoogleSuccess, modalGoogleTargetMode]);
 
-  const handleModalGoogleSignIn = async () => {
+  const handleModalGoogleSignIn = async (targetMode: "signin" | "create_account" = authMode || "signin") => {
+    setModalGoogleTargetMode(targetMode);
     setSignInGeneralError("");
     setRegGeneralError("");
     if (Platform.OS === "web") {
       setModalGoogleLoading(true);
       try {
         const res = await signInWithGooglePopup();
-        await onModalGoogleSuccess(res.idToken, res.email, res.displayName);
+        await onModalGoogleSuccess(res.idToken, res.email, res.displayName, targetMode);
       } catch (err: any) {
         if (err?.code !== "auth/popup-closed-by-user" && err?.code !== "auth/cancelled-popup-request") {
           let msg = err?.message || "Google Sign-In failed. Please try again.";
           if (err?.code === "auth/unauthorized-domain") {
             msg = `Domain (${window?.location?.hostname}) is not authorized in Firebase. Please add it to Firebase Authorized Domains.`;
           }
-          setSignInGeneralError(msg);
-          setRegGeneralError(msg);
+          if (targetMode === "signin") {
+            setSignInGeneralError(msg);
+          } else {
+            setRegGeneralError(msg);
+          }
         }
       } finally {
         setModalGoogleLoading(false);
@@ -1723,6 +1794,12 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
+    if (isGoogleSignup && googleVerifiedEmail && trimmedEmail.toLowerCase() === googleVerifiedEmail.toLowerCase()) {
+      setCreateForm((f) => ({ ...f, email: trimmedEmail.toLowerCase(), category: detected || f.category }));
+      goToCreateStep(2, "next");
+      return;
+    }
+
     setRegErrors({});
     setEmailChecking(true);
 
@@ -1786,7 +1863,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setEmailChecking(false);
     }
-  }, [createForm.email, createDetectedPatient, goToCreateStep, triggerHaptic]);
+  }, [createForm.email, createDetectedPatient, goToCreateStep, triggerHaptic, isGoogleSignup, googleVerifiedEmail]);
 
   // Step 2 Validation & Next: Basic Information
   const handleStep2Next = useCallback(() => {
@@ -2377,13 +2454,33 @@ const AuthModal = memo(function AuthModal({
                           borderColor: "rgba(248, 113, 113, 0.5)",
                           borderRadius: 12,
                           paddingHorizontal: 12,
-                          paddingVertical: 8,
+                          paddingVertical: 10,
                           marginBottom: 14,
                         }}
                       >
-                        <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
+                        <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit", lineHeight: 18 }}>
                           {signInGeneralError}
                         </Text>
+                        {signInGeneralError.includes("No account found") && (
+                          <TouchableOpacity
+                            onPress={() => {
+                              switchAuthMode("create_account");
+                            }}
+                            activeOpacity={0.8}
+                            style={{
+                              marginTop: 8,
+                              paddingVertical: 7,
+                              paddingHorizontal: 12,
+                              backgroundColor: "#2563EB",
+                              borderRadius: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 13, fontFamily: "Outfit" }}>
+                              Create Account Now →
+                            </Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     ) : null}
 
@@ -2784,7 +2881,7 @@ const AuthModal = memo(function AuthModal({
 
                         {/* Google Sign In Button in AuthModal */}
                         <TouchableOpacity
-                          onPress={handleModalGoogleSignIn}
+                          onPress={() => handleModalGoogleSignIn("signin")}
                           disabled={modalGoogleLoading || signInLoading}
                           activeOpacity={0.85}
                           style={{
@@ -2894,13 +2991,34 @@ const AuthModal = memo(function AuthModal({
                           borderColor: "rgba(248, 113, 113, 0.5)",
                           borderRadius: 12,
                           paddingHorizontal: 12,
-                          paddingVertical: 8,
+                          paddingVertical: 10,
                           marginBottom: 12,
                         }}
                       >
-                        <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit" }}>
+                        <Text style={{ color: "#FEE2E2", fontSize: 13, fontFamily: "Outfit", lineHeight: 18 }}>
                           {regGeneralError}
                         </Text>
+                        {regGeneralError.includes("already registered") && (
+                          <TouchableOpacity
+                            onPress={() => {
+                              setSignInIdentifier(createForm.email.trim() || googleVerifiedEmail);
+                              switchAuthMode("signin");
+                            }}
+                            activeOpacity={0.8}
+                            style={{
+                              marginTop: 8,
+                              paddingVertical: 7,
+                              paddingHorizontal: 12,
+                              backgroundColor: "#2563EB",
+                              borderRadius: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 13, fontFamily: "Outfit" }}>
+                              Go to Sign In →
+                            </Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     ) : null}
 
@@ -3466,7 +3584,7 @@ const AuthModal = memo(function AuthModal({
 
                             {/* Google Sign In/Up Button in Step 1 */}
                             <TouchableOpacity
-                              onPress={handleModalGoogleSignIn}
+                              onPress={() => handleModalGoogleSignIn("create_account")}
                               disabled={modalGoogleLoading || emailChecking}
                               activeOpacity={0.85}
                               style={{
@@ -3561,6 +3679,28 @@ const AuthModal = memo(function AuthModal({
                           subtitle="Personal and emergency details"
                           onBack={() => goToCreateStep(1, "back")}
                         />
+
+                        {isGoogleSignup && (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              backgroundColor: "rgba(59, 130, 246, 0.2)",
+                              borderWidth: 1,
+                              borderColor: "rgba(147, 197, 253, 0.4)",
+                              borderRadius: 12,
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              marginBottom: 12,
+                              gap: 8,
+                            }}
+                          >
+                            <GoogleLogoIcon size={16} />
+                            <Text style={{ color: "#BFDBFE", fontSize: 12, fontFamily: "Outfit", fontWeight: "600", flex: 1 }}>
+                              Google Connected: {createForm.email} ({createForm.category})
+                            </Text>
+                          </View>
+                        )}
 
                         <GlassInput
                           ref={fullNameRef}
@@ -3689,6 +3829,28 @@ const AuthModal = memo(function AuthModal({
                           subtitle="Complete your specific requirements"
                           onBack={() => goToCreateStep(2, "back")}
                         />
+
+                        {isGoogleSignup && (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              backgroundColor: "rgba(59, 130, 246, 0.2)",
+                              borderWidth: 1,
+                              borderColor: "rgba(147, 197, 253, 0.4)",
+                              borderRadius: 12,
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              marginBottom: 12,
+                              gap: 8,
+                            }}
+                          >
+                            <GoogleLogoIcon size={16} />
+                            <Text style={{ color: "#BFDBFE", fontSize: 12, fontFamily: "Outfit", fontWeight: "600", flex: 1 }}>
+                              Google Connected: {createForm.email} ({createForm.category})
+                            </Text>
+                          </View>
+                        )}
 
                         {/* Student Fields */}
                         {createForm.category === "Student" && (
@@ -3894,6 +4056,28 @@ const AuthModal = memo(function AuthModal({
                           subtitle="Set a secure password for your account"
                           onBack={() => goToCreateStep(3, "back")}
                         />
+
+                        {isGoogleSignup && (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              backgroundColor: "rgba(59, 130, 246, 0.2)",
+                              borderWidth: 1,
+                              borderColor: "rgba(147, 197, 253, 0.4)",
+                              borderRadius: 12,
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              marginBottom: 12,
+                              gap: 8,
+                            }}
+                          >
+                            <GoogleLogoIcon size={16} />
+                            <Text style={{ color: "#BFDBFE", fontSize: 12, fontFamily: "Outfit", fontWeight: "600", flex: 1 }}>
+                              Google Connected: {createForm.email} ({createForm.category})
+                            </Text>
+                          </View>
+                        )}
 
                         <GlassInput
                           ref={regPasswordRef}
@@ -5029,7 +5213,35 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   const onGoogleSuccess = useCallback(async (idToken: string, fallbackEmail?: string, fallbackName?: string) => {
     try {
       setGoogleLoading(true);
-      const data = await authenticateWithCuraBackend(idToken, fallbackEmail, fallbackName);
+      setError("");
+
+      let cleanEmail = (fallbackEmail || "").trim().toLowerCase();
+      let cleanName = (fallbackName || "").trim();
+      if (!cleanEmail) {
+        const parsed = parseGoogleIdToken(idToken);
+        if (parsed?.email) cleanEmail = parsed.email.trim().toLowerCase();
+        if (parsed?.name && !cleanName) cleanName = parsed.name.trim();
+      }
+
+      // Check if user has an existing account
+      if (cleanEmail) {
+        try {
+          const checkRes = await fetchWithRetry(`https://cura-backend-dvj5.onrender.com/api/auth/check-email/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cleanEmail }),
+          });
+          const checkData = await checkRes.json().catch(() => ({}));
+          if (checkData && !checkData.claimed) {
+            const notFoundMsg = `No account found for this Google account (${cleanEmail}). Please create an account first.`;
+            setError(notFoundMsg);
+            setGoogleLoading(false);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      const data = await authenticateWithCuraBackend(idToken, cleanEmail, cleanName, undefined, "signin");
 
       if (data?.require_otp) {
         setGooglePendingToken(idToken);
@@ -5041,8 +5253,8 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         return;
       }
 
-      const userEmail = data.user?.email || fallbackEmail || "user@ua.edu.ph";
-      const userName = (data.user?.first_name || data.user?.name || fallbackName || userEmail.split("@")[0]).toUpperCase();
+      const userEmail = data.user?.email || cleanEmail || "user@ua.edu.ph";
+      const userName = (data.user?.first_name || data.user?.name || cleanName || userEmail.split("@")[0]).toUpperCase();
 
       if (data.access) {
         await AsyncStorage.setItem("@cura_access_token", data.access).catch(() => {});
@@ -5066,7 +5278,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       }
       navigate("home");
     } catch (err: any) {
-      if (err?.not_found) {
+      if (err?.not_found || err?.code === "ACCOUNT_NOT_FOUND" || err?.status === 404) {
         setError("No clinic account found for this Google email. Please create an account first.");
         return;
       }
@@ -5186,8 +5398,18 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       <View className="flex-1 bg-[#F8FAFC] rounded-t-[40px] overflow-hidden" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.05, shadowRadius: 24 }}>
         <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
         {error ? (
-          <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
-            <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>
+          <View className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 gap-2">
+            <View className="flex-row items-center gap-2">
+              <Text>⚠️</Text><Text className="text-sm text-rose-600 flex-1">{error}</Text>
+            </View>
+            {error.includes("No account found") && (
+              <Pressable
+                onPress={() => navigate("register")}
+                className="bg-cura-500 rounded-xl py-2 px-3 items-center mt-1 active:opacity-80"
+              >
+                <Text className="text-white text-xs font-bold">Create an Account Instead →</Text>
+              </Pressable>
+            )}
           </View>
         ) : null}
 
