@@ -1103,7 +1103,7 @@ const AuthModal = memo(function AuthModal({
 
   const [createForm, setCreateForm] = useState({
     // Step 1: Category Selection
-    category: "Student" as "Student" | "Employee" | "Outsider",
+    category: "" as "" | "Student" | "Employee" | "Outsider",
     // Step 2: Account
     email: "",
     password: "",
@@ -1820,9 +1820,7 @@ const AuthModal = memo(function AuthModal({
     }
 
     const detected = detectCategoryFromEmail(trimmedEmail);
-    const chosenCategory = isCategoryLocked
-      ? (detected || createForm.category || "Student")
-      : (createForm.category || detected || "Student");
+    const chosenCategory = detected || (createDetectedPatient?.category as any) || "Outsider";
 
     if (Object.keys(errs).length > 0) {
       setRegErrors(errs);
@@ -3391,7 +3389,7 @@ const AuthModal = memo(function AuthModal({
                                 setCreateForm((f) => ({
                                   ...f,
                                   email: t,
-                                  category: detected ? detected : (f.category || "Student"),
+                                  category: detected,
                                 }));
                                 if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
                                 if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
@@ -3403,95 +3401,85 @@ const AuthModal = memo(function AuthModal({
                               error={regErrors.email}
                             />
 
-                            {/* Account Classification (Student / Employee / Outsider) */}
-                            {!isCategoryLocked && !createDetectedPatient && (
-                              <View style={{ marginTop: 8, marginBottom: 10 }}>
-                                <Text
-                                  style={{
-                                    color: "rgba(255, 255, 255, 0.8)",
-                                    fontSize: 11.5,
-                                    fontWeight: "700",
-                                    textTransform: "uppercase",
-                                    letterSpacing: 0.6,
-                                    fontFamily: "Outfit",
-                                    marginBottom: 6,
-                                  }}
-                                >
-                                  Classification
-                                </Text>
-                                <View style={{ flexDirection: "row", gap: 6 }}>
-                                  {(["Student", "Employee", "Outsider"] as const).map((cat) => {
-                                    const isSelected = (createForm.category || "Student") === cat;
-                                    return (
-                                      <TouchableOpacity
-                                        key={cat}
-                                        onPress={() => {
-                                          setCreateForm((f) => ({ ...f, category: cat }));
-                                          if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
-                                        }}
-                                        activeOpacity={0.8}
-                                        style={{
-                                          flex: 1,
-                                          height: 40,
-                                          borderRadius: 12,
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.14)",
-                                          borderWidth: 1.5,
-                                          borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
-                                        }}
-                                      >
-                                        <Text
-                                          style={{
-                                            color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
-                                            fontSize: 12.5,
-                                            fontWeight: isSelected ? "700" : "500",
-                                            fontFamily: "Outfit",
-                                          }}
-                                        >
-                                          {cat === "Student" ? "🎓 Student" : cat === "Employee" ? "💼 Employee" : "🌐 Outsider"}
-                                        </Text>
-                                      </TouchableOpacity>
-                                    );
-                                  })}
-                                </View>
-                              </View>
-                            )}
-
-                            {/* Requirements Guide for selected category */}
+                            {/* Automatically Detected Classification & Requirements Guide */}
                             {!createDetectedPatient && (
-                              <View
-                                style={{
-                                  backgroundColor: "rgba(30, 79, 216, 0.22)",
-                                  borderWidth: 1,
-                                  borderColor: "rgba(96, 165, 250, 0.45)",
-                                  borderRadius: 12,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 10,
-                                  marginBottom: 10,
-                                }}
-                              >
-                                <Text
+                              createForm.category ? (
+                                <View
                                   style={{
-                                    color: "#93C5FD",
-                                    fontSize: 11,
-                                    fontWeight: "700",
-                                    fontFamily: "Outfit",
-                                    textTransform: "uppercase",
-                                    letterSpacing: 0.5,
-                                    marginBottom: 3,
+                                    backgroundColor: "rgba(30, 79, 216, 0.22)",
+                                    borderWidth: 1.5,
+                                    borderColor: "rgba(96, 165, 250, 0.45)",
+                                    borderRadius: 14,
+                                    padding: 12,
+                                    marginTop: 8,
+                                    marginBottom: 10,
                                   }}
                                 >
-                                  📋 Requirements to fill up for {(createForm.category || "Student")}:
-                                </Text>
-                                <Text style={{ color: "#E0F2FE", fontSize: 11.5, fontFamily: "Outfit", lineHeight: 16 }}>
-                                  {(createForm.category || "Student") === "Student"
-                                    ? "• Student ID\n• Level (College, SHS, JHS, Elementary)\n• Course & Year (or Grade & Guardian)"
-                                    : (createForm.category || "Student") === "Employee"
-                                    ? "• Employee ID\n• Position / Designation\n• Department / Unit"
-                                    : "• Complete Home Address\n• Mobile number & Emergency contact"}
-                                </Text>
-                              </View>
+                                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                                    <Text
+                                      style={{
+                                        color: "#93C5FD",
+                                        fontSize: 11,
+                                        fontWeight: "700",
+                                        fontFamily: "Outfit",
+                                        textTransform: "uppercase",
+                                        letterSpacing: 0.5,
+                                      }}
+                                    >
+                                      Detected Classification
+                                    </Text>
+                                    <View
+                                      style={{
+                                        backgroundColor: "#1E4FD8",
+                                        paddingHorizontal: 10,
+                                        paddingVertical: 3,
+                                        borderRadius: 8,
+                                      }}
+                                    >
+                                      <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700", fontFamily: "Outfit" }}>
+                                        {createForm.category === "Student" ? "🎓 Student" : createForm.category === "Employee" ? "💼 Employee" : "🌐 Outsider"}
+                                      </Text>
+                                    </View>
+                                  </View>
+
+                                  <Text
+                                    style={{
+                                      color: "#93C5FD",
+                                      fontSize: 10.5,
+                                      fontWeight: "700",
+                                      fontFamily: "Outfit",
+                                      textTransform: "uppercase",
+                                      letterSpacing: 0.4,
+                                      marginBottom: 3,
+                                    }}
+                                  >
+                                    Requirements to fill up:
+                                  </Text>
+                                  <Text style={{ color: "#E0F2FE", fontSize: 11.5, fontFamily: "Outfit", lineHeight: 16 }}>
+                                    {createForm.category === "Student"
+                                      ? "• Student ID\n• Level (College, SHS, JHS, Elementary)\n• Course & Year Level (or Grade & Guardian)"
+                                      : createForm.category === "Employee"
+                                      ? "• Employee ID\n• Position / Designation\n• Department / Unit"
+                                      : "• Complete Home Address\n• Mobile number & Emergency contact"}
+                                  </Text>
+                                </View>
+                              ) : (
+                                <View
+                                  style={{
+                                    marginTop: 8,
+                                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                                    borderWidth: 1,
+                                    borderColor: "rgba(255, 255, 255, 0.15)",
+                                    borderRadius: 12,
+                                    padding: 10,
+                                    marginBottom: 10,
+                                  }}
+                                >
+                                  <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 11.5, fontFamily: "Outfit" }}>
+                                    💡 System auto-detects Student, Employee, or Outsider based on your email domain.
+                                  </Text>
+                                </View>
+                              )
                             )}
 
                             {/* Real-time Email Check Status */}
