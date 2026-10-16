@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -6,10 +6,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
-import { LiquidGlassTimePicker } from "../components/LiquidGlassTimePicker";
+import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
 import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
 import type { Screen, AppUser } from "../types";
-import { formatTime12 } from "../utils/philippineTime";
+import { getManilaDate, normalizeDate, formatTime12 } from "../utils/philippineTime";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 
@@ -158,12 +158,14 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedDetails, setConfirmedDetails] = useState<{ date: string; time: string }>({ date: "", time: "" });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
+  const [allAppointmentRequests, setAllAppointmentRequests] = useState<any[]>([]);
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/availability/`);
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/availability/?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.unavailable_dates)) {
@@ -211,6 +213,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
+          setAllAppointmentRequests(data);
           const uIds = [
             String(user?.id || ""),
             String((user as any)?.id_number || ""),
@@ -233,12 +236,71 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   }, [user]);
 
   useEffect(() => {
+    fetchAvailability();
+    fetchRequests(true);
+  }, [fetchRequests]);
+
+  useEffect(() => {
     if (activeTab === "history") {
       fetchRequests(false);
       const interval = setInterval(() => fetchRequests(true), 6000);
       return () => clearInterval(interval);
     }
   }, [activeTab, fetchRequests]);
+
+  // Dynamically compute booked/locked times for the selected date
+  const bookedTimesForSelectedDate = useMemo(() => {
+    const targetDate = normalizeDate(date || getManilaDate());
+    if (!targetDate) return [];
+    const booked = new Set<string>();
+
+    allAppointmentRequests.forEach((req: any) => {
+      const st = String(req.status || "").toLowerCase();
+      // Only Pending and Approved requests lock the slot
+      if (st === "rejected" || st === "completed" || st === "cancelled") {
+        return;
+      }
+
+      const rawReqDate = req.scheduled_date || req.preferred_date || "";
+      const reqDate = normalizeDate(rawReqDate);
+      if (reqDate && reqDate === targetDate) {
+        const reqTime = String(req.scheduled_time || req.preferred_time || "").trim();
+        if (reqTime) {
+          booked.add(reqTime);
+        }
+      }
+    });
+
+    return Array.from(booked);
+  }, [date, allAppointmentRequests]);
+
+  // Combined unavailable times for the time picker (Manual clinic overrides + Auto-booked slots)
+  const activeUnavailableTimes = useMemo(() => {
+    return Array.from(new Set([...unavailableTimes, ...bookedTimesForSelectedDate]));
+  }, [unavailableTimes, bookedTimesForSelectedDate]);
+
+  // Auto-reset time if patient changes date to a date where the selected time is already booked or closed
+  useEffect(() => {
+    if (time && date && activeUnavailableTimes.length > 0) {
+      const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
+      const isUnavailable = activeUnavailableTimes.some((b) => {
+        const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
+        return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
+      });
+      if (isUnavailable) {
+        setTime("");
+      }
+    }
+  }, [date, activeUnavailableTimes]);
+
+  const handleOpenTimePicker = () => {
+    if (!date) {
+      Alert.alert("Select Date First", "Please pick an appointment date before choosing a time window.");
+      return;
+    }
+    fetchAvailability();
+    setShowTimePicker(true);
+  };
 
   const handleOpenDatePicker = () => {
     fetchAvailability();
@@ -265,6 +327,14 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     }
     if (!time.trim()) {
       Alert.alert("Time Required", "Please select your preferred appointment time window.");
+      return;
+    }
+    const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
+    if (activeUnavailableTimes.some(b => {
+      const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
+      return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
+    })) {
+      Alert.alert("Time Unavailable", "The selected time window is no longer available. Please choose another time.");
       return;
     }
     setIsSubmitting(true);
@@ -481,11 +551,62 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
             </View>
 
             {/* Preferred Time Window */}
-            <LiquidGlassTimePicker
-              value={time}
-              onChange={setTime}
-              label="Preferred Appointment Time"
-            />
+            <View className="flex-col gap-1.5">
+              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
+                Preferred Appointment Time
+              </Text>
+              <TouchableOpacity
+                onPress={handleOpenTimePicker}
+                activeOpacity={0.8}
+                className="w-full bg-white rounded-[24px] px-4 py-3.5 flex-row items-center justify-between"
+                style={{
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                }}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
+                    <Svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+                      <Defs>
+                        <SvgLinearGradient id="gTimeAppt" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <Stop offset="0%" stopColor="#00A3FF" />
+                          <Stop offset="100%" stopColor="#0056B3" />
+                        </SvgLinearGradient>
+                      </Defs>
+                      <Circle cx="20" cy="20" r="14" fill="url(#gTimeAppt)" />
+                      <Circle cx="20" cy="20" r="14" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.3" />
+                      <Polyline points="20 12 20 20 25 23" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </Svg>
+                  </View>
+                  <Text
+                    className="text-sm font-bold"
+                    style={{
+                      color: "#002D72",
+                      fontFamily: "Outfit",
+                    }}
+                  >
+                    {time ? time : "Select appointment time..."}
+                  </Text>
+                </View>
+                <View className="px-3 py-1 rounded-full bg-slate-100">
+                  <Text className="text-[11px] font-bold text-slate-600">Choose</Text>
+                </View>
+              </TouchableOpacity>
+              <LiquidGlassTimePickerModal
+                visible={showTimePicker}
+                onClose={() => setShowTimePicker(false)}
+                selectedTime={time}
+                onSelectTime={(newTime) => {
+                  setTime(newTime);
+                }}
+                title="Select Appointment Time"
+                unavailableTimes={activeUnavailableTimes}
+                selectedDate={formatDisplayDate(date || getManilaDate())}
+              />
+            </View>
 
 
             {/* Reason for Visit */}
