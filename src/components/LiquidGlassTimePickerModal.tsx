@@ -40,38 +40,36 @@ export const TELEMEDICINE_TIME_SLOTS = [
   "9:00 PM - 10:00 PM",
 ];
 
+function cleanToken(s: string): string {
+  return (s || "").toLowerCase().replace(/[\s:-]/g, "");
+}
+
 function isSlotUnavailable(slot: string, unavailableList: string[] = []): boolean {
   if (!unavailableList || unavailableList.length === 0) return false;
-  const clean = (s: string) => s.toLowerCase().replace(/[\s:-]/g, "");
-  const target = clean(slot);
-  const targetStart = clean(slot.split("-")[0] || "");
+  const slotClean = cleanToken(slot);
+  const slotStartClean = cleanToken((slot.split("-")[0] || "").trim());
 
   return unavailableList.some((item) => {
     if (!item) return false;
-    const norm = clean(item);
-    if (!norm) return false;
+    const itemClean = cleanToken(item);
+    if (!itemClean) return false;
 
-    // 1. Direct match or substring match
-    if (norm === target || target.includes(norm) || norm.includes(target)) return true;
+    // 1. Exact slot match (e.g. '1:00 PM - 2:00 PM' === '1:00 PM - 2:00 PM')
+    if (itemClean === slotClean) return true;
 
-    // 2. Start time matches start time (e.g. "7:00 PM" matches "7:00 PM - 8:00 PM")
-    const itemStart = clean(item.split("-")[0] || "");
-    if (itemStart && (itemStart === targetStart || targetStart.includes(itemStart) || itemStart.includes(targetStart))) return true;
-
-    // 3. Legacy macro block handling (e.g., "Morning (8AM - 12PM)")
-    const itemLower = item.toLowerCase();
-    const slotLower = slot.toLowerCase();
-    if (
-      itemLower.includes("morning") &&
-      (slotLower.includes("8:00 am") || slotLower.includes("9:00 am") || slotLower.includes("10:00 am") || slotLower.includes("11:00 am"))
-    ) {
+    // 2. Single time match with slot start (e.g. '1:00 PM' matches slot starting at '1:00 PM')
+    const itemParts = item.split("-").map((p) => p.trim());
+    if (itemParts.length === 1 && itemClean === slotStartClean) {
       return true;
     }
-    if (
-      itemLower.includes("afternoon") &&
-      (slotLower.includes("1:00 pm") || slotLower.includes("2:00 pm") || slotLower.includes("3:00 pm") || slotLower.includes("4:00 pm"))
-    ) {
-      return true;
+
+    // 3. Both are ranges: match if start time tokens match exactly
+    if (itemParts.length === 2) {
+      const itemStartClean = cleanToken(itemParts[0]);
+      const itemEndClean = cleanToken(itemParts[1]);
+      if (itemStartClean === slotStartClean && itemEndClean === cleanToken(slot.split("-")[1])) {
+        return true;
+      }
     }
 
     return false;

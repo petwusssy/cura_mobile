@@ -250,7 +250,8 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   // Dynamically compute booked/locked times for the selected date
   const bookedTimesForSelectedDate = useMemo(() => {
-    const targetDate = normalizeDate(date || getManilaDate());
+    if (!date) return [];
+    const targetDate = normalizeDate(date);
     if (!targetDate) return [];
     const booked = new Set<string>();
 
@@ -575,7 +576,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 }}
                 title="Select Appointment Time"
                 unavailableTimes={activeUnavailableTimes}
-                selectedDate={formatDisplayDate(date || getManilaDate())}
+                selectedDate={date ? formatDisplayDate(date) : undefined}
               />
             </View>
 
