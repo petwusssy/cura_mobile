@@ -1103,7 +1103,7 @@ const AuthModal = memo(function AuthModal({
 
   const [createForm, setCreateForm] = useState({
     // Step 1: Category Selection
-    category: "" as "" | "Student" | "Employee" | "Outsider",
+    category: "Student" as "Student" | "Employee" | "Outsider",
     // Step 2: Account
     email: "",
     password: "",
@@ -1406,49 +1406,57 @@ const AuthModal = memo(function AuthModal({
 
   const switchAuthMode = useCallback((newMode: "signin" | "create_account") => {
     triggerHaptic();
-    Animated.sequence([
-      Animated.timing(contentFadeAnim, { toValue: 0, duration: 110, useNativeDriver: true }),
-      Animated.timing(contentFadeAnim, { toValue: 1, duration: 170, useNativeDriver: true }),
-    ]).start();
-    setTimeout(() => {
-      setAuthMode(newMode);
-      setSignInErrors({});
-      setSignInGeneralError("");
-      setRegErrors({});
-      setRegGeneralError("");
-      setCreateStep(1);
-      setIsClaimingWebAccount(false);
-      setClaimStep(1);
-      setClaimOtp("");
-      setClaimErrors({});
-      setSignInOtpMode(false);
-      setSignInOtpSent(false);
-      setSignInOtp("");
-      setIsCategoryLocked(false);
-      setIsGooglePrefilled(false);
-      setIsGoogleSignup(false);
-      setGoogleVerifiedEmail("");
-      setModalGooglePendingToken("");
-    }, 110);
-  }, [triggerHaptic, contentFadeAnim]);
+    setAuthMode(newMode);
+    setSignInErrors({});
+    setSignInGeneralError("");
+    setRegErrors({});
+    setRegGeneralError("");
+    setCreateStep(1);
+    setIsClaimingWebAccount(false);
+    setClaimStep(1);
+    setClaimOtp("");
+    setClaimErrors({});
+    setSignInOtpMode(false);
+    setSignInOtpSent(false);
+    setSignInOtp("");
+    setIsCategoryLocked(false);
+    setIsGooglePrefilled(false);
+    setIsGoogleSignup(false);
+    setGoogleVerifiedEmail("");
+    setModalGooglePendingToken("");
 
-  // Step Transition Animator
+    if (Platform.OS === "web") {
+      contentFadeAnim.setValue(1);
+      stepFadeAnim.setValue(1);
+      stepSlideAnim.setValue(0);
+    } else {
+      contentFadeAnim.setValue(0);
+      stepFadeAnim.setValue(1);
+      stepSlideAnim.setValue(0);
+      Animated.timing(contentFadeAnim, { toValue: 1, duration: 170, useNativeDriver: true }).start();
+    }
+  }, [triggerHaptic, contentFadeAnim, stepFadeAnim, stepSlideAnim]);
+
+  // Step Transition Animator: Immediately switches step and guarantees visibility
   const goToCreateStep = useCallback((targetStep: 1 | 2 | 3 | 4, direction: "next" | "back") => {
     triggerHaptic();
     Keyboard.dismiss();
+    setCreateStep(targetStep);
+    setRegErrors({});
+    setRegGeneralError("");
+
+    if (Platform.OS === "web") {
+      stepFadeAnim.setValue(1);
+      stepSlideAnim.setValue(0);
+      return;
+    }
+
+    stepSlideAnim.setValue(direction === "next" ? 20 : -20);
+    stepFadeAnim.setValue(0);
     Animated.parallel([
-      Animated.timing(stepFadeAnim, { toValue: 0, duration: 110, useNativeDriver: true }),
-      Animated.timing(stepSlideAnim, { toValue: direction === "next" ? -25 : 25, duration: 110, useNativeDriver: true }),
-    ]).start(() => {
-      setCreateStep(targetStep);
-      setRegErrors({});
-      setRegGeneralError("");
-      stepSlideAnim.setValue(direction === "next" ? 25 : -25);
-      Animated.parallel([
-        Animated.timing(stepFadeAnim, { toValue: 1, duration: 160, useNativeDriver: true }),
-        Animated.timing(stepSlideAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
-      ]).start();
-    });
+      Animated.timing(stepFadeAnim, { toValue: 1, duration: 170, useNativeDriver: true }),
+      Animated.timing(stepSlideAnim, { toValue: 0, duration: 170, useNativeDriver: true }),
+    ]).start();
   }, [triggerHaptic, stepFadeAnim, stepSlideAnim]);
 
   // Sign In Handlers
@@ -1812,9 +1820,9 @@ const AuthModal = memo(function AuthModal({
     }
 
     const detected = detectCategoryFromEmail(trimmedEmail);
-    if (!detected && !createDetectedPatient) {
-      errs.email = "Please enter a valid student, employee, or outsider email";
-    }
+    const chosenCategory = isCategoryLocked
+      ? (detected || createForm.category || "Student")
+      : (createForm.category || detected || "Student");
 
     if (Object.keys(errs).length > 0) {
       setRegErrors(errs);
@@ -1822,7 +1830,7 @@ const AuthModal = memo(function AuthModal({
     }
 
     if (isGoogleSignup && googleVerifiedEmail && trimmedEmail.toLowerCase() === googleVerifiedEmail.toLowerCase()) {
-      setCreateForm((f) => ({ ...f, email: trimmedEmail.toLowerCase(), category: detected || f.category }));
+      setCreateForm((f) => ({ ...f, email: trimmedEmail.toLowerCase(), category: chosenCategory }));
       goToCreateStep(2, "next");
       return;
     }
@@ -1868,7 +1876,7 @@ const AuthModal = memo(function AuthModal({
         }
 
         triggerHaptic();
-        setCreateForm((f) => ({ ...f, email: cleanEmail, category: detected || (createDetectedPatient?.category as any) || "Student" }));
+        setCreateForm((f) => ({ ...f, email: cleanEmail, category: chosenCategory }));
         setIsClaimingWebAccount(true);
         setClaimStep(1);
         setClaimOtp("");
@@ -1881,7 +1889,7 @@ const AuthModal = memo(function AuthModal({
       }
 
       // Not yet added in Web CURA: proceed with normal multi-step registration
-      setCreateForm((f) => ({ ...f, email: cleanEmail, category: detected }));
+      setCreateForm((f) => ({ ...f, email: cleanEmail, category: chosenCategory }));
       goToCreateStep(2, "next");
     } catch (err) {
       setRegErrors({
@@ -1890,7 +1898,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setEmailChecking(false);
     }
-  }, [createForm.email, createDetectedPatient, goToCreateStep, triggerHaptic, isGoogleSignup, googleVerifiedEmail]);
+  }, [createForm.email, createForm.category, isCategoryLocked, createDetectedPatient, goToCreateStep, triggerHaptic, isGoogleSignup, googleVerifiedEmail]);
 
   // Step 2 Validation & Next: Basic Information
   const handleStep2Next = useCallback(() => {
@@ -3380,7 +3388,11 @@ const AuthModal = memo(function AuthModal({
                               onChangeText={(t) => {
                                 if (isCategoryLocked) return;
                                 const detected = detectCategoryFromEmail(t);
-                                setCreateForm((f) => ({ ...f, email: t, category: detected }));
+                                setCreateForm((f) => ({
+                                  ...f,
+                                  email: t,
+                                  category: detected ? detected : (f.category || "Student"),
+                                }));
                                 if (regErrors.email) setRegErrors((e) => ({ ...e, email: "" }));
                                 if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
                               }}
@@ -3390,6 +3402,97 @@ const AuthModal = memo(function AuthModal({
                               onSubmitEditing={handleStep1Next}
                               error={regErrors.email}
                             />
+
+                            {/* Account Classification (Student / Employee / Outsider) */}
+                            {!isCategoryLocked && !createDetectedPatient && (
+                              <View style={{ marginTop: 8, marginBottom: 10 }}>
+                                <Text
+                                  style={{
+                                    color: "rgba(255, 255, 255, 0.8)",
+                                    fontSize: 11.5,
+                                    fontWeight: "700",
+                                    textTransform: "uppercase",
+                                    letterSpacing: 0.6,
+                                    fontFamily: "Outfit",
+                                    marginBottom: 6,
+                                  }}
+                                >
+                                  Classification
+                                </Text>
+                                <View style={{ flexDirection: "row", gap: 6 }}>
+                                  {(["Student", "Employee", "Outsider"] as const).map((cat) => {
+                                    const isSelected = (createForm.category || "Student") === cat;
+                                    return (
+                                      <TouchableOpacity
+                                        key={cat}
+                                        onPress={() => {
+                                          setCreateForm((f) => ({ ...f, category: cat }));
+                                          if (regErrors.category) setRegErrors((e) => ({ ...e, category: "" }));
+                                        }}
+                                        activeOpacity={0.8}
+                                        style={{
+                                          flex: 1,
+                                          height: 40,
+                                          borderRadius: 12,
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.14)",
+                                          borderWidth: 1.5,
+                                          borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
+                                        }}
+                                      >
+                                        <Text
+                                          style={{
+                                            color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
+                                            fontSize: 12.5,
+                                            fontWeight: isSelected ? "700" : "500",
+                                            fontFamily: "Outfit",
+                                          }}
+                                        >
+                                          {cat === "Student" ? "🎓 Student" : cat === "Employee" ? "💼 Employee" : "🌐 Outsider"}
+                                        </Text>
+                                      </TouchableOpacity>
+                                    );
+                                  })}
+                                </View>
+                              </View>
+                            )}
+
+                            {/* Requirements Guide for selected category */}
+                            {!createDetectedPatient && (
+                              <View
+                                style={{
+                                  backgroundColor: "rgba(30, 79, 216, 0.22)",
+                                  borderWidth: 1,
+                                  borderColor: "rgba(96, 165, 250, 0.45)",
+                                  borderRadius: 12,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 10,
+                                  marginBottom: 10,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: "#93C5FD",
+                                    fontSize: 11,
+                                    fontWeight: "700",
+                                    fontFamily: "Outfit",
+                                    textTransform: "uppercase",
+                                    letterSpacing: 0.5,
+                                    marginBottom: 3,
+                                  }}
+                                >
+                                  📋 Requirements to fill up for {(createForm.category || "Student")}:
+                                </Text>
+                                <Text style={{ color: "#E0F2FE", fontSize: 11.5, fontFamily: "Outfit", lineHeight: 16 }}>
+                                  {(createForm.category || "Student") === "Student"
+                                    ? "• Student ID\n• Level (College, SHS, JHS, Elementary)\n• Course & Year (or Grade & Guardian)"
+                                    : (createForm.category || "Student") === "Employee"
+                                    ? "• Employee ID\n• Position / Designation\n• Department / Unit"
+                                    : "• Complete Home Address\n• Mobile number & Emergency contact"}
+                                </Text>
+                              </View>
+                            )}
 
                             {/* Real-time Email Check Status */}
                             {emailChecking ? (
