@@ -358,7 +358,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           signal: controller.signal,
           headers: {
             "Accept": "application/json",
-            "Cache-Control": "no-cache",
           },
         });
         clearTimeout(timeoutId);
