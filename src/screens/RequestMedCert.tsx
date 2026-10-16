@@ -43,7 +43,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
     if (!user?.id) return;
     if (!background) setIsLoadingHistory(true);
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/medcert-requests/`);
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/medcert-requests/`);
       if (res.ok) {
         const data = await res.json();
         const myRequests = data.filter((r: any) => r.patient === user.id);
@@ -97,7 +97,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/medcert-requests/`, {
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/medcert-requests/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -144,7 +144,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
       const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
 
-      fetch(`https://cura-backend-dvj5.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
+      fetch(`https://cura-backend-dtfj.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remarks: updatedRemarks }),

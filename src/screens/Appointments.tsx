@@ -163,7 +163,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/appointments/availability/`);
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/availability/`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.unavailable_dates)) {
@@ -207,7 +207,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     if (!user?.id) return;
     if (!background) setIsLoading(true);
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/appointments/`);
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/`);
       if (res.ok) {
         const data = await res.json();
         const myRequests = data.filter((r: any) => r.patient === user.id);
@@ -259,7 +259,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/appointments/`, {
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

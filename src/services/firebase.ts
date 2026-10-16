@@ -129,7 +129,7 @@ export async function authenticateWithCuraBackend(
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const response = await fetch("https://cura-backend-dvj5.onrender.com/api/auth/google/", {
+      const response = await fetch("https://cura-backend-dtfj.onrender.com/api/auth/google/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

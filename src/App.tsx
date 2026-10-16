@@ -51,7 +51,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
 
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/notifications/`);
+        const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/notifications/`);
         if (res.ok) {
           const data = await res.json();
           const myNotifs = Array.isArray(data) ? data.filter((n: any) => {
@@ -138,7 +138,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const loadUserData = useCallback(async (email: string) => {
     try {
-      const patients = (await safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/patients/`)) || [];
+      const patients = (await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/patients/`)) || [];
       if (!Array.isArray(patients)) return;
       const patient = patients.find((p: any) => p.email?.toLowerCase().trim() === email.toLowerCase().trim());
       
@@ -171,8 +171,8 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         
         // Fetch consultations and certificates concurrently
         const [allConsultations, allCertificates] = await Promise.all([
-          safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/consultations/`).then(d => Array.isArray(d) ? d : []),
-          safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/certificates/`).then(d => Array.isArray(d) ? d : []),
+          safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/`).then(d => Array.isArray(d) ? d : []),
+          safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/`).then(d => Array.isArray(d) ? d : []),
         ]);
         
         const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === patient.id);
@@ -252,7 +252,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     const uName = ((user as any)?.name || '').trim().toUpperCase();
     if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents' || current?.screen === 'medications' || current?.screen === 'notifications')) {
       if (current?.screen === 'medications' || current?.screen === 'profile' || current?.screen === 'notifications') {
-        safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/consultations/`)
+        safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/`)
           .then(async (allConsultations) => {
             if (Array.isArray(allConsultations)) {
               const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === pId);
@@ -303,7 +303,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
           .catch(() => {});
       }
 
-      safeFetchJson(`https://cura-backend-dvj5.onrender.com/api/certificates/`)
+      safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/`)
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {
             const userCerts = allCertificates.filter((c: any) =>
@@ -512,7 +512,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
         const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
 
-        fetch(`https://cura-backend-dvj5.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
+        fetch(`https://cura-backend-dtfj.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remarks: updatedRemarks }),

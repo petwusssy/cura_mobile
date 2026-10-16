@@ -235,7 +235,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/availability/`);
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/availability/`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.unavailable_dates)) {
@@ -354,7 +354,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/`, {
+        const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/`, {
           signal: controller.signal,
           headers: {
             "Accept": "application/json",
@@ -449,7 +449,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/`, {
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
