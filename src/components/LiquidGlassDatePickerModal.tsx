@@ -19,6 +19,7 @@ interface Props {
   selectedDate: string; // YYYY-MM-DD
   onSelectDate: (dateStr: string) => void;
   title?: string;
+  unavailableDates?: string[];
 }
 
 const DAYS_OF_WEEK = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -43,7 +44,9 @@ export function LiquidGlassDatePickerModal({
   selectedDate,
   onSelectDate,
   title = "Select Preferred Date",
+  unavailableDates = [],
 }: Props) {
+
   const getTodayStart = () => {
     const t = new Date();
     t.setHours(0, 0, 0, 0);
@@ -127,16 +130,20 @@ export function LiquidGlassDatePickerModal({
     const mStr = String(viewMonth + 1).padStart(2, "0");
     const dStr = String(day).padStart(2, "0");
     const dateFormatted = `${yStr}-${mStr}-${dStr}`;
+    if (unavailableDates?.includes(dateFormatted)) {
+      return;
+    }
     setTempSelected(dateFormatted);
   };
 
   const handleConfirm = () => {
     const finalDate = tempSelected || selectedDate || getTodayFormatted();
-    if (finalDate) {
+    if (finalDate && !unavailableDates?.includes(finalDate)) {
       onSelectDate(finalDate);
+      onClose();
     }
-    onClose();
   };
+
 
   return (
     <Modal
@@ -257,8 +264,9 @@ export function LiquidGlassDatePickerModal({
                 const dStr = String(day).padStart(2, "0");
                 const thisDateStr = `${yStr}-${mStr}-${dStr}`;
 
+                const isUnavailable = !isPast && Boolean(unavailableDates?.includes(thisDateStr));
                 const activeSelected = tempSelected || selectedDate || getTodayFormatted();
-                const isSelected = activeSelected === thisDateStr;
+                const isSelected = !isUnavailable && activeSelected === thisDateStr;
 
                 return (
                   <View
@@ -266,7 +274,7 @@ export function LiquidGlassDatePickerModal({
                     style={styles.dayCell}
                   >
                     <TouchableOpacity
-                      disabled={isPast}
+                      disabled={isPast || isUnavailable}
                       onPress={() => handleDayPress(day)}
                       activeOpacity={0.7}
                       style={[
@@ -275,6 +283,8 @@ export function LiquidGlassDatePickerModal({
                           ? styles.dayBtnSelected
                           : isPast
                           ? styles.dayBtnPast
+                          : isUnavailable
+                          ? styles.dayBtnUnavailable
                           : styles.dayBtnDefault,
                       ]}
                     >
@@ -285,6 +295,8 @@ export function LiquidGlassDatePickerModal({
                             ? styles.dayTextSelected
                             : isPast
                             ? styles.dayTextPast
+                            : isUnavailable
+                            ? styles.dayTextUnavailable
                             : styles.dayTextDefault,
                         ]}
                       >
@@ -295,6 +307,21 @@ export function LiquidGlassDatePickerModal({
                 );
               })}
             </View>
+
+            {/* Legend */}
+            {unavailableDates && unavailableDates.length > 0 && (
+              <View style={styles.legendContainer}>
+                <View style={styles.legendItem}>
+                  <View style={styles.legendDotAvailable} />
+                  <Text style={styles.legendText}>Available</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={styles.legendDotUnavailable} />
+                  <Text style={[styles.legendText, { color: "#EF4444" }]}>Unavailable (Red)</Text>
+                </View>
+              </View>
+            )}
+
 
             {/* Confirm Date Action Button */}
             <TouchableOpacity
@@ -461,6 +488,11 @@ const styles = StyleSheet.create({
   dayBtnDefault: {
     backgroundColor: "transparent",
   },
+  dayBtnUnavailable: {
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderWidth: 1.5,
+    borderColor: "#EF4444",
+  },
   dayText: {
     fontSize: 14,
     fontFamily: "Outfit",
@@ -473,10 +505,48 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontWeight: "500",
   },
+  dayTextUnavailable: {
+    color: "#EF4444",
+    fontWeight: "800",
+  },
   dayTextDefault: {
     color: "#1E293B",
     fontWeight: "700",
   },
+  legendContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+    marginTop: 10,
+    marginBottom: 2,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendDotAvailable: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: "#94A3B8",
+    backgroundColor: "transparent",
+  },
+  legendDotUnavailable: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#EF4444",
+  },
+  legendText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#64748B",
+    fontFamily: "Outfit",
+  },
+
   confirmBtn: {
     marginTop: 16,
     overflow: "hidden",

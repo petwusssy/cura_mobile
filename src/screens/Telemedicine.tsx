@@ -268,10 +268,31 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+
+  const fetchAvailability = async () => {
+    try {
+      const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/availability/`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.unavailable_dates)) {
+          setUnavailableDates(data.unavailable_dates);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch telemedicine availability:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailability();
+  }, []);
 
   const handleOpenDatePicker = () => {
+    fetchAvailability();
     setShowDatePicker(true);
   };
+
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     if (event?.type === 'dismissed') return;
@@ -414,7 +435,12 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   const handleSubmit = async () => {
     if (!user?.id) return;
+    if (date && unavailableDates.includes(date)) {
+      Alert.alert("Date Unavailable", "The selected date is currently unavailable for telemedicine consultations. Please select an available date.");
+      return;
+    }
     setIsSubmitting(true);
+
 
     try {
       const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/telemedicine/`, {
@@ -606,7 +632,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 selectedDate={date}
                 onSelectDate={(newDate) => setDate(newDate)}
                 title="Select Consultation Date"
+                unavailableDates={unavailableDates}
               />
+
             </View>
 
             {/* Preferred Time */}
