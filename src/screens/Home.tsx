@@ -17,6 +17,8 @@ interface Props {
   medications?: any[];
 }
 
+import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
+
 function getGreeting() {
   const h = getManilaHour();
   if (h < 12) return "Good Morning";
@@ -24,9 +26,21 @@ function getGreeting() {
   return "Good Evening";
 }
 
-import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
+// Persist clinic advisory in memory across screen unmounts/tab switching to eliminate pop-in flash
+let memoryCachedAdvisory: { status: string; message: string } | null = null;
+try {
+  AsyncStorage.getItem('@cura_cached_advisory').then((val) => {
+    if (val && !memoryCachedAdvisory) {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed?.status) memoryCachedAdvisory = parsed;
+      } catch {}
+    }
+  }).catch(() => {});
+} catch {}
 
 export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
+
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const latestConsult = consultations.length > 0 ? consultations[0] : null;
@@ -164,24 +178,45 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     return () => clearInterval(t);
   }, [(user as any)?.id, (user as any)?.id_number, user?.email]);
 
-  const [advisory, setAdvisory] = useState<{ status: string; message: string } | null>(null);
+  const [advisory, setAdvisory] = useState<{ status: string; message: string } | null>(memoryCachedAdvisory);
 
   useEffect(() => {
+    // If not yet available in memory on initial app start, hydrate from AsyncStorage immediately
+    if (!advisory) {
+      AsyncStorage.getItem('@cura_cached_advisory').then((val) => {
+        if (val) {
+          try {
+            const parsed = JSON.parse(val);
+            if (parsed?.status) {
+              memoryCachedAdvisory = parsed;
+              setAdvisory((prev) => prev || parsed);
+            }
+          } catch {}
+        }
+      }).catch(() => {});
+    }
+
     const fetchAdvisory = async () => {
       try {
         const res = await fetch('https://cura-backend-dvj5.onrender.com/api/advisory/');
         if (res.ok) {
           const data = await res.json();
           if (data && data.status) {
-            setAdvisory(data);
+            memoryCachedAdvisory = data;
+            setAdvisory((prev) => {
+              if (prev && prev.status === data.status && prev.message === data.message) return prev;
+              return data;
+            });
+            AsyncStorage.setItem('@cura_cached_advisory', JSON.stringify(data)).catch(() => {});
           }
         }
       } catch (e) {}
     };
     fetchAdvisory();
-    const t = setInterval(fetchAdvisory, 2000);
+    const t = setInterval(fetchAdvisory, 5000);
     return () => clearInterval(t);
   }, []);
+
 
 
   const joinQueue = async () => {
