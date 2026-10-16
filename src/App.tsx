@@ -467,8 +467,19 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         WebBrowser.dismissBrowser();
         WebBrowser.dismissAuthSession();
       } catch (e) {}
-      if (event?.url && (event.url.includes("telemedicine") || event.url.includes("curamobile"))) {
-        navigate("telemedicine");
+      if (event?.url) {
+        try {
+          const parsed = Linking.parse(event.url);
+          const path = (parsed.path || "").toLowerCase().replace(/^\/+|\/+$/g, "");
+          const hostname = (parsed.hostname || "").toLowerCase();
+          if (path === "telemedicine" || path.startsWith("telemedicine/") || hostname === "telemedicine") {
+            navigate("telemedicine");
+          }
+        } catch {
+          if (event.url.includes("/telemedicine") || event.url.includes("://telemedicine")) {
+            navigate("telemedicine");
+          }
+        }
       }
     };
 
