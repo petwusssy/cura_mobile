@@ -6,53 +6,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
+import { LiquidGlassTimePicker } from "../components/LiquidGlassTimePicker";
 import type { Screen, AppUser } from "../types";
 import { formatTime12 } from "../utils/philippineTime";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
-
-function MorningIcon({ selected }: { selected?: boolean }) {
-  return (
-    <Svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
-      <Defs>
-        <SvgLinearGradient id="gMornAppt" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor="#00A3FF" />
-          <Stop offset="100%" stopColor="#0056B3" />
-        </SvgLinearGradient>
-      </Defs>
-      <Path d="M10 20a6 6 0 0 1 12 0H10z" fill={selected ? "#FFFFFF" : "url(#gMornAppt)"} />
-      <Line x1="5" y1="21" x2="27" y2="21" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="16" y1="9" x2="16" y2="12" stroke={selected ? "#FFFFFF" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="9.5" y1="12" x2="11.5" y2="14" stroke={selected ? "#FFFFFF" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="22.5" y1="12" x2="20.5" y2="14" stroke={selected ? "#FFFFFF" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="7" y1="17" x2="9" y2="17.5" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
-      <Line x1="25" y1="17" x2="23" y2="17.5" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function AfternoonIcon({ selected }: { selected?: boolean }) {
-  return (
-    <Svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: 4 }}>
-      <Defs>
-        <SvgLinearGradient id="gAftAppt" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor="#00A3FF" />
-          <Stop offset="100%" stopColor="#0056B3" />
-        </SvgLinearGradient>
-      </Defs>
-      <Circle cx="16" cy="16" r="6" fill={selected ? "#FFFFFF" : "url(#gAftAppt)"} />
-      <Line x1="16" y1="5" x2="16" y2="8" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="16" y1="24" x2="16" y2="27" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="5" y1="16" x2="8" y2="16" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="24" y1="16" x2="27" y2="16" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="8.2" y1="8.2" x2="10.3" y2="10.3" stroke={selected ? "#FFFFFF" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="21.7" y1="21.7" x2="23.8" y2="23.8" stroke={selected ? "#FFFFFF" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="8.2" y1="23.8" x2="10.3" y2="21.7" stroke={selected ? "#FFFFFF" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
-      <Line x1="21.7" y1="10.3" x2="23.8" y2="8.2" stroke={selected ? "#FFFFFF" : "#00A3FF"} strokeWidth="2" strokeLinecap="round" />
-      <Circle cx="14" cy="14" r="1.5" fill={selected ? "#002D72" : "#FFFFFF"} opacity={selected ? 0.35 : 0.8} />
-    </Svg>
-  );
-}
 
 function MedicalIcon({ selected }: { selected?: boolean }) {
   return (
@@ -292,17 +250,12 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       Alert.alert("Date Unavailable", "The selected date is currently unavailable for in-person appointments. Please select an available date.");
       return;
     }
-    const isSlotBlocked = 
-      (time && unavailableTimes.includes(time)) ||
-      (date && time && unavailableTimes.includes(`${date}__${time}`));
-    if (isSlotBlocked) {
-      Alert.alert("Time Slot Unavailable", "The selected time slot is currently unavailable for appointments. Please choose an available time.");
+    if (!time.trim()) {
+      Alert.alert("Time Required", "Please select your preferred appointment time window.");
       return;
     }
     setIsSubmitting(true);
 
-
-    
     try {
       const res = await fetch(`https://cura-backend-dvj5.onrender.com/api/appointments/`, {
         method: "POST",
@@ -311,7 +264,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
           patient: user.id,
           visit_type: visitType,
           preferred_date: date,
-          preferred_time: time === "morning" ? "Morning (8AM - 12PM)" : time === "afternoon" ? "Afternoon (1PM - 5PM)" : "",
+          preferred_time: time,
           reason: reason,
           status: "Pending"
         }),
@@ -532,92 +485,12 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
             </View>
 
-            {/* Preferred Time */}
-            <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
-                Preferred Time
-              </Text>
-              <View className="flex-row gap-3">
-                {[
-                  {
-                    label: "Morning",
-                    timeRange: "8:00 AM - 12:00 PM",
-                    icon: "🌅",
-                    value: "morning",
-                  },
-                  {
-                    label: "Afternoon",
-                    timeRange: "1:00 PM - 5:00 PM",
-                    icon: "☀️",
-                    value: "afternoon",
-                  },
-                ].map((slot) => {
-                  const isUnavailable =
-                    unavailableTimes.includes(slot.value) ||
-                    (Boolean(date) && unavailableTimes.includes(`${date}__${slot.value}`)) ||
-                    (Boolean(date) && unavailableDates.includes(date));
-                  const isSelected = !isUnavailable && time === slot.value;
-                  return (
-                    <TouchableOpacity
-                      key={slot.value}
-                      disabled={isUnavailable}
-                      onPress={() => setTime(slot.value)}
-                      activeOpacity={0.75}
-                      className="flex-1 rounded-[24px] p-3.5 items-center justify-center relative overflow-hidden"
-                      style={{
-                        backgroundColor: isUnavailable
-                          ? "rgba(239, 68, 68, 0.08)"
-                          : isSelected
-                          ? "transparent"
-                          : "#FFFFFF",
-                        borderWidth: isUnavailable ? 1.5 : 1,
-                        borderColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : undefined,
-                        borderTopColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.45)" : "#E2E8F0",
-                        borderLeftColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.3)" : "#E2E8F0",
-                        borderRightColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.2)" : "#E2E8F0",
-                        borderBottomColor: isUnavailable ? "rgba(239, 68, 68, 0.45)" : isSelected ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
-                        elevation: isSelected ? 4 : 1,
-                        shadowColor: isSelected ? "#0A2472" : "#000",
-                        shadowOffset: isSelected ? { width: 0, height: 6 } : { width: 0, height: 2 },
-                        shadowOpacity: isSelected ? 0.22 : 0.04,
-                        shadowRadius: isSelected ? 12 : 6,
-                      }}
-                    >
-                      {isSelected && (
-                        <LinearGradient
-                          colors={ADMIN_PORTAL_GRADIENT.colors}
-                          start={ADMIN_PORTAL_GRADIENT.start}
-                          end={ADMIN_PORTAL_GRADIENT.end}
-                          style={StyleSheet.absoluteFill}
-                        />
-                      )}
-                      {slot.value === "morning" ? (
-                        <MorningIcon selected={isSelected} />
-                      ) : (
-                        <AfternoonIcon selected={isSelected} />
-                      )}
-                      <Text
-                        className="text-sm font-black"
-                        style={{
-                          color: isUnavailable ? "#EF4444" : isSelected ? "#FFFFFF" : "#0B2136",
-                          fontFamily: "Outfit",
-                        }}
-                      >
-                        {slot.label}
-                      </Text>
-                      <Text
-                        className="text-[10px] font-semibold mt-0.5"
-                        style={{
-                          color: isUnavailable ? "#EF4444" : isSelected ? "rgba(255, 255, 255, 0.75)" : "#64748B",
-                        }}
-                      >
-                        {isUnavailable ? "Closed / Unavailable" : slot.timeRange}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
+            {/* Preferred Time Window */}
+            <LiquidGlassTimePicker
+              value={time}
+              onChange={setTime}
+              label="Preferred Appointment Time"
+            />
 
 
             {/* Reason for Visit */}
