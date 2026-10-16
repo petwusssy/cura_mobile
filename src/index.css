@@ -185,3 +185,12 @@ h1, h2, h3, h4, h5 {
 }
 .cura-pulse { animation: cura-pulse 1.8s ease-in-out infinite; }
 
+/* Remove aggressive browser focus outline ring on inputs in web preview */
+input, textarea, select {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}

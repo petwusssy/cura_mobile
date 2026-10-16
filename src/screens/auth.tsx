@@ -265,6 +265,8 @@ interface GlassInputProps {
   placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   editable?: boolean;
   secureTextEntry?: boolean;
   showPasswordToggle?: boolean;
@@ -287,6 +289,8 @@ const GlassInput = memo(
       placeholder,
       value,
       onChangeText,
+      onFocus,
+      onBlur,
       editable = true,
       secureTextEntry = false,
       showPasswordToggle = false,
@@ -303,6 +307,7 @@ const GlassInput = memo(
     ref
   ) {
     const [isSecured, setIsSecured] = useState(secureTextEntry);
+    const [isFocused, setIsFocused] = useState(false);
 
     return (
       <View style={{ marginBottom: 12 }}>
@@ -328,9 +333,13 @@ const GlassInput = memo(
             height: multiline ? undefined : 48,
             minHeight: multiline ? 72 : undefined,
             borderRadius: 12,
-            backgroundColor: "rgba(255, 255, 255, 0.18)",
+            backgroundColor: isFocused ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.18)",
             borderWidth: 1.5,
-            borderColor: error ? "rgba(248, 113, 113, 0.7)" : "rgba(255, 255, 255, 0.30)",
+            borderColor: error
+              ? "rgba(248, 113, 113, 0.75)"
+              : isFocused
+              ? "rgba(147, 197, 253, 0.65)"
+              : "rgba(255, 255, 255, 0.30)",
             paddingHorizontal: 14,
             paddingVertical: multiline ? 10 : 0,
             opacity: editable ? 1 : 0.75,
@@ -341,6 +350,14 @@ const GlassInput = memo(
             ref={ref}
             value={value}
             onChangeText={onChangeText}
+            onFocus={() => {
+              setIsFocused(true);
+              onFocus?.();
+            }}
+            onBlur={() => {
+              setIsFocused(false);
+              onBlur?.();
+            }}
             placeholder={placeholder}
             placeholderTextColor="rgba(255, 255, 255, 0.62)"
             secureTextEntry={isSecured}
@@ -354,15 +371,25 @@ const GlassInput = memo(
             numberOfLines={numberOfLines}
             textAlignVertical={multiline ? "top" : "center"}
             editable={editable}
-            style={{
-              flex: 1,
-              color: "#FFFFFF",
-              fontSize: 14,
-              fontFamily: "Outfit",
-              paddingVertical: 0,
-              height: multiline ? undefined : "100%",
-              minHeight: multiline ? 52 : undefined,
-            }}
+            style={[
+              {
+                flex: 1,
+                color: "#FFFFFF",
+                fontSize: 14,
+                fontFamily: "Outfit",
+                paddingVertical: 0,
+                height: multiline ? undefined : "100%",
+                minHeight: multiline ? 52 : undefined,
+              },
+              Platform.OS === "web"
+                ? ({
+                    outline: "none",
+                    outlineStyle: "none",
+                    outlineWidth: 0,
+                    boxShadow: "none",
+                  } as any)
+                : null,
+            ]}
           />
           {showPasswordToggle ? (
             <TouchableOpacity
@@ -2401,7 +2428,14 @@ const AuthModal = memo(function AuthModal({
               }}
             >
               {/* University Clinic Header + Logo inside Card */}
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12, paddingRight: 40 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 16,
+                }}
+              >
                 <Image
                   source={require("../../assets/images/ua-seal.png")}
                   style={{ width: 28, height: 28, borderRadius: 14 }}
@@ -2424,6 +2458,7 @@ const AuthModal = memo(function AuthModal({
                         fontWeight: "700",
                         fontFamily: "Outfit",
                         letterSpacing: 0.3,
+                        textAlign: "center",
                         textShadowColor: "rgba(0, 0, 0, 0.35)",
                         textShadowOffset: { width: 0, height: 1 },
                         textShadowRadius: 3,
@@ -2436,6 +2471,7 @@ const AuthModal = memo(function AuthModal({
                         color: "rgba(255, 255, 255, 0.85)",
                         fontSize: 14,
                         fontFamily: "Outfit",
+                        textAlign: "center",
                         marginTop: 4,
                         marginBottom: 20,
                         textShadowColor: "rgba(0, 0, 0, 0.3)",

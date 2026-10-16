@@ -305,6 +305,7 @@ export function Input({ label, error, icon, ...props }: InputProps) {
           {...props}
           placeholderTextColor="#94A3B8"
           className={`w-full bg-white rounded-[32px] px-5 py-4 text-sm text-slate-800 ${icon ? "pl-12" : ""} ${error ? "border border-rose-300 bg-rose-50" : ""}`}
+          style={[props.style, Platform.OS === "web" ? ({ outline: "none", outlineStyle: "none", outlineWidth: 0, boxShadow: "none" } as any) : null]}
         />
       </View>
       {error && <Text className="text-xs text-rose-500 pl-1">{error}</Text>}
