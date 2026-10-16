@@ -606,15 +606,10 @@ function isValidEmail(email: string): boolean {
 function detectCategoryFromEmail(email: string): "" | "Student" | "Employee" | "Outsider" {
   const clean = email.trim().toLowerCase();
   if (!clean || !clean.includes("@")) return "";
-  if (
-    clean.includes(".student@ua.edu.ph") ||
-    clean.endsWith(".student@ua.edu.ph") ||
-    clean.includes("student@ua.edu.ph") ||
-    clean.endsWith("@student.ua.edu.ph")
-  ) {
+  if (clean.endsWith("ua.edu.ph") && clean.includes("student")) {
     return "Student";
   }
-  if (clean.includes("@ua.edu.ph") || clean.endsWith("@ua.edu.ph")) {
+  if (clean.endsWith("@ua.edu.ph") || clean.endsWith(".ua.edu.ph")) {
     return "Employee";
   }
   return "Outsider";
@@ -3905,8 +3900,20 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={3}
                           total={4}
-                          title="Category Details"
-                          subtitle="Complete your specific requirements"
+                          title={
+                            createForm.category === "Student"
+                              ? "Student Information"
+                              : createForm.category === "Employee"
+                              ? "Employee Details"
+                              : "Outsider Information"
+                          }
+                          subtitle={
+                            createForm.category === "Student"
+                              ? "Fill in your student ID & academic level"
+                              : createForm.category === "Employee"
+                              ? "Fill in your employee ID & department"
+                              : "Fill in your complete home address"
+                          }
                           onBack={() => goToCreateStep(2, "back")}
                         />
 
