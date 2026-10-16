@@ -85,7 +85,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 1500);
+    const interval = setInterval(fetchNotifications, 6000);
     return () => clearInterval(interval);
   }, [user?.id, (user as any)?.id_number, user?.displayName, user?.firstName, user?.lastName, setNotifications, showAlert]);
 

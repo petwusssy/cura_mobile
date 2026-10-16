@@ -210,12 +210,23 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/`);
       if (res.ok) {
         const data = await res.json();
-        const myRequests = data.filter((r: any) => r.patient === user.id);
-        setRequests(myRequests);
-        AsyncStorage.setItem(`@cura_cached_appointments_${user.id}`, JSON.stringify(myRequests)).catch(() => {});
+        if (Array.isArray(data)) {
+          const uIds = [
+            String(user?.id || ""),
+            String((user as any)?.id_number || ""),
+            String((user as any)?.patient_id || ""),
+            String(user?.email || "")
+          ].map(s => s.trim().toLowerCase()).filter(Boolean);
+          const myRequests = data.filter((r: any) => {
+            const pId = String(r.patient?.id ?? r.patient ?? "").trim().toLowerCase();
+            return uIds.includes(pId);
+          });
+          setRequests(myRequests);
+          AsyncStorage.setItem(`@cura_cached_appointments_${user.id}`, JSON.stringify(myRequests)).catch(() => {});
+        }
       }
     } catch (err) {
-      console.error("Failed to fetch appointment requests", err);
+      if (!background) console.warn("Failed to fetch appointment requests", err);
     } finally {
       if (!background) setIsLoading(false);
     }
@@ -224,7 +235,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   useEffect(() => {
     if (activeTab === "history") {
       fetchRequests(false);
-      const interval = setInterval(() => fetchRequests(true), 3000);
+      const interval = setInterval(() => fetchRequests(true), 6000);
       return () => clearInterval(interval);
     }
   }, [activeTab, fetchRequests]);

@@ -79,7 +79,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     };
 
     fetchIntaked();
-    const interval = setInterval(fetchIntaked, 2000);
+    const interval = setInterval(fetchIntaked, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -174,7 +174,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     };
 
     fetchQueue();
-    const t = setInterval(fetchQueue, 1500);
+    const t = setInterval(fetchQueue, 6000);
     return () => clearInterval(t);
   }, [(user as any)?.id, (user as any)?.id_number, user?.email]);
 

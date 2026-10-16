@@ -365,10 +365,15 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
-            const uId = String(user.id);
+            const uIds = [
+              String(user?.id || ""),
+              String((user as any)?.id_number || ""),
+              String((user as any)?.patient_id || ""),
+              String(user?.email || "")
+            ].map(s => s.trim().toLowerCase()).filter(Boolean);
             const myRequests = data.filter((r: any) => {
-              const pId = String(r.patient?.id ?? r.patient ?? "");
-              return pId === uId;
+              const pId = String(r.patient?.id ?? r.patient ?? "").trim().toLowerCase();
+              return uIds.includes(pId);
             });
             setRequests(myRequests);
             AsyncStorage.setItem(`@cura_cached_telemedicine_${user.id}`, JSON.stringify(myRequests)).catch(() => {});
@@ -406,11 +411,11 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         if (!isMounted) return;
         await fetchRequests(true);
         if (isMounted) {
-          timerId = setTimeout(poll, 4000);
+          timerId = setTimeout(poll, 6000);
         }
       };
 
-      timerId = setTimeout(poll, 4000);
+      timerId = setTimeout(poll, 6000);
     }
 
     return () => {
