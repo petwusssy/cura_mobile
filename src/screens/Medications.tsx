@@ -519,8 +519,8 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                 <View className="mb-1">
                   <MedicinePillIcon size={32} />
                 </View>
-                <Text className="text-sm font-bold text-white">No taken medications yet</Text>
-                <Text className="text-xs text-white/60 text-center mt-0.5">Medications you mark as taken will appear here.</Text>
+                <Text className="text-sm font-bold text-slate-500" style={{ fontFamily: "Outfit" }}>No taken medications yet</Text>
+                <Text className="text-xs text-slate-400 text-center mt-0.5" style={{ fontFamily: "Outfit" }}>Medications you mark as taken will appear here.</Text>
               </View>
             ) : (
               intakedList.map((med) => renderMedCard(med, false))
