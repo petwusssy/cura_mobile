@@ -687,6 +687,24 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   );
 }
 
+function BlueCalendarNotificationIcon({ size = 26 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <Defs>
+        <SvgLinearGradient id="gDateNotifIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#00A3FF" />
+          <Stop offset="100%" stopColor="#0056B3" />
+        </SvgLinearGradient>
+      </Defs>
+      <Rect x="5" y="9" width="30" height="25" rx="6" fill="url(#gDateNotifIcon)" />
+      <Rect x="11" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+      <Rect x="26" y="5" width="3" height="7" rx="1.5" fill="#38BDF8" />
+      <Line x1="5" y1="16" x2="35" y2="16" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.4" />
+      <Polyline points="14 24 18 28 26 20" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
 export function NotificationsScreen({
   navigate,
   goBack,
@@ -854,7 +872,11 @@ export function NotificationsScreen({
               }}
             >
               <View className="w-12 h-12 rounded-full items-center justify-center" style={{ backgroundColor: bgs[n.type] || '#F8FAFC' }}>
-                <Text className="text-2xl">{icons[n.type] || 'ℹ️'}</Text>
+                {n.type && (n.type.includes("appointment") || n.type === "appointment") ? (
+                  <BlueCalendarNotificationIcon size={26} />
+                ) : (
+                  <Text className="text-2xl">{icons[n.type] || 'ℹ️'}</Text>
+                )}
               </View>
               <View className="flex-1 pt-1">
                 <View className="flex-row items-center gap-2 mb-1">
