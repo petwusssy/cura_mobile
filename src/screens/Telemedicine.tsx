@@ -865,12 +865,12 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
             {/* Submit Button */}
             <View className="mt-8">
               <Button
-                variant="white"
+                variant="blue"
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
               >
-                <Text style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                <Text style={{ color: "#FFFFFF", fontFamily: "Outfit" }}>
                   Submit Request
                 </Text>
               </Button>

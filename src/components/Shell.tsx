@@ -316,7 +316,7 @@ export function Input({ label, error, icon, ...props }: InputProps) {
 // ── Button ───────────────────────────────────────────────────────────────────
 
 interface ButtonProps {
-  variant?: "primary" | "secondary" | "ghost" | "danger" | "white" | "outline";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "white" | "outline" | "blue";
   loading?: boolean;
   fullWidth?: boolean;
   onPress?: () => void;
@@ -333,6 +333,7 @@ export function Button({ variant = "primary", loading, fullWidth, children, onPr
     outline:   "bg-white",
     ghost:     "",
     danger:    "bg-rose-50 border border-rose-100",
+    blue:      "bg-[#002D72]",
   };
   
   const textVariants = {
@@ -342,6 +343,7 @@ export function Button({ variant = "primary", loading, fullWidth, children, onPr
     outline:   "text-[#0B2136]",
     ghost:     "text-slate-600",
     danger:    "text-rose-600",
+    blue:      "text-white",
   };
 
   return (
@@ -353,12 +355,13 @@ export function Button({ variant = "primary", loading, fullWidth, children, onPr
         transform: [{ scale: pressed && !disabled && !loading ? 0.96 : 1 }],
         opacity: pressed && !disabled && !loading ? 0.85 : (disabled || loading ? 0.5 : 1),
         ...(variant === 'primary' ? { backgroundColor: '#0B2136', elevation: 4, shadowColor: '#0B2136', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10 } : {}),
+        ...(variant === 'blue' ? { backgroundColor: '#002D72', elevation: 4, shadowColor: '#002D72', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10 } : {}),
         ...(variant === 'secondary' ? { backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' } : {}),
         ...(variant === 'white' ? { backgroundColor: '#ffffff', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10 } : {}),
         ...(variant === 'outline' ? { backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#CBD5E1', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6 } : {})
       })}
     >
-      {loading && <ActivityIndicator size="small" color={variant === 'primary' ? 'white' : '#0B2136'} />}
+      {loading && <ActivityIndicator size="small" color={variant === 'primary' || variant === 'blue' ? 'white' : '#0B2136'} />}
       <Text className={`font-bold ${textVariants[variant]}`} style={{ fontSize: 15 }}>
         {children}
       </Text>

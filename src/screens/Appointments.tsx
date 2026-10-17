@@ -612,13 +612,13 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
             {/* Submit Button */}
             <View className="mt-8">
               <Button
-                variant="white"
+                variant="blue"
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
                 disabled={!visitType || !date.trim() || !time || !reason.trim()}
               >
-                <Text style={{ color: "#002D72", fontFamily: "Outfit" }}>
+                <Text style={{ color: "#FFFFFF", fontFamily: "Outfit" }}>
                   Request Appointment
                 </Text>
               </Button>
