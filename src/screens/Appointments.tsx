@@ -153,6 +153,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
+  const [errors, setErrors] = useState<{ visitType?: boolean; date?: boolean; time?: boolean; reason?: boolean }>({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -321,13 +322,31 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!user?.id || !visitType) return;
-    if (date && unavailableDates.includes(date)) {
-      Alert.alert("Date Unavailable", "The selected date is currently unavailable for in-person appointments. Please select an available date.");
+    if (!user?.id) return;
+
+    const newErrors: { visitType?: boolean; date?: boolean; time?: boolean; reason?: boolean } = {};
+    if (!visitType) newErrors.visitType = true;
+    if (!date.trim()) newErrors.date = true;
+    if (!time.trim()) newErrors.time = true;
+    if (!reason.trim()) newErrors.reason = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const missingList: string[] = [];
+      if (newErrors.visitType) missingList.push("Type of Visit");
+      if (newErrors.date) missingList.push("Preferred Date");
+      if (newErrors.time) missingList.push("Preferred Time");
+      if (newErrors.reason) missingList.push("Reason for Visit");
+
+      Alert.alert(
+        "Incomplete Request",
+        `Please fill in the required field(s):\n• ${missingList.join("\n• ")}`
+      );
       return;
     }
-    if (!time.trim()) {
-      Alert.alert("Time Required", "Please select your preferred appointment time window.");
+
+    if (date && unavailableDates.includes(date)) {
+      Alert.alert("Date Unavailable", "The selected date is currently unavailable for in-person appointments. Please select an available date.");
       return;
     }
     const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
@@ -336,6 +355,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
     })) {
       Alert.alert("Time Unavailable", "The selected time window is no longer available. Please choose another time.");
+      setTime("");
       return;
     }
     setIsSubmitting(true);
@@ -361,6 +381,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         setDate("");
         setTime("");
         setReason("");
+        setErrors({});
         fetchRequests(true);
       } else {
         console.error("Failed to submit request", await res.text());
@@ -419,16 +440,19 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                   return (
                     <TouchableOpacity
                       key={item.value}
-                      onPress={() => setVisitType(item.value)}
+                      onPress={() => {
+                        setVisitType(item.value);
+                        setErrors((prev) => ({ ...prev, visitType: false }));
+                      }}
                       activeOpacity={0.75}
                       className="flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden"
                       style={{
                         backgroundColor: isSelected ? "transparent" : "#FFFFFF",
-                        borderWidth: 1,
-                        borderTopColor: isSelected ? "rgba(255, 255, 255, 0.45)" : "#E2E8F0",
-                        borderLeftColor: isSelected ? "rgba(255, 255, 255, 0.3)" : "#E2E8F0",
-                        borderRightColor: isSelected ? "rgba(255, 255, 255, 0.2)" : "#E2E8F0",
-                        borderBottomColor: isSelected ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
+                        borderWidth: isSelected ? 1 : 1.5,
+                        borderTopColor: isSelected ? "rgba(255, 255, 255, 0.45)" : errors.visitType ? "#F87171" : "#E2E8F0",
+                        borderLeftColor: isSelected ? "rgba(255, 255, 255, 0.3)" : errors.visitType ? "#F87171" : "#E2E8F0",
+                        borderRightColor: isSelected ? "rgba(255, 255, 255, 0.2)" : errors.visitType ? "#F87171" : "#E2E8F0",
+                        borderBottomColor: isSelected ? "rgba(255, 255, 255, 0.15)" : errors.visitType ? "#F87171" : "#E2E8F0",
                         elevation: isSelected ? 4 : 1,
                         shadowColor: isSelected ? "#0A2472" : "#000",
                         shadowOffset: isSelected ? { width: 0, height: 6 } : { width: 0, height: 2 },
@@ -464,14 +488,30 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
-                Preferred Date
-              </Text>
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Preferred Date
+                </Text>
+                {date ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setDate("");
+                      setTime("");
+                      setErrors((prev) => ({ ...prev, date: true, time: false }));
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text className="text-[11px] font-semibold text-rose-500">Reset Date</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               <TouchableOpacity
                 onPress={handleOpenDatePicker}
                 activeOpacity={0.75}
                 className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
                 style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.date ? "#F87171" : "#E2E8F0",
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
@@ -515,23 +555,40 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 visible={showDatePicker}
                 onClose={() => setShowDatePicker(false)}
                 selectedDate={date}
-                onSelectDate={(newDate) => setDate(newDate)}
+                onSelectDate={(newDate) => {
+                  setDate(newDate);
+                  setErrors((prev) => ({ ...prev, date: false }));
+                }}
                 title="Select Appointment Date"
                 unavailableDates={unavailableDates}
               />
-
             </View>
 
             {/* Preferred Time Window */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
-                Preferred Appointment Time
-              </Text>
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Preferred Appointment Time
+                </Text>
+                {time ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setTime("");
+                      setErrors((prev) => ({ ...prev, time: true }));
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text className="text-[11px] font-semibold text-rose-500">Reset Time</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               <TouchableOpacity
                 onPress={handleOpenTimePicker}
-                activeOpacity={0.8}
-                className="w-full bg-white rounded-[24px] px-4 py-3.5 flex-row items-center justify-between"
+                activeOpacity={0.75}
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
                 style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.time ? "#F87171" : "#E2E8F0",
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
@@ -573,13 +630,13 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 selectedTime={time}
                 onSelectTime={(newTime) => {
                   setTime(newTime);
+                  setErrors((prev) => ({ ...prev, time: false }));
                 }}
                 title="Select Appointment Time"
                 unavailableTimes={activeUnavailableTimes}
                 selectedDate={date ? formatDisplayDate(date) : undefined}
               />
             </View>
-
 
             {/* Reason for Visit */}
             <View className="flex-col gap-1.5">
@@ -589,6 +646,8 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
               <View
                 className="bg-white rounded-[24px] px-4 py-3.5"
                 style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.reason ? "#F87171" : "#E2E8F0",
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
@@ -600,7 +659,12 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                   placeholder="Briefly describe your symptoms or reason for visit..."
                   placeholderTextColor="#94A3B8"
                   value={reason}
-                  onChangeText={setReason}
+                  onChangeText={(text) => {
+                    setReason(text);
+                    if (errors.reason && text.trim()) {
+                      setErrors((prev) => ({ ...prev, reason: false }));
+                    }
+                  }}
                   multiline
                   numberOfLines={4}
                   className="text-sm text-slate-800 leading-relaxed"
@@ -616,7 +680,6 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
-                disabled={!visitType || !date.trim() || !time || !reason.trim()}
               >
                 <Text style={{ color: "#FFFFFF", fontFamily: "Outfit" }}>
                   Request Appointment
