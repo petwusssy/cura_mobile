@@ -40,14 +40,20 @@ export const TELEMEDICINE_TIME_SLOTS = [
   "9:00 PM - 10:00 PM",
 ];
 
+export const APPOINTMENT_TIME_SLOTS = TELEMEDICINE_TIME_SLOTS;
+
 function cleanToken(s: string): string {
-  return (s || "").toLowerCase().replace(/[\s:-]/g, "");
+  return (s || "")
+    .toLowerCase()
+    .replace(/\b0(\d)/g, "$1")
+    .replace(/[\s:-]/g, "");
 }
 
 function isSlotUnavailable(slot: string, unavailableList: string[] = []): boolean {
   if (!unavailableList || unavailableList.length === 0) return false;
   const slotClean = cleanToken(slot);
-  const slotStartClean = cleanToken((slot.split("-")[0] || "").trim());
+  const slotParts = slot.split(/[-–—]|to/i).map((p) => p.trim());
+  const slotStartClean = cleanToken(slotParts[0] || "");
 
   return unavailableList.some((item) => {
     if (!item) return false;
@@ -58,16 +64,16 @@ function isSlotUnavailable(slot: string, unavailableList: string[] = []): boolea
     if (itemClean === slotClean) return true;
 
     // 2. Single time match with slot start (e.g. '1:00 PM' matches slot starting at '1:00 PM')
-    const itemParts = item.split("-").map((p) => p.trim());
+    const itemParts = item.split(/[-–—]|to/i).map((p) => p.trim());
     if (itemParts.length === 1 && itemClean === slotStartClean) {
       return true;
     }
 
     // 3. Both are ranges: match if start time tokens match exactly
-    if (itemParts.length === 2) {
+    if (itemParts.length === 2 && slotParts.length === 2) {
       const itemStartClean = cleanToken(itemParts[0]);
       const itemEndClean = cleanToken(itemParts[1]);
-      if (itemStartClean === slotStartClean && itemEndClean === cleanToken(slot.split("-")[1])) {
+      if (itemStartClean === slotStartClean && itemEndClean === cleanToken(slotParts[1])) {
         return true;
       }
     }

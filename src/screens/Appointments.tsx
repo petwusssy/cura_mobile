@@ -6,7 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
-import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
+import { LiquidGlassTimePickerModal, APPOINTMENT_TIME_SLOTS } from "../components/LiquidGlassTimePickerModal";
 import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
 import type { Screen, AppUser } from "../types";
 import { getManilaDate, normalizeDate, formatTime12 } from "../utils/philippineTime";
@@ -151,8 +151,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   const [visitType, setVisitType] = useState("");
   const [time, setTime] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(() => getManilaDate());
   const [reason, setReason] = useState("");
+  const [errors, setErrors] = useState<{ visitType?: boolean; date?: boolean; time?: boolean; reason?: boolean }>({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -163,11 +164,33 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
   const [allAppointmentRequests, setAllAppointmentRequests] = useState<any[]>([]);
 
+  // Instantly hydrate cached all-requests for immediate slot locking
+  useEffect(() => {
+    AsyncStorage.getItem("@cura_cached_appointments_all_requests").then((stored) => {
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAllAppointmentRequests(parsed);
+          }
+        } catch (e) {}
+      }
+    }).catch(() => {});
+  }, []);
+
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/availability/?t=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
+      const [availRes, apptRes] = await Promise.allSettled([
+        fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/availability/?t=${Date.now()}`, {
+          headers: { "Cache-Control": "no-cache" }
+        }),
+        fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/?t=${Date.now()}`, {
+          headers: { "Accept": "application/json", "Cache-Control": "no-cache" }
+        }),
+      ]);
+
+      if (availRes.status === "fulfilled" && availRes.value.ok) {
+        const data = await availRes.value.json();
         if (Array.isArray(data.unavailable_dates)) {
           setUnavailableDates(data.unavailable_dates);
         }
@@ -175,16 +198,26 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
           setUnavailableTimes(data.unavailable_times);
         }
       }
+
+      if (apptRes.status === "fulfilled" && apptRes.value.ok) {
+        const allData = await apptRes.value.json();
+        if (Array.isArray(allData)) {
+          setAllAppointmentRequests(allData);
+          AsyncStorage.setItem("@cura_cached_appointments_all_requests", JSON.stringify(allData)).catch(() => {});
+        }
+      }
     } catch (err) {
       console.warn("Failed to fetch appointment availability:", err);
     }
   };
 
-
   useEffect(() => {
     fetchAvailability();
+    const interval = setInterval(() => {
+      fetchAvailability();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
-
 
   const [activeTab, setActiveTab] = useState<"book" | "history">("book");
   const [requests, setRequests] = useState<any[]>([]);
@@ -192,8 +225,15 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   // Instantly hydrate cached appointments
   useEffect(() => {
-    if (!user?.id) return;
-    AsyncStorage.getItem(`@cura_cached_appointments_${user.id}`).then((stored) => {
+    const resolvedId = String(
+      (user as any)?.id ||
+      (user as any)?.id_number ||
+      (user as any)?.patient_id ||
+      ""
+    ).trim();
+    if (!resolvedId) return;
+
+    AsyncStorage.getItem(`@cura_cached_appointments_${resolvedId}`).then((stored) => {
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -203,19 +243,30 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         } catch (e) {}
       }
     }).catch(() => {});
-  }, [user?.id]);
+  }, [user]);
 
   const fetchRequests = useCallback(async (background = false) => {
-    if (!user?.id) return;
+    const resolvedId = String(
+      (user as any)?.id ||
+      (user as any)?.id_number ||
+      (user as any)?.patient_id ||
+      ""
+    ).trim();
+
+    if (!resolvedId && !user?.email) return;
     if (!background) setIsLoading(true);
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/`);
+      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/?t=${Date.now()}`, {
+        headers: { "Accept": "application/json", "Cache-Control": "no-cache" }
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
           setAllAppointmentRequests(data);
+          AsyncStorage.setItem("@cura_cached_appointments_all_requests", JSON.stringify(data)).catch(() => {});
           const uIds = [
-            String(user?.id || ""),
+            resolvedId,
+            String((user as any)?.id || ""),
             String((user as any)?.id_number || ""),
             String((user as any)?.patient_id || ""),
             String(user?.email || "")
@@ -225,7 +276,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
             return uIds.includes(pId);
           });
           setRequests(myRequests);
-          AsyncStorage.setItem(`@cura_cached_appointments_${user.id}`, JSON.stringify(myRequests)).catch(() => {});
+          if (resolvedId) {
+            AsyncStorage.setItem(`@cura_cached_appointments_${resolvedId}`, JSON.stringify(myRequests)).catch(() => {});
+          }
         }
       }
     } catch (err) {
@@ -280,24 +333,51 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     return Array.from(new Set([...unavailableTimes, ...bookedTimesForSelectedDate]));
   }, [unavailableTimes, bookedTimesForSelectedDate]);
 
-  // Auto-reset time if patient changes date to a date where the selected time is already booked or closed
+  // If a date has all slots booked, mark the date as unavailable too
+  const fullyBookedDates = useMemo(() => {
+    const dateCounts: Record<string, Set<string>> = {};
+    allAppointmentRequests.forEach((req: any) => {
+      const st = String(req.status || "").toLowerCase();
+      if (st === "rejected" || st === "completed" || st === "cancelled") return;
+      const rawReqDate = req.scheduled_date || req.preferred_date || "";
+      const reqDate = normalizeDate(rawReqDate);
+      const reqTime = String(req.scheduled_time || req.preferred_time || "").trim();
+      if (reqDate && reqTime) {
+        if (!dateCounts[reqDate]) dateCounts[reqDate] = new Set();
+        dateCounts[reqDate].add(reqTime);
+      }
+    });
+
+    const fullDates: string[] = [];
+    Object.entries(dateCounts).forEach(([d, slots]) => {
+      if (slots.size >= APPOINTMENT_TIME_SLOTS.length) {
+        fullDates.push(d);
+      }
+    });
+    return Array.from(new Set([...unavailableDates, ...fullDates]));
+  }, [unavailableDates, allAppointmentRequests]);
+
+  // Auto-reset time if patient changes date to a date where the selected time is already booked
   useEffect(() => {
-    if (time && date && activeUnavailableTimes.length > 0) {
+    if (time && date && bookedTimesForSelectedDate.length > 0) {
       const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
-      const isUnavailable = activeUnavailableTimes.some((b) => {
+      const isBooked = bookedTimesForSelectedDate.some((b) => {
         const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
         return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
       });
-      if (isUnavailable) {
+      if (isBooked) {
         setTime("");
+        Alert.alert(
+          "Slot Already Booked",
+          `The time slot "${time}" on ${formatDisplayDate(date)} is already taken. Please choose another time.`
+        );
       }
     }
-  }, [date, activeUnavailableTimes]);
+  }, [date, bookedTimesForSelectedDate, time]);
 
   const handleOpenTimePicker = () => {
     if (!date) {
-      Alert.alert("Select Date First", "Please pick an appointment date before choosing a time window.");
-      return;
+      setDate(getManilaDate());
     }
     fetchAvailability();
     setShowTimePicker(true);
@@ -308,36 +388,80 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     setShowDatePicker(true);
   };
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    if (selectedDate) {
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      setDate(`${year}-${month}-${day}`);
-    }
-    if (Platform.OS !== "ios") {
-      setShowDatePicker(false);
-    }
-  };
-
   const handleSubmit = async () => {
-    if (!user?.id || !visitType) return;
-    if (date && unavailableDates.includes(date)) {
-      Alert.alert("Date Unavailable", "The selected date is currently unavailable for in-person appointments. Please select an available date.");
+    const newErrors: { visitType?: boolean; date?: boolean; time?: boolean; reason?: boolean } = {};
+    if (!visitType) newErrors.visitType = true;
+    if (!date.trim()) newErrors.date = true;
+    if (!time.trim()) newErrors.time = true;
+    if (!reason.trim()) newErrors.reason = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const missingList: string[] = [];
+      if (newErrors.visitType) missingList.push("Type of Visit");
+      if (newErrors.date) missingList.push("Preferred Date");
+      if (newErrors.time) missingList.push("Preferred Time");
+      if (newErrors.reason) missingList.push("Reason for Visit");
+
+      Alert.alert(
+        "Incomplete Request",
+        `Please fill in the required field(s):\n• ${missingList.join("\n• ")}`
+      );
       return;
     }
-    if (!time.trim()) {
-      Alert.alert("Time Required", "Please select your preferred appointment time window.");
+
+    if (date && fullyBookedDates.includes(date)) {
+      Alert.alert("Date Fully Booked", "The selected date is fully booked for in-person appointments. Please select another date.");
       return;
     }
+
     const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
-    if (activeUnavailableTimes.some(b => {
+    const isSlotTaken = bookedTimesForSelectedDate.some((b) => {
       const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
       return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
-    })) {
-      Alert.alert("Time Unavailable", "The selected time window is no longer available. Please choose another time.");
+    });
+
+    if (isSlotTaken) {
+      Alert.alert(
+        "Time Slot Locked",
+        "This time slot has already been booked by another patient. Please choose an available time."
+      );
+      setTime("");
       return;
     }
+
+    const isOverridden = unavailableTimes.some((b) => {
+      const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
+      return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
+    });
+
+    if (isOverridden) {
+      Alert.alert(
+        "Time Slot Unavailable",
+        "This time slot has been marked unavailable by clinic staff. Please select another time."
+      );
+      setTime("");
+      return;
+    }
+
+    let patientId = (user as any)?.id || (user as any)?.id_number || (user as any)?.patient_id;
+
+    if (!patientId && user?.email) {
+      try {
+        const pRes = await fetch("https://cura-backend-dtfj.onrender.com/api/patients/");
+        if (pRes.ok) {
+          const patients = await pRes.json();
+          const p = patients.find((item: any) => item.email?.toLowerCase().trim() === user.email?.toLowerCase().trim());
+          if (p?.id) patientId = p.id;
+        }
+      } catch (e) {}
+    }
+
+    if (!patientId) {
+      Alert.alert("Account Error", "Unable to identify your patient account. Please make sure you are signed in.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -345,28 +469,42 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          patient: user.id,
+          patient: String(patientId),
           visit_type: visitType,
           preferred_date: date,
           preferred_time: time,
-          reason: reason,
+          reason: reason.trim(),
           status: "Pending"
         }),
       });
 
       if (res.ok) {
+        const createdReq = await res.json();
+        if (createdReq && createdReq.id) {
+          setAllAppointmentRequests((prev) => [createdReq, ...prev]);
+          setRequests((prev) => {
+            const updated = [createdReq, ...prev.filter((r) => r.id !== createdReq.id)];
+            if (patientId) {
+              AsyncStorage.setItem(`@cura_cached_appointments_${patientId}`, JSON.stringify(updated)).catch(() => {});
+            }
+            return updated;
+          });
+        }
         setConfirmedDetails({ date, time });
         setShowConfirmation(true);
-        setVisitType("");
-        setDate("");
         setTime("");
         setReason("");
+        setVisitType("");
+        setErrors({});
         fetchRequests(true);
       } else {
-        console.error("Failed to submit request", await res.text());
+        const errText = await res.text();
+        console.error("Failed to submit request", errText);
+        Alert.alert("Request Failed", "Failed to submit appointment request. Please try again.");
       }
     } catch (err) {
-      console.error("Error submitting request", err);
+      console.error("Error submitting appointment request:", err);
+      Alert.alert("Connection Error", "Could not connect to the clinic server. Please check your internet connection.");
     } finally {
       setIsSubmitting(false);
     }
@@ -406,9 +544,14 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
           <View className="flex-col gap-6">
             {/* Type of Visit */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
-                Type of Visit
-              </Text>
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Type of Visit
+                </Text>
+                {errors.visitType ? (
+                  <Text className="text-[11px] font-semibold text-rose-500">Required</Text>
+                ) : null}
+              </View>
               <View className="flex-row gap-2.5">
                 {[
                   { label: "Medical", icon: "🩺", value: "medical" },
@@ -419,16 +562,19 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                   return (
                     <TouchableOpacity
                       key={item.value}
-                      onPress={() => setVisitType(item.value)}
+                      onPress={() => {
+                        setVisitType(item.value);
+                        setErrors((prev) => ({ ...prev, visitType: false }));
+                      }}
                       activeOpacity={0.75}
                       className="flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden"
                       style={{
                         backgroundColor: isSelected ? "transparent" : "#FFFFFF",
                         borderWidth: 1,
-                        borderTopColor: isSelected ? "rgba(255, 255, 255, 0.45)" : "#E2E8F0",
-                        borderLeftColor: isSelected ? "rgba(255, 255, 255, 0.3)" : "#E2E8F0",
-                        borderRightColor: isSelected ? "rgba(255, 255, 255, 0.2)" : "#E2E8F0",
-                        borderBottomColor: isSelected ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
+                        borderTopColor: isSelected ? "rgba(255, 255, 255, 0.45)" : errors.visitType ? "#F87171" : "#E2E8F0",
+                        borderLeftColor: isSelected ? "rgba(255, 255, 255, 0.3)" : errors.visitType ? "#F87171" : "#E2E8F0",
+                        borderRightColor: isSelected ? "rgba(255, 255, 255, 0.2)" : errors.visitType ? "#F87171" : "#E2E8F0",
+                        borderBottomColor: isSelected ? "rgba(255, 255, 255, 0.15)" : errors.visitType ? "#F87171" : "#E2E8F0",
                         elevation: isSelected ? 4 : 1,
                         shadowColor: isSelected ? "#0A2472" : "#000",
                         shadowOffset: isSelected ? { width: 0, height: 6 } : { width: 0, height: 2 },
@@ -464,14 +610,21 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
-                Preferred Date
-              </Text>
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Preferred Date
+                </Text>
+                {errors.date ? (
+                  <Text className="text-[11px] font-semibold text-rose-500">Required</Text>
+                ) : null}
+              </View>
               <TouchableOpacity
                 onPress={handleOpenDatePicker}
                 activeOpacity={0.75}
                 className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
                 style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.date ? "#F87171" : "#E2E8F0",
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
@@ -515,23 +668,40 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 visible={showDatePicker}
                 onClose={() => setShowDatePicker(false)}
                 selectedDate={date}
-                onSelectDate={(newDate) => setDate(newDate)}
+                onSelectDate={(newDate) => {
+                  setDate(newDate);
+                  setErrors((prev) => ({ ...prev, date: false }));
+                }}
                 title="Select Appointment Date"
-                unavailableDates={unavailableDates}
+                unavailableDates={fullyBookedDates}
               />
-
             </View>
 
             {/* Preferred Time Window */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
-                Preferred Appointment Time
-              </Text>
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Preferred Appointment Time
+                </Text>
+                {time ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setTime("");
+                      setErrors((prev) => ({ ...prev, time: true }));
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text className="text-[11px] font-semibold text-rose-500">Reset Time</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               <TouchableOpacity
                 onPress={handleOpenTimePicker}
-                activeOpacity={0.8}
-                className="w-full bg-white rounded-[24px] px-4 py-3.5 flex-row items-center justify-between"
+                activeOpacity={0.75}
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
                 style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.time ? "#F87171" : "#E2E8F0",
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
@@ -541,16 +711,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
               >
                 <View className="flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-xl bg-sky-50 items-center justify-center">
-                    <Svg width="20" height="20" viewBox="0 0 40 40" fill="none">
-                      <Defs>
-                        <SvgLinearGradient id="gTimeAppt" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <Stop offset="0%" stopColor="#00A3FF" />
-                          <Stop offset="100%" stopColor="#0056B3" />
-                        </SvgLinearGradient>
-                      </Defs>
-                      <Circle cx="20" cy="20" r="14" fill="url(#gTimeAppt)" />
-                      <Circle cx="20" cy="20" r="14" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.3" />
-                      <Polyline points="20 12 20 20 25 23" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <Circle cx="12" cy="12" r="9" stroke="#00A3FF" strokeWidth="2.2" />
+                      <Polyline points="12 7 12 12 15 15" stroke="#0056B3" strokeWidth="2.2" strokeLinecap="round" />
                     </Svg>
                   </View>
                   <Text
@@ -573,6 +736,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 selectedTime={time}
                 onSelectTime={(newTime) => {
                   setTime(newTime);
+                  setErrors((prev) => ({ ...prev, time: false }));
                 }}
                 title="Select Appointment Time"
                 unavailableTimes={activeUnavailableTimes}
@@ -580,15 +744,21 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
               />
             </View>
 
-
             {/* Reason for Visit */}
             <View className="flex-col gap-1.5">
-              <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">
-                Reason for Visit
-              </Text>
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Reason for Visit
+                </Text>
+                {errors.reason ? (
+                  <Text className="text-[11px] font-semibold text-rose-500">Required</Text>
+                ) : null}
+              </View>
               <View
                 className="bg-white rounded-[24px] px-4 py-3.5"
                 style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.reason ? "#F87171" : "#E2E8F0",
                   elevation: 2,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
@@ -600,7 +770,10 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                   placeholder="Briefly describe your symptoms or reason for visit..."
                   placeholderTextColor="#94A3B8"
                   value={reason}
-                  onChangeText={setReason}
+                  onChangeText={(val) => {
+                    setReason(val);
+                    if (val.trim()) setErrors((prev) => ({ ...prev, reason: false }));
+                  }}
                   multiline
                   numberOfLines={4}
                   className="text-sm text-slate-800 leading-relaxed"
@@ -616,7 +789,6 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
-                disabled={!visitType || !date.trim() || !time || !reason.trim()}
               >
                 <Text style={{ color: "#FFFFFF", fontFamily: "Outfit" }}>
                   Request Appointment
