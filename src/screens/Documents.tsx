@@ -270,8 +270,18 @@ export function DocumentsScreen({ navigate, goBack, params, certificates }: Prop
 function PrescriptionList({ navigate }: { navigate: Props["navigate"] }) {
   if (PRESCRIPTIONS.length === 0) {
     return (
-      <View className="pt-8">
-        <EmptyState emoji="🩺" title="No Prescriptions" message="You don't have any medical prescriptions yet." />
+      <View className="flex-col items-center justify-center py-14 px-6 gap-3">
+        <Svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
+          <Path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
+          <Circle cx="20" cy="10" r="2" />
+        </Svg>
+        <Text className="text-base font-bold text-center" style={{ color: "#64748B", fontFamily: "Outfit" }}>
+          No Prescriptions
+        </Text>
+        <Text className="text-sm text-center max-w-[220px]" style={{ color: "#94A3B8", fontFamily: "Outfit" }}>
+          You don't have any medical prescriptions yet.
+        </Text>
       </View>
     );
   }
@@ -380,8 +390,21 @@ function CertificateList({ navigate, certificates = [] }: { navigate: Props["nav
 function TransferList() {
   if (TRANSFERS.length === 0) {
     return (
-      <View className="pt-8">
-        <EmptyState emoji="🚑" title="No Transfers" message="You don't have any hospital transfer records yet." />
+      <View className="flex-col items-center justify-center py-14 px-6 gap-3">
+        <Svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M10 17h4V5H2v12h3" />
+          <Path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1" />
+          <Circle cx="7.5" cy="17.5" r="2.5" />
+          <Circle cx="17.5" cy="17.5" r="2.5" />
+          <Line x1="6" y1="9" x2="10" y2="9" />
+          <Line x1="8" y1="7" x2="8" y2="11" />
+        </Svg>
+        <Text className="text-base font-bold text-center" style={{ color: "#64748B", fontFamily: "Outfit" }}>
+          No Transfers
+        </Text>
+        <Text className="text-sm text-center max-w-[220px]" style={{ color: "#94A3B8", fontFamily: "Outfit" }}>
+          You don't have any hospital transfer records yet.
+        </Text>
       </View>
     );
   }
