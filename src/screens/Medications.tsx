@@ -481,7 +481,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                   <Text className="text-[11px] font-bold text-sky-200">{toTakeList.length}</Text>
                 </View>
               </View>
-              <Text className="text-xs text-white/50">Pending medications</Text>
+              <Text className="text-xs text-slate-500 font-medium" style={{ fontFamily: "Outfit" }}>Pending medications</Text>
             </View>
 
             {toTakeList.length === 0 ? (
@@ -511,7 +511,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                   <Text className="text-[11px] font-bold text-emerald-200">{intakedList.length}</Text>
                 </View>
               </View>
-              <Text className="text-xs text-white/50">Completed</Text>
+              <Text className="text-xs text-slate-500 font-medium" style={{ fontFamily: "Outfit" }}>Completed</Text>
             </View>
 
             {intakedList.length === 0 ? (
