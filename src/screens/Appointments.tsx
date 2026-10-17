@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, StyleSheet, Alert } from "react-native";
+import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -631,10 +631,18 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
           contentContainerStyle={{ padding: 24, paddingBottom: 120, gap: 16 }}
           refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchRequests} />}
         >
-          {requests.length === 0 && !isLoading ? (
-            <View className="items-center justify-center py-12">
-              <BlueMailboxIcon size={44} />
-              <Text className="text-white/80 text-center">No appointment requests found.</Text>
+          {isLoading && requests.length === 0 ? (
+            <View className="items-center justify-center py-16">
+              <ActivityIndicator size="small" color="#002D72" />
+            </View>
+          ) : requests.length === 0 ? (
+            <View className="items-center justify-center py-16 px-4">
+              <Text
+                className="text-slate-600 text-sm font-semibold text-center"
+                style={{ fontFamily: "Outfit" }}
+              >
+                No appointment requests found.
+              </Text>
             </View>
           ) : (
             requests.map((req) => (
