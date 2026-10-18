@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet, Image, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
@@ -114,15 +114,90 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     return null;
   }, [medications, consultations, intakedIds]);
 
-  // Bed Timer Logic
-  const hasBed = !!BED_ASSIGNMENT;
-  const totalSecs = BED_ASSIGNMENT ? (BED_ASSIGNMENT.allottedMinutes * 60) : 0;
-  const elapsed = BED_ASSIGNMENT ? Math.floor((Date.now() - new Date(BED_ASSIGNMENT.startTime).getTime()) / 1000) : 0;
-  const [secs, setSecs] = useState(Math.max(totalSecs - elapsed, 0));
+  // Live Bed Assignment & Timer Logic
+  const [activeBed, setActiveBed] = useState<any>(null);
+  const [bedRemainingSecs, setBedRemainingSecs] = useState<number>(0);
+  const bedUpcomingAlertedRef = useRef<string | null>(null);
+  const bedExpiredAlertedRef = useRef<string | null>(null);
 
-  const mins = Math.floor(secs / 60);
-  const sec = secs % 60;
-  const isBedActive = secs > 0 && hasBed;
+  useEffect(() => {
+    const fetchBedAssignment = async () => {
+      try {
+        const res = await fetch('https://cura-backend-dtfj.onrender.com/api/beds/');
+        if (!res.ok) return;
+        const beds = await res.json();
+        if (!Array.isArray(beds)) return;
+
+        const currentPatientId = (user as any)?.id || (user as any)?.id_number;
+        const currentPatientName = (
+          (user as any)?.displayName || 
+          (user as any)?.name || 
+          `${user.firstName || ''} ${user.lastName || ''}`
+        ).trim().toUpperCase();
+
+        const myBed = beds.find((b: any) => {
+          if (b.status !== 'Occupied') return false;
+          if (currentPatientId && (String(b.patientId) === String(currentPatientId) || String(b.patient_id) === String(currentPatientId))) return true;
+          if (currentPatientName && b.patientName && b.patientName.trim().toUpperCase() === currentPatientName) return true;
+          if (currentPatientName && b.patient_name && b.patient_name.trim().toUpperCase() === currentPatientName) return true;
+          return false;
+        });
+
+        setActiveBed(myBed || null);
+      } catch (e) {}
+    };
+
+    fetchBedAssignment();
+    const interval = setInterval(fetchBedAssignment, 6000);
+    return () => clearInterval(interval);
+  }, [(user as any)?.id, (user as any)?.id_number, user?.displayName, user?.firstName, user?.lastName]);
+
+  // Second-by-second countdown for bed assignment
+  useEffect(() => {
+    if (!activeBed || !activeBed.timeOccupied) {
+      setBedRemainingSecs(0);
+      return;
+    }
+
+    const updateTimer = () => {
+      const startTime = new Date(activeBed.timeOccupied).getTime();
+      if (isNaN(startTime)) return;
+      const allottedSecs = (activeBed.allottedTime || 30) * 60;
+      const elapsedSecs = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, allottedSecs - elapsedSecs);
+      setBedRemainingSecs(remaining);
+
+      const bedKey = `${activeBed.id}-${activeBed.timeOccupied}`;
+
+      // Approaching alert (<= 5 minutes / 300 seconds left)
+      if (remaining > 0 && remaining <= 300 && bedUpcomingAlertedRef.current !== bedKey) {
+        bedUpcomingAlertedRef.current = bedKey;
+        const minsLeft = Math.max(1, Math.ceil(remaining / 60));
+        Alert.alert(
+          "Paalala sa Bed Management ⏳",
+          `Malapit na matapos ang iyong oras sa Bed ${activeBed.bedNumber} (${minsLeft} minuto na lang). Mangyaring maghanda na o kumausap sa nars kung kailangan mo pa ng pahinga.`
+        );
+      }
+
+      // Time expired alert (remaining <= 0)
+      if (remaining <= 0 && bedExpiredAlertedRef.current !== bedKey) {
+        bedExpiredAlertedRef.current = bedKey;
+        Alert.alert(
+          "Tapos na ang Oras sa Bed! 🚨",
+          `Tapos na ang nakalaang oras (${activeBed.allottedTime || 30} mins) para sa iyong Bed ${activeBed.bedNumber}. Mangyaring lumapit sa nurse station.`
+        );
+      }
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+    return () => clearInterval(timer);
+  }, [activeBed]);
+
+  const hasBed = !!activeBed || !!BED_ASSIGNMENT;
+  const isBedActive = !!activeBed || (BED_ASSIGNMENT ? true : false);
+  const mins = Math.floor(bedRemainingSecs / 60);
+  const sec = bedRemainingSecs % 60;
 
   const [queue, setQueue] = useState<any>(null);
   const [aheadCount, setAheadCount] = useState<number>(0);
@@ -420,7 +495,17 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           >
             {/* Top: Blue Hero Section */}
             <Pressable 
-              onPress={() => isQueueActive ? {} : isBedActive ? {} : navigate("medications")}
+              onPress={() => {
+                if (isQueueActive) return;
+                if (isBedActive && activeBed) {
+                  Alert.alert(
+                    `Bed ${activeBed.bedNumber} Details`,
+                    `Reason: ${activeBed.reason || 'Rest / Observation'}\nAllotted Time: ${activeBed.allottedTime || 30} mins\nStatus: ${bedRemainingSecs > 0 ? `${mins}m ${sec}s remaining` : 'Time Expired'}`
+                  );
+                  return;
+                }
+                navigate("medications");
+              }}
               className="w-full p-6 relative overflow-hidden"
             >
               {/* Admin Portal Gradient Background */}
@@ -437,7 +522,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                     {isQueueActive
                       ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist")
                       : isBedActive
-                      ? "🛏️ Timer"
+                      ? `🛏️ Bed ${activeBed?.bedNumber || ''} Timer`
                       : dueMed
                       ? "💊 Alert"
                       : "✨ All Intaked"}
@@ -459,7 +544,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                         ? "🎉 You are next in line! (0 ahead)" 
                         : `⏳ ${aheadCount} ${aheadCount === 1 ? 'patient' : 'patients'} ahead of you`
                   ) : isBedActive ? (
-                    BED_ASSIGNMENT?.reason
+                    activeBed?.reason || BED_ASSIGNMENT?.reason || "Resting in Bed"
                   ) : dueMed ? (
                     dueMed.instructions || "Take medication"
                   ) : (
@@ -470,12 +555,18 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                   {isQueueActive
                     ? `Queue #${queue.queue_number}`
                     : isBedActive
-                    ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+                    ? bedRemainingSecs > 0
+                      ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+                      : "00:00 (Expired)"
                     : dueMed
                     ? (dueMed.name || dueMed.medicineName)
                     : "All Caught Up!"}
                 </Text>
-                {isBedActive && <Text className="text-white/80 text-xs mt-1">Remaining time</Text>}
+                {isBedActive && (
+                  <Text className="text-white/80 text-xs mt-1">
+                    {bedRemainingSecs > 0 ? "Remaining bed time" : "Allotted bed time has expired"}
+                  </Text>
+                )}
                 {!isQueueActive && !isBedActive && !dueMed && (
                   <Text className="text-white/70 text-xs mt-1">All scheduled medications are completed</Text>
                 )}
@@ -487,7 +578,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                     {isQueueActive
                       ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line")
                       : isBedActive
-                      ? "View Status"
+                      ? (bedRemainingSecs > 0 ? "Bed Active" : "Time's Up")
                       : dueMed
                       ? "Take Meds"
                       : "View Meds"}
@@ -826,6 +917,7 @@ export function NotificationsScreen({
     if (n.type.includes("telemedicine")) navigate("telemedicine");
     else if (n.type.includes("appointment")) navigate("appointment");
     else if (n.type === "medication") navigate("medications");
+    else if (n.type === "bed") navigate("home");
     else if (n.type.includes("medcert") || n.type === "result") navigate("documents");
   };
 

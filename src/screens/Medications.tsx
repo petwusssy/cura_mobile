@@ -83,6 +83,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
   const [localIntakedIds, setLocalIntakedIds] = useState<Set<string>>(() => new Set());
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
   const notifiedMedsRef = useRef<Set<string>>(new Set());
+  const notifiedUpcomingMedsRef = useRef<Set<string>>(new Set());
 
   // 1-second interval for real-time countdown timer
   useEffect(() => {
@@ -160,13 +161,25 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
     return normalizedMeds.filter((m) => m.status === "intaked");
   }, [normalizedMeds]);
 
-  // Notify user when a pending medication reaches its scheduled time (due)
+  // Notify user when a pending medication is upcoming (<= 30 mins) or due (<= 0s)
   useEffect(() => {
     toTakeList.forEach((med) => {
       if (!med.nextDose) return;
       const target = parseNextDoseTime(med.nextDose);
       if (!target) return;
       const diffSec = Math.floor((target.getTime() - currentTime) / 1000);
+
+      // Approaching reminder (within 30 mins)
+      if (diffSec > 0 && diffSec <= 1800 && !notifiedUpcomingMedsRef.current.has(med.id)) {
+        notifiedUpcomingMedsRef.current.add(med.id);
+        const minsLeft = Math.max(1, Math.ceil(diffSec / 60));
+        Alert.alert(
+          "Paalala sa Gamot ⏰",
+          `Malapit na ang oras ng iyong gamot (${minsLeft} minuto na lang): ${med.name} (${med.dose}). Ihanda na ang iyong gamot at tubig.`
+        );
+      }
+
+      // Due now reminder
       if (diffSec <= 0 && !notifiedMedsRef.current.has(med.id)) {
         notifiedMedsRef.current.add(med.id);
         Alert.alert(
