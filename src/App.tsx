@@ -246,63 +246,83 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const current = stack[stack.length - 1];
 
-  // Refresh certificates and consultations whenever user views documents, profile, or medications screen
+  const refreshConsultations = useCallback(async () => {
+    const pId = user?.id || (user as any)?.id_number;
+    if (!pId) return;
+
+    try {
+      const allConsultations = await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/`);
+      if (Array.isArray(allConsultations)) {
+        const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === pId);
+        const userConsultationsMap = new Map();
+        userConsultationsRaw.forEach((c: any) => userConsultationsMap.set(c.id, c));
+        const userConsultations = Array.from(userConsultationsMap.values());
+        setConsultations(userConsultations);
+        AsyncStorage.setItem('@cura_cached_consultations', JSON.stringify(userConsultations)).catch(() => {});
+
+        const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
+        let intakedIds = new Set<string>();
+        if (intakedStored) {
+          try {
+            const parsed = JSON.parse(intakedStored);
+            if (Array.isArray(parsed)) intakedIds = new Set(parsed);
+          } catch {}
+        }
+
+        const extracted = userConsultations.flatMap((c: any) =>
+          (c.treatments || []).map((t: any, idx: number) => {
+            const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
+            const rawRemarks = t.remarks || "";
+            const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
+            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)));
+            if (isServerIntaked) {
+              intakedIds.add(medId);
+              if (t.id) intakedIds.add(String(t.id));
+            }
+            return {
+              id: medId,
+              treatmentId: t.id ? String(t.id) : null,
+              rawRemarks,
+              name: t.medicineName,
+              dose: `${t.quantity} ${t.unit}`,
+              instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
+              timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
+              nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
+              status: isIntaked ? "intaked" : "next-intake",
+              consultationId: c.id
+            };
+          })
+        );
+        AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
+        setMedications(extracted);
+        AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(extracted)).catch(() => {});
+      }
+    } catch (e) {
+      // silent
+    }
+  }, [user?.id, (user as any)?.id_number]);
+
+  // Polling for consultations and real-time medication intake sync
+  useEffect(() => {
+    const pId = user?.id || (user as any)?.id_number;
+    if (!pId) return;
+
+    refreshConsultations();
+    const interval = setInterval(refreshConsultations, 6000);
+    return () => clearInterval(interval);
+  }, [refreshConsultations, user?.id, (user as any)?.id_number]);
+
+  // Refresh certificates and consultations whenever user views documents, profile, home, or medications screen
   useEffect(() => {
     const pId = user?.id || (user as any)?.id_number;
     const uName = ((user as any)?.name || '').trim().toUpperCase();
-    if ((pId || uName) && (current?.screen === 'profile' || current?.screen === 'documents' || current?.screen === 'medications' || current?.screen === 'notifications')) {
-      if (current?.screen === 'medications' || current?.screen === 'profile' || current?.screen === 'notifications') {
-        safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/`)
-          .then(async (allConsultations) => {
-            if (Array.isArray(allConsultations)) {
-              const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === pId);
-              const userConsultationsMap = new Map();
-              userConsultationsRaw.forEach((c: any) => userConsultationsMap.set(c.id, c));
-              const userConsultations = Array.from(userConsultationsMap.values());
-              setConsultations(userConsultations);
-              AsyncStorage.setItem('@cura_cached_consultations', JSON.stringify(userConsultations)).catch(() => {});
+    if (!pId && !uName) return;
 
-              const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
-              let intakedIds = new Set<string>();
-              if (intakedStored) {
-                try {
-                  const parsed = JSON.parse(intakedStored);
-                  if (Array.isArray(parsed)) intakedIds = new Set(parsed);
-                } catch {}
-              }
+    if (current?.screen === 'home' || current?.screen === 'medications' || current?.screen === 'profile' || current?.screen === 'notifications') {
+      refreshConsultations();
+    }
 
-              const extracted = userConsultations.flatMap((c: any) =>
-                (c.treatments || []).map((t: any, idx: number) => {
-                  const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
-                  const rawRemarks = t.remarks || "";
-                  const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
-                  const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)));
-                  if (isServerIntaked) {
-                    intakedIds.add(medId);
-                    if (t.id) intakedIds.add(String(t.id));
-                  }
-                  return {
-                    id: medId,
-                    treatmentId: t.id ? String(t.id) : null,
-                    rawRemarks,
-                    name: t.medicineName,
-                    dose: `${t.quantity} ${t.unit}`,
-                    instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
-                    timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
-                    nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
-                    status: isIntaked ? "intaked" : "next-intake",
-                    consultationId: c.id
-                  };
-                })
-              );
-              AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
-              setMedications(extracted);
-              AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(extracted)).catch(() => {});
-            }
-          })
-          .catch(() => {});
-      }
-
+    if (current?.screen === 'documents' || current?.screen === 'profile') {
       safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/`)
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {
@@ -316,7 +336,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         })
         .catch(() => {});
     }
-  }, [current?.screen, user?.id, (user as any)?.name]);
+  }, [current?.screen, refreshConsultations, user?.id, (user as any)?.id_number, (user as any)?.name]);
 
   const navigate = useCallback((screen: Screen, params?: Record<string, unknown>) => {
     setStack((prev) => {
@@ -506,20 +526,26 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       const targetMed = prev.find(m => m.id === id);
       const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
       const resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
+      const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
+      const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
+      const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
 
       if (resolvedTreatmentId) {
-        const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
-        const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
-        const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
-
         fetch(`https://cura-backend-dtfj.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remarks: updatedRemarks }),
         }).catch(() => {});
+
+        setConsultations(prevConsults => prevConsults.map(c => ({
+          ...c,
+          treatments: (c.treatments || []).map((t: any) =>
+            String(t.id) === String(resolvedTreatmentId) ? { ...t, remarks: updatedRemarks } : t
+          )
+        })));
       }
 
-      const updatedMeds = prev.map(m => m.id === id ? { ...m, status: "intaked" } : m);
+      const updatedMeds = prev.map(m => m.id === id ? { ...m, status: "intaked", rawRemarks: updatedRemarks } : m);
       AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(updatedMeds)).catch(() => {});
       return updatedMeds;
     });
