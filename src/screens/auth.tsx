@@ -1721,10 +1721,13 @@ const AuthModal = memo(function AuthModal({
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         triggerHaptic();
+        if (data.otp) {
+          console.log(`[CURA OTP] Verification Code for ${cleanEmail}:`, data.otp);
+        }
         setSignInOtpSent(true);
         setSignInOtpMode(true);
         setSignInOtpCooldown(60);
-        setSignInOtp("");
+        setSignInOtp(data.otp || "");
       } else {
         setSignInGeneralError(data.error || "Failed to send OTP code.");
       }
@@ -1866,9 +1869,10 @@ const AuthModal = memo(function AuthModal({
 
         triggerHaptic();
         setCreateForm((f) => ({ ...f, email: cleanEmail, category: chosenCategory }));
-        setIsClaimingWebAccount(true);
-        setClaimStep(1);
-        setClaimOtp("");
+        if (otpData.otp) {
+          console.log(`[CURA OTP] Claim Code for ${cleanEmail}:`, otpData.otp);
+        }
+        setClaimOtp(otpData.otp || "");
         setClaimPassword("");
         setClaimConfirmPassword("");
         setClaimErrors({});
