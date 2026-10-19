@@ -343,7 +343,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     }
 
     if (current?.screen === 'documents' || current?.screen === 'profile') {
-      safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/`)
+      safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/?patient=${encodeURIComponent(pId)}`)
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {
             const userCerts = allCertificates.filter((c: any) =>

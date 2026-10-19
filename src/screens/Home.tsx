@@ -161,7 +161,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     };
 
     fetchBedAssignment();
-    const interval = setInterval(fetchBedAssignment, 6000);
+    const interval = setInterval(fetchBedAssignment, 25000);
     return () => clearInterval(interval);
   }, [(user as any)?.id, (user as any)?.id_number, user?.displayName, user?.firstName, user?.lastName]);
 
@@ -314,10 +314,11 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
     if (!patientId && user?.email) {
       try {
-        const pRes = await fetch('https://cura-backend-dtfj.onrender.com/api/patients/');
+        const cleanEmail = user.email.trim();
+        const pRes = await fetch(`https://cura-backend-dtfj.onrender.com/api/patients/?email=${encodeURIComponent(cleanEmail)}`);
         if (pRes.ok) {
           const patients = await pRes.json();
-          const p = patients.find((item: any) => item.email?.toLowerCase().trim() === user.email?.toLowerCase().trim());
+          const p = Array.isArray(patients) ? patients.find((item: any) => item.email?.toLowerCase().trim() === cleanEmail.toLowerCase()) : null;
           if (p?.id) patientId = p.id;
         }
       } catch (e) {}

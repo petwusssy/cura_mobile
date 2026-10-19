@@ -59,7 +59,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
   useEffect(() => {
     if (activeTab === "history") {
       fetchRequests(false);
-      const interval = setInterval(() => fetchRequests(true), 3000);
+      const interval = setInterval(() => fetchRequests(true), 15000);
       return () => clearInterval(interval);
     }
   }, [activeTab, fetchRequests]);
