@@ -13,13 +13,24 @@ interface Props {
   goBack: () => void;
   params?: { id?: string };
   consultations?: any[];
+  user?: any;
 }
 
-export function HealthHistoryScreen({ navigate, goBack, consultations = [] }: Props) {
+export function HealthHistoryScreen({ navigate, goBack, consultations = [], user }: Props) {
   const [activeTab, setActiveTab] = useState<"consultations" | "non-consultations">("consultations");
 
-  const consultationList = consultations.filter((c: any) => c.status !== "Non-Consultation");
-  const nonConsultationList = consultations.filter((c: any) => c.status === "Non-Consultation");
+  const pId = String(user?.id || user?.id_number || "").trim();
+  const pName = String(user?.displayName || user?.name || "").trim().toUpperCase();
+
+  const userConsultations = consultations.filter((c: any) => {
+    if (!pId && !pName) return true;
+    if (pId && String(c.patient) === pId) return true;
+    if (pName && (c.patient_name || c.patientName || "").trim().toUpperCase() === pName) return true;
+    return false;
+  });
+
+  const consultationList = userConsultations.filter((c: any) => c.status !== "Non-Consultation");
+  const nonConsultationList = userConsultations.filter((c: any) => c.status === "Non-Consultation");
 
   const currentList = activeTab === "consultations" ? consultationList : nonConsultationList;
 

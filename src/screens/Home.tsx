@@ -43,7 +43,18 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const latestConsult = consultations.length > 0 ? consultations[0] : null;
+  const userConsultations = useMemo(() => {
+    const pId = String((user as any)?.id || (user as any)?.id_number || "").trim();
+    const pName = String((user as any)?.displayName || (user as any)?.name || "").trim().toUpperCase();
+    if (!pId && !pName) return [];
+    return consultations.filter((c: any) => {
+      if (pId && String(c.patient) === pId) return true;
+      if (pName && (c.patient_name || c.patientName || "").trim().toUpperCase() === pName) return true;
+      return false;
+    });
+  }, [consultations, (user as any)?.id, (user as any)?.id_number, (user as any)?.displayName, (user as any)?.name]);
+
+  const latestConsult = userConsultations.length > 0 ? userConsultations[0] : null;
 
   const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
 
@@ -101,7 +112,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     }
 
     // Fallback: check consultations treatments
-    for (const consult of consultations) {
+    for (const consult of userConsultations) {
       if (consult.treatments) {
         const found = consult.treatments.find((t: any, idx: number) => {
           if (!t.nextDose || !String(t.nextDose).trim() || String(t.nextDose).toLowerCase() === 'none' || String(t.nextDose).toLowerCase() === 'null') return false;
@@ -114,7 +125,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       }
     }
     return null;
-  }, [medications, consultations, intakedIds]);
+  }, [medications, userConsultations, intakedIds]);
 
   // Live Bed Assignment & Timer Logic
   const [activeBed, setActiveBed] = useState<any>(null);

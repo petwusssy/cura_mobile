@@ -1191,7 +1191,7 @@ interface AuthModalProps {
   visible: boolean;
   initialMode: "signin" | "create_account";
   onClose: () => void;
-  onSuccessSignIn: (userEmail: string, userName: string, accessToken: string) => void;
+  onSuccessSignIn: (userEmail: string, userName: string, accessToken: string, patientId?: string) => void;
   onSuccessRegister: (
     userEmail: string,
     userName: string,
@@ -1612,7 +1612,7 @@ const AuthModal = memo(function AuthModal({
       if (loginRes.ok) {
         const userEmail = loginData.user?.email || signInIdentifier.trim();
         const userName = (loginData.user?.name || userEmail.split("@")[0]).toUpperCase();
-        onSuccessSignIn(userEmail, userName, loginData.access || "");
+        onSuccessSignIn(userEmail, userName, loginData.access || "", loginData.user?.id || loginData.user?.patient_id);
       } else {
         setSignInGeneralError(loginData.detail || loginData.error || "Invalid username/email or password.");
       }
@@ -1713,7 +1713,7 @@ const AuthModal = memo(function AuthModal({
         };
         await AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
 
-        onSuccessSignIn(userEmail, userName, data.access || "");
+        onSuccessSignIn(userEmail, userName, data.access || "", data.user?.patient_id || data.user?.id);
         return;
       }
 
@@ -1895,7 +1895,7 @@ const AuthModal = memo(function AuthModal({
             role: data.user?.category || "Student",
             id: data.user?.patient_id,
           })).catch(() => {});
-          onSuccessSignIn(userEmail, userName, data.access);
+          onSuccessSignIn(userEmail, userName, data.access, data.user?.patient_id || data.user?.id);
           return;
         }
       }
@@ -1910,7 +1910,7 @@ const AuthModal = memo(function AuthModal({
       if (res.ok) {
         triggerHaptic();
         if (data.access) {
-          onSuccessSignIn(cleanEmail, data.user?.name || cleanEmail.split("@")[0], data.access);
+          onSuccessSignIn(cleanEmail, data.user?.name || cleanEmail.split("@")[0], data.access, data.user?.id || data.user?.patient_id);
         } else {
           setCreateForm((f) => ({
             ...f,
@@ -4563,8 +4563,14 @@ export function WelcomeScreen({
     });
   }, [bgBlurAnim, initialAuthMode, goBack]);
 
-  const handleSignInSuccess = useCallback((userEmail: string, userName: string, accessToken: string) => {
+  const handleSignInSuccess = useCallback((userEmail: string, userName: string, accessToken: string, patientId?: string) => {
+    AsyncStorage.multiRemove([
+      "@cura_cached_consultations",
+      "@cura_cached_medications",
+      "@cura_cached_certificates",
+    ]).catch(() => {});
     const sessionUser = {
+      ...(patientId ? { id: patientId, id_number: patientId } : {}),
       email: userEmail,
       firstName: userName,
       displayName: userName,
@@ -4572,10 +4578,7 @@ export function WelcomeScreen({
       accessToken,
     };
     if (setUser) {
-      setUser((prev: any) => ({
-        ...prev,
-        ...sessionUser,
-      }));
+      setUser(sessionUser);
     }
     if (accessToken) {
       AsyncStorage.setItem("@cura_access_token", accessToken).catch(() => {});
@@ -4589,6 +4592,11 @@ export function WelcomeScreen({
   }, [setUser, loadUserData, navigate, closeAuthModal]);
 
   const handleRegisterSuccess = useCallback((userEmail: string, userName: string, accessToken: string, idNumber: string, fullName: string, finalUser?: any) => {
+    AsyncStorage.multiRemove([
+      "@cura_cached_consultations",
+      "@cura_cached_medications",
+      "@cura_cached_certificates",
+    ]).catch(() => {});
     const sessionUser = finalUser || {
       id: idNumber,
       id_number: idNumber,

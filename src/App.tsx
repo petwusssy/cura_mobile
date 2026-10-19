@@ -138,9 +138,17 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
 
   const loadUserData = useCallback(async (email: string) => {
     try {
-      const patients = (await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/patients/`)) || [];
-      if (!Array.isArray(patients)) return;
-      const patient = patients.find((p: any) => p.email?.toLowerCase().trim() === email.toLowerCase().trim());
+      const cleanEmail = email.toLowerCase().trim();
+      let patient: any = null;
+      const filtered = await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/patients/?email=${encodeURIComponent(cleanEmail)}`);
+      if (Array.isArray(filtered) && filtered.length > 0) {
+        patient = filtered[0];
+      } else {
+        const patients = (await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/patients/`)) || [];
+        if (Array.isArray(patients)) {
+          patient = patients.find((p: any) => p.email?.toLowerCase().trim() === cleanEmail);
+        }
+      }
       
       const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
       
@@ -171,11 +179,11 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         
         // Fetch consultations and certificates concurrently
         const [allConsultations, allCertificates] = await Promise.all([
-          safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/`).then(d => Array.isArray(d) ? d : []),
+          safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/?patient=${encodeURIComponent(patient.id)}`).then(d => Array.isArray(d) ? d : []),
           safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/`).then(d => Array.isArray(d) ? d : []),
         ]);
         
-        const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === patient.id);
+        const userConsultationsRaw = allConsultations.filter((c: any) => String(c.patient) === String(patient.id));
         
         // Deduplicate consultations to remove any duplicate records
         const userConsultationsMap = new Map();
@@ -257,9 +265,9 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     if (!pId) return;
 
     try {
-      const allConsultations = await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/`);
+      const allConsultations = await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/?patient=${encodeURIComponent(pId)}`);
       if (Array.isArray(allConsultations)) {
-        const userConsultationsRaw = allConsultations.filter((c: any) => c.patient === pId);
+        const userConsultationsRaw = allConsultations.filter((c: any) => String(c.patient) === String(pId));
         const userConsultationsMap = new Map();
         userConsultationsRaw.forEach((c: any) => userConsultationsMap.set(c.id, c));
         const userConsultations = Array.from(userConsultationsMap.values());
@@ -399,44 +407,47 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     let isMounted = true;
     const restoreSession = async () => {
       try {
-        const [stored, storedToken, storedTheme] = await Promise.all([
+        const [stored, storedToken, storedTheme, cachedConsults, cachedMeds, cachedCerts, cachedNotifs] = await Promise.all([
           AsyncStorage.getItem('@cura_user_session').catch(() => null),
           AsyncStorage.getItem('@cura_access_token').catch(() => null),
           AsyncStorage.getItem('@cura_theme').catch(() => null),
-        ]);
-
-        if (storedTheme && isMounted) setTheme(storedTheme);
-
-        // Instantly hydrate offline cache so counts and records show immediately without 0 flashing
-        const [cachedConsults, cachedMeds, cachedCerts, cachedNotifs] = await Promise.all([
           AsyncStorage.getItem('@cura_cached_consultations').catch(() => null),
           AsyncStorage.getItem('@cura_cached_medications').catch(() => null),
           AsyncStorage.getItem('@cura_cached_certificates').catch(() => null),
           AsyncStorage.getItem('@cura_cached_notifications').catch(() => null),
         ]);
 
-        if (cachedConsults && isMounted) {
-          try { const d = JSON.parse(cachedConsults); if (Array.isArray(d)) setConsultations(d); } catch (e) {}
-        }
-        if (cachedMeds && isMounted) {
-          try { const d = JSON.parse(cachedMeds); if (Array.isArray(d)) setMedications(d); } catch (e) {}
-        }
-        if (cachedCerts && isMounted) {
-          try { const d = JSON.parse(cachedCerts); if (Array.isArray(d)) setCertificates(d); } catch (e) {}
-        }
-        if (cachedNotifs && isMounted) {
-          try { const d = JSON.parse(cachedNotifs); if (Array.isArray(d)) setNotifications(d); } catch (e) {}
-        }
-        
+        if (storedTheme && isMounted) setTheme(storedTheme);
+
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
             if (parsed?.id || parsed?.email) {
+              const currentUserId = String(parsed.id || parsed.id_number || '').trim();
               if (storedToken && !parsed.accessToken) {
                 parsed.accessToken = storedToken;
               }
               if (isMounted) {
                 setUser(parsed);
+                // Instantly hydrate offline cache strictly belonging to this restored user
+                if (cachedConsults) {
+                  try {
+                    const d = JSON.parse(cachedConsults);
+                    if (Array.isArray(d)) {
+                      const userOnly = d.filter((c: any) => currentUserId && String(c.patient) === currentUserId);
+                      setConsultations(userOnly);
+                    }
+                  } catch (e) {}
+                }
+                if (cachedMeds) {
+                  try { const d = JSON.parse(cachedMeds); if (Array.isArray(d)) setMedications(d); } catch (e) {}
+                }
+                if (cachedCerts) {
+                  try { const d = JSON.parse(cachedCerts); if (Array.isArray(d)) setCertificates(d); } catch (e) {}
+                }
+                if (cachedNotifs) {
+                  try { const d = JSON.parse(cachedNotifs); if (Array.isArray(d)) setNotifications(d); } catch (e) {}
+                }
                 setStack([{ screen: initialScreen || "home" }]);
               }
               if (parsed.email) {
@@ -602,7 +613,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} medications={medications} />;
       case "telemedicine":   return <TelemedicineScreen navigate={navigate} goBack={goBack} user={user} />;
       case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
-      case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
+      case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} user={user} />;
       case "health-detail":  return <HealthDetailScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} />;
       case "medications":    return <MedicationsScreen navigate={navigate} goBack={goBack} medications={medications} onIntake={handleIntakeMedication} />;
       case "documents":      return <DocumentsScreen navigate={navigate} goBack={goBack} params={current.params} certificates={certificates} />;
