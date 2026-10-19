@@ -442,14 +442,28 @@ function GlassOtpInput({
 
   return (
     <View style={{ marginBottom: 12 }}>
+      <Text
+        style={{
+          color: "rgba(255, 255, 255, 0.78)",
+          fontSize: 12,
+          fontFamily: "Outfit",
+          fontWeight: "500",
+          textAlign: "center",
+          marginBottom: 10,
+        }}
+      >
+        Enter the 6-digit verification code sent to your email
+      </Text>
+
       <TouchableOpacity
         onPress={() => inputRef.current?.focus()}
         activeOpacity={0.9}
         style={{
           flexDirection: "row",
-          justifyContent: "space-between",
+          justifyContent: "center",
           alignItems: "center",
-          marginVertical: 6,
+          gap: 8,
+          marginBottom: 6,
         }}
       >
         {[0, 1, 2, 3, 4, 5].map((index) => {
@@ -459,30 +473,34 @@ function GlassOtpInput({
             <View
               key={index}
               style={{
-                width: 44,
-                height: 52,
-                borderRadius: 12,
+                width: 46,
+                height: 54,
+                borderRadius: 14,
                 backgroundColor: char
-                  ? "rgba(255, 255, 255, 0.22)"
+                  ? "rgba(255, 255, 255, 0.20)"
                   : isActive
-                  ? "rgba(255, 255, 255, 0.18)"
-                  : "rgba(255, 255, 255, 0.10)",
+                  ? "rgba(56, 189, 248, 0.15)"
+                  : "rgba(255, 255, 255, 0.08)",
                 borderWidth: 1.5,
                 borderColor: error
                   ? "rgba(248, 113, 113, 0.85)"
                   : isActive
                   ? "#38BDF8"
                   : char
-                  ? "rgba(255, 255, 255, 0.45)"
-                  : "rgba(255, 255, 255, 0.22)",
+                  ? "rgba(56, 189, 248, 0.45)"
+                  : "rgba(255, 255, 255, 0.20)",
                 alignItems: "center",
                 justifyContent: "center",
+                shadowColor: isActive ? "#38BDF8" : "transparent",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.35,
+                shadowRadius: 6,
               }}
             >
               <Text
                 style={{
                   color: "#FFFFFF",
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: "700",
                   fontFamily: "Outfit",
                   textAlign: "center",
@@ -510,10 +528,10 @@ function GlassOtpInput({
         onBlur={() => setIsFocused(false)}
         style={{
           position: "absolute",
-          top: 0,
+          top: 26,
           left: 0,
           width: "100%",
-          height: 52,
+          height: 54,
           opacity: 0,
         }}
         caretHidden={true}
@@ -526,8 +544,8 @@ function GlassOtpInput({
             fontSize: 12,
             fontFamily: "Outfit",
             fontWeight: "500",
+            textAlign: "center",
             marginTop: 4,
-            marginLeft: 4,
           }}
         >
           {error}
@@ -1835,9 +1853,6 @@ const AuthModal = memo(function AuthModal({
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         triggerHaptic();
-        if (data.otp) {
-          console.log(`[CURA OTP] Verification Code for ${cleanEmail}:`, data.otp);
-        }
         setSignInOtpSent(true);
         setSignInOtpMode(true);
         setSignInOtpCooldown(60);
@@ -1983,9 +1998,6 @@ const AuthModal = memo(function AuthModal({
 
         triggerHaptic();
         setCreateForm((f) => ({ ...f, email: cleanEmail, category: chosenCategory }));
-        if (otpData.otp) {
-          console.log(`[CURA OTP] Claim Code for ${cleanEmail}:`, otpData.otp);
-        }
         setClaimOtp("");
         setClaimPassword("");
         setClaimConfirmPassword("");
@@ -2656,20 +2668,64 @@ const AuthModal = memo(function AuthModal({
                       </View>
                     ) : null}
 
-                    <GlassInput
-                      icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                      placeholder="Username or Email"
-                      value={signInIdentifier}
-                      onChangeText={(t) => {
-                        setSignInIdentifier(t);
-                        if (signInErrors.identifier) setSignInErrors((e) => ({ ...e, identifier: "" }));
-                      }}
-                      autoCapitalize="none"
-                      returnKeyType="next"
-                      onSubmitEditing={() => signInPasswordRef.current?.focus()}
-                      blurOnSubmit={false}
-                      error={signInErrors.identifier}
-                    />
+                    {!signInOtpSent ? (
+                      <GlassInput
+                        icon={<UserIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                        placeholder="Username or Email"
+                        value={signInIdentifier}
+                        onChangeText={(t) => {
+                          setSignInIdentifier(t);
+                          if (signInErrors.identifier) setSignInErrors((e) => ({ ...e, identifier: "" }));
+                        }}
+                        autoCapitalize="none"
+                        returnKeyType="next"
+                        onSubmitEditing={() => signInPasswordRef.current?.focus()}
+                        blurOnSubmit={false}
+                        error={signInErrors.identifier}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          backgroundColor: "rgba(255, 255, 255, 0.12)",
+                          borderRadius: 14,
+                          borderWidth: 1.5,
+                          borderColor: "rgba(255, 255, 255, 0.20)",
+                          paddingHorizontal: 14,
+                          height: 48,
+                          marginBottom: 12,
+                        }}
+                      >
+                        <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
+                          <MailIcon color="#38BDF8" size={17} />
+                          <Text
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 13.5,
+                              fontFamily: "Outfit",
+                              fontWeight: "600",
+                              marginLeft: 10,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {signInIdentifier}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSignInOtpSent(false);
+                            setSignInOtp("");
+                          }}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Text style={{ color: "#38BDF8", fontSize: 12.5, fontFamily: "Outfit", fontWeight: "700" }}>
+                            Change
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
 
                     {/* Case A: Unclaimed Clinic Record -> Direct OTP flow */}
                     {signInDetectedPatient && !signInDetectedPatient.claimed ? (
