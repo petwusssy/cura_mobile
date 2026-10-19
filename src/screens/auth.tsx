@@ -1641,10 +1641,6 @@ const AuthModal = memo(function AuthModal({
         setRegErrors({});
         setRegGeneralError("");
         goToCreateStep(2, "next");
-        showAlert(
-          "Google Account Connected",
-          `Google account verified (${cleanEmail}). Please fill out your profile details for ${detectedCat}.`
-        );
       }
     } catch (err: any) {
       const isNotFound = Boolean(err?.not_found || err?.code === "ACCOUNT_NOT_FOUND" || err?.status === 404);

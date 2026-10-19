@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Modal, View, Text, Pressable } from 'react-native';
+import { Modal, View, Text, Pressable, Platform } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 
 interface AlertContextProps {
@@ -27,7 +27,22 @@ export function AlertProvider({ children }: { children: ReactNode }) {
     <AlertContext.Provider value={{ showAlert }}>
       {children}
       <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
-        <View className="flex-1 justify-center items-center px-6" style={{ backgroundColor: 'rgba(11, 33, 54, 0.65)' }}>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={[
+            { backgroundColor: 'rgba(11, 33, 54, 0.65)' },
+            Platform.OS === 'web'
+              ? ({
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 999999,
+                } as any)
+              : { elevation: 9999 },
+          ]}
+        >
           <View
             className="w-full max-w-[340px] bg-white rounded-[32px] p-6 border border-sky-100/80 relative"
             style={{
