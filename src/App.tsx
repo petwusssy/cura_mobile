@@ -206,8 +206,14 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
             const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
             const rawRemarks = t.remarks || "";
             const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
-            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)));
-            if (isServerIntaked) {
+            const hasNextDose = Boolean(
+              t.nextDose &&
+              String(t.nextDose).trim() &&
+              String(t.nextDose).toLowerCase() !== 'none' &&
+              String(t.nextDose).toLowerCase() !== 'null'
+            );
+            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id))) || !hasNextDose;
+            if (isServerIntaked || !hasNextDose) {
               intakedIds.add(medId);
               if (t.id) intakedIds.add(String(t.id));
             }
@@ -219,7 +225,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               dose: `${t.quantity} ${t.unit}`,
               instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
               timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
-              nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
+              nextDose: hasNextDose ? `${c.date} ${t.nextDose}` : null,
               status: isIntaked ? "intaked" : "next-intake",
               consultationId: c.id
             };
@@ -274,8 +280,14 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
             const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
             const rawRemarks = t.remarks || "";
             const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
-            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)));
-            if (isServerIntaked) {
+            const hasNextDose = Boolean(
+              t.nextDose &&
+              String(t.nextDose).trim() &&
+              String(t.nextDose).toLowerCase() !== 'none' &&
+              String(t.nextDose).toLowerCase() !== 'null'
+            );
+            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id))) || !hasNextDose;
+            if (isServerIntaked || !hasNextDose) {
               intakedIds.add(medId);
               if (t.id) intakedIds.add(String(t.id));
             }
@@ -287,7 +299,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               dose: `${t.quantity} ${t.unit}`,
               instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
               timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
-              nextDose: t.nextDose ? `${c.date} ${t.nextDose}` : null,
+              nextDose: hasNextDose ? `${c.date} ${t.nextDose}` : null,
               status: isIntaked ? "intaked" : "next-intake",
               consultationId: c.id
             };

@@ -116,7 +116,13 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
         (m.rawRemarks && m.rawRemarks.includes('[INTAKED]')) ||
         (m.instructions && m.instructions.includes('[INTAKED]'))
       );
-      const isMarkedIntaked = localIntakedIds.has(m.id) || (m.treatmentId && localIntakedIds.has(m.treatmentId)) || isServerIntaked;
+      const hasNextDose = Boolean(
+        m.nextDose &&
+        String(m.nextDose).trim() &&
+        String(m.nextDose).toLowerCase() !== "none" &&
+        String(m.nextDose).toLowerCase() !== "null"
+      );
+      const isMarkedIntaked = localIntakedIds.has(m.id) || (m.treatmentId && localIntakedIds.has(m.treatmentId)) || isServerIntaked || !hasNextDose;
       const isAlreadyIntaked = m.status === "intaked" || m.status === "taken";
       const status = (isMarkedIntaked || isAlreadyIntaked) ? "intaked" : "next-intake";
       return {

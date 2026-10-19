@@ -90,19 +90,21 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         (m: any) =>
           m.status !== "intaked" &&
           m.status !== "taken" &&
+          m.nextDose &&
           !intakedIds.has(String(m.id)) &&
           !intakedIds.has(m.id) &&
           !(m.rawRemarks && m.rawRemarks.includes('[INTAKED]')) &&
           !(m.instructions && m.instructions.includes('[INTAKED]'))
       );
       if (pending.length === 0) return null;
-      return pending.find((m: any) => m.nextDose) || pending[0];
+      return pending.find((m: any) => m.nextDose) || null;
     }
 
     // Fallback: check consultations treatments
     for (const consult of consultations) {
       if (consult.treatments) {
         const found = consult.treatments.find((t: any, idx: number) => {
+          if (!t.nextDose || !String(t.nextDose).trim() || String(t.nextDose).toLowerCase() === 'none' || String(t.nextDose).toLowerCase() === 'null') return false;
           const medId = t.id ? String(t.id) : `${consult.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
           if (intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id)))) return false;
           if (t.remarks && t.remarks.includes('[INTAKED]')) return false;
