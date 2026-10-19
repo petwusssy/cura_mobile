@@ -423,6 +423,120 @@ const GlassInput = memo(
   })
 );
 
+// ── Glass 6-Box OTP Input Field ─────────────────────────────────────────────
+
+function GlassOtpInput({
+  value,
+  onChangeText,
+  error,
+  onSubmitEditing,
+}: {
+  value: string;
+  onChangeText: (text: string) => void;
+  error?: string;
+  onSubmitEditing?: () => void;
+}) {
+  const inputRef = useRef<TextInput>(null);
+  const digits = (value || "").split("").slice(0, 6);
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <TouchableOpacity
+        onPress={() => inputRef.current?.focus()}
+        activeOpacity={0.9}
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginVertical: 6,
+        }}
+      >
+        {[0, 1, 2, 3, 4, 5].map((index) => {
+          const char = digits[index] || "";
+          const isActive = isFocused && (index === digits.length || (digits.length === 6 && index === 5));
+          return (
+            <View
+              key={index}
+              style={{
+                width: 44,
+                height: 52,
+                borderRadius: 12,
+                backgroundColor: char
+                  ? "rgba(255, 255, 255, 0.22)"
+                  : isActive
+                  ? "rgba(255, 255, 255, 0.18)"
+                  : "rgba(255, 255, 255, 0.10)",
+                borderWidth: 1.5,
+                borderColor: error
+                  ? "rgba(248, 113, 113, 0.85)"
+                  : isActive
+                  ? "#38BDF8"
+                  : char
+                  ? "rgba(255, 255, 255, 0.45)"
+                  : "rgba(255, 255, 255, 0.22)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 22,
+                  fontWeight: "700",
+                  fontFamily: "Outfit",
+                  textAlign: "center",
+                }}
+              >
+                {char}
+              </Text>
+            </View>
+          );
+        })}
+      </TouchableOpacity>
+
+      <TextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={(text) => {
+          const cleaned = text.replace(/\D/g, "").slice(0, 6);
+          onChangeText(cleaned);
+        }}
+        keyboardType="number-pad"
+        maxLength={6}
+        returnKeyType="done"
+        onSubmitEditing={onSubmitEditing}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: 52,
+          opacity: 0,
+        }}
+        caretHidden={true}
+      />
+
+      {error ? (
+        <Text
+          style={{
+            color: "#F87171",
+            fontSize: 12,
+            fontFamily: "Outfit",
+            fontWeight: "500",
+            marginTop: 4,
+            marginLeft: 4,
+          }}
+        >
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 // ── Glass DatePicker Field ───────────────────────────────────────────────────
 
 function GlassDatePickerField({
@@ -1727,7 +1841,7 @@ const AuthModal = memo(function AuthModal({
         setSignInOtpSent(true);
         setSignInOtpMode(true);
         setSignInOtpCooldown(60);
-        setSignInOtp(data.otp || "");
+        setSignInOtp("");
       } else {
         setSignInGeneralError(data.error || "Failed to send OTP code.");
       }
@@ -1872,7 +1986,7 @@ const AuthModal = memo(function AuthModal({
         if (otpData.otp) {
           console.log(`[CURA OTP] Claim Code for ${cleanEmail}:`, otpData.otp);
         }
-        setClaimOtp(otpData.otp || "");
+        setClaimOtp("");
         setClaimPassword("");
         setClaimConfirmPassword("");
         setClaimErrors({});
@@ -2598,18 +2712,13 @@ const AuthModal = memo(function AuthModal({
                           </TouchableOpacity>
                         ) : (
                           <>
-                            <GlassInput
-                              icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                              placeholder="6-Digit OTP Code"
+                            <GlassOtpInput
                               value={signInOtp}
                               onChangeText={(t) => {
                                 setSignInOtp(t);
                                 if (signInErrors.otp) setSignInErrors((e) => ({ ...e, otp: "" }));
                               }}
-                              keyboardType="number-pad"
-                              maxLength={6}
                               error={signInErrors.otp}
-                              returnKeyType="done"
                               onSubmitEditing={handleVerifySignInOTP}
                             />
 
@@ -2708,18 +2817,13 @@ const AuthModal = memo(function AuthModal({
                             </Text>
                           </View>
                         ) : null}
-                        <GlassInput
-                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="6-Digit OTP Code"
+                        <GlassOtpInput
                           value={signInOtp}
                           onChangeText={(t) => {
                             setSignInOtp(t);
                             if (signInErrors.otp) setSignInErrors((e) => ({ ...e, otp: "" }));
                           }}
-                          keyboardType="number-pad"
-                          maxLength={6}
                           error={signInErrors.otp}
-                          returnKeyType="done"
                           onSubmitEditing={handleVerifySignInOTP}
                         />
 
@@ -3075,18 +3179,13 @@ const AuthModal = memo(function AuthModal({
                               </View>
                             </View>
 
-                            <GlassInput
-                              icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                              placeholder="6-Digit OTP"
+                            <GlassOtpInput
                               value={claimOtp}
                               onChangeText={(t) => {
                                 setClaimOtp(t);
                                 if (claimErrors.otp) setClaimErrors((e) => ({ ...e, otp: "" }));
                               }}
-                              keyboardType="number-pad"
-                              maxLength={6}
                               error={claimErrors.otp}
-                              returnKeyType="done"
                               onSubmitEditing={handleVerifyClaimOTP}
                             />
 
