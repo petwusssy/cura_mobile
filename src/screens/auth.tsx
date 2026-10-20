@@ -1308,6 +1308,30 @@ const AuthModal = memo(function AuthModal({
     address: "",
   });
 
+  // Forgot Password Multi-Step State (1 = Email, 2 = 6-digit OTP, 3 = New Password)
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotPassword, setForgotPassword] = useState("");
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
+  const [forgotErrors, setForgotErrors] = useState<Record<string, string>>({});
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotCooldown, setForgotCooldown] = useState(0);
+
+  // Forgot Password OTP resend cooldown timer
+  useEffect(() => {
+    let timer: any;
+    if (forgotCooldown > 0) {
+      timer = setInterval(() => {
+        setForgotCooldown((c) => (c > 0 ? c - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [forgotCooldown]);
+
   // OTP resend cooldown timer
   useEffect(() => {
     let timer: any;
@@ -1498,6 +1522,13 @@ const AuthModal = memo(function AuthModal({
       setSignInOtp("");
       setIsCategoryLocked(false);
       setIsGooglePrefilled(false);
+      setIsForgotPassword(false);
+      setForgotStep(1);
+      setForgotOtp("");
+      setForgotPassword("");
+      setForgotConfirmPassword("");
+      setForgotErrors({});
+      setForgotLoading(false);
       stepFadeAnim.setValue(1);
       stepSlideAnim.setValue(0);
       contentFadeAnim.setValue(1);
@@ -1527,6 +1558,12 @@ const AuthModal = memo(function AuthModal({
       setSignInOtp("");
       setIsCategoryLocked(false);
       setIsGooglePrefilled(false);
+      setIsForgotPassword(false);
+      setForgotStep(1);
+      setForgotOtp("");
+      setForgotPassword("");
+      setForgotConfirmPassword("");
+      setForgotErrors({});
       onClose();
     });
   }, [animVal, onClose]);
@@ -1549,6 +1586,12 @@ const AuthModal = memo(function AuthModal({
     setIsCategoryLocked(false);
     setIsGooglePrefilled(false);
     setIsGoogleSignup(false);
+    setIsForgotPassword(false);
+    setForgotStep(1);
+    setForgotOtp("");
+    setForgotPassword("");
+    setForgotConfirmPassword("");
+    setForgotErrors({});
     setGoogleVerifiedEmail("");
     setModalGooglePendingToken("");
 
@@ -2454,6 +2497,187 @@ const AuthModal = memo(function AuthModal({
     }
   }, [claimResendCooldown, claimLoading, createForm.email, showAlert]);
 
+  // ── Forgot Password Handlers (Same OTP Flow as Account Claim) ───────────────
+  const handleStartForgotPassword = useCallback(() => {
+    triggerHaptic();
+    setForgotErrors({});
+    const currentId = signInIdentifier.trim();
+    if (currentId) {
+      setForgotEmail(currentId);
+    }
+    setForgotStep(1);
+    setForgotOtp("");
+    setForgotPassword("");
+    setForgotConfirmPassword("");
+    setIsForgotPassword(true);
+  }, [signInIdentifier, triggerHaptic]);
+
+  const handleCancelForgotPassword = useCallback(() => {
+    triggerHaptic();
+    setIsForgotPassword(false);
+    setForgotStep(1);
+    setForgotErrors({});
+  }, [triggerHaptic]);
+
+  const handleRequestForgotOTP = useCallback(async () => {
+    const cleanInput = forgotEmail.trim();
+    if (!cleanInput) {
+      setForgotErrors({ email: "Please enter your email or username." });
+      return;
+    }
+    setForgotErrors({});
+    setForgotLoading(true);
+
+    try {
+      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanInput.toLowerCase() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        triggerHaptic();
+        if (data.email) {
+          setForgotEmail(data.email);
+        }
+        setForgotCooldown(60);
+        setForgotStep(2);
+      } else {
+        setForgotErrors({ email: data.error || "No account found matching this email." });
+      }
+    } catch {
+      setForgotErrors({ email: "Network error. Please try again." });
+    } finally {
+      setForgotLoading(false);
+    }
+  }, [forgotEmail, triggerHaptic]);
+
+  const handleVerifyForgotOTP = useCallback(async () => {
+    const cleanOtp = forgotOtp.trim();
+    if (!cleanOtp) {
+      setForgotErrors({ otp: "Please enter the 6-digit OTP." });
+      return;
+    }
+    if (cleanOtp.length < 6) {
+      setForgotErrors({ otp: "OTP must be 6 digits." });
+      return;
+    }
+
+    setForgotErrors({});
+    setForgotLoading(true);
+
+    try {
+      const cleanEmail = forgotEmail.trim().toLowerCase();
+      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        triggerHaptic();
+        setForgotStep(3);
+      } else {
+        setForgotErrors({ otp: data.error || "Invalid or expired OTP." });
+      }
+    } catch {
+      setForgotErrors({ otp: "Network error. Please try again." });
+    } finally {
+      setForgotLoading(false);
+    }
+  }, [forgotOtp, forgotEmail, triggerHaptic]);
+
+  const handleResendForgotOTP = useCallback(async () => {
+    if (forgotCooldown > 0 || forgotLoading) return;
+    setForgotLoading(true);
+    setForgotErrors({});
+
+    try {
+      const cleanEmail = forgotEmail.trim().toLowerCase();
+      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      if (res.ok) {
+        setForgotCooldown(60);
+        showAlert("Code Sent", "A new 6-digit OTP has been sent to your email.");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setForgotErrors({ otp: err.error || "Failed to resend OTP." });
+      }
+    } catch {
+      setForgotErrors({ otp: "Network error. Please try again." });
+    } finally {
+      setForgotLoading(false);
+    }
+  }, [forgotCooldown, forgotLoading, forgotEmail, showAlert]);
+
+  const handleResetPasswordSubmit = useCallback(async () => {
+    const errs: Record<string, string> = {};
+    if (!forgotPassword) {
+      errs.password = "New password is required";
+    } else if (forgotPassword.length < 6) {
+      errs.password = "Password must be at least 6 characters";
+    }
+
+    if (!forgotConfirmPassword) {
+      errs.confirmPassword = "Confirm password is required";
+    } else if (forgotConfirmPassword !== forgotPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setForgotErrors(errs);
+      return;
+    }
+
+    setForgotErrors({});
+    setForgotLoading(true);
+    const cleanEmail = forgotEmail.trim().toLowerCase();
+
+    try {
+      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/set-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, password: forgotPassword }),
+      });
+
+      const resData = await res.json().catch(() => ({}));
+
+      if (res.ok && resData.access) {
+        const token = resData.access;
+        const userName = (resData.user?.name || cleanEmail.split("@")[0]).toUpperCase();
+        const patientId = resData.user?.id || "";
+
+        if (token) {
+          await AsyncStorage.setItem("@cura_access_token", token).catch(() => {});
+        }
+
+        const sessionUser = {
+          email: cleanEmail,
+          firstName: userName,
+          displayName: userName,
+          lastName: "",
+          accessToken: token,
+          id: patientId,
+        };
+        await AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
+
+        showAlert("Password Reset! 🎉", "Your password has been successfully updated. Welcome back!");
+        setIsForgotPassword(false);
+        onSuccessSignIn(cleanEmail, userName, token, patientId);
+      } else {
+        setForgotErrors({ password: resData.error || "Failed to reset password. Please try again." });
+      }
+    } catch {
+      setForgotErrors({ password: "Network error. Please try again." });
+    } finally {
+      setForgotLoading(false);
+    }
+  }, [forgotPassword, forgotConfirmPassword, forgotEmail, onSuccessSignIn, showAlert]);
+
   return (
     <Modal
       visible={visible}
@@ -2575,7 +2799,297 @@ const AuthModal = memo(function AuthModal({
               </View>
 
               <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
-                {authMode === "signin" ? (
+                {isForgotPassword ? (
+                  // Forgot Password Multi-Step Flow (Email -> OTP -> New Password)
+                  <View>
+                    <GlassStepHeader
+                      step={forgotStep}
+                      total={3}
+                      onBack={forgotStep === 1 ? handleCancelForgotPassword : () => setForgotStep((s) => (s - 1) as any)}
+                      title={
+                        forgotStep === 1
+                          ? "Reset Password"
+                          : forgotStep === 2
+                          ? "Verify Code"
+                          : "New Password"
+                      }
+                      subtitle={
+                        forgotStep === 1
+                          ? "Enter your email to receive a 6-digit code"
+                          : forgotStep === 2
+                          ? `Code sent to ${forgotEmail}`
+                          : "Enter your new secure password"
+                      }
+                    />
+
+                    {forgotStep === 1 && (
+                      <View style={{ marginTop: 8 }}>
+                        <GlassInput
+                          icon={<MailIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Registered Email or Username"
+                          value={forgotEmail}
+                          onChangeText={(t) => {
+                            setForgotEmail(t);
+                            if (forgotErrors.email) setForgotErrors((e) => ({ ...e, email: "" }));
+                          }}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          returnKeyType="done"
+                          onSubmitEditing={handleRequestForgotOTP}
+                          error={forgotErrors.email}
+                        />
+
+                        <TouchableOpacity
+                          onPress={handleRequestForgotOTP}
+                          disabled={forgotLoading || !forgotEmail.trim()}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: forgotEmail.trim() ? "#1E4FD8" : "rgba(30, 79, 216, 0.5)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {forgotLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 15,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.3,
+                              }}
+                            >
+                              Send Reset Code →
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={handleCancelForgotPassword}
+                          activeOpacity={0.7}
+                          style={{ marginTop: 14, alignItems: "center", paddingVertical: 4 }}
+                        >
+                          <Text
+                            style={{
+                              color: "rgba(255, 255, 255, 0.75)",
+                              fontSize: 13,
+                              fontFamily: "Outfit",
+                              fontWeight: "600",
+                            }}
+                          >
+                            ← Back to Sign In
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {forgotStep === 2 && (
+                      <View style={{ marginTop: 8 }}>
+                        <GlassOtpInput
+                          value={forgotOtp}
+                          onChangeText={(t) => {
+                            setForgotOtp(t);
+                            if (forgotErrors.otp) setForgotErrors((e) => ({ ...e, otp: "" }));
+                          }}
+                          error={forgotErrors.otp}
+                          onSubmitEditing={handleVerifyForgotOTP}
+                        />
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginVertical: 4,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={handleResendForgotOTP}
+                            disabled={forgotCooldown > 0 || forgotLoading}
+                            activeOpacity={0.7}
+                          >
+                            <Text
+                              style={{
+                                color: forgotCooldown > 0 ? "rgba(255, 255, 255, 0.4)" : "#60A5FA",
+                                fontSize: 12.5,
+                                fontFamily: "Outfit",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {forgotCooldown > 0 ? `Resend in ${forgotCooldown}s` : "Resend OTP"}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => setForgotStep(1)}
+                            activeOpacity={0.7}
+                          >
+                            <Text
+                              style={{
+                                color: "#38BDF8",
+                                fontSize: 12.5,
+                                fontFamily: "Outfit",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Change Email
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                          onPress={handleVerifyForgotOTP}
+                          disabled={forgotLoading || forgotOtp.trim().length < 6}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: forgotOtp.trim().length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.5)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {forgotLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 15,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.3,
+                              }}
+                            >
+                              Verify Code →
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={handleCancelForgotPassword}
+                          activeOpacity={0.7}
+                          style={{ marginTop: 14, alignItems: "center", paddingVertical: 4 }}
+                        >
+                          <Text
+                            style={{
+                              color: "rgba(255, 255, 255, 0.75)",
+                              fontSize: 13,
+                              fontFamily: "Outfit",
+                              fontWeight: "600",
+                            }}
+                          >
+                            ← Back to Sign In
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {forgotStep === 3 && (
+                      <View style={{ marginTop: 8 }}>
+                        <GlassInput
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="New Password (min 6 chars)"
+                          value={forgotPassword}
+                          onChangeText={(t) => {
+                            setForgotPassword(t);
+                            if (forgotErrors.password) setForgotErrors((e) => ({ ...e, password: "" }));
+                          }}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="next"
+                          error={forgotErrors.password}
+                        />
+
+                        <GlassInput
+                          icon={<LockIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="Confirm New Password"
+                          value={forgotConfirmPassword}
+                          onChangeText={(t) => {
+                            setForgotConfirmPassword(t);
+                            if (forgotErrors.confirmPassword) setForgotErrors((e) => ({ ...e, confirmPassword: "" }));
+                          }}
+                          secureTextEntry
+                          showPasswordToggle
+                          returnKeyType="done"
+                          onSubmitEditing={handleResetPasswordSubmit}
+                          error={forgotErrors.confirmPassword}
+                        />
+
+                        <TouchableOpacity
+                          onPress={handleResetPasswordSubmit}
+                          disabled={forgotLoading || forgotPassword.length < 6 || forgotConfirmPassword.length < 6}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: forgotPassword.length >= 6 && forgotConfirmPassword.length >= 6 ? "#1E4FD8" : "rgba(30, 79, 216, 0.5)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {forgotLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 15,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.3,
+                              }}
+                            >
+                              Reset Password & Sign In →
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={handleCancelForgotPassword}
+                          activeOpacity={0.7}
+                          style={{ marginTop: 14, alignItems: "center", paddingVertical: 4 }}
+                        >
+                          <Text
+                            style={{
+                              color: "rgba(255, 255, 255, 0.75)",
+                              fontSize: 13,
+                              fontFamily: "Outfit",
+                              fontWeight: "600",
+                            }}
+                          >
+                            ← Back to Sign In
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                ) : authMode === "signin" ? (
                   // Sign In Content
                   <View>
                     <Text
@@ -2975,6 +3489,26 @@ const AuthModal = memo(function AuthModal({
                           onSubmitEditing={handleSignIn}
                           error={signInErrors.password}
                         />
+
+                        {/* Forgot Password Link */}
+                        <View style={{ width: "100%", alignItems: "flex-end", marginTop: 2, marginBottom: 8 }}>
+                          <TouchableOpacity
+                            onPress={handleStartForgotPassword}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            activeOpacity={0.7}
+                          >
+                            <Text
+                              style={{
+                                color: "#60A5FA",
+                                fontSize: 13,
+                                fontFamily: "Outfit",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Forgot password?
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
 
                         <TouchableOpacity
                           onPress={handleSignIn}
@@ -5769,7 +6303,7 @@ export function RegisterScreen({ navigate, goBack, setUser, loadUserData }: NavP
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
 
-export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
+export function ForgotPasswordScreen({ navigate, goBack, setUser }: NavProps) {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [email, setEmail] = useState("");
@@ -5788,7 +6322,7 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
     if (!cleanEmail) { setError("Please enter your email."); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/request-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail }),
@@ -5813,7 +6347,7 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
     if (!cleanOtp) { setError("Please enter the OTP."); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/verify-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
@@ -5837,16 +6371,30 @@ export function ForgotPasswordScreen({ navigate, goBack }: NavProps) {
     if (!password || password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/set-password/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/set-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, password }),
       });
-      if (res.ok) {
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.access) {
+        await AsyncStorage.setItem("@cura_access_token", resData.access).catch(() => {});
+        const userName = (resData.user?.name || cleanEmail.split("@")[0]).toUpperCase();
+        const sessionUser = {
+          email: cleanEmail,
+          firstName: userName,
+          displayName: userName,
+          lastName: "",
+          accessToken: resData.access,
+          id: resData.user?.id || "",
+        };
+        await AsyncStorage.setItem("@cura_user_session", JSON.stringify(sessionUser)).catch(() => {});
+        if (setUser) setUser(sessionUser);
+        setStep(4);
+      } else if (res.ok) {
         setStep(4);
       } else {
-        const errData = await res.json().catch(() => ({}));
-        setError(errData.error || "Failed to reset password.");
+        setError(resData.error || "Failed to reset password.");
       }
     } catch (err) {
       setError("Network error. Please try again.");
