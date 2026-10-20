@@ -22,50 +22,23 @@ function MedicalIcon({ selected }: { selected?: boolean }) {
           <Stop offset="100%" stopColor="#0056B3" />
         </SvgLinearGradient>
       </Defs>
-      {/* Medical Cross badge with solid presence */}
-      <Rect
-        x="14"
-        y="6"
-        width="4"
-        height="10"
-        rx="1.5"
-        fill={selected ? "#FFFFFF" : "url(#gMedVis)"}
-      />
-      <Rect
-        x="11"
-        y="9"
-        width="10"
-        height="4"
-        rx="1.5"
-        fill={selected ? "#FFFFFF" : "url(#gMedVis)"}
-      />
-      {/* Stethoscope binaural tubes */}
+      {/* Bold Medical Cross Silhouette */}
       <Path
-        d="M8.5 5.5v5.5c0 4.8 3.3 7.5 7.5 7.5s7.5-2.7 7.5-7.5V5.5"
-        stroke={selected ? "#FFFFFF" : "#0284C7"}
-        strokeWidth="2.8"
-        strokeLinecap="round"
-      />
-      {/* Ear tips */}
-      <Circle cx="8.5" cy="5.5" r="2" fill={selected ? "#FFFFFF" : "#0284C7"} />
-      <Circle cx="23.5" cy="5.5" r="2" fill={selected ? "#FFFFFF" : "#0284C7"} />
-      {/* Lower flexible tubing */}
-      <Path
-        d="M16 18.5v3.2c0 2.4 1.8 4.3 4.2 4.3h1.8"
-        stroke={selected ? "#FFFFFF" : "#0284C7"}
-        strokeWidth="2.8"
-        strokeLinecap="round"
-      />
-      {/* Chestpiece diaphragm */}
-      <Circle
-        cx="23.5"
-        cy="26"
-        r="4.5"
+        d="M13.5 5h5a1.5 1.5 0 0 1 1.5 1.5V12h5.5a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H20v5.5a1.5 1.5 0 0 1-1.5 1.5h-5a1.5 1.5 0 0 1-1.5-1.5V20H6.5A1.5 1.5 0 0 1 5 18.5v-5A1.5 1.5 0 0 1 6.5 12H12V6.5A1.5 1.5 0 0 1 13.5 5z"
         fill={selected ? "#FFFFFF" : "url(#gMedVis)"}
-        stroke={selected ? "#0A2472" : "#0284C7"}
+        stroke={selected ? "#FFFFFF" : "#0284C7"}
         strokeWidth="1.2"
+        strokeLinejoin="round"
       />
-      <Circle cx="23.5" cy="26" r="1.8" fill={selected ? "#002D72" : "#FFFFFF"} />
+      {/* Clinic EKG heartbeat line accent */}
+      <Path
+        d="M9 16h4l1.5-3.5 3 7 2-4.5 1.5 1h2"
+        fill="none"
+        stroke={selected ? "#0A2472" : "#FFFFFF"}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
@@ -506,21 +479,23 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                           colors={ADMIN_PORTAL_GRADIENT.colors}
                           start={ADMIN_PORTAL_GRADIENT.start}
                           end={ADMIN_PORTAL_GRADIENT.end}
-                          style={StyleSheet.absoluteFill}
+                          style={[StyleSheet.absoluteFill, { zIndex: 0 }]}
                         />
                       )}
-                      {item.value === "medical" && <MedicalIcon selected={isSelected} />}
-                      {item.value === "dental" && <DentalIcon selected={isSelected} />}
-                      {item.value === "clearance" && <ClearanceIcon selected={isSelected} />}
-                      <Text
-                        className="text-xs font-bold"
-                        style={{
-                          color: isSelected ? "#FFFFFF" : "#0B2136",
-                          fontFamily: "Outfit",
-                        }}
-                      >
-                        {item.label}
-                      </Text>
+                      <View style={{ zIndex: 1, alignItems: "center", justifyContent: "center" }}>
+                        {item.value === "medical" && <MedicalIcon selected={isSelected} />}
+                        {item.value === "dental" && <DentalIcon selected={isSelected} />}
+                        {item.value === "clearance" && <ClearanceIcon selected={isSelected} />}
+                        <Text
+                          className="text-xs font-bold"
+                          style={{
+                            color: isSelected ? "#FFFFFF" : "#0B2136",
+                            fontFamily: "Outfit",
+                          }}
+                        >
+                          {item.label}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
