@@ -22,12 +22,50 @@ function MedicalIcon({ selected }: { selected?: boolean }) {
           <Stop offset="100%" stopColor="#0056B3" />
         </SvgLinearGradient>
       </Defs>
-      <Path d="M9 7v5a7 7 0 0 0 14 0V7" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2.2" strokeLinecap="round" />
-      <Circle cx="9" cy="7" r="1.5" fill={selected ? "#FFFFFF" : "#00A3FF"} />
-      <Circle cx="23" cy="7" r="1.5" fill={selected ? "#FFFFFF" : "#00A3FF"} />
-      <Path d="M16 19v4a3 3 0 0 0 3 3h2" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="2.2" strokeLinecap="round" />
-      <Circle cx="23" cy="26" r="3.5" fill={selected ? "#FFFFFF" : "url(#gMedVis)"} stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="1.5" />
-      <Circle cx="23" cy="26" r="1" fill={selected ? "#002D72" : "#FFFFFF"} />
+      {/* Medical Cross badge with solid presence */}
+      <Rect
+        x="14"
+        y="6"
+        width="4"
+        height="10"
+        rx="1.5"
+        fill={selected ? "#FFFFFF" : "url(#gMedVis)"}
+      />
+      <Rect
+        x="11"
+        y="9"
+        width="10"
+        height="4"
+        rx="1.5"
+        fill={selected ? "#FFFFFF" : "url(#gMedVis)"}
+      />
+      {/* Stethoscope binaural tubes */}
+      <Path
+        d="M8.5 5.5v5.5c0 4.8 3.3 7.5 7.5 7.5s7.5-2.7 7.5-7.5V5.5"
+        stroke={selected ? "#FFFFFF" : "#0284C7"}
+        strokeWidth="2.8"
+        strokeLinecap="round"
+      />
+      {/* Ear tips */}
+      <Circle cx="8.5" cy="5.5" r="2" fill={selected ? "#FFFFFF" : "#0284C7"} />
+      <Circle cx="23.5" cy="5.5" r="2" fill={selected ? "#FFFFFF" : "#0284C7"} />
+      {/* Lower flexible tubing */}
+      <Path
+        d="M16 18.5v3.2c0 2.4 1.8 4.3 4.2 4.3h1.8"
+        stroke={selected ? "#FFFFFF" : "#0284C7"}
+        strokeWidth="2.8"
+        strokeLinecap="round"
+      />
+      {/* Chestpiece diaphragm */}
+      <Circle
+        cx="23.5"
+        cy="26"
+        r="4.5"
+        fill={selected ? "#FFFFFF" : "url(#gMedVis)"}
+        stroke={selected ? "#0A2472" : "#0284C7"}
+        strokeWidth="1.2"
+      />
+      <Circle cx="23.5" cy="26" r="1.8" fill={selected ? "#002D72" : "#FFFFFF"} />
     </Svg>
   );
 }
@@ -44,7 +82,7 @@ function DentalIcon({ selected }: { selected?: boolean }) {
       <Path
         d="M10 6c-3 0-5 3-5 7 0 4 2 8 3 13 1 1 2.5 1 3.5 0l2.5-7h4l2.5 7c1 1 2.5 1 3.5 0 1-5 3-9 3-13 0-4-2-7-5-7-2 0-3.5 1.5-5 3-1.5-1.5-3-3-5-3z"
         fill={selected ? "#FFFFFF" : "url(#gDent)"}
-        stroke={selected ? "#FFFFFF" : "#38BDF8"}
+        stroke={selected ? "#FFFFFF" : "#0284C7"}
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
@@ -75,12 +113,12 @@ function ClearanceIcon({ selected }: { selected?: boolean }) {
         height="22"
         rx="4"
         fill={selected ? "rgba(255, 255, 255, 0.25)" : "url(#gClear)"}
-        stroke={selected ? "#FFFFFF" : "#38BDF8"}
+        stroke={selected ? "#FFFFFF" : "#0284C7"}
         strokeWidth="1.8"
       />
-      <Rect x="12" y="4" width="8" height="4" rx="1.5" fill={selected ? "#FFFFFF" : "#38BDF8"} />
+      <Rect x="12" y="4" width="8" height="4" rx="1.5" fill={selected ? "#FFFFFF" : "#0284C7"} />
       <Polyline points="11 17 14 20 21 13" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <Line x1="12" y1="23" x2="20" y2="23" stroke={selected ? "#FFFFFF" : "#38BDF8"} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="12" y1="23" x2="20" y2="23" stroke={selected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)"} strokeWidth="1.5" strokeLinecap="round" />
     </Svg>
   );
 }
@@ -445,6 +483,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
                         setErrors((prev) => ({ ...prev, visitType: false }));
                       }}
                       activeOpacity={0.75}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${item.label} visit`}
+                      accessibilityState={{ selected: isSelected }}
                       className="flex-1 rounded-[22px] py-3 px-1 items-center justify-center relative overflow-hidden"
                       style={{
                         backgroundColor: isSelected ? "transparent" : "#FFFFFF",
