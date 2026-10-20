@@ -55,6 +55,10 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
         if (res.ok) {
           const data = await res.json();
           const myNotifs = Array.isArray(data) ? data.filter((n: any) => {
+            // Exclude clinic admin-only request notifications (e.g. "New Appointment Request from...")
+            if (n.type === 'appointment_request' || n.type === 'telemedicine_request' || n.type === 'medcert_request') {
+              return false;
+            }
             if (userId && (String(n.patient_id) === String(userId) || String(n.patient) === String(userId))) return true;
             if (idNumber && (String(n.patient_id) === String(idNumber) || String(n.patient) === String(idNumber))) return true;
             if (userName && n.patientName && n.patientName.trim().toUpperCase() === userName) return true;
