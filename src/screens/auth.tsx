@@ -2147,29 +2147,16 @@ const AuthModal = memo(function AuthModal({
   // Step 2 Validation & Next: ID Verification & Clinic Record Detection
   const handleStep2Next = useCallback(async () => {
     const errs: Record<string, string> = {};
-    const { category } = createForm;
     const enteredId = (
-      category === "Student" ? createForm.studentId :
-      category === "Employee" ? createForm.employeeId :
-      createForm.outsiderId || ""
+      createForm.studentId ||
+      createForm.employeeId ||
+      createForm.outsiderId ||
+      ""
     ).trim();
 
-    const errKey = category === "Student" ? "studentId" : category === "Employee" ? "employeeId" : "outsiderId";
-
-    if (category === "Student" && !enteredId) {
-      errs.studentId = "Student ID is required";
-    } else if (category === "Employee" && !enteredId) {
-      errs.employeeId = "Employee ID is required";
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setRegErrors(errs);
-      return;
-    }
-
     if (!enteredId) {
-      // Outsider without ID: proceed to basic info
-      goToCreateStep(3, "next");
+      errs.studentId = "Please enter your ID number";
+      setRegErrors(errs);
       return;
     }
 
@@ -2192,7 +2179,7 @@ const AuthModal = memo(function AuthModal({
       if (checkData?.exists && checkData?.patient) {
         if (checkData.claimed) {
           setRegErrors({
-            [errKey]: "This ID is already linked to an active account. Please sign in.",
+            studentId: "This ID is already linked to an active account. Please sign in.",
           });
           setRegLoading(false);
           return;
@@ -2208,7 +2195,7 @@ const AuthModal = memo(function AuthModal({
 
         if (!otpRes.ok) {
           setRegErrors({
-            [errKey]: otpData.error || "Failed to send verification code to your email. Please try again.",
+            studentId: otpData.error || "Failed to send verification code to your email. Please try again.",
           });
           setRegLoading(false);
           return;
@@ -2217,25 +2204,27 @@ const AuthModal = memo(function AuthModal({
         triggerHaptic();
         const p = checkData.patient;
         const missing = checkData.missing_fields || [];
+        const detectedCategory: "Student" | "Employee" | "Outsider" = p.category || "Student";
         setCreateDetectedPatient({
           id: p.id,
           name: p.name || "",
-          category: p.category || category,
+          category: detectedCategory,
           claimed: false,
           missing_fields: missing,
         });
         setClaimMissingFields(missing);
         setCreateForm((prev) => ({
           ...prev,
-          category: p.category || prev.category,
+          category: detectedCategory,
           fullName: p.name || prev.fullName,
           contact: p.contact || prev.contact,
           dob: p.birthday || prev.dob,
           sex: p.sex || prev.sex,
           emergencyName: p.emergencyContact || prev.emergencyName,
           emergencyPhone: p.emergencyPhone || prev.emergencyPhone,
-          studentId: p.category === "Student" ? p.id : prev.studentId,
-          employeeId: p.category === "Employee" ? p.id : prev.employeeId,
+          studentId: detectedCategory === "Student" ? p.id : prev.studentId,
+          employeeId: detectedCategory === "Employee" ? p.id : prev.employeeId,
+          outsiderId: detectedCategory === "Outsider" ? p.id : prev.outsiderId,
           studentCategory: p.studentCategory || prev.studentCategory,
           gradeLevel: p.gradeLevel || prev.gradeLevel,
           guardianName: p.guardianName || prev.guardianName,
@@ -2269,7 +2258,24 @@ const AuthModal = memo(function AuthModal({
         return;
       }
 
-      // Not found in clinic records: proceed to Step 3 (Basic Information)
+      // Not found in clinic records: auto-detect category or default to Student
+      const upperId = enteredId.toUpperCase();
+      let autoCategory: "Student" | "Employee" | "Outsider" = "Student";
+      if (upperId.startsWith("EMP") || upperId.startsWith("FAC") || upperId.startsWith("STAFF")) {
+        autoCategory = "Employee";
+      } else if (upperId.startsWith("OUT")) {
+        autoCategory = "Outsider";
+      }
+
+      setCreateForm((prev) => ({
+        ...prev,
+        category: autoCategory,
+        studentId: autoCategory === "Student" ? enteredId : prev.studentId,
+        employeeId: autoCategory === "Employee" ? enteredId : prev.employeeId,
+        outsiderId: autoCategory === "Outsider" ? enteredId : prev.outsiderId,
+      }));
+
+      // proceed to Step 3 (Basic Information)
       goToCreateStep(3, "next");
     } catch (err) {
       console.warn("Clinic ID check warning:", err);
@@ -4581,11 +4587,9 @@ const AuthModal = memo(function AuthModal({
                           step={2}
                           total={5}
                           title={
-                            createForm.category === "Student"
-                              ? "Student ID"
-                              : createForm.category === "Employee"
-                              ? "Employee ID"
-                              : "Outsider / Patient ID"
+                            createDetectedPatient
+                              ? `${createDetectedPatient.category} ID`
+                              : "Student / Employee ID"
                           }
                           subtitle="Enter your ID to check clinic records"
                           onBack={() => goToCreateStep(1, "back")}
@@ -4608,116 +4612,32 @@ const AuthModal = memo(function AuthModal({
                           >
                             <GoogleLogoIcon size={16} />
                             <Text style={{ color: "#BFDBFE", fontSize: 12, fontFamily: "Outfit", fontWeight: "600", flex: 1 }}>
-                              Google Connected: {createForm.email} ({createForm.category})
+                              Google Connected: {createForm.email}
                             </Text>
                           </View>
                         )}
 
-                        {!isCategoryLocked && (
-                          <View style={{ marginBottom: 14 }}>
-                            <Text
-                              style={{
-                                color: "rgba(255, 255, 255, 0.75)",
-                                fontSize: 11.5,
-                                fontWeight: "700",
-                                textTransform: "uppercase",
-                                letterSpacing: 0.6,
-                                fontFamily: "Outfit",
-                                marginBottom: 6,
-                              }}
-                            >
-                              Account Category
-                            </Text>
-                            <View style={{ flexDirection: "row", gap: 8 }}>
-                              {(["Student", "Employee", "Outsider"] as const).map((cat) => {
-                                const isSelected = createForm.category === cat;
-                                return (
-                                  <TouchableOpacity
-                                    key={cat}
-                                    onPress={() => {
-                                      setCreateForm((f) => ({ ...f, category: cat }));
-                                      if (regErrors.studentId) setRegErrors((e) => ({ ...e, studentId: "" }));
-                                      if (regErrors.employeeId) setRegErrors((e) => ({ ...e, employeeId: "" }));
-                                      if (regErrors.outsiderId) setRegErrors((e) => ({ ...e, outsiderId: "" }));
-                                    }}
-                                    activeOpacity={0.8}
-                                    style={{
-                                      flex: 1,
-                                      height: 42,
-                                      borderRadius: 12,
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.14)",
-                                      borderWidth: 1.5,
-                                      borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
-                                    }}
-                                  >
-                                    <Text
-                                      style={{
-                                        color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
-                                        fontSize: 13,
-                                        fontWeight: isSelected ? "700" : "500",
-                                        fontFamily: "Outfit",
-                                      }}
-                                    >
-                                      {cat}
-                                    </Text>
-                                  </TouchableOpacity>
-                                );
-                              })}
-                            </View>
-                          </View>
-                        )}
-
-                        {createForm.category === "Student" && (
-                          <GlassInput
-                            ref={studentIdRef}
-                            label="Student ID"
-                            icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                            placeholder="e.g. 2024-00123"
-                            value={createForm.studentId}
-                            onChangeText={(t) => {
-                              setCreateForm((f) => ({ ...f, studentId: t }));
-                              if (regErrors.studentId) setRegErrors((e) => ({ ...e, studentId: "" }));
-                            }}
-                            error={regErrors.studentId}
-                            returnKeyType="done"
-                            onSubmitEditing={handleStep2Next}
-                          />
-                        )}
-
-                        {createForm.category === "Employee" && (
-                          <GlassInput
-                            ref={employeeIdRef}
-                            label="Employee ID"
-                            icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                            placeholder="e.g. EMP-2024-042"
-                            value={createForm.employeeId}
-                            onChangeText={(t) => {
-                              setCreateForm((f) => ({ ...f, employeeId: t }));
-                              if (regErrors.employeeId) setRegErrors((e) => ({ ...e, employeeId: "" }));
-                            }}
-                            error={regErrors.employeeId}
-                            returnKeyType="done"
-                            onSubmitEditing={handleStep2Next}
-                          />
-                        )}
-
-                        {createForm.category === "Outsider" && (
-                          <GlassInput
-                            label="Outsider / Patient ID (Optional)"
-                            icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                            placeholder="e.g. OUT-2026-001 (Leave blank if new)"
-                            value={createForm.outsiderId}
-                            onChangeText={(t) => {
-                              setCreateForm((f) => ({ ...f, outsiderId: t }));
-                              if (regErrors.outsiderId) setRegErrors((e) => ({ ...e, outsiderId: "" }));
-                            }}
-                            error={regErrors.outsiderId}
-                            returnKeyType="done"
-                            onSubmitEditing={handleStep2Next}
-                          />
-                        )}
+                        <GlassInput
+                          ref={studentIdRef}
+                          label="Student / Employee / Outsider ID"
+                          icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                          placeholder="e.g. 2024-00123 or EMP-2024-042"
+                          value={createForm.studentId || createForm.employeeId || createForm.outsiderId || ""}
+                          onChangeText={(t) => {
+                            setCreateForm((f) => ({
+                              ...f,
+                              studentId: t,
+                              employeeId: t,
+                              outsiderId: t,
+                            }));
+                            if (regErrors.studentId || regErrors.employeeId || regErrors.outsiderId) {
+                              setRegErrors((e) => ({ ...e, studentId: "", employeeId: "", outsiderId: "" }));
+                            }
+                          }}
+                          error={regErrors.studentId || regErrors.employeeId || regErrors.outsiderId}
+                          returnKeyType="done"
+                          onSubmitEditing={handleStep2Next}
+                        />
 
                         {/* Clinic Record Detected Notification Banner */}
                         {createDetectedPatient ? (
