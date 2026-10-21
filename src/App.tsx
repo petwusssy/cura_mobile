@@ -51,18 +51,37 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
 
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/notifications/`);
+        const queryTarget = userId || idNumber || '';
+        let url = `https://cura-backend-dtfj.onrender.com/api/notifications/?audience=patient`;
+        if (queryTarget) {
+          url += `&patient_id=${encodeURIComponent(String(queryTarget))}`;
+        }
+        if (userName) {
+          url += `&patient_name=${encodeURIComponent(userName)}`;
+        }
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           const myNotifs = Array.isArray(data) ? data.filter((n: any) => {
             // Exclude clinic admin-only request notifications (e.g. "New Appointment Request from...")
-            if (n.type === 'appointment_request' || n.type === 'telemedicine_request' || n.type === 'medcert_request') {
+            if (n.type === 'appointment_request' || n.type === 'telemedicine_request' || n.type === 'medcert_request' || n.type === 'stock') {
               return false;
             }
-            if (userId && (String(n.patient_id) === String(userId) || String(n.patient) === String(userId))) return true;
-            if (idNumber && (String(n.patient_id) === String(idNumber) || String(n.patient) === String(idNumber))) return true;
-            if (userName && n.patientName && n.patientName.trim().toUpperCase() === userName) return true;
-            if (userName && n.patient_name && n.patient_name.trim().toUpperCase() === userName) return true;
+            const nPatId = n.patient_id != null ? String(n.patient_id).trim() : '';
+            const nPat = n.patient != null ? String(n.patient).trim() : '';
+            const nName = (n.patientName || n.patient_name || '').trim().toUpperCase();
+
+            // If notification has a patient ID, it MUST match the logged in user's ID
+            if (nPatId || nPat) {
+              const matchesId = (userId && (nPatId === String(userId).trim() || nPat === String(userId).trim())) ||
+                               (idNumber && (nPatId === String(idNumber).trim() || nPat === String(idNumber).trim()));
+              return Boolean(matchesId);
+            }
+
+            // Fallback only if no patient ID was recorded on notification: strictly match patient name
+            if (userName && nName && nName === userName) {
+              return true;
+            }
             return false;
           }) : [];
           setNotifications(myNotifs);
