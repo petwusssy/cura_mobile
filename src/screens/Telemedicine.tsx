@@ -1081,7 +1081,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 request.grant(request.resources);
               }}
               onNavigationStateChange={(navState: any) => {
-                if (navState.url.startsWith("curamobile://") || (!navState.url.includes("/call/") && !navState.loading)) {
+                if (navState.url.startsWith("curamobile://")) {
                   setActiveCallRoom(null);
                 }
               }}
