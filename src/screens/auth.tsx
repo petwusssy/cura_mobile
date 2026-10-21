@@ -1224,7 +1224,7 @@ const AuthModal = memo(function AuthModal({
   const [signInGeneralError, setSignInGeneralError] = useState("");
 
   // Create Account Multi-Step Shared State
-  const [createStep, setCreateStep] = useState<1 | 2 | 3 | 4>(1);
+  const [createStep, setCreateStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const stepFadeAnim = useRef(new Animated.Value(1)).current;
   const stepSlideAnim = useRef(new Animated.Value(0)).current;
 
@@ -1482,6 +1482,85 @@ const AuthModal = memo(function AuthModal({
     return () => clearTimeout(timer);
   }, [createForm.email, triggerHaptic]);
 
+  // Debounced ID check for Step 2 while user is typing ID
+  useEffect(() => {
+    if (createStep !== 2) return;
+    const currentId = (
+      createForm.category === "Student" ? createForm.studentId :
+      createForm.category === "Employee" ? createForm.employeeId :
+      createForm.outsiderId || ""
+    ).trim();
+
+    if (currentId.length < 3) {
+      if (createDetectedPatient && !createDetectedPatient.id) {
+        setCreateDetectedPatient(null);
+      }
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: createForm.email.trim().toLowerCase(), id: currentId }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.exists && data.patient) {
+          triggerHaptic();
+          const p = data.patient;
+          const missing = data.missing_fields || [];
+          setCreateDetectedPatient({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            claimed: Boolean(data.claimed),
+            missing_fields: missing,
+          });
+          setClaimMissingFields(missing);
+          setCreateForm((prev) => ({
+            ...prev,
+            category: p.category || prev.category,
+            fullName: p.name || prev.fullName,
+            contact: p.contact || prev.contact,
+            dob: p.birthday || prev.dob,
+            sex: p.sex || prev.sex,
+            emergencyName: p.emergencyContact || prev.emergencyName,
+            emergencyPhone: p.emergencyPhone || prev.emergencyPhone,
+            studentId: p.category === "Student" ? p.id : prev.studentId,
+            employeeId: p.category === "Employee" ? p.id : prev.employeeId,
+            studentCategory: p.studentCategory || prev.studentCategory,
+            gradeLevel: p.gradeLevel || prev.gradeLevel,
+            guardianName: p.guardianName || prev.guardianName,
+            course: p.course || prev.course,
+            yearLevel: p.yearLevel || prev.yearLevel,
+            position: p.position || prev.position,
+            department: p.department || prev.department,
+            address: p.address || prev.address,
+          }));
+          setClaimMissingData({
+            contact: p.contact || "",
+            dob: p.birthday || "",
+            sex: p.sex || "",
+            emergencyName: p.emergencyContact || "",
+            emergencyPhone: p.emergencyPhone || "",
+            course: p.course || "",
+            yearLevel: p.yearLevel || "",
+            gradeLevel: p.gradeLevel || "",
+            guardianName: p.guardianName || "",
+            address: p.address || "",
+          });
+        } else {
+          setCreateDetectedPatient(null);
+        }
+      } catch {
+        setCreateDetectedPatient(null);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [createStep, createForm.category, createForm.studentId, createForm.employeeId, createForm.outsiderId, createForm.email, triggerHaptic]);
+
   // Category select modals (Student Classification, Grade Level, Year Level)
   const [selectModalType, setSelectModalType] = useState<"studentCategory" | "gradeLevel" | "yearLevel" | null>(null);
 
@@ -1609,7 +1688,7 @@ const AuthModal = memo(function AuthModal({
   }, [triggerHaptic, contentFadeAnim, stepFadeAnim, stepSlideAnim]);
 
   // Step Transition Animator: Immediately switches step and guarantees visibility
-  const goToCreateStep = useCallback((targetStep: 1 | 2 | 3 | 4, direction: "next" | "back") => {
+  const goToCreateStep = useCallback((targetStep: 1 | 2 | 3 | 4 | 5, direction: "next" | "back") => {
     triggerHaptic();
     Keyboard.dismiss();
     setCreateStep(targetStep);
@@ -2065,8 +2144,152 @@ const AuthModal = memo(function AuthModal({
     }
   }, [createForm.email, createForm.category, isCategoryLocked, createDetectedPatient, goToCreateStep, triggerHaptic, isGoogleSignup, googleVerifiedEmail]);
 
-  // Step 2 Validation & Next: Basic Information
-  const handleStep2Next = useCallback(() => {
+  // Step 2 Validation & Next: ID Verification & Clinic Record Detection
+  const handleStep2Next = useCallback(async () => {
+    const errs: Record<string, string> = {};
+    const { category } = createForm;
+    const enteredId = (
+      category === "Student" ? createForm.studentId :
+      category === "Employee" ? createForm.employeeId :
+      createForm.outsiderId || ""
+    ).trim();
+
+    const errKey = category === "Student" ? "studentId" : category === "Employee" ? "employeeId" : "outsiderId";
+
+    if (category === "Student" && !enteredId) {
+      errs.studentId = "Student ID is required";
+    } else if (category === "Employee" && !enteredId) {
+      errs.employeeId = "Employee ID is required";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+
+    if (!enteredId) {
+      // Outsider without ID: proceed to basic info
+      goToCreateStep(3, "next");
+      return;
+    }
+
+    setRegLoading(true);
+    setRegErrors({});
+
+    try {
+      const cleanEmail = createForm.email.trim().toLowerCase();
+      let checkData: any = createDetectedPatient;
+
+      if (!checkData || checkData.id !== enteredId) {
+        const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail, id: enteredId }),
+        });
+        checkData = await checkRes.json().catch(() => ({}));
+      }
+
+      if (checkData?.exists && checkData?.patient) {
+        if (checkData.claimed) {
+          setRegErrors({
+            [errKey]: "This ID is already linked to an active account. Please sign in.",
+          });
+          setRegLoading(false);
+          return;
+        }
+
+        // Unclaimed clinic record found in database! Send OTP to user's email to claim account
+        const otpRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail, id: enteredId }),
+        });
+        const otpData = await otpRes.json().catch(() => ({}));
+
+        if (!otpRes.ok) {
+          setRegErrors({
+            [errKey]: otpData.error || "Failed to send verification code to your email. Please try again.",
+          });
+          setRegLoading(false);
+          return;
+        }
+
+        triggerHaptic();
+        const p = checkData.patient;
+        const missing = checkData.missing_fields || [];
+        setCreateDetectedPatient({
+          id: p.id,
+          name: p.name || "",
+          category: p.category || category,
+          claimed: false,
+          missing_fields: missing,
+        });
+        setClaimMissingFields(missing);
+        setCreateForm((prev) => ({
+          ...prev,
+          category: p.category || prev.category,
+          fullName: p.name || prev.fullName,
+          contact: p.contact || prev.contact,
+          dob: p.birthday || prev.dob,
+          sex: p.sex || prev.sex,
+          emergencyName: p.emergencyContact || prev.emergencyName,
+          emergencyPhone: p.emergencyPhone || prev.emergencyPhone,
+          studentId: p.category === "Student" ? p.id : prev.studentId,
+          employeeId: p.category === "Employee" ? p.id : prev.employeeId,
+          studentCategory: p.studentCategory || prev.studentCategory,
+          gradeLevel: p.gradeLevel || prev.gradeLevel,
+          guardianName: p.guardianName || prev.guardianName,
+          course: p.course || prev.course,
+          yearLevel: p.yearLevel || prev.yearLevel,
+          position: p.position || prev.position,
+          department: p.department || prev.department,
+          address: p.address || prev.address,
+        }));
+        setClaimMissingData({
+          contact: p.contact || "",
+          dob: p.birthday || "",
+          sex: p.sex || "",
+          emergencyName: p.emergencyContact || "",
+          emergencyPhone: p.emergencyPhone || "",
+          course: p.course || "",
+          yearLevel: p.yearLevel || "",
+          gradeLevel: p.gradeLevel || "",
+          guardianName: p.guardianName || "",
+          address: p.address || "",
+        });
+
+        setIsClaimingWebAccount(true);
+        setClaimStep(1);
+        setClaimOtp("");
+        setClaimPassword("");
+        setClaimConfirmPassword("");
+        setClaimErrors({});
+        setClaimResendCooldown(30);
+        setRegLoading(false);
+        return;
+      }
+
+      // Not found in clinic records: proceed to Step 3 (Basic Information)
+      goToCreateStep(3, "next");
+    } catch (err) {
+      console.warn("Clinic ID check warning:", err);
+      goToCreateStep(3, "next");
+    } finally {
+      setRegLoading(false);
+    }
+  }, [
+    createForm.category,
+    createForm.studentId,
+    createForm.employeeId,
+    createForm.outsiderId,
+    createForm.email,
+    createDetectedPatient,
+    goToCreateStep,
+    triggerHaptic,
+  ]);
+
+  // Step 3 Validation & Next: Basic Information
+  const handleStep3Next = useCallback(() => {
     const errs: Record<string, string> = {};
     if (!createForm.fullName.trim()) {
       errs.fullName = "Full name is required";
@@ -2110,7 +2333,7 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    goToCreateStep(3, "next");
+    goToCreateStep(4, "next");
   }, [createForm.fullName, createForm.dob, createForm.sex, createForm.contact, createForm.emergencyName, createForm.emergencyPhone, goToCreateStep]);
 
   // Step 4 Validation & Submit: Password & Complete Registration
@@ -2288,15 +2511,12 @@ const AuthModal = memo(function AuthModal({
     }
   }, [createForm, onSuccessRegister, showAlert]);
 
-  // Step 3 Validation & Next: Category-Specific Details (with Web Cura Detection & OTP Claim)
-  const handleStep3Next = useCallback(async () => {
+  // Step 4 Validation & Next: Category-Specific Details
+  const handleStep4Next = useCallback(() => {
     const errs: Record<string, string> = {};
     const { category } = createForm;
 
     if (category === "Student") {
-      if (!createForm.studentId.trim()) {
-        errs.studentId = "Student ID is required";
-      }
       if (!createForm.studentCategory) {
         errs.studentCategory = "Student classification is required";
       }
@@ -2308,7 +2528,6 @@ const AuthModal = memo(function AuthModal({
         if (!createForm.guardianName.trim()) errs.guardianName = "Guardian name is required";
       }
     } else if (category === "Employee") {
-      if (!createForm.employeeId.trim()) errs.employeeId = "Employee ID is required";
       if (!createForm.position.trim()) errs.position = "Position is required";
       if (!createForm.department.trim()) errs.department = "Department is required";
     } else if (category === "Outsider") {
@@ -2320,104 +2539,17 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    const enteredId = (
-      category === "Student" ? createForm.studentId :
-      category === "Employee" ? createForm.employeeId :
-      createForm.outsiderId || ""
-    ).trim();
-
-    // Check if entered credentials match an existing patient added on Web CURA without email
-    if (enteredId) {
-      setRegLoading(true);
-      setRegErrors({});
-      try {
-        const cleanEmail = createForm.email.trim().toLowerCase();
-        const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cleanEmail, id: enteredId, name: createForm.fullName.trim() }),
-        });
-        const checkData = await checkRes.json().catch(() => ({}));
-
-        if (checkData.exists && checkData.patient) {
-          const errKey = category === "Student" ? "studentId" : category === "Employee" ? "employeeId" : "outsiderId";
-          if (checkData.claimed) {
-            setRegErrors({
-              [errKey]: "This ID is already linked to an active account. Please sign in.",
-            });
-            setRegLoading(false);
-            return;
-          }
-
-          // Unclaimed clinic record found in database! Send OTP to user's email to claim account
-          const otpRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: cleanEmail, id: enteredId }),
-          });
-          const otpData = await otpRes.json().catch(() => ({}));
-
-          if (!otpRes.ok) {
-            setRegErrors({
-              [errKey]: otpData.error || "Failed to send verification code to your email. Please try again.",
-            });
-            setRegLoading(false);
-            return;
-          }
-
-          triggerHaptic();
-          const p = checkData.patient;
-          const missing = checkData.missing_fields || [];
-          setCreateDetectedPatient({
-            id: p.id,
-            name: p.name || createForm.fullName,
-            category: p.category || category,
-            claimed: false,
-            missing_fields: missing,
-          });
-          setClaimMissingFields(missing);
-          setClaimMissingData({
-            contact: p.contact || createForm.contact || "",
-            dob: p.birthday || createForm.dob || "",
-            sex: p.sex || createForm.sex || "",
-            emergencyName: p.emergencyContact || createForm.emergencyName || "",
-            emergencyPhone: p.emergencyPhone || createForm.emergencyPhone || "",
-            course: p.course || createForm.course || "",
-            yearLevel: p.yearLevel || createForm.yearLevel || "",
-            gradeLevel: p.gradeLevel || createForm.gradeLevel || "",
-            guardianName: p.guardianName || createForm.guardianName || "",
-            address: p.address || createForm.address || "",
-          });
-
-          setIsClaimingWebAccount(true);
-          setClaimStep(1);
-          setClaimOtp("");
-          setClaimPassword("");
-          setClaimConfirmPassword("");
-          setClaimErrors({});
-          setClaimResendCooldown(30);
-          setRegLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn("Clinic ID check warning:", err);
-      } finally {
-        setRegLoading(false);
-      }
-    }
-
     if (isGooglePrefilled) {
       handleGetStarted();
       return;
     }
 
-    goToCreateStep(4, "next");
+    goToCreateStep(5, "next");
   }, [
     createForm,
     isGooglePrefilled,
     goToCreateStep,
     handleGetStarted,
-    triggerHaptic,
   ]);
 
   // Web Cura OTP Claim Handlers
@@ -4093,7 +4225,7 @@ const AuthModal = memo(function AuthModal({
                           >
                             <GlassStepHeader
                               step={1}
-                              total={4}
+                              total={5}
                               title="Account Email"
                               subtitle={isCategoryLocked ? `Category locked to ${createForm.category}` : "Enter your email to identify your account"}
                             />
@@ -4437,7 +4569,7 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 2: Basic Information */}
+                    {/* Step 2: Identification (Student ID / Employee ID / Outsider ID) */}
                     {createStep === 2 && (
                       <Animated.View
                         style={{
@@ -4447,10 +4579,260 @@ const AuthModal = memo(function AuthModal({
                       >
                         <GlassStepHeader
                           step={2}
-                          total={4}
+                          total={5}
+                          title={
+                            createForm.category === "Student"
+                              ? "Student ID"
+                              : createForm.category === "Employee"
+                              ? "Employee ID"
+                              : "Outsider / Patient ID"
+                          }
+                          subtitle="Enter your ID to check clinic records"
+                          onBack={() => goToCreateStep(1, "back")}
+                        />
+
+                        {isGoogleSignup && (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              backgroundColor: "rgba(59, 130, 246, 0.2)",
+                              borderWidth: 1,
+                              borderColor: "rgba(147, 197, 253, 0.4)",
+                              borderRadius: 12,
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              marginBottom: 12,
+                              gap: 8,
+                            }}
+                          >
+                            <GoogleLogoIcon size={16} />
+                            <Text style={{ color: "#BFDBFE", fontSize: 12, fontFamily: "Outfit", fontWeight: "600", flex: 1 }}>
+                              Google Connected: {createForm.email} ({createForm.category})
+                            </Text>
+                          </View>
+                        )}
+
+                        {!isCategoryLocked && (
+                          <View style={{ marginBottom: 14 }}>
+                            <Text
+                              style={{
+                                color: "rgba(255, 255, 255, 0.75)",
+                                fontSize: 11.5,
+                                fontWeight: "700",
+                                textTransform: "uppercase",
+                                letterSpacing: 0.6,
+                                fontFamily: "Outfit",
+                                marginBottom: 6,
+                              }}
+                            >
+                              Account Category
+                            </Text>
+                            <View style={{ flexDirection: "row", gap: 8 }}>
+                              {(["Student", "Employee", "Outsider"] as const).map((cat) => {
+                                const isSelected = createForm.category === cat;
+                                return (
+                                  <TouchableOpacity
+                                    key={cat}
+                                    onPress={() => {
+                                      setCreateForm((f) => ({ ...f, category: cat }));
+                                      if (regErrors.studentId) setRegErrors((e) => ({ ...e, studentId: "" }));
+                                      if (regErrors.employeeId) setRegErrors((e) => ({ ...e, employeeId: "" }));
+                                      if (regErrors.outsiderId) setRegErrors((e) => ({ ...e, outsiderId: "" }));
+                                    }}
+                                    activeOpacity={0.8}
+                                    style={{
+                                      flex: 1,
+                                      height: 42,
+                                      borderRadius: 12,
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      backgroundColor: isSelected ? "#1E4FD8" : "rgba(255, 255, 255, 0.14)",
+                                      borderWidth: 1.5,
+                                      borderColor: isSelected ? "#60A5FA" : "rgba(255, 255, 255, 0.25)",
+                                    }}
+                                  >
+                                    <Text
+                                      style={{
+                                        color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.85)",
+                                        fontSize: 13,
+                                        fontWeight: isSelected ? "700" : "500",
+                                        fontFamily: "Outfit",
+                                      }}
+                                    >
+                                      {cat}
+                                    </Text>
+                                  </TouchableOpacity>
+                                );
+                              })}
+                            </View>
+                          </View>
+                        )}
+
+                        {createForm.category === "Student" && (
+                          <GlassInput
+                            ref={studentIdRef}
+                            label="Student ID"
+                            icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                            placeholder="e.g. 2024-00123"
+                            value={createForm.studentId}
+                            onChangeText={(t) => {
+                              setCreateForm((f) => ({ ...f, studentId: t }));
+                              if (regErrors.studentId) setRegErrors((e) => ({ ...e, studentId: "" }));
+                            }}
+                            error={regErrors.studentId}
+                            returnKeyType="done"
+                            onSubmitEditing={handleStep2Next}
+                          />
+                        )}
+
+                        {createForm.category === "Employee" && (
+                          <GlassInput
+                            ref={employeeIdRef}
+                            label="Employee ID"
+                            icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                            placeholder="e.g. EMP-2024-042"
+                            value={createForm.employeeId}
+                            onChangeText={(t) => {
+                              setCreateForm((f) => ({ ...f, employeeId: t }));
+                              if (regErrors.employeeId) setRegErrors((e) => ({ ...e, employeeId: "" }));
+                            }}
+                            error={regErrors.employeeId}
+                            returnKeyType="done"
+                            onSubmitEditing={handleStep2Next}
+                          />
+                        )}
+
+                        {createForm.category === "Outsider" && (
+                          <GlassInput
+                            label="Outsider / Patient ID (Optional)"
+                            icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                            placeholder="e.g. OUT-2026-001 (Leave blank if new)"
+                            value={createForm.outsiderId}
+                            onChangeText={(t) => {
+                              setCreateForm((f) => ({ ...f, outsiderId: t }));
+                              if (regErrors.outsiderId) setRegErrors((e) => ({ ...e, outsiderId: "" }));
+                            }}
+                            error={regErrors.outsiderId}
+                            returnKeyType="done"
+                            onSubmitEditing={handleStep2Next}
+                          />
+                        )}
+
+                        {/* Clinic Record Detected Notification Banner */}
+                        {createDetectedPatient ? (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              backgroundColor: "rgba(16, 185, 129, 0.18)",
+                              borderWidth: 1.5,
+                              borderColor: "rgba(52, 211, 153, 0.55)",
+                              borderRadius: 14,
+                              padding: 12,
+                              marginTop: 4,
+                              marginBottom: 12,
+                              gap: 10,
+                            }}
+                          >
+                            <Text style={{ fontSize: 20 }}>🏥</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={{
+                                  color: "#6EE7B7",
+                                  fontSize: 10.5,
+                                  fontWeight: "700",
+                                  fontFamily: "Outfit",
+                                  textTransform: "uppercase",
+                                  letterSpacing: 0.5,
+                                }}
+                              >
+                                Clinic Record Detected
+                              </Text>
+                              <Text
+                                style={{
+                                  color: "#FFFFFF",
+                                  fontSize: 13.5,
+                                  fontWeight: "700",
+                                  fontFamily: "Outfit",
+                                  marginTop: 1,
+                                }}
+                                numberOfLines={1}
+                              >
+                                {createDetectedPatient.name}
+                              </Text>
+                              <Text
+                                style={{
+                                  color: "rgba(255, 255, 255, 0.7)",
+                                  fontSize: 11.5,
+                                  fontFamily: "Outfit",
+                                  marginTop: 2,
+                                }}
+                              >
+                                {createDetectedPatient.claimed
+                                  ? "Account already active. Please sign in."
+                                  : "Registered in CURA Clinic! Tap below to claim account with OTP."}
+                              </Text>
+                            </View>
+                          </View>
+                        ) : null}
+
+                        <TouchableOpacity
+                          onPress={handleStep2Next}
+                          disabled={regLoading}
+                          activeOpacity={0.85}
+                          style={{
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 14,
+                            backgroundColor: createDetectedPatient ? "#059669" : "#1E4FD8",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 10,
+                            shadowColor: createDetectedPatient ? "#059669" : "#1E4FD8",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 8,
+                            elevation: 4,
+                          }}
+                        >
+                          {regLoading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 16,
+                                fontWeight: "700",
+                                fontFamily: "Outfit",
+                                letterSpacing: 0.4,
+                              }}
+                            >
+                              {createDetectedPatient
+                                ? createDetectedPatient.claimed
+                                  ? "Go to Sign In →"
+                                  : "Claim Account (Send OTP) →"
+                                : "Next →"}
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      </Animated.View>
+                    )}
+
+                    {/* Step 3: Basic Information */}
+                    {createStep === 3 && (
+                      <Animated.View
+                        style={{
+                          opacity: stepFadeAnim,
+                          transform: [{ translateX: stepSlideAnim }],
+                        }}
+                      >
+                        <GlassStepHeader
+                          step={3}
+                          total={5}
                           title="Basic Information"
                           subtitle="Personal and emergency details"
-                          onBack={() => goToCreateStep(1, "back")}
+                          onBack={() => goToCreateStep(2, "back")}
                         />
 
                         {isGoogleSignup && (
@@ -4555,7 +4937,7 @@ const AuthModal = memo(function AuthModal({
                         />
 
                         <TouchableOpacity
-                          onPress={handleStep2Next}
+                          onPress={handleStep3Next}
                           activeOpacity={0.85}
                           style={{
                             width: "100%",
@@ -4587,8 +4969,8 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 3: Category-Specific Details */}
-                    {createStep === 3 && (
+                    {/* Step 4: Category-Specific Details */}
+                    {createStep === 4 && (
                       <Animated.View
                         style={{
                           opacity: stepFadeAnim,
@@ -4596,8 +4978,8 @@ const AuthModal = memo(function AuthModal({
                         }}
                       >
                         <GlassStepHeader
-                          step={3}
-                          total={4}
+                          step={4}
+                          total={5}
                           title={
                             createForm.category === "Student"
                               ? "Student Information"
@@ -4607,12 +4989,12 @@ const AuthModal = memo(function AuthModal({
                           }
                           subtitle={
                             createForm.category === "Student"
-                              ? "Fill in your student ID & academic level"
+                              ? "Fill in your academic level & classification"
                               : createForm.category === "Employee"
-                              ? "Fill in your employee ID & department"
+                              ? "Fill in your department & position"
                               : "Fill in your complete home address"
                           }
-                          onBack={() => goToCreateStep(2, "back")}
+                          onBack={() => goToCreateStep(3, "back")}
                         />
 
                         {isGoogleSignup && (
@@ -4637,22 +5019,34 @@ const AuthModal = memo(function AuthModal({
                           </View>
                         )}
 
+                        {/* Verified ID Badge */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "rgba(59, 130, 246, 0.18)",
+                            borderWidth: 1,
+                            borderColor: "rgba(147, 197, 253, 0.35)",
+                            borderRadius: 12,
+                            paddingHorizontal: 12,
+                            paddingVertical: 10,
+                            marginBottom: 12,
+                            gap: 8,
+                          }}
+                        >
+                          <IdCardIcon color="#60A5FA" size={18} />
+                          <Text style={{ color: "#BFDBFE", fontSize: 13, fontFamily: "Outfit", fontWeight: "600", flex: 1 }}>
+                            {createForm.category === "Student"
+                              ? `Student ID: ${createForm.studentId || "Not set"}`
+                              : createForm.category === "Employee"
+                              ? `Employee ID: ${createForm.employeeId || "Not set"}`
+                              : `ID: ${createForm.outsiderId || "N/A"}`}
+                          </Text>
+                        </View>
+
                         {/* Student Fields */}
                         {createForm.category === "Student" && (
                           <View>
-                            <GlassInput
-                              ref={studentIdRef}
-                              label="Student ID"
-                              icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                              placeholder="e.g. 2024-00123"
-                              value={createForm.studentId}
-                              onChangeText={(t) => {
-                                setCreateForm((f) => ({ ...f, studentId: t }));
-                                if (regErrors.studentId) setRegErrors((e) => ({ ...e, studentId: "" }));
-                              }}
-                              error={regErrors.studentId}
-                            />
-
                             <GlassSelectRow
                               label="Student Classification"
                               value={createForm.studentCategory}
@@ -4719,19 +5113,6 @@ const AuthModal = memo(function AuthModal({
                         {createForm.category === "Employee" && (
                           <View>
                             <GlassInput
-                              ref={employeeIdRef}
-                              label="Employee ID"
-                              icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                              placeholder="e.g. EMP-2024-042"
-                              value={createForm.employeeId}
-                              onChangeText={(t) => {
-                                setCreateForm((f) => ({ ...f, employeeId: t }));
-                                if (regErrors.employeeId) setRegErrors((e) => ({ ...e, employeeId: "" }));
-                              }}
-                              error={regErrors.employeeId}
-                            />
-
-                            <GlassInput
                               ref={positionRef}
                               label="Position / Designation"
                               placeholder="e.g. Assistant Professor"
@@ -4761,18 +5142,6 @@ const AuthModal = memo(function AuthModal({
                         {createForm.category === "Outsider" && (
                           <View>
                             <GlassInput
-                              label="Outsider / Patient ID (Optional if registered at clinic)"
-                              icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                              placeholder="e.g. OUT-2026-001 (Leave blank if new)"
-                              value={createForm.outsiderId}
-                              onChangeText={(t) => {
-                                setCreateForm((f) => ({ ...f, outsiderId: t }));
-                                if (regErrors.outsiderId) setRegErrors((e) => ({ ...e, outsiderId: "" }));
-                              }}
-                              error={regErrors.outsiderId}
-                            />
-
-                            <GlassInput
                               ref={addressRef}
                               label="Home Address"
                               icon={<MapPinIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
@@ -4790,7 +5159,7 @@ const AuthModal = memo(function AuthModal({
                         )}
 
                         <TouchableOpacity
-                          onPress={handleStep3Next}
+                          onPress={handleStep4Next}
                           activeOpacity={0.85}
                           style={{
                             width: "100%",
@@ -4826,7 +5195,7 @@ const AuthModal = memo(function AuthModal({
 
                         {isGooglePrefilled ? (
                           <TouchableOpacity
-                            onPress={() => goToCreateStep(4, "next")}
+                            onPress={() => goToCreateStep(5, "next")}
                             activeOpacity={0.7}
                             style={{ alignItems: "center", marginTop: 10, paddingVertical: 4 }}
                           >
@@ -4838,8 +5207,8 @@ const AuthModal = memo(function AuthModal({
                       </Animated.View>
                     )}
 
-                    {/* Step 4: Security & Password (Last Step) */}
-                    {createStep === 4 && (
+                    {/* Step 5: Security & Password (Last Step) */}
+                    {createStep === 5 && (
                       <Animated.View
                         style={{
                           opacity: stepFadeAnim,
@@ -4847,11 +5216,11 @@ const AuthModal = memo(function AuthModal({
                         }}
                       >
                         <GlassStepHeader
-                          step={4}
-                          total={4}
+                          step={5}
+                          total={5}
                           title="Security & Password"
                           subtitle="Set a secure password for your account"
-                          onBack={() => goToCreateStep(3, "back")}
+                          onBack={() => goToCreateStep(4, "back")}
                         />
 
                         {isGoogleSignup && (
