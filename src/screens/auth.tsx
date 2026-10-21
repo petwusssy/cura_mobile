@@ -1252,6 +1252,7 @@ const AuthModal = memo(function AuthModal({
     employeeId: "",
     position: "",
     department: "",
+    outsiderId: "",
     address: "",
   });
 
@@ -2041,6 +2042,8 @@ const AuthModal = memo(function AuthModal({
 
         triggerHaptic();
         setCreateForm((f) => ({ ...f, email: cleanEmail, category: chosenCategory }));
+        setIsClaimingWebAccount(true);
+        setClaimStep(1);
         setClaimOtp("");
         setClaimPassword("");
         setClaimConfirmPassword("");
@@ -2109,60 +2112,6 @@ const AuthModal = memo(function AuthModal({
 
     goToCreateStep(3, "next");
   }, [createForm.fullName, createForm.dob, createForm.sex, createForm.contact, createForm.emergencyName, createForm.emergencyPhone, goToCreateStep]);
-
-  // Step 3 Validation & Next: Category-Specific Details
-  const handleStep3Next = useCallback(() => {
-    const errs: Record<string, string> = {};
-    const { category } = createForm;
-
-    if (category === "Student") {
-      if (!createForm.studentId.trim()) {
-        errs.studentId = "Student ID is required";
-      }
-      if (!createForm.studentCategory) {
-        errs.studentCategory = "Student classification is required";
-      }
-      if (createForm.studentCategory === "College") {
-        if (!createForm.course.trim()) errs.course = "Course / Program is required";
-        if (!createForm.yearLevel.trim()) errs.yearLevel = "Year Level is required";
-      } else if (createForm.studentCategory) {
-        if (!createForm.gradeLevel.trim()) errs.gradeLevel = "Grade level is required";
-        if (!createForm.guardianName.trim()) errs.guardianName = "Guardian name is required";
-      }
-    } else if (category === "Employee") {
-      if (!createForm.employeeId.trim()) errs.employeeId = "Employee ID is required";
-      if (!createForm.position.trim()) errs.position = "Position is required";
-      if (!createForm.department.trim()) errs.department = "Department is required";
-    } else if (category === "Outsider") {
-      if (!createForm.address.trim()) errs.address = "Home address is required";
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setRegErrors(errs);
-      return;
-    }
-
-    if (isGooglePrefilled) {
-      handleGetStarted();
-      return;
-    }
-
-    goToCreateStep(4, "next");
-  }, [
-    createForm.category,
-    createForm.studentId,
-    createForm.studentCategory,
-    createForm.course,
-    createForm.yearLevel,
-    createForm.gradeLevel,
-    createForm.guardianName,
-    createForm.employeeId,
-    createForm.position,
-    createForm.department,
-    createForm.address,
-    isGooglePrefilled,
-    goToCreateStep,
-  ]);
 
   // Step 4 Validation & Submit: Password & Complete Registration
   const handleGetStarted = useCallback(async () => {
@@ -2339,6 +2288,138 @@ const AuthModal = memo(function AuthModal({
     }
   }, [createForm, onSuccessRegister, showAlert]);
 
+  // Step 3 Validation & Next: Category-Specific Details (with Web Cura Detection & OTP Claim)
+  const handleStep3Next = useCallback(async () => {
+    const errs: Record<string, string> = {};
+    const { category } = createForm;
+
+    if (category === "Student") {
+      if (!createForm.studentId.trim()) {
+        errs.studentId = "Student ID is required";
+      }
+      if (!createForm.studentCategory) {
+        errs.studentCategory = "Student classification is required";
+      }
+      if (createForm.studentCategory === "College") {
+        if (!createForm.course.trim()) errs.course = "Course / Program is required";
+        if (!createForm.yearLevel.trim()) errs.yearLevel = "Year Level is required";
+      } else if (createForm.studentCategory) {
+        if (!createForm.gradeLevel.trim()) errs.gradeLevel = "Grade level is required";
+        if (!createForm.guardianName.trim()) errs.guardianName = "Guardian name is required";
+      }
+    } else if (category === "Employee") {
+      if (!createForm.employeeId.trim()) errs.employeeId = "Employee ID is required";
+      if (!createForm.position.trim()) errs.position = "Position is required";
+      if (!createForm.department.trim()) errs.department = "Department is required";
+    } else if (category === "Outsider") {
+      if (!createForm.address.trim()) errs.address = "Home address is required";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setRegErrors(errs);
+      return;
+    }
+
+    const enteredId = (
+      category === "Student" ? createForm.studentId :
+      category === "Employee" ? createForm.employeeId :
+      createForm.outsiderId || ""
+    ).trim();
+
+    // Check if entered credentials match an existing patient added on Web CURA without email
+    if (enteredId) {
+      setRegLoading(true);
+      setRegErrors({});
+      try {
+        const cleanEmail = createForm.email.trim().toLowerCase();
+        const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail, id: enteredId, name: createForm.fullName.trim() }),
+        });
+        const checkData = await checkRes.json().catch(() => ({}));
+
+        if (checkData.exists && checkData.patient) {
+          const errKey = category === "Student" ? "studentId" : category === "Employee" ? "employeeId" : "outsiderId";
+          if (checkData.claimed) {
+            setRegErrors({
+              [errKey]: "This ID is already linked to an active account. Please sign in.",
+            });
+            setRegLoading(false);
+            return;
+          }
+
+          // Unclaimed clinic record found in database! Send OTP to user's email to claim account
+          const otpRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cleanEmail, id: enteredId }),
+          });
+          const otpData = await otpRes.json().catch(() => ({}));
+
+          if (!otpRes.ok) {
+            setRegErrors({
+              [errKey]: otpData.error || "Failed to send verification code to your email. Please try again.",
+            });
+            setRegLoading(false);
+            return;
+          }
+
+          triggerHaptic();
+          const p = checkData.patient;
+          const missing = checkData.missing_fields || [];
+          setCreateDetectedPatient({
+            id: p.id,
+            name: p.name || createForm.fullName,
+            category: p.category || category,
+            claimed: false,
+            missing_fields: missing,
+          });
+          setClaimMissingFields(missing);
+          setClaimMissingData({
+            contact: p.contact || createForm.contact || "",
+            dob: p.birthday || createForm.dob || "",
+            sex: p.sex || createForm.sex || "",
+            emergencyName: p.emergencyContact || createForm.emergencyName || "",
+            emergencyPhone: p.emergencyPhone || createForm.emergencyPhone || "",
+            course: p.course || createForm.course || "",
+            yearLevel: p.yearLevel || createForm.yearLevel || "",
+            gradeLevel: p.gradeLevel || createForm.gradeLevel || "",
+            guardianName: p.guardianName || createForm.guardianName || "",
+            address: p.address || createForm.address || "",
+          });
+
+          setIsClaimingWebAccount(true);
+          setClaimStep(1);
+          setClaimOtp("");
+          setClaimPassword("");
+          setClaimConfirmPassword("");
+          setClaimErrors({});
+          setClaimResendCooldown(30);
+          setRegLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Clinic ID check warning:", err);
+      } finally {
+        setRegLoading(false);
+      }
+    }
+
+    if (isGooglePrefilled) {
+      handleGetStarted();
+      return;
+    }
+
+    goToCreateStep(4, "next");
+  }, [
+    createForm,
+    isGooglePrefilled,
+    goToCreateStep,
+    handleGetStarted,
+    triggerHaptic,
+  ]);
+
   // Web Cura OTP Claim Handlers
   const handleVerifyClaimOTP = useCallback(async () => {
     const cleanOtp = claimOtp.trim();
@@ -2356,10 +2437,11 @@ const AuthModal = memo(function AuthModal({
 
     try {
       const cleanEmail = createForm.email.trim().toLowerCase();
+      const targetId = createDetectedPatient?.id || createForm.studentId.trim() || createForm.employeeId.trim() || createForm.outsiderId?.trim() || "";
       const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
+        body: JSON.stringify({ email: cleanEmail, otp: cleanOtp, id: targetId }),
       });
 
       if (res.ok) {
@@ -2374,7 +2456,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setClaimLoading(false);
     }
-  }, [claimOtp, createForm.email, triggerHaptic]);
+  }, [claimOtp, createForm.email, createForm.studentId, createForm.employeeId, createForm.outsiderId, createDetectedPatient, triggerHaptic]);
 
   const handleSetClaimPassword = useCallback(async () => {
     const errs: Record<string, string> = {};
@@ -2391,18 +2473,18 @@ const AuthModal = memo(function AuthModal({
     }
 
     if (claimMissingFields.includes("contact")) {
-      const digits = (claimMissingData.contact || "").replace(/\D/g, "");
+      const digits = (claimMissingData.contact || createForm.contact || "").replace(/\D/g, "");
       if (!digits) {
         errs.contact = "Contact number is required";
-      } else if (!isValidPHPhone(claimMissingData.contact) && !/^09\d{9}$/.test(digits)) {
+      } else if (!isValidPHPhone(claimMissingData.contact || createForm.contact) && !/^09\d{9}$/.test(digits)) {
         errs.contact = "Must be valid PH mobile (09XX-XXX-XXXX)";
       }
     }
     if (claimMissingFields.includes("emergencyPhone")) {
-      const emDigits = (claimMissingData.emergencyPhone || "").replace(/\D/g, "");
+      const emDigits = (claimMissingData.emergencyPhone || createForm.emergencyPhone || "").replace(/\D/g, "");
       if (!emDigits) {
         errs.emergencyPhone = "Emergency phone is required";
-      } else if (!isValidPHPhone(claimMissingData.emergencyPhone) && !/^09\d{9}$/.test(emDigits)) {
+      } else if (!isValidPHPhone(claimMissingData.emergencyPhone || createForm.emergencyPhone) && !/^09\d{9}$/.test(emDigits)) {
         errs.emergencyPhone = "Must be valid PH mobile";
       }
     }
@@ -2415,31 +2497,37 @@ const AuthModal = memo(function AuthModal({
     setClaimErrors({});
     setClaimLoading(true);
     const cleanEmail = createForm.email.trim().toLowerCase();
+    const targetId = createDetectedPatient?.id || createForm.studentId.trim() || createForm.employeeId.trim() || createForm.outsiderId?.trim() || "";
 
     try {
       const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/set-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, password: claimPassword }),
+        body: JSON.stringify({ email: cleanEmail, password: claimPassword, id: targetId }),
       });
 
       const resData = await res.json().catch(() => ({}));
 
       if (res.ok && resData.access) {
         const token = resData.access;
-        const userName = (resData.user?.name || cleanEmail.split("@")[0]).toUpperCase();
+        const userName = (resData.user?.name || createForm.fullName || cleanEmail.split("@")[0]).toUpperCase();
 
-        if (claimMissingFields.length > 0) {
-          const profilePayload: any = {};
-          if (claimMissingData.contact) profilePayload.contact = claimMissingData.contact;
-          if (claimMissingData.dob) profilePayload.birthday = claimMissingData.dob;
-          if (claimMissingData.sex) profilePayload.sex = claimMissingData.sex;
-          if (claimMissingData.emergencyName) profilePayload.emergencyContact = claimMissingData.emergencyName;
-          if (claimMissingData.emergencyPhone) profilePayload.emergencyPhone = claimMissingData.emergencyPhone;
-          if (claimMissingData.course) profilePayload.course = claimMissingData.course;
-          if (claimMissingData.yearLevel) profilePayload.yearLevel = claimMissingData.yearLevel;
-          if (claimMissingData.address) profilePayload.address = claimMissingData.address;
+        const profilePayload: any = {};
+        if (claimMissingData.contact || createForm.contact) profilePayload.contact = claimMissingData.contact || createForm.contact;
+        if (claimMissingData.dob || createForm.dob) profilePayload.birthday = claimMissingData.dob || createForm.dob;
+        if (claimMissingData.sex || createForm.sex) profilePayload.sex = claimMissingData.sex || createForm.sex;
+        if (claimMissingData.emergencyName || createForm.emergencyName) profilePayload.emergencyContact = claimMissingData.emergencyName || createForm.emergencyName;
+        if (claimMissingData.emergencyPhone || createForm.emergencyPhone) profilePayload.emergencyPhone = claimMissingData.emergencyPhone || createForm.emergencyPhone;
+        if (claimMissingData.course || createForm.course) profilePayload.course = claimMissingData.course || createForm.course;
+        if (claimMissingData.yearLevel || createForm.yearLevel) profilePayload.yearLevel = claimMissingData.yearLevel || createForm.yearLevel;
+        if (claimMissingData.address || createForm.address) profilePayload.address = claimMissingData.address || createForm.address;
+        if (createForm.position) profilePayload.position = createForm.position;
+        if (createForm.department) profilePayload.department = createForm.department;
+        if (createForm.studentCategory) profilePayload.studentCategory = createForm.studentCategory;
+        if (createForm.gradeLevel) profilePayload.gradeLevel = createForm.gradeLevel;
+        if (createForm.guardianName) profilePayload.guardianName = createForm.guardianName;
 
+        if (Object.keys(profilePayload).length > 0) {
           await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/complete-profile/`, {
             method: "POST",
             headers: {
@@ -2454,11 +2542,12 @@ const AuthModal = memo(function AuthModal({
           await AsyncStorage.setItem("@cura_access_token", token).catch(() => {});
         }
 
+        const assignedId = targetId || resData.user?.id || "";
         onSuccessRegister(
           cleanEmail,
           userName,
           token,
-          resData.user?.id || "",
+          assignedId,
           userName
         );
         showAlert("Account Activated! 🎉", "Your Web CURA clinic record has been successfully verified and activated.");
@@ -2470,7 +2559,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setClaimLoading(false);
     }
-  }, [claimPassword, claimConfirmPassword, claimMissingFields, claimMissingData, createForm.email, onSuccessRegister, showAlert]);
+  }, [claimPassword, claimConfirmPassword, claimMissingFields, claimMissingData, createForm, createDetectedPatient, onSuccessRegister, showAlert]);
 
   const handleResendClaimOTP = useCallback(async () => {
     if (claimResendCooldown > 0 || claimLoading) return;
@@ -2478,10 +2567,11 @@ const AuthModal = memo(function AuthModal({
     setClaimErrors({});
     try {
       const cleanEmail = createForm.email.trim().toLowerCase();
+      const targetId = createDetectedPatient?.id || createForm.studentId.trim() || createForm.employeeId.trim() || createForm.outsiderId?.trim() || "";
       const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail }),
+        body: JSON.stringify({ email: cleanEmail, id: targetId }),
       });
       if (res.ok) {
         setClaimResendCooldown(30);
@@ -2495,7 +2585,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setClaimLoading(false);
     }
-  }, [claimResendCooldown, claimLoading, createForm.email, showAlert]);
+  }, [claimResendCooldown, claimLoading, createForm.email, createForm.studentId, createForm.employeeId, createForm.outsiderId, createDetectedPatient, showAlert]);
 
   // ── Forgot Password Handlers (Same OTP Flow as Account Claim) ───────────────
   const handleStartForgotPassword = useCallback(() => {
@@ -4670,6 +4760,18 @@ const AuthModal = memo(function AuthModal({
                         {/* Outsider Fields */}
                         {createForm.category === "Outsider" && (
                           <View>
+                            <GlassInput
+                              label="Outsider / Patient ID (Optional if registered at clinic)"
+                              icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
+                              placeholder="e.g. OUT-2026-001 (Leave blank if new)"
+                              value={createForm.outsiderId}
+                              onChangeText={(t) => {
+                                setCreateForm((f) => ({ ...f, outsiderId: t }));
+                                if (regErrors.outsiderId) setRegErrors((e) => ({ ...e, outsiderId: "" }));
+                              }}
+                              error={regErrors.outsiderId}
+                            />
+
                             <GlassInput
                               ref={addressRef}
                               label="Home Address"
