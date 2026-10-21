@@ -2193,22 +2193,42 @@ const AuthModal = memo(function AuthModal({
 
     try {
       const cleanEmail = createForm.email.trim().toLowerCase();
-      let checkData: any = createDetectedPatient;
 
-      if (!checkData || checkData.id !== enteredId) {
+      // Check clinic record from backend or use existing detected state
+      let checkData: any = null;
+      try {
         const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cleanEmail, id: enteredId }),
+          body: JSON.stringify({ email: cleanEmail, id: enteredId, patient_id: enteredId }),
         });
         checkData = await checkRes.json().catch(() => ({}));
+      } catch (e) {
+        console.warn("Clinic check-email error in Step 2:", e);
       }
 
-      if (checkData?.exists && checkData?.patient) {
-        if (checkData.claimed) {
-          setRegErrors({
-            studentId: "This ID is already linked to an active account. Please sign in.",
-          });
+      const isRecordFound = Boolean(
+        (checkData?.exists && checkData?.patient) ||
+        (createDetectedPatient && (!createDetectedPatient.id || createDetectedPatient.id.toLowerCase() === enteredId.toLowerCase()))
+      );
+
+      const isClaimed = Boolean(
+        checkData?.claimed ||
+        (createDetectedPatient && createDetectedPatient.claimed)
+      );
+
+      const p = checkData?.patient || (createDetectedPatient ? {
+        id: createDetectedPatient.id || enteredId,
+        name: createDetectedPatient.name,
+        category: createDetectedPatient.category,
+      } : null);
+
+      const missing = checkData?.missing_fields || createDetectedPatient?.missing_fields || [];
+
+      if (isRecordFound && p) {
+        if (isClaimed) {
+          setSignInIdentifier(cleanEmail || enteredId);
+          switchAuthMode("signin");
           setRegLoading(false);
           return;
         }
@@ -2217,7 +2237,13 @@ const AuthModal = memo(function AuthModal({
         const otpRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cleanEmail, id: enteredId }),
+          body: JSON.stringify({
+            email: cleanEmail,
+            id: enteredId,
+            patient_id: enteredId,
+            allow_new: true,
+            is_google: isGoogleSignup,
+          }),
         });
         const otpData = await otpRes.json().catch(() => ({}));
 
@@ -2230,8 +2256,6 @@ const AuthModal = memo(function AuthModal({
         }
 
         triggerHaptic();
-        const p = checkData.patient;
-        const missing = checkData.missing_fields || [];
         const detectedCategory: "Student" | "Employee" | "Outsider" = p.category || "Student";
         setCreateDetectedPatient({
           id: p.id,
@@ -2326,6 +2350,8 @@ const AuthModal = memo(function AuthModal({
     createDetectedPatient,
     goToCreateStep,
     triggerHaptic,
+    isGoogleSignup,
+    switchAuthMode,
   ]);
 
   // Step 3 Validation & Next: Basic Information
