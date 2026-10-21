@@ -1295,6 +1295,33 @@ const AuthModal = memo(function AuthModal({
   } | null>(null);
   const [claimMissingFields, setClaimMissingFields] = useState<string[]>([]);
   const [isCategoryLocked, setIsCategoryLocked] = useState(false);
+
+  const step2EnteredId = (
+    createForm.studentId ||
+    createForm.employeeId ||
+    createForm.outsiderId ||
+    ""
+  ).trim();
+
+  const step2DetectedCategory: "Student" | "Employee" | "Outsider" = (() => {
+    if (createDetectedPatient?.category && (createDetectedPatient.category === "Student" || createDetectedPatient.category === "Employee" || createDetectedPatient.category === "Outsider")) {
+      return createDetectedPatient.category as "Student" | "Employee" | "Outsider";
+    }
+    const upper = step2EnteredId.toUpperCase();
+    if (upper.startsWith("EMP") || upper.startsWith("FAC") || upper.startsWith("STAFF")) {
+      return "Employee";
+    }
+    if (upper.startsWith("OUT")) {
+      return "Outsider";
+    }
+    if (/^\d{4}/.test(upper) || (upper.length >= 3 && /^\d+$/.test(upper)) || /^STU/i.test(upper)) {
+      return "Student";
+    }
+    if (createForm.category && (createForm.category === "Student" || createForm.category === "Employee" || createForm.category === "Outsider")) {
+      return createForm.category;
+    }
+    return "Student";
+  })();
   const [isGooglePrefilled, setIsGooglePrefilled] = useState(false);
   const [claimMissingData, setClaimMissingData] = useState({
     contact: "",
@@ -1486,9 +1513,10 @@ const AuthModal = memo(function AuthModal({
   useEffect(() => {
     if (createStep !== 2) return;
     const currentId = (
-      createForm.category === "Student" ? createForm.studentId :
-      createForm.category === "Employee" ? createForm.employeeId :
-      createForm.outsiderId || ""
+      createForm.studentId ||
+      createForm.employeeId ||
+      createForm.outsiderId ||
+      ""
     ).trim();
 
     if (currentId.length < 3) {
@@ -2261,10 +2289,16 @@ const AuthModal = memo(function AuthModal({
       // Not found in clinic records: auto-detect category or default to Student
       const upperId = enteredId.toUpperCase();
       let autoCategory: "Student" | "Employee" | "Outsider" = "Student";
-      if (upperId.startsWith("EMP") || upperId.startsWith("FAC") || upperId.startsWith("STAFF")) {
+      if (createDetectedPatient?.category) {
+        autoCategory = createDetectedPatient.category as "Student" | "Employee" | "Outsider";
+      } else if (upperId.startsWith("EMP") || upperId.startsWith("FAC") || upperId.startsWith("STAFF")) {
         autoCategory = "Employee";
       } else if (upperId.startsWith("OUT")) {
         autoCategory = "Outsider";
+      } else if (/^\d{4}/.test(upperId) || (upperId.length >= 3 && /^\d+$/.test(upperId)) || /^STU/i.test(upperId)) {
+        autoCategory = "Student";
+      } else if (createForm.category && (createForm.category === "Student" || createForm.category === "Employee" || createForm.category === "Outsider")) {
+        autoCategory = createForm.category;
       }
 
       setCreateForm((prev) => ({
@@ -4586,11 +4620,7 @@ const AuthModal = memo(function AuthModal({
                         <GlassStepHeader
                           step={2}
                           total={5}
-                          title={
-                            createDetectedPatient
-                              ? `${createDetectedPatient.category} ID`
-                              : "Student / Employee ID"
-                          }
+                          title={`${step2DetectedCategory} ID`}
                           subtitle="Enter your ID to check clinic records"
                           onBack={() => goToCreateStep(1, "back")}
                         />
@@ -4619,13 +4649,34 @@ const AuthModal = memo(function AuthModal({
 
                         <GlassInput
                           ref={studentIdRef}
-                          label="Student / Employee / Outsider ID"
+                          label={`${step2DetectedCategory} ID`}
                           icon={<IdCardIcon color="rgba(255, 255, 255, 0.85)" size={18} />}
-                          placeholder="e.g. 2024-00123 or EMP-2024-042"
+                          placeholder={
+                            step2DetectedCategory === "Employee"
+                              ? "e.g. EMP-2024-042"
+                              : step2DetectedCategory === "Outsider"
+                              ? "e.g. OUT-2024-001"
+                              : "e.g. 2024-00123"
+                          }
                           value={createForm.studentId || createForm.employeeId || createForm.outsiderId || ""}
                           onChangeText={(t) => {
+                            const tUpper = t.trim().toUpperCase();
+                            let autoCat: "Student" | "Employee" | "Outsider" = "Student";
+                            if (createDetectedPatient?.category) {
+                              autoCat = createDetectedPatient.category as any;
+                            } else if (tUpper.startsWith("EMP") || tUpper.startsWith("FAC") || tUpper.startsWith("STAFF")) {
+                              autoCat = "Employee";
+                            } else if (tUpper.startsWith("OUT")) {
+                              autoCat = "Outsider";
+                            } else if (/^\d{4}/.test(tUpper) || (tUpper.length >= 3 && /^\d+$/.test(tUpper)) || /^STU/i.test(tUpper)) {
+                              autoCat = "Student";
+                            } else if (createForm.category && (createForm.category === "Student" || createForm.category === "Employee" || createForm.category === "Outsider")) {
+                              autoCat = createForm.category;
+                            }
+
                             setCreateForm((f) => ({
                               ...f,
+                              category: autoCat,
                               studentId: t,
                               employeeId: t,
                               outsiderId: t,
