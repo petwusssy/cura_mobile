@@ -745,23 +745,38 @@ export function ProfileScreen({
     if (setUser) setUser(updatedUser);
     await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
 
-    // Sync avatar to backend database so it persists across all devices
+    // Sync avatar to backend database (which offloads to Google Drive) so it persists across all devices
     const patientId = user.id || (user as any).id_number;
     if (avatarChanged) {
       const avatarPayload = { avatar: newAvatar || "" };
+      const applyRemoteAvatar = async (remoteUrl?: string) => {
+        if (remoteUrl && remoteUrl !== newAvatar) {
+          updatedUser.avatarUrl = remoteUrl;
+          updatedUser.avatar = remoteUrl;
+          setFormAvatarUrl(remoteUrl);
+          if (setUser) setUser({ ...updatedUser });
+          await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
+        }
+      };
       if (patientId) {
         fetch(`https://cura-backend-dtfj.onrender.com/api/patients/${patientId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(avatarPayload),
-        }).catch(() => {});
+        })
+          .then(r => (r.ok ? r.json() : null))
+          .then(d => applyRemoteAvatar(d?.avatar))
+          .catch(() => {});
       }
       if (user.email) {
         fetch(`https://cura-backend-dtfj.onrender.com/api/patients/update-by-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email, ...avatarPayload }),
-        }).catch(() => {});
+        })
+          .then(r => (r.ok ? r.json() : null))
+          .then(d => applyRemoteAvatar(d?.avatar))
+          .catch(() => {});
       }
     }
 
