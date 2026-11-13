@@ -20,6 +20,7 @@ import {
   Keyboard,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../services/api";
 import { LinearGradient } from "expo-linear-gradient";
 import AnimatedReanimated, {
   useSharedValue,
@@ -1404,7 +1405,7 @@ const AuthModal = memo(function AuthModal({
     setSignInCheckingEmail(true);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+        const res = await fetchWithRetry(`${API_URL}/auth/check-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: trimmed }),
@@ -1443,7 +1444,7 @@ const AuthModal = memo(function AuthModal({
     setEmailChecking(true);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+        const res = await fetchWithRetry(`${API_URL}/auth/check-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: trimmed }),
@@ -1528,7 +1529,7 @@ const AuthModal = memo(function AuthModal({
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+        const res = await fetchWithRetry(`${API_URL}/auth/check-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: createForm.email.trim().toLowerCase(), id: currentId }),
@@ -1751,7 +1752,7 @@ const AuthModal = memo(function AuthModal({
     setSignInLoading(true);
 
     try {
-      const loginRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/login/`, {
+      const loginRes = await fetchWithRetry(`${API_URL}/auth/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: signInIdentifier.trim(), password: signInPassword }),
@@ -1808,7 +1809,7 @@ const AuthModal = memo(function AuthModal({
       let checkData: any = null;
       if (cleanEmail) {
         try {
-          const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+          const checkRes = await fetchWithRetry(`${API_URL}/auth/check-email/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: cleanEmail }),
@@ -1996,7 +1997,7 @@ const AuthModal = memo(function AuthModal({
     setSignInOtpLoading(true);
 
     try {
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, is_google: Boolean(modalGooglePendingToken) }),
@@ -2051,7 +2052,7 @@ const AuthModal = memo(function AuthModal({
         }
       }
 
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/verify-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
@@ -2114,7 +2115,7 @@ const AuthModal = memo(function AuthModal({
       const cleanEmail = trimmedEmail.toLowerCase();
       let checkData: any = createDetectedPatient;
       if (!checkData) {
-        const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+        const checkRes = await fetchWithRetry(`${API_URL}/auth/check-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: cleanEmail }),
@@ -2132,7 +2133,7 @@ const AuthModal = memo(function AuthModal({
         }
 
         // Account is already in Web CURA! Request OTP from Render backend
-        const otpRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+        const otpRes = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: cleanEmail }),
@@ -2197,7 +2198,7 @@ const AuthModal = memo(function AuthModal({
       // Check clinic record from backend or use existing detected state
       let checkData: any = null;
       try {
-        const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+        const checkRes = await fetchWithRetry(`${API_URL}/auth/check-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: cleanEmail, id: enteredId, patient_id: enteredId }),
@@ -2234,7 +2235,7 @@ const AuthModal = memo(function AuthModal({
         }
 
         // Unclaimed clinic record found in database! Send OTP to user's email to claim account
-        const otpRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+        const otpRes = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2446,7 +2447,7 @@ const AuthModal = memo(function AuthModal({
       const finalPassword = createForm.password || `Ggl_${Math.random().toString(36).slice(2)}${Date.now()}!`;
 
       // Step A: Register API call
-      const regRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/register/`, {
+      const regRes = await fetchWithRetry(`${API_URL}/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2516,7 +2517,7 @@ const AuthModal = memo(function AuthModal({
       }
 
       if (token) {
-        await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/complete-profile/`, {
+        await fetchWithRetry(`${API_URL}/auth/complete-profile/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -2636,7 +2637,7 @@ const AuthModal = memo(function AuthModal({
     try {
       const cleanEmail = createForm.email.trim().toLowerCase();
       const targetId = createDetectedPatient?.id || createForm.studentId.trim() || createForm.employeeId.trim() || createForm.outsiderId?.trim() || "";
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/verify-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, otp: cleanOtp, id: targetId }),
@@ -2698,7 +2699,7 @@ const AuthModal = memo(function AuthModal({
     const targetId = createDetectedPatient?.id || createForm.studentId.trim() || createForm.employeeId.trim() || createForm.outsiderId?.trim() || "";
 
     try {
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/set-password/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/set-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, password: claimPassword, id: targetId }),
@@ -2726,7 +2727,7 @@ const AuthModal = memo(function AuthModal({
         if (createForm.guardianName) profilePayload.guardianName = createForm.guardianName;
 
         if (Object.keys(profilePayload).length > 0) {
-          await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/complete-profile/`, {
+          await fetchWithRetry(`${API_URL}/auth/complete-profile/`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -2766,7 +2767,7 @@ const AuthModal = memo(function AuthModal({
     try {
       const cleanEmail = createForm.email.trim().toLowerCase();
       const targetId = createDetectedPatient?.id || createForm.studentId.trim() || createForm.employeeId.trim() || createForm.outsiderId?.trim() || "";
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, id: targetId }),
@@ -2817,7 +2818,7 @@ const AuthModal = memo(function AuthModal({
     setForgotLoading(true);
 
     try {
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanInput.toLowerCase() }),
@@ -2856,7 +2857,7 @@ const AuthModal = memo(function AuthModal({
 
     try {
       const cleanEmail = forgotEmail.trim().toLowerCase();
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/verify-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
@@ -2883,7 +2884,7 @@ const AuthModal = memo(function AuthModal({
 
     try {
       const cleanEmail = forgotEmail.trim().toLowerCase();
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail }),
@@ -2926,7 +2927,7 @@ const AuthModal = memo(function AuthModal({
     const cleanEmail = forgotEmail.trim().toLowerCase();
 
     try {
-      const res = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/set-password/`, {
+      const res = await fetchWithRetry(`${API_URL}/auth/set-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, password: forgotPassword }),
@@ -6252,7 +6253,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     const timer = setTimeout(async () => {
       setCheckingEmail(true);
       try {
-        const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/?email=${encodeURIComponent(trimmed)}`);
+        const res = await fetch(`${API_URL}/auth/check-email/?email=${encodeURIComponent(trimmed)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.exists) {
@@ -6297,7 +6298,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     setError("");
     setOtpLoading(true);
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/auth/request-otp/`, {
+      const res = await fetch(`${API_URL}/auth/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -6353,7 +6354,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
         return;
       }
 
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/auth/verify-otp/`, {
+      const res = await fetch(`${API_URL}/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase(), otp: cleanOtp }),
@@ -6407,7 +6408,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
       // Check if user has an existing account
       if (cleanEmail) {
         try {
-          const checkRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/check-email/`, {
+          const checkRes = await fetchWithRetry(`${API_URL}/auth/check-email/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: cleanEmail }),
@@ -6501,7 +6502,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
     if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
-      const loginRes = await fetchWithRetry(`https://cura-backend-dtfj.onrender.com/api/auth/login/`, {
+      const loginRes = await fetchWithRetry(`${API_URL}/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email.trim(), password: password }),
@@ -6781,8 +6782,6 @@ export function ForgotPasswordScreen({ navigate, goBack, setUser }: NavProps) {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const API_URL = "https://cura-backend-dtfj.onrender.com/api";
 
   const handleRequestOTP = async () => {
     setError("");

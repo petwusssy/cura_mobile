@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL, isAppForeground } from "../services/api";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
@@ -177,7 +178,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/availability/?t=${Date.now()}`);
+      const res = await fetch(`${API_URL}/appointments/availability/?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.unavailable_dates)) {
@@ -221,7 +222,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     if (!user?.id) return;
     if (!background) setIsLoading(true);
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/`);
+      const res = await fetch(`${API_URL}/appointments/`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -255,7 +256,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   useEffect(() => {
     if (activeTab === "history") {
       fetchRequests(false);
-      const interval = setInterval(() => fetchRequests(true), 6000);
+      const interval = setInterval(() => {
+        if (isAppForeground()) fetchRequests(true);
+      }, 25000);
       return () => clearInterval(interval);
     }
   }, [activeTab, fetchRequests]);
@@ -372,7 +375,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/appointments/`, {
+      const res = await fetch(`${API_URL}/appointments/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

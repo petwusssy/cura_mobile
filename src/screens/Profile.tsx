@@ -18,6 +18,7 @@ import {
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../services/api";
 import Svg, { Path, Polyline, Rect, Circle, Line } from "react-native-svg";
 import * as ImagePicker from "expo-image-picker";
 import type { Screen, AppUser } from "../types";
@@ -495,7 +496,7 @@ export function ProfileScreen({
     try {
       // 1. Sync with backend Patient record by ID
       if (patientId) {
-        await fetch(`https://cura-backend-dtfj.onrender.com/api/patients/${patientId}/`, {
+        await fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -504,7 +505,7 @@ export function ProfileScreen({
 
       // 2. Also sync by email if available to guarantee web patient profile update
       if (user.email) {
-        await fetch(`https://cura-backend-dtfj.onrender.com/api/patients/update-by-email/`, {
+        await fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email, ...payload }),
@@ -648,7 +649,7 @@ export function ProfileScreen({
 
     try {
       if (patientId) {
-        await fetch(`https://cura-backend-dtfj.onrender.com/api/patients/${patientId}/`, {
+        await fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -656,7 +657,7 @@ export function ProfileScreen({
       }
 
       if (user.email) {
-        await fetch(`https://cura-backend-dtfj.onrender.com/api/patients/update-by-email/`, {
+        await fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email, ...payload }),
@@ -759,7 +760,7 @@ export function ProfileScreen({
         }
       };
       if (patientId) {
-        fetch(`https://cura-backend-dtfj.onrender.com/api/patients/${patientId}/`, {
+        fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(avatarPayload),
@@ -769,7 +770,7 @@ export function ProfileScreen({
           .catch(() => {});
       }
       if (user.email) {
-        fetch(`https://cura-backend-dtfj.onrender.com/api/patients/update-by-email/`, {
+        fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email, ...avatarPayload }),
@@ -817,7 +818,7 @@ export function ProfileScreen({
 
       setSavingSecurity(true);
       try {
-        const res = await fetch("https://cura-backend-dtfj.onrender.com/api/auth/change-password/", {
+        const res = await fetch(`${API_URL}/auth/change-password/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet, Image, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL, isAppForeground } from "../services/api";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
@@ -136,7 +137,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   useEffect(() => {
     const fetchBedAssignment = async () => {
       try {
-        const res = await fetch('https://cura-backend-dtfj.onrender.com/api/beds/');
+        const res = await fetch(`${API_URL}/beds/`);
         if (!res.ok) return;
         const beds = await res.json();
         if (!Array.isArray(beds)) return;
@@ -161,7 +162,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     };
 
     fetchBedAssignment();
-    const interval = setInterval(fetchBedAssignment, 25000);
+    const interval = setInterval(() => {
+      if (isAppForeground()) fetchBedAssignment();
+    }, 45000);
     return () => clearInterval(interval);
   }, [(user as any)?.id, (user as any)?.id_number, user?.displayName, user?.firstName, user?.lastName]);
 
@@ -225,7 +228,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       if (joiningRef.current) return;
 
       try {
-        const res = await fetch('https://cura-backend-dtfj.onrender.com/api/queue/');
+        const res = await fetch(`${API_URL}/queue/`);
         if (!res.ok) return;
         const qs = await res.json();
         if (!Array.isArray(qs)) return;
@@ -262,7 +265,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     };
 
     fetchQueue();
-    const t = setInterval(fetchQueue, 6000);
+    const t = setInterval(() => {
+      if (isAppForeground()) fetchQueue();
+    }, 20000);
     return () => clearInterval(t);
   }, [(user as any)?.id, (user as any)?.id_number, user?.email]);
 
@@ -286,7 +291,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
     const fetchAdvisory = async () => {
       try {
-        const res = await fetch('https://cura-backend-dtfj.onrender.com/api/advisory/');
+        const res = await fetch(`${API_URL}/advisory/`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.status) {
@@ -301,7 +306,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       } catch (e) {}
     };
     fetchAdvisory();
-    const t = setInterval(fetchAdvisory, 5000);
+    const t = setInterval(() => {
+      if (isAppForeground()) fetchAdvisory();
+    }, 30000);
     return () => clearInterval(t);
   }, []);
 
@@ -315,7 +322,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     if (!patientId && user?.email) {
       try {
         const cleanEmail = user.email.trim();
-        const pRes = await fetch(`https://cura-backend-dtfj.onrender.com/api/patients/?email=${encodeURIComponent(cleanEmail)}`);
+        const pRes = await fetch(`${API_URL}/patients/?email=${encodeURIComponent(cleanEmail)}`);
         if (pRes.ok) {
           const patients = await pRes.json();
           const p = Array.isArray(patients) ? patients.find((item: any) => item.email?.toLowerCase().trim() === cleanEmail.toLowerCase()) : null;
@@ -330,7 +337,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     joiningRef.current = true;
     setJoining(true);
     try {
-      const res = await fetch('https://cura-backend-dtfj.onrender.com/api/queue/', {
+      const res = await fetch(`${API_URL}/queue/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ patient: String(patientId) })
@@ -352,7 +359,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     setQueue(null);
     setAheadCount(0);
     try {
-      await fetch(`https://cura-backend-dtfj.onrender.com/api/queue/${targetId}/cancel/`, {
+      await fetch(`${API_URL}/queue/${targetId}/cancel/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -914,7 +921,7 @@ export function NotificationsScreen({
     // Mark as read in backend
     if (!n.read && n.id) {
       try {
-        await fetch(`https://cura-backend-dtfj.onrender.com/api/notifications/${n.id}/`, {
+        await fetch(`${API_URL}/notifications/${n.id}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ read: true }),

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge, EmptyState } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Screen, AppUser } from "../types";
+import { API_URL, isAppForeground } from "../services/api";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -43,7 +44,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
     if (!user?.id) return;
     if (!background) setIsLoadingHistory(true);
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/medcert-requests/`);
+      const res = await fetch(`${API_URL}/medcert-requests/`);
       if (res.ok) {
         const data = await res.json();
         const myRequests = data.filter((r: any) => r.patient === user.id);
@@ -59,7 +60,9 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
   useEffect(() => {
     if (activeTab === "history") {
       fetchRequests(false);
-      const interval = setInterval(() => fetchRequests(true), 15000);
+      const interval = setInterval(() => {
+        if (isAppForeground()) fetchRequests(true);
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [activeTab, fetchRequests]);
@@ -97,7 +100,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/medcert-requests/`, {
+      const res = await fetch(`${API_URL}/medcert-requests/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

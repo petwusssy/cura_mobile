@@ -3,6 +3,7 @@ import { Image, View, Platform } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL, isAppForeground } from "./services/api";
 import type { Screen, AppUser } from "./types";
 import { MobileShell, BottomNav } from "./components/Shell";
 import { DEFAULT_USER } from "./data";
@@ -52,7 +53,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
     const fetchNotifications = async () => {
       try {
         const queryTarget = userId || idNumber || '';
-        let url = `https://cura-backend-dtfj.onrender.com/api/notifications/?audience=patient`;
+        let url = `${API_URL}/notifications/?audience=patient`;
         if (queryTarget) {
           url += `&patient_id=${encodeURIComponent(String(queryTarget))}`;
         }
@@ -108,7 +109,9 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 6000);
+    const interval = setInterval(() => {
+      if (isAppForeground()) fetchNotifications();
+    }, 30000);
     return () => clearInterval(interval);
   }, [user?.id, (user as any)?.id_number, user?.displayName, user?.firstName, user?.lastName, setNotifications, showAlert]);
 
@@ -163,11 +166,11 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     try {
       const cleanEmail = email.toLowerCase().trim();
       let patient: any = null;
-      const filtered = await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/patients/?email=${encodeURIComponent(cleanEmail)}`);
+      const filtered = await safeFetchJson(`${API_URL}/patients/?email=${encodeURIComponent(cleanEmail)}`);
       if (Array.isArray(filtered) && filtered.length > 0) {
         patient = filtered[0];
       } else {
-        const patients = (await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/patients/`)) || [];
+        const patients = (await safeFetchJson(`${API_URL}/patients/`)) || [];
         if (Array.isArray(patients)) {
           patient = patients.find((p: any) => p.email?.toLowerCase().trim() === cleanEmail);
         }
@@ -202,8 +205,8 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         
         // Fetch consultations and certificates concurrently
         const [allConsultations, allCertificates] = await Promise.all([
-          safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/?patient=${encodeURIComponent(patient.id)}`).then(d => Array.isArray(d) ? d : []),
-          safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/`).then(d => Array.isArray(d) ? d : []),
+          safeFetchJson(`${API_URL}/consultations/?patient=${encodeURIComponent(patient.id)}`).then(d => Array.isArray(d) ? d : []),
+          safeFetchJson(`${API_URL}/certificates/`).then(d => Array.isArray(d) ? d : []),
         ]);
         
         const userConsultationsRaw = allConsultations.filter((c: any) => String(c.patient) === String(patient.id));
@@ -288,7 +291,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     if (!pId) return;
 
     try {
-      const allConsultations = await safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/consultations/?patient=${encodeURIComponent(pId)}`);
+      const allConsultations = await safeFetchJson(`${API_URL}/consultations/?patient=${encodeURIComponent(pId)}`);
       if (Array.isArray(allConsultations)) {
         const userConsultationsRaw = allConsultations.filter((c: any) => String(c.patient) === String(pId));
         const userConsultationsMap = new Map();
@@ -351,7 +354,9 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     if (!pId) return;
 
     refreshConsultations();
-    const interval = setInterval(refreshConsultations, 6000);
+    const interval = setInterval(() => {
+      if (isAppForeground()) refreshConsultations();
+    }, 25000);
     return () => clearInterval(interval);
   }, [refreshConsultations, user?.id, (user as any)?.id_number]);
 
@@ -366,7 +371,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     }
 
     if (current?.screen === 'documents' || current?.screen === 'profile') {
-      safeFetchJson(`https://cura-backend-dtfj.onrender.com/api/certificates/?patient=${encodeURIComponent(pId)}`)
+      safeFetchJson(`${API_URL}/certificates/?patient=${encodeURIComponent(pId)}`)
         .then(allCertificates => {
           if (Array.isArray(allCertificates)) {
             const userCerts = allCertificates.filter((c: any) =>
@@ -577,7 +582,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
 
       if (resolvedTreatmentId) {
-        fetch(`https://cura-backend-dtfj.onrender.com/api/treatments/${resolvedTreatmentId}/`, {
+        fetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remarks: updatedRemarks }),

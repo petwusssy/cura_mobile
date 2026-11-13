@@ -4,6 +4,7 @@ import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL, isAppForeground } from "../services/api";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import * as WebBrowser from 'expo-web-browser';
@@ -251,10 +252,10 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const fetchAvailability = async () => {
     try {
       const [availRes, telemedRes] = await Promise.allSettled([
-        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/availability/?t=${Date.now()}`, {
+        fetch(`${API_URL}/telemedicine/availability/?t=${Date.now()}`, {
           headers: { "Cache-Control": "no-cache" }
         }),
-        fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/?t=${Date.now()}`, {
+        fetch(`${API_URL}/telemedicine/?t=${Date.now()}`, {
           headers: { "Accept": "application/json", "Cache-Control": "no-cache" }
         }),
       ]);
@@ -284,8 +285,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   useEffect(() => {
     fetchAvailability();
     const interval = setInterval(() => {
-      fetchAvailability();
-    }, 5000);
+      if (isAppForeground()) fetchAvailability();
+    }, 25000);
     return () => clearInterval(interval);
   }, []);
 
@@ -470,7 +471,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/`, {
+        const res = await fetch(`${API_URL}/telemedicine/`, {
           signal: controller.signal,
           headers: {
             "Accept": "application/json",
@@ -586,7 +587,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`https://cura-backend-dtfj.onrender.com/api/telemedicine/`, {
+      const res = await fetch(`${API_URL}/telemedicine/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
