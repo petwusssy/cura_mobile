@@ -129,7 +129,7 @@ export function PrivacyPolicyModal({
               className="py-2.5 px-3 rounded-xl bg-sky-50 border border-sky-200 items-center mb-2 active:opacity-80"
             >
               <Text className="text-xs font-bold text-[#0056B3]" style={{ fontFamily: 'Outfit' }}>
-                Open Full Web Notice (cura-bice.vercel.app/privacy) ↗
+                Open Full Web Notice ({PUBLIC_PRIVACY_URL.replace(/^https?:\/\//, '')}) ↗
               </Text>
             </Pressable>
           </ScrollView>

@@ -9,6 +9,7 @@ import {
   TextInput,
   Switch,
   Alert,
+  Linking,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -2567,10 +2568,35 @@ export function ProfileScreen({
                     setShowSecurityModal(false);
                     setShowPrivacyModal(true);
                   }}
-                  className="py-2 px-3 rounded-xl bg-sky-100/80 border border-sky-200 items-center active:opacity-80"
+                  className="py-2 px-3 rounded-xl bg-sky-100/80 border border-sky-200 items-center active:opacity-80 mb-2"
                 >
                   <Text className="text-xs font-bold text-[#0056B3]" style={{ fontFamily: "Outfit" }}>
                     Read Full Data Privacy Policy (RA 10173) →
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    const patientName = user.displayName || user.firstName || "Patient";
+                    const subject = encodeURIComponent(`CURA RA 10173 Privacy / Account Deletion Request (${userKey})`);
+                    const body = encodeURIComponent(
+                      `Hello UA Clinic Data Protection Officer,\n\nI would like to request [Account Deletion / Record Access / Rectification] under RA 10173:\n- Full Name: ${patientName}\n- ID Number: ${userKey}\n- Registered Email: ${user.email || "N/A"}\n\nDetails:\n`
+                    );
+                    Alert.alert(
+                      "Request Data Copy or Account Deletion",
+                      "Under Philippine RA 10173, data access, correction, and portal account deletion requests are verified by the UA Medical-Dental Clinic DPO (clinic@ua.edu.ph).",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Email DPO",
+                          onPress: () => Linking.openURL(`mailto:clinic@ua.edu.ph?subject=${subject}&body=${body}`).catch(() => {}),
+                        },
+                      ]
+                    );
+                  }}
+                  className="py-2 px-3 rounded-xl bg-white border border-slate-200 items-center active:opacity-80"
+                >
+                  <Text className="text-xs font-bold text-slate-700" style={{ fontFamily: "Outfit" }}>
+                    Request Data Copy / Account Deletion
                   </Text>
                 </Pressable>
               </View>

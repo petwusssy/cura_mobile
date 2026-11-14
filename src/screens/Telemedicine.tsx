@@ -4,7 +4,7 @@ import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient";
 import { Header, Button, Card, Badge } from "../components/Shell";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, isAppForeground } from "../services/api";
+import { API_URL, isAppForeground, getTelemedicineCallUrl } from "../services/api";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import * as WebBrowser from 'expo-web-browser';
@@ -427,7 +427,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     try {
       const roomId = getRoomId(rawUrl, reqId);
       const redirectUrl = Linking.createURL('telemedicine');
-      const targetUrl = `https://cura-bice.vercel.app/call/${roomId}?role=patient&redirect_url=${encodeURIComponent(redirectUrl)}`;
+      const targetUrl = getTelemedicineCallUrl(roomId, `role=patient&redirect_url=${encodeURIComponent(redirectUrl)}`);
 
       // Open in real external browser (Chrome / Safari) so WebRTC microphone and camera work natively
       const supported = await Linking.canOpenURL(targetUrl);
@@ -1066,7 +1066,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           {/* Embedded WebRTC Call via WebView */}
           {activeCallRoom && (
             <WebView
-              source={{ uri: `https://cura-bice.vercel.app/call/${activeCallRoom}?role=patient&embedded=true` }}
+              source={{ uri: getTelemedicineCallUrl(activeCallRoom, 'role=patient&embedded=true') }}
               style={{ flex: 1, backgroundColor: "#0B1C33" }}
               allowsInlineMediaPlayback={true}
               mediaPlaybackRequiresUserAction={false}

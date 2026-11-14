@@ -5,7 +5,15 @@ export const API_URL = (
   process.env.EXPO_PUBLIC_API_URL || 'https://cura-backend-dvj5.onrender.com/api'
 ).replace(/\/+$/, '');
 
-export const PUBLIC_PRIVACY_URL = 'https://cura-bice.vercel.app/privacy';
+export const WEB_APP_URL = (
+  process.env.EXPO_PUBLIC_WEB_URL || 'https://cura-bice.vercel.app'
+).replace(/\/+$/, '');
+
+export const PUBLIC_PRIVACY_URL = `${WEB_APP_URL}/privacy`;
+
+export function getTelemedicineCallUrl(roomId: string, query: string): string {
+  return `${WEB_APP_URL}/call/${roomId}?${query}`;
+}
 
 function isJwtExpired(token: string): boolean {
   try {
