@@ -643,7 +643,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       case "forgot-password": return <ForgotPasswordScreen navigate={navigate} goBack={goBack} />;
 
       case "home":           return <HomeScreen navigate={navigate} user={user} consultations={consultations} notifications={notifications} medications={medications} />;
-      case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} medications={medications} />;
+      case "notifications":  return <NotificationsScreen navigate={navigate} goBack={goBack} notifications={notifications} setNotifications={setNotifications} medications={medications} user={user} />;
       case "telemedicine":   return <TelemedicineScreen navigate={navigate} goBack={goBack} user={user} />;
       case "appointment":    return <AppointmentsScreen navigate={navigate} goBack={goBack} user={user} />;
       case "health-history": return <HealthHistoryScreen navigate={navigate} goBack={goBack} params={current.params} consultations={consultations} user={user} />;

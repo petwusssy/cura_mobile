@@ -35,10 +35,10 @@ try {
       try {
         const parsed = JSON.parse(val);
         if (parsed?.status) memoryCachedAdvisory = parsed;
-      } catch {}
+      } catch { }
     }
-  }).catch(() => {});
-} catch {}
+  }).catch(() => { });
+} catch { }
 
 export function HomeScreen({ navigate, user, consultations = [], notifications = [], medications = [] }: Props) {
 
@@ -84,10 +84,10 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               if (Array.isArray(parsed)) {
                 setIntakedIds(new Set(parsed));
               }
-            } catch {}
+            } catch { }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     fetchIntaked();
@@ -144,8 +144,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
         const currentPatientId = (user as any)?.id || (user as any)?.id_number;
         const currentPatientName = (
-          (user as any)?.displayName || 
-          (user as any)?.name || 
+          (user as any)?.displayName ||
+          (user as any)?.name ||
           `${user.firstName || ''} ${user.lastName || ''}`
         ).trim().toUpperCase();
 
@@ -158,7 +158,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         });
 
         setActiveBed(myBed || null);
-      } catch (e) {}
+      } catch (e) { }
     };
 
     fetchBedAssignment();
@@ -235,8 +235,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
         const currentPatientId = (user as any)?.id || (user as any)?.id_number;
         const currentPatientName = (
-          (user as any)?.displayName || 
-          (user as any)?.name || 
+          (user as any)?.displayName ||
+          (user as any)?.name ||
           `${user.firstName || ''} ${user.lastName || ''}`
         ).trim().toUpperCase();
 
@@ -252,8 +252,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           activeTickets.sort((a: any, b: any) => a.queue_number - b.queue_number);
           const myQueue = activeTickets[activeTickets.length - 1];
           setQueue(myQueue);
-          const ahead = qs.filter((q: any) => 
-            (q.status === 'waiting' || q.status === 'called') && 
+          const ahead = qs.filter((q: any) =>
+            (q.status === 'waiting' || q.status === 'called') &&
             q.queue_number < myQueue.queue_number
           ).length;
           setAheadCount(ahead);
@@ -261,7 +261,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
           setQueue(null);
           setAheadCount(0);
         }
-      } catch (e) {}
+      } catch (e) { }
     };
 
     fetchQueue();
@@ -284,9 +284,9 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               memoryCachedAdvisory = parsed;
               setAdvisory((prev) => prev || parsed);
             }
-          } catch {}
+          } catch { }
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     const fetchAdvisory = async () => {
@@ -300,10 +300,10 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               if (prev && prev.status === data.status && prev.message === data.message) return prev;
               return data;
             });
-            AsyncStorage.setItem('@cura_cached_advisory', JSON.stringify(data)).catch(() => {});
+            AsyncStorage.setItem('@cura_cached_advisory', JSON.stringify(data)).catch(() => { });
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     };
     fetchAdvisory();
     const t = setInterval(() => {
@@ -331,7 +331,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             const p = Array.isArray(patients) ? patients.find((item: any) => item.email?.toLowerCase().trim() === cleanEmail.toLowerCase()) : null;
             if (p?.id) patientId = p.id;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (!patientId) return;
@@ -365,7 +365,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-    } catch (e) {}
+    } catch (e) { }
     setCancelling(false);
   };
 
@@ -374,7 +374,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   return (
     <View className="flex-1 bg-transparent">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: Math.max(insets.top, 24) + 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        
+
         {/* 1. Header Section */}
         <View className="px-6 flex-row items-center justify-between mb-6 mt-4">
           <View className="flex-row items-center gap-3">
@@ -436,7 +436,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             className="w-12 h-12 rounded-full border border-sky-100 bg-white items-center justify-center relative shadow-xs"
           >
             <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#002D72" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><Path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><Path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </Svg>
             {unread > 0 && (
               <View className="absolute top-2 right-2.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white" />
@@ -447,7 +447,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         {/* Clinic Status Broadcast Banner */}
         {advisory && (
           <View className="px-6 mb-6">
-            <View 
+            <View
               className="bg-white rounded-[24px] p-5 border border-slate-100 relative overflow-hidden"
               style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 }}
             >
@@ -468,16 +468,14 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                   </Svg>
                   <Text className="text-xs font-bold uppercase tracking-wider" style={{ color: "#002D72" }}>Clinic Advisory</Text>
                 </View>
-                <View className={`px-3 py-1 rounded-full ${
-                  advisory.status === 'Open' ? 'bg-emerald-100' :
+                <View className={`px-3 py-1 rounded-full ${advisory.status === 'Open' ? 'bg-emerald-100' :
                   advisory.status === 'Half Day' ? 'bg-amber-100' :
-                  'bg-rose-100'
-                }`}>
-                  <Text className={`text-xs font-bold ${
-                    advisory.status === 'Open' ? 'text-emerald-700' :
-                    advisory.status === 'Half Day' ? 'text-amber-700' :
-                    'text-rose-700'
+                    'bg-rose-100'
                   }`}>
+                  <Text className={`text-xs font-bold ${advisory.status === 'Open' ? 'text-emerald-700' :
+                    advisory.status === 'Half Day' ? 'text-amber-700' :
+                      'text-rose-700'
+                    }`}>
                     {advisory.status === 'Open' ? '🟢 Open' : advisory.status === 'Half Day' ? '🟡 Half Day' : '🔴 Closed'}
                   </Text>
                 </View>
@@ -497,14 +495,14 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               isQueueActive
                 ? "Live Queue"
                 : isBedActive
-                ? "Active Rest"
-                : "Medication Due"
+                  ? "Active Rest"
+                  : "Medication Due"
             }
             action={!isQueueActive && !isBedActive ? "See all" : undefined}
             onAction={!isQueueActive && !isBedActive ? () => navigate("medications") : undefined}
           />
-          
-          <View 
+
+          <View
             className="w-full bg-white rounded-[28px] overflow-hidden mt-2"
             style={{
               shadowColor: '#0A2540',
@@ -517,7 +515,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             }}
           >
             {/* Top: Blue Hero Section */}
-            <Pressable 
+            <Pressable
               onPress={() => {
                 if (isQueueActive) return;
                 if (isBedActive && activeBed) {
@@ -545,15 +543,15 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                     {isQueueActive
                       ? (queue.status === 'called' ? "🎫 Your Turn!" : "🎫 Waitlist")
                       : isBedActive
-                      ? `🛏️ Bed ${activeBed?.bedNumber || ''} Timer`
-                      : dueMed
-                      ? "💊 Alert"
-                      : "✨ All Intaked"}
+                        ? `🛏️ Bed ${activeBed?.bedNumber || ''} Timer`
+                        : dueMed
+                          ? "💊 Alert"
+                          : "✨ All Intaked"}
                   </Text>
                 </View>
                 <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
                   <Svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="none">
-                    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </Svg>
                 </View>
               </View>
@@ -561,10 +559,10 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
               <View className="mb-6 z-10 w-3/4">
                 <Text className="text-white/80 text-sm font-medium mb-1">
                   {isQueueActive ? (
-                    queue.status === 'called' 
-                      ? "📢 It's your turn! Proceed to counter" 
-                      : aheadCount === 0 
-                        ? "🎉 You are next in line! (0 ahead)" 
+                    queue.status === 'called'
+                      ? "📢 It's your turn! Proceed to counter"
+                      : aheadCount === 0
+                        ? "🎉 You are next in line! (0 ahead)"
                         : `⏳ ${aheadCount} ${aheadCount === 1 ? 'patient' : 'patients'} ahead of you`
                   ) : isBedActive ? (
                     activeBed?.reason || BED_ASSIGNMENT?.reason || "Resting in Bed"
@@ -578,12 +576,12 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                   {isQueueActive
                     ? `Queue #${queue.queue_number}`
                     : isBedActive
-                    ? bedRemainingSecs > 0
-                      ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
-                      : "00:00 (Expired)"
-                    : dueMed
-                    ? (dueMed.name || dueMed.medicineName)
-                    : "All Caught Up!"}
+                      ? bedRemainingSecs > 0
+                        ? `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+                        : "00:00 (Expired)"
+                      : dueMed
+                        ? (dueMed.name || dueMed.medicineName)
+                        : "All Caught Up!"}
                 </Text>
                 {isBedActive && (
                   <Text className="text-white/80 text-xs mt-1">
@@ -601,14 +599,14 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                     {isQueueActive
                       ? (queue.status === 'called' ? "Ready Now" : aheadCount === 0 ? "You're Next" : "In Line")
                       : isBedActive
-                      ? (bedRemainingSecs > 0 ? "Bed Active" : "Time's Up")
-                      : dueMed
-                      ? "Take Meds"
-                      : "View Meds"}
+                        ? (bedRemainingSecs > 0 ? "Bed Active" : "Time's Up")
+                        : dueMed
+                          ? "Take Meds"
+                          : "View Meds"}
                   </Text>
                 </View>
                 {isQueueActive && (
-                  <Pressable 
+                  <Pressable
                     onPress={cancelQueue}
                     disabled={cancelling}
                     className="px-4 py-2.5 rounded-full bg-white/20 active:bg-white/30"
@@ -630,8 +628,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
             {/* Bottom: Quick Actions (Nakatuglong sa Medication Due container tulad sa GCash) */}
             <View className="bg-white px-2 pt-3.5 pb-4 flex-row items-center justify-between">
-              <Pressable 
-                onPress={joinQueue} 
+              <Pressable
+                onPress={joinQueue}
                 disabled={joining || Boolean(queue)}
                 className="items-center flex-1 active:opacity-75"
                 style={{ opacity: joining ? 0.5 : 1 }}
@@ -658,8 +656,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 </Text>
               </Pressable>
 
-              <Pressable 
-                onPress={() => navigate("telemedicine")} 
+              <Pressable
+                onPress={() => navigate("telemedicine")}
                 className="items-center flex-1 active:opacity-75"
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
@@ -684,8 +682,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 </Text>
               </Pressable>
 
-              <Pressable 
-                onPress={() => navigate("appointment")} 
+              <Pressable
+                onPress={() => navigate("appointment")}
                 className="items-center flex-1 active:opacity-75"
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
@@ -707,8 +705,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 </Text>
               </Pressable>
 
-              <Pressable 
-                onPress={() => navigate("medications")} 
+              <Pressable
+                onPress={() => navigate("medications")}
                 className="items-center flex-1 active:opacity-75"
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
@@ -735,8 +733,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
                 </Text>
               </Pressable>
 
-              <Pressable 
-                onPress={() => navigate("documents")} 
+              <Pressable
+                onPress={() => navigate("documents")}
                 className="items-center flex-1 active:opacity-75"
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
@@ -766,7 +764,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         <View className="px-6 pb-24">
           <SectionHeader title="Recent Visit" action={latestConsult ? "History" : undefined} onAction={latestConsult ? () => navigate("health-history") : undefined} />
           {latestConsult ? (
-            <Pressable 
+            <Pressable
               onPress={() => navigate("health-detail", { id: latestConsult.id })}
               className="bg-white rounded-[24px] p-4 flex-row items-center gap-4 mt-2"
               style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 }}
@@ -826,12 +824,14 @@ export function NotificationsScreen({
   notifications = [],
   setNotifications,
   medications = [],
+  user,
 }: {
   navigate: Props["navigate"];
   goBack: () => void;
   notifications?: any[];
   setNotifications?: any;
   medications?: any[];
+  user?: any;
 }) {
   const icons: Record<string, string> = {
     medication: "💊",
@@ -871,10 +871,10 @@ export function NotificationsScreen({
           try {
             const parsed = JSON.parse(data);
             if (Array.isArray(parsed)) setIntakedIds(new Set(parsed));
-          } catch {}
+          } catch { }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const pendingMeds = useMemo(() => {
@@ -915,6 +915,35 @@ export function NotificationsScreen({
 
   const unreadCount = allDisplayNotifs.filter((n: any) => !n.read).length;
 
+  const handleDelete = async (id: string) => {
+    if (!id) return;
+    if (setNotifications) {
+      setNotifications((prev: any[]) => {
+        const next = prev.filter((item) => item.id !== id);
+        AsyncStorage.setItem("@cura_cached_notifications", JSON.stringify(next)).catch(() => {});
+        return next;
+      });
+    }
+    try {
+      await fetch(`${API_URL}/notifications/${id}/`, { method: "DELETE" });
+    } catch { }
+  };
+
+  const handleClearAll = async () => {
+    if (setNotifications) {
+      setNotifications([]);
+    }
+    AsyncStorage.setItem("@cura_cached_notifications", JSON.stringify([])).catch(() => {});
+    try {
+      const queryTarget = user?.id || user?.id_number || "";
+      const userName = (user?.displayName || `${user?.firstName || ""} ${user?.lastName || ""}`).trim().toUpperCase();
+      let url = `${API_URL}/notifications/clear_all/?audience=patient`;
+      if (queryTarget) url += `&patient_id=${encodeURIComponent(String(queryTarget))}`;
+      if (userName) url += `&patient_name=${encodeURIComponent(userName)}`;
+      await fetch(url, { method: "POST" });
+    } catch { }
+  };
+
   const handlePress = async (n: any) => {
     if (n.isMedication) {
       navigate("medications");
@@ -934,7 +963,7 @@ export function NotificationsScreen({
             prev.map((item) => (item.id === n.id ? { ...item, read: true } : item))
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Navigate
@@ -973,8 +1002,20 @@ export function NotificationsScreen({
           </View>
         }
       />
-      
+
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}>
+        {notifications.length > 0 && (
+          <View className="flex-row justify-end mb-3">
+            <Pressable
+              onPress={handleClearAll}
+              className="px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200 active:opacity-80"
+            >
+              <Text className="text-[11px] font-bold text-red-600" style={{ fontFamily: "Outfit" }}>
+                Clear all
+              </Text>
+            </Pressable>
+          </View>
+        )}
         <View className="flex-col gap-3 pb-8">
           {allDisplayNotifs.length > 0 ? allDisplayNotifs.map((n) => (
             <Pressable
@@ -999,6 +1040,18 @@ export function NotificationsScreen({
                 <View className="flex-row items-center gap-2 mb-1">
                   <Text className="text-sm font-bold text-slate-800 flex-1" numberOfLines={1}>{n.title || n.type}</Text>
                   {!n.read && <View className="w-2.5 h-2.5 rounded-full bg-[#002D72]" />}
+                  {!n.isMedication && n.id && (
+                    <Pressable
+                      onPress={(e) => {
+                        e?.stopPropagation?.();
+                        handleDelete(n.id);
+                      }}
+                      hitSlop={8}
+                      className="w-6 h-6 rounded-full items-center justify-center bg-slate-100 active:bg-red-100"
+                    >
+                      <Text className="text-xs font-bold text-slate-500">✕</Text>
+                    </Pressable>
+                  )}
                 </View>
                 <Text className="text-xs text-slate-500 leading-relaxed">{n.message}</Text>
                 <View className="flex-row items-center justify-between mt-2">
