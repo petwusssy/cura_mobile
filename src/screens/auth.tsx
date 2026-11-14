@@ -1920,7 +1920,7 @@ const AuthModal = memo(function AuthModal({
       // Tell user no account found, do NOT log in, do NOT create account.
       // =========================================================================
       if (targetMode === "signin") {
-        if (checkData && !checkData.claimed) {
+        if (checkData && !checkData.claimed && !checkData.exists) {
           const msg = `No account found for this Google account (${cleanEmail || "unregistered"}). Please create an account first.`;
           setSignInGeneralError(msg);
           showAlert("Account Not Found", msg);
@@ -2018,6 +2018,7 @@ const AuthModal = memo(function AuthModal({
         setIsGoogleSignup(true);
         setGoogleVerifiedEmail(cleanEmail);
         setModalGooglePendingToken(idToken);
+        authenticateWithCuraBackend(idToken, cleanEmail, cleanName, undefined, "register").catch(() => {});
         setRegErrors({});
         setRegGeneralError("");
         goToCreateStep(2, "next");
@@ -2048,6 +2049,12 @@ const AuthModal = memo(function AuthModal({
   useEffect(() => {
     if (modalGoogleResponse?.type === "success" && modalGoogleResponse.params?.id_token) {
       onModalGoogleSuccess(modalGoogleResponse.params.id_token, undefined, undefined, modalGoogleTargetMode);
+    } else if (
+      modalGoogleResponse?.type === "error" ||
+      modalGoogleResponse?.type === "cancel" ||
+      modalGoogleResponse?.type === "dismiss"
+    ) {
+      setModalGoogleLoading(false);
     }
   }, [modalGoogleResponse, onModalGoogleSuccess, modalGoogleTargetMode]);
 
@@ -2330,26 +2337,28 @@ const AuthModal = memo(function AuthModal({
           return;
         }
 
-        // Unclaimed clinic record found in database! Send OTP to user's email to claim account
-        const otpRes = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: cleanEmail,
-            id: enteredId,
-            patient_id: enteredId,
-            allow_new: true,
-            is_google: isGoogleSignup,
-          }),
-        });
-        const otpData = await otpRes.json().catch(() => ({}));
-
-        if (!otpRes.ok) {
-          setRegErrors({
-            studentId: otpData.error || "Failed to send verification code to your email. Please try again.",
+        if (!isGoogleSignup) {
+          // Unclaimed clinic record found in database! Send OTP to user's email to claim account
+          const otpRes = await fetchWithRetry(`${API_URL}/auth/request-otp/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: cleanEmail,
+              id: enteredId,
+              patient_id: enteredId,
+              allow_new: true,
+              is_google: isGoogleSignup,
+            }),
           });
-          setRegLoading(false);
-          return;
+          const otpData = await otpRes.json().catch(() => ({}));
+
+          if (!otpRes.ok) {
+            setRegErrors({
+              studentId: otpData.error || "Failed to send verification code to your email. Please try again.",
+            });
+            setRegLoading(false);
+            return;
+          }
         }
 
         triggerHaptic();
@@ -2397,7 +2406,7 @@ const AuthModal = memo(function AuthModal({
         });
 
         setIsClaimingWebAccount(true);
-        setClaimStep(1);
+        setClaimStep(isGoogleSignup ? 2 : 1);
         setClaimOtp("");
         setClaimPassword("");
         setClaimConfirmPassword("");
@@ -2503,7 +2512,7 @@ const AuthModal = memo(function AuthModal({
   const handleGetStarted = useCallback(async () => {
     const errs: Record<string, string> = {};
 
-    if (!isGooglePrefilled) {
+    if (!isGooglePrefilled && !isGoogleSignup) {
       if (!createForm.password) {
         errs.password = "Password is required";
       } else if (createForm.password.length < 6) {
@@ -2678,7 +2687,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setRegLoading(false);
     }
-  }, [createForm, isGooglePrefilled, regPrivacyAccepted, onSuccessRegister, showAlert]);
+  }, [createForm, isGooglePrefilled, isGoogleSignup, regPrivacyAccepted, onSuccessRegister, showAlert]);
 
   // Step 4 Validation & Next: Category-Specific Details
   const handleStep4Next = useCallback(() => {
@@ -2708,17 +2717,10 @@ const AuthModal = memo(function AuthModal({
       return;
     }
 
-    if (isGooglePrefilled) {
-      handleGetStarted();
-      return;
-    }
-
     goToCreateStep(5, "next");
   }, [
     createForm,
-    isGooglePrefilled,
     goToCreateStep,
-    handleGetStarted,
   ]);
 
   // Web Cura OTP Claim Handlers
@@ -6603,7 +6605,7 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
             body: JSON.stringify({ email: cleanEmail }),
           });
           const checkData = await checkRes.json().catch(() => ({}));
-          if (checkData && !checkData.claimed) {
+          if (checkData && !checkData.claimed && !checkData.exists) {
             const notFoundMsg = `No account found for this Google account (${cleanEmail}). Please create an account first.`;
             setError(notFoundMsg);
             setGoogleLoading(false);
@@ -6662,6 +6664,12 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
   useEffect(() => {
     if (googleResponse?.type === "success" && googleResponse.params?.id_token) {
       onGoogleSuccess(googleResponse.params.id_token);
+    } else if (
+      googleResponse?.type === "error" ||
+      googleResponse?.type === "cancel" ||
+      googleResponse?.type === "dismiss"
+    ) {
+      setGoogleLoading(false);
     }
   }, [googleResponse, onGoogleSuccess]);
 
@@ -6798,7 +6806,13 @@ export function LoginScreen({ navigate, goBack, setUser, loadUserData }: NavProp
             label="Email address"
             placeholder="you@university.edu"
             value={email}
-            onChangeText={(val) => { setError(""); setEmail(val); }}
+            onChangeText={(val) => {
+              setError("");
+              setEmail(val);
+              setOtpSent(false);
+              setOtp("");
+              setDetectedPatient(null);
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
           />

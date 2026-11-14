@@ -24,19 +24,31 @@ function parseNextDoseTime(nextDoseStr?: string | null): Date | null {
   const str = String(nextDoseStr).trim();
   if (!str) return null;
 
-  const dateMatch = str.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  const dateMatch = str.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp][Mm]))?/);
   if (dateMatch) {
-    const [_, datePart, hh, mm, ss] = dateMatch;
+    const [_, datePart, hhRaw, mm, ss, ampm] = dateMatch;
     const [y, m, d] = datePart.split("-").map(Number);
-    return new Date(y, m - 1, d, parseInt(hh, 10), parseInt(mm, 10), ss ? parseInt(ss, 10) : 0);
+    let hh = parseInt(hhRaw, 10);
+    if (ampm) {
+      const upper = ampm.toUpperCase();
+      if (upper === "PM" && hh < 12) hh += 12;
+      if (upper === "AM" && hh === 12) hh = 0;
+    }
+    return new Date(y, m - 1, d, hh, parseInt(mm, 10), ss ? parseInt(ss, 10) : 0);
   }
 
-  const time24Match = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-  if (time24Match) {
+  const time12Or24Match = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp][Mm]))?$/);
+  if (time12Or24Match) {
     const now = new Date();
-    const hh = parseInt(time24Match[1], 10);
-    const mm = parseInt(time24Match[2], 10);
-    const ss = time24Match[3] ? parseInt(time24Match[3], 10) : 0;
+    let hh = parseInt(time12Or24Match[1], 10);
+    const mm = parseInt(time12Or24Match[2], 10);
+    const ss = time12Or24Match[3] ? parseInt(time12Or24Match[3], 10) : 0;
+    const ampm = time12Or24Match[4];
+    if (ampm) {
+      const upper = ampm.toUpperCase();
+      if (upper === "PM" && hh < 12) hh += 12;
+      if (upper === "AM" && hh === 12) hh = 0;
+    }
     return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss);
   }
 
@@ -86,11 +98,11 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
   const notifiedMedsRef = useRef<Set<string>>(new Set());
   const notifiedUpcomingMedsRef = useRef<Set<string>>(new Set());
 
-  // 1-second interval for real-time countdown timer
+  // 15-second interval for countdown timer (avoids 1Hz full-screen re-renders)
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 1000);
+    }, 15000);
     return () => clearInterval(timer);
   }, []);
 
@@ -141,24 +153,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       return next;
     });
     onIntake?.(id);
-
-    // Patch directly to server so it never reverts across devices
-    const targetMed = normalizedMeds.find((m) => m.id === id);
-    const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-    const resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
-
-    if (resolvedTreatmentId) {
-      const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
-      const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
-      const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
-
-      fetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ remarks: updatedRemarks }),
-      }).catch(() => {});
-    }
-  }, [normalizedMeds, onIntake]);
+  }, [onIntake]);
 
   const toTakeList = useMemo(() => {
     return normalizedMeds.filter((m) => m.status !== "intaked");

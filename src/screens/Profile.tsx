@@ -498,22 +498,30 @@ export function ProfileScreen({
 
     try {
       const authHeaders = await getAuthHeaders();
+      let synced = false;
       // 1. Sync with backend Patient record by ID
       if (patientId) {
-        await fetch(`${API_URL}/patients/${patientId}/`, {
+        const r1 = await fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify(payload),
-        }).catch(() => {});
+        }).catch(() => null);
+        if (r1?.ok) synced = true;
       }
 
       // 2. Also sync by email if available to guarantee web patient profile update
       if (user.email) {
-        await fetch(`${API_URL}/patients/update-by-email/`, {
+        const r2 = await fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ email: user.email, ...payload }),
-        }).catch(() => {});
+        }).catch(() => null);
+        if (r2?.ok) synced = true;
+      }
+      if (!synced) {
+        Alert.alert("Connection Error", "Could not sync changes with the clinic server. Please check your connection and try again.");
+        setSavingInfo(false);
+        return;
       }
 
       // 3. Update local session state
@@ -653,20 +661,28 @@ export function ProfileScreen({
 
     try {
       const authHeaders = await getAuthHeaders();
+      let synced = false;
       if (patientId) {
-        await fetch(`${API_URL}/patients/${patientId}/`, {
+        const r1 = await fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify(payload),
-        }).catch(() => {});
+        }).catch(() => null);
+        if (r1?.ok) synced = true;
       }
 
       if (user.email) {
-        await fetch(`${API_URL}/patients/update-by-email/`, {
+        const r2 = await fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ email: user.email, ...payload }),
-        }).catch(() => {});
+        }).catch(() => null);
+        if (r2?.ok) synced = true;
+      }
+      if (!synced) {
+        Alert.alert("Connection Error", "Could not sync this change with the clinic server. Please try again.");
+        setSavingSingleField(false);
+        return;
       }
 
       const updatedUser = {
@@ -1289,10 +1305,11 @@ export function ProfileScreen({
               </Svg>
             </Pressable>
           </View>
-          <View>
+          <View className="flex-1">
             <Text
               className="text-xl font-black text-cura-900"
               style={{ fontFamily: "Outfit" }}
+              numberOfLines={2}
             >
               {(user.firstName || "").toUpperCase()} {(user.lastName || "").toUpperCase()}
             </Text>
@@ -1486,7 +1503,7 @@ export function ProfileScreen({
             </View>
           ))}
 
-          {/* Logout */}
+          {/* Logout & Delete Account */}
           <View
             style={{
               backgroundColor: "#FFFFFF",
@@ -1502,7 +1519,20 @@ export function ProfileScreen({
             }}
           >
             <Pressable
-              onPress={resetApp}
+              onPress={() => {
+                if (Platform.OS === "web") {
+                  resetApp?.();
+                  return;
+                }
+                Alert.alert(
+                  "Sign Out",
+                  "Are you sure you want to sign out of your CURA account?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Sign Out", style: "destructive", onPress: () => resetApp?.() },
+                  ]
+                );
+              }}
               className="flex-row items-center gap-3.5 px-5 py-4 active:bg-slate-50"
             >
               <View className="w-6 items-center justify-center">
@@ -1535,6 +1565,64 @@ export function ProfileScreen({
               >
                 <Polyline points="9 18 15 12 9 6" />
               </Svg>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                const runDelete = async () => {
+                  try {
+                    const authHeaders = await getAuthHeaders();
+                    const res = await fetch(`${API_URL}/auth/delete-account/`, {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json", ...authHeaders },
+                    });
+                    if (res.ok) {
+                      resetApp?.();
+                    } else {
+                      Alert.alert("Error", "Could not delete mobile login account. Please try again.");
+                    }
+                  } catch {
+                    Alert.alert("Connection Error", "Please check your internet connection and try again.");
+                  }
+                };
+                if (Platform.OS === "web") {
+                  if (typeof window !== "undefined" && window.confirm("Delete your CURA mobile login account? Your official clinic medical records remain securely archived at the University Clinic.")) {
+                    runDelete();
+                  }
+                  return;
+                }
+                Alert.alert(
+                  "Delete Mobile Account",
+                  "Are you sure you want to delete your CURA mobile login credentials? Your official clinic medical records remain securely archived at the University Clinic under RA 10173.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Delete Account", style: "destructive", onPress: runDelete },
+                  ]
+                );
+              }}
+              className="flex-row items-center gap-3.5 px-5 py-4 active:bg-rose-50"
+              style={{ borderTopWidth: 1, borderTopColor: "#F1F5F9" }}
+            >
+              <View className="w-6 items-center justify-center">
+                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <Polyline points="3 6 5 6 21 6" />
+                  <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </Svg>
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-[15px] font-bold"
+                  style={{
+                    color: "#E11D48",
+                    fontFamily: "Outfit",
+                  }}
+                >
+                  Delete Account
+                </Text>
+                <Text className="text-[11px] font-medium text-slate-400">
+                  Remove mobile app login credentials
+                </Text>
+              </View>
             </Pressable>
           </View>
 

@@ -8,6 +8,7 @@
     "scheme": "curamobile",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "ph.edu.ua.cura",
       "icon": "./assets/expo.icon",
       "infoPlist": {
         "NSCameraUsageDescription": "CURA requires camera access for telemedicine video consultations.",
@@ -15,6 +16,7 @@
       }
     },
     "android": {
+      "package": "ph.edu.ua.cura",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

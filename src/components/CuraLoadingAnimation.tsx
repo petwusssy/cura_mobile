@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, ActivityIndicator } from "react-native";
 
 export interface CuraLoadingAnimationProps {
   /** Logo size in pixels (default: 160) */
@@ -346,9 +346,9 @@ export const CuraLoadingAnimation = memo(function CuraLoadingAnimation({
         style,
       ]}
     >
-      <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-        {/* Render fallback or web-compatible markup */}
-        <Text style={{ color: "#4B9ECB", fontWeight: "600" }}>{text}</Text>
+      <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <ActivityIndicator size="large" color="#4B9ECB" />
+        {showText ? <Text style={{ color: "#4B9ECB", fontWeight: "600" }}>{text}</Text> : null}
       </View>
     </View>
   );

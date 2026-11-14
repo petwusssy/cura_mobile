@@ -361,12 +361,10 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
   // Auto-reset time if patient changes date to a date where the selected time is already booked
   useEffect(() => {
-    if (time && date && bookedTimesForSelectedDate.length > 0) {
-      const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
-      const isBooked = bookedTimesForSelectedDate.some((b) => {
-        const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
-        return cleanB === cleanTime || cleanB.includes(cleanTime) || cleanTime.includes(cleanB);
-      });
+    if (time && date && activeUnavailableTimes.length > 0) {
+      const normSlot = (s: string) => s.split("-")[0].trim().toLowerCase().replace(/\s+/g, "");
+      const cleanTime = normSlot(time);
+      const isBooked = activeUnavailableTimes.some((b) => normSlot(b) === cleanTime);
       if (isBooked) {
         setTime("");
         Alert.alert(
@@ -375,7 +373,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         );
       }
     }
-  }, [date, bookedTimesForSelectedDate, time]);
+  }, [date, activeUnavailableTimes, time]);
 
 
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -395,6 +393,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     if (rawUrl) {
       const match = rawUrl.match(/CURA-Telemed-[a-zA-Z0-9_-]+/i);
       if (match) return match[0];
+    }
+    if (reqId && /^CURA-Telemed-[a-zA-Z0-9_-]+$/i.test(reqId)) {
+      return reqId;
     }
     const cleanId = (reqId || 'room').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
     return `CURA-Telemed-${cleanId}`;
@@ -527,13 +528,15 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
 
       const poll = async () => {
         if (!isMounted) return;
-        await fetchRequests(true);
+        if (isAppForeground()) {
+          await fetchRequests(true);
+        }
         if (isMounted) {
-          timerId = setTimeout(poll, 6000);
+          timerId = setTimeout(poll, 15000);
         }
       };
 
-      timerId = setTimeout(poll, 6000);
+      timerId = setTimeout(poll, 15000);
     }
 
     return () => {
@@ -543,7 +546,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   }, [activeTab, fetchRequests]);
 
   const handleSubmit = async () => {
-    if (!user?.id) return;
+    if (!user?.id || isSubmitting) return;
 
     const newErrors: { date?: boolean; time?: boolean; reason?: boolean } = {};
     if (!date.trim()) newErrors.date = true;
@@ -569,11 +572,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       return;
     }
 
-    const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
-    const isSlotTaken = bookedTimesForSelectedDate.some((b) => {
-      const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
-      return cleanB === cleanTime || cleanB.includes(cleanTime) || cleanTime.includes(cleanB);
-    });
+    const normSlot = (s: string) => s.split("-")[0].trim().toLowerCase().replace(/\s+/g, "");
+    const cleanTime = normSlot(time);
+    const isSlotTaken = activeUnavailableTimes.some((b) => normSlot(b) === cleanTime);
 
     if (isSlotTaken) {
       Alert.alert(

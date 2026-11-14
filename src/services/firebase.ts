@@ -170,7 +170,7 @@ export async function authenticateWithCuraBackend(
         err?.status ||
         err?.not_found ||
         err?.already_exists ||
-        (err?.message && !err.message.includes("Failed to fetch") && !err.message.includes("NetworkError"))
+        (err?.message && !err.message.includes("Failed to fetch") && !err.message.includes("NetworkError") && !err.message.includes("Network request failed"))
       ) {
         throw err;
       }

@@ -115,20 +115,20 @@ export const SplashScreen = memo(function SplashScreen({ onDone }: Props) {
       useNativeDriver: true,
     }).start();
 
-    // Fade-out at 2200ms
+    // Fade-out at 900ms
     const tOut = setTimeout(() => {
       Animated.timing(exitOpacity, {
         toValue: 0,
-        duration: 300,
+        duration: 250,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start();
-    }, 2200);
+    }, 900);
 
-    // Complete transition at 2500ms
+    // Complete transition at 1150ms
     const tDone = setTimeout(() => {
       onDoneRef.current?.();
-    }, 2500);
+    }, 1150);
 
     return () => {
       clearTimeout(tOut);

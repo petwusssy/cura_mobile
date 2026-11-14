@@ -124,23 +124,22 @@ export function LiquidGlassTabBar({
   const prevScrollY = useSharedValue(0);
   const isHidden = useSharedValue(0); // 0 = visible, 1 = hidden
 
-  if (scrollY && autoHideOnScroll) {
-    useDerivedValue(() => {
-      const currentY = scrollY.value;
-      const diff = currentY - prevScrollY.value;
+  useDerivedValue(() => {
+    if (!scrollY || !autoHideOnScroll) return 0;
+    const currentY = scrollY.value;
+    const diff = currentY - prevScrollY.value;
 
-      if (currentY > 60 && diff > 10) {
-        // Scrolling down
-        isHidden.value = withSpring(1, { damping: 20, stiffness: 180 });
-      } else if (diff < -8 || currentY <= 20) {
-        // Scrolling up or at the top
-        isHidden.value = withSpring(0, { damping: 20, stiffness: 180 });
-      }
+    if (currentY > 60 && diff > 10) {
+      // Scrolling down
+      isHidden.value = withSpring(1, { damping: 20, stiffness: 180 });
+    } else if (diff < -8 || currentY <= 20) {
+      // Scrolling up or at the top
+      isHidden.value = withSpring(0, { damping: 20, stiffness: 180 });
+    }
 
-      prevScrollY.value = currentY;
-      return currentY;
-    });
-  }
+    prevScrollY.value = currentY;
+    return currentY;
+  });
 
   const animatedContainerStyle = useAnimatedStyle(() => {
     const hidden = isHidden.value;

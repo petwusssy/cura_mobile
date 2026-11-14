@@ -248,7 +248,7 @@ export function HealthHistoryScreen({ navigate, goBack, consultations = [], user
 // ── Health Detail ─────────────────────────────────────────────────────────────
 
 export function HealthDetailScreen({ navigate: _navigate, goBack, params, consultations = [] }: Props) {
-  const consult = consultations.find((c) => c.id === params?.id);
+  const consult = consultations.find((c) => String(c.id) === String(params?.id));
 
   if (!consult) {
     return (
@@ -277,7 +277,7 @@ export function HealthDetailScreen({ navigate: _navigate, goBack, params, consul
           >
             <View className="flex-row items-center justify-between mb-3">
               <View className="bg-white/20 rounded-full px-2.5 py-1">
-                <Text className="text-white text-[10px] font-bold">#{consult.id.toUpperCase()}</Text>
+                <Text className="text-white text-[10px] font-bold">#{String(consult.id || '').toUpperCase()}</Text>
               </View>
               <Text className="text-white/70 text-xs">
                 {new Date(consult.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "Asia/Manila" })}

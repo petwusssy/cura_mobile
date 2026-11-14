@@ -44,10 +44,10 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
     if (!user?.id) return;
     if (!background) setIsLoadingHistory(true);
     try {
-      const res = await fetch(`${API_URL}/medcert-requests/`);
+      const res = await fetch(`${API_URL}/medcert-requests/?patient=${encodeURIComponent(String(user.id))}`);
       if (res.ok) {
         const data = await res.json();
-        const myRequests = data.filter((r: any) => r.patient === user.id);
+        const myRequests = Array.isArray(data) ? data.filter((r: any) => String(r.patient) === String(user.id)) : [];
         setRequests(myRequests);
       }
     } catch (err) {
@@ -140,10 +140,10 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
           <View className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-6">
             <Text className="text-4xl">📄</Text>
           </View>
-          <Text className="text-2xl font-bold text-white text-center mb-2" style={{ fontFamily: "Outfit" }}>
+          <Text className="text-2xl font-bold text-cura-900 text-center mb-2" style={{ fontFamily: "Outfit" }}>
             Request Submitted!
           </Text>
-          <Text className="text-sm text-white/80 text-center mb-8 max-w-[280px]">
+          <Text className="text-sm text-slate-600 text-center mb-8 max-w-[280px]">
             Your medical certificate request has been sent to the University Clinic for review and approval.
           </Text>
           <View className="w-full gap-3">
@@ -179,22 +179,22 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
         <Pressable
           onPress={() => setActiveTab("request")}
           className={`flex-1 py-3 items-center rounded-2xl ${
-            activeTab === "request" ? "bg-white" : "bg-white/20"
+            activeTab === "request" ? "bg-white" : "bg-white/60"
           }`}
           style={activeTab === "request" ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 } : {}}
         >
-          <Text className={`text-xs font-bold ${activeTab === "request" ? "text-cura-900" : "text-white"}`}>
+          <Text className={`text-xs font-bold ${activeTab === "request" ? "text-cura-900" : "text-slate-600"}`}>
             New Request
           </Text>
         </Pressable>
         <Pressable
           onPress={() => setActiveTab("history")}
           className={`flex-1 py-3 items-center rounded-2xl flex-row justify-center gap-1.5 ${
-            activeTab === "history" ? "bg-white" : "bg-white/20"
+            activeTab === "history" ? "bg-white" : "bg-white/60"
           }`}
           style={activeTab === "history" ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 } : {}}
         >
-          <Text className={`text-xs font-bold ${activeTab === "history" ? "text-cura-900" : "text-white"}`}>
+          <Text className={`text-xs font-bold ${activeTab === "history" ? "text-cura-900" : "text-slate-600"}`}>
             My Requests
           </Text>
           {requests.filter(r => r.status === 'Pending').length > 0 && (
@@ -214,8 +214,8 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           {errorMessage ? (
-            <View className="bg-rose-500/20 border border-rose-400/40 rounded-2xl p-4">
-              <Text className="text-white text-xs font-semibold">{errorMessage}</Text>
+            <View className="bg-rose-50 border border-rose-200 rounded-2xl p-4">
+              <Text className="text-rose-700 text-xs font-semibold">{errorMessage}</Text>
             </View>
           ) : null}
 
@@ -240,7 +240,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
 
           {/* Start Date */}
           <View className="flex-col gap-1.5">
-            <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">Date of Illness / Start Date</Text>
+            <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">Date of Illness / Start Date</Text>
             <Pressable
               onPress={() => {
                 if (Platform.OS !== "web") setShowStartDatePicker(true);
@@ -281,7 +281,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
 
           {/* End Date (Optional) */}
           <View className="flex-col gap-1.5">
-            <Text className="text-xs font-bold text-white/80 uppercase tracking-wider pl-1">End / Recovery Date (Optional)</Text>
+            <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">End / Recovery Date (Optional)</Text>
             <Pressable
               onPress={() => {
                 if (Platform.OS !== "web") setShowEndDatePicker(true);

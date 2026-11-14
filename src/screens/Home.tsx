@@ -317,26 +317,26 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const joinQueue = async () => {
     if (queue || joining || joiningRef.current) return;
 
-    let patientId = (user as any)?.id || (user as any)?.id_number;
-
-    if (!patientId && user?.email) {
-      try {
-        const cleanEmail = user.email.trim();
-        const pRes = await fetch(`${API_URL}/patients/?email=${encodeURIComponent(cleanEmail)}`);
-        if (pRes.ok) {
-          const patients = await pRes.json();
-          const p = Array.isArray(patients) ? patients.find((item: any) => item.email?.toLowerCase().trim() === cleanEmail.toLowerCase()) : null;
-          if (p?.id) patientId = p.id;
-        }
-      } catch (e) {}
-    }
-
-    if (!patientId) return;
-
-    cancelledQueueIdRef.current = null;
     joiningRef.current = true;
     setJoining(true);
     try {
+      let patientId = (user as any)?.id || (user as any)?.id_number;
+
+      if (!patientId && user?.email) {
+        try {
+          const cleanEmail = user.email.trim();
+          const pRes = await fetch(`${API_URL}/patients/?email=${encodeURIComponent(cleanEmail)}`);
+          if (pRes.ok) {
+            const patients = await pRes.json();
+            const p = Array.isArray(patients) ? patients.find((item: any) => item.email?.toLowerCase().trim() === cleanEmail.toLowerCase()) : null;
+            if (p?.id) patientId = p.id;
+          }
+        } catch (e) {}
+      }
+
+      if (!patientId) return;
+
+      cancelledQueueIdRef.current = null;
       const res = await fetch(`${API_URL}/queue/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -346,9 +346,11 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         const q = await res.json();
         setQueue(q);
       }
-    } catch (e) {}
-    setJoining(false);
-    joiningRef.current = false;
+    } catch (e) {
+    } finally {
+      setJoining(false);
+      joiningRef.current = false;
+    }
   };
 
   const cancelQueue = async () => {
@@ -630,6 +632,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
             <View className="bg-white px-2 pt-3.5 pb-4 flex-row items-center justify-between">
               <Pressable 
                 onPress={joinQueue} 
+                disabled={joining || Boolean(queue)}
                 className="items-center flex-1 active:opacity-75"
                 style={{ opacity: joining ? 0.5 : 1 }}
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
@@ -935,11 +938,12 @@ export function NotificationsScreen({
     }
 
     // Navigate
-    if (n.type.includes("telemedicine")) navigate("telemedicine");
-    else if (n.type.includes("appointment")) navigate("appointment");
-    else if (n.type === "medication") navigate("medications");
-    else if (n.type === "bed") navigate("home");
-    else if (n.type.includes("medcert") || n.type === "result") navigate("documents");
+    const nType = String(n.type || "");
+    if (nType.includes("telemedicine")) navigate("telemedicine");
+    else if (nType.includes("appointment")) navigate("appointment");
+    else if (nType === "medication") navigate("medications");
+    else if (nType === "bed") navigate("home");
+    else if (nType.includes("medcert") || nType === "result") navigate("documents");
   };
 
   return (

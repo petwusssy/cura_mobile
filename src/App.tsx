@@ -169,11 +169,6 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
       const filtered = await safeFetchJson(`${API_URL}/patients/?email=${encodeURIComponent(cleanEmail)}`);
       if (Array.isArray(filtered) && filtered.length > 0) {
         patient = filtered[0];
-      } else {
-        const patients = (await safeFetchJson(`${API_URL}/patients/`)) || [];
-        if (Array.isArray(patients)) {
-          patient = patients.find((p: any) => p.email?.toLowerCase().trim() === cleanEmail);
-        }
       }
       
       const storedToken = await AsyncStorage.getItem('@cura_access_token').catch(() => null);
@@ -206,7 +201,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         // Fetch consultations and certificates concurrently
         const [allConsultations, allCertificates] = await Promise.all([
           safeFetchJson(`${API_URL}/consultations/?patient=${encodeURIComponent(patient.id)}`).then(d => Array.isArray(d) ? d : []),
-          safeFetchJson(`${API_URL}/certificates/`).then(d => Array.isArray(d) ? d : []),
+          safeFetchJson(`${API_URL}/certificates/?patient=${encodeURIComponent(patient.id)}`).then(d => Array.isArray(d) ? d : []),
         ]);
         
         const userConsultationsRaw = allConsultations.filter((c: any) => String(c.patient) === String(patient.id));
@@ -297,6 +292,11 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         const userConsultationsMap = new Map();
         userConsultationsRaw.forEach((c: any) => userConsultationsMap.set(c.id, c));
         const userConsultations = Array.from(userConsultationsMap.values());
+        userConsultations.sort((a: any, b: any) => {
+          const dateA = new Date(`${a.date}T${a.timeIn || '00:00'}`).getTime();
+          const dateB = new Date(`${b.date}T${b.timeIn || '00:00'}`).getTime();
+          return dateB - dateA;
+        });
         setConsultations(userConsultations);
         AsyncStorage.setItem('@cura_cached_consultations', JSON.stringify(userConsultations)).catch(() => {});
 
@@ -573,33 +573,38 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   const handleIntakeMedication = useCallback((id: string) => {
+    let resolvedTreatmentId: string | null = null;
+    let updatedRemarks = "[INTAKED]";
+
     setMedications(prev => {
       const targetMed = prev.find(m => m.id === id);
       const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      const resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
+      resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
       const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
       const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
-      const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
-
-      if (resolvedTreatmentId) {
-        fetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ remarks: updatedRemarks }),
-        }).catch(() => {});
-
-        setConsultations(prevConsults => prevConsults.map(c => ({
-          ...c,
-          treatments: (c.treatments || []).map((t: any) =>
-            String(t.id) === String(resolvedTreatmentId) ? { ...t, remarks: updatedRemarks } : t
-          )
-        })));
-      }
+      updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
 
       const updatedMeds = prev.map(m => m.id === id ? { ...m, status: "intaked", rawRemarks: updatedRemarks } : m);
       AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(updatedMeds)).catch(() => {});
       return updatedMeds;
     });
+
+    if (resolvedTreatmentId) {
+      fetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remarks: updatedRemarks }),
+      }).catch(() => {});
+
+      const treatmentIdToUpdate = resolvedTreatmentId;
+      const remarksToApply = updatedRemarks;
+      setConsultations(prevConsults => prevConsults.map(c => ({
+        ...c,
+        treatments: (c.treatments || []).map((t: any) =>
+          String(t.id) === String(treatmentIdToUpdate) ? { ...t, remarks: remarksToApply } : t
+        )
+      })));
+    }
 
     AsyncStorage.getItem('@cura_intaked_meds').then(data => {
       let set = new Set<string>();

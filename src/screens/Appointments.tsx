@@ -298,16 +298,14 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   // Auto-reset time if patient changes date to a date where the selected time is already booked or closed
   useEffect(() => {
     if (time && date && activeUnavailableTimes.length > 0) {
-      const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
-      const isUnavailable = activeUnavailableTimes.some((b) => {
-        const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
-        return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
-      });
+      const normSlot = (s: string) => s.split("-")[0].trim().toLowerCase().replace(/\s+/g, "");
+      const cleanTime = normSlot(time);
+      const isUnavailable = activeUnavailableTimes.some((b) => normSlot(b) === cleanTime);
       if (isUnavailable) {
         setTime("");
       }
     }
-  }, [date, activeUnavailableTimes]);
+  }, [date, activeUnavailableTimes, time]);
 
   const handleOpenTimePicker = () => {
     if (!date) {
@@ -336,7 +334,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!user?.id) return;
+    if (!user?.id || isSubmitting) return;
 
     const newErrors: { visitType?: boolean; date?: boolean; time?: boolean; reason?: boolean } = {};
     if (!visitType) newErrors.visitType = true;
@@ -363,11 +361,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       Alert.alert("Date Unavailable", "The selected date is currently unavailable for in-person appointments. Please select an available date.");
       return;
     }
-    const cleanTime = time.toLowerCase().replace(/[\s:-]/g, "");
-    if (activeUnavailableTimes.some(b => {
-      const cleanB = b.toLowerCase().replace(/[\s:-]/g, "");
-      return cleanB === cleanTime || cleanTime.includes(cleanB) || cleanB.includes(cleanTime);
-    })) {
+    const normSlot = (s: string) => s.split("-")[0].trim().toLowerCase().replace(/\s+/g, "");
+    const cleanTime = normSlot(time);
+    if (activeUnavailableTimes.some(b => normSlot(b) === cleanTime)) {
       Alert.alert("Time Unavailable", "The selected time window is no longer available. Please choose another time.");
       setTime("");
       return;
@@ -399,9 +395,11 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         fetchRequests(true);
       } else {
         console.error("Failed to submit request", await res.text());
+        Alert.alert("Submission Failed", "Could not submit your appointment request. Please try again.");
       }
     } catch (err) {
       console.error("Error submitting request", err);
+      Alert.alert("Connection Error", "Please check your internet connection and try again.");
     } finally {
       setIsSubmitting(false);
     }
