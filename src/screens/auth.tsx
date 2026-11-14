@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../services/api";
+import { PrivacyPolicyModal, PRIVACY_POLICY_VERSION } from "../components/PrivacyPolicyModal";
 import { LinearGradient } from "expo-linear-gradient";
 import AnimatedReanimated, {
   useSharedValue,
@@ -1186,6 +1187,97 @@ function GlassStepHeader({
   );
 }
 
+// ── Reusable RA 10173 Privacy Consent Checkbox ────────────────────────────────
+
+function PrivacyConsentRow({
+  accepted,
+  onToggle,
+  onOpenPolicy,
+  error,
+}: {
+  accepted: boolean;
+  onToggle: () => void;
+  onOpenPolicy: () => void;
+  error?: string;
+}) {
+  return (
+    <View
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.10)",
+        borderWidth: 1,
+        borderColor: error ? "#FCA5A5" : "rgba(255, 255, 255, 0.24)",
+        borderRadius: 12,
+        padding: 11,
+        marginTop: 6,
+        marginBottom: 4,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+        <TouchableOpacity
+          onPress={onToggle}
+          activeOpacity={0.8}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: accepted }}
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: 6,
+            borderWidth: 1.5,
+            borderColor: accepted ? "#60A5FA" : "rgba(255, 255, 255, 0.65)",
+            backgroundColor: accepted ? "#1E4FD8" : "rgba(255, 255, 255, 0.08)",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 1,
+          }}
+        >
+          {accepted ? (
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900", lineHeight: 14 }}>✓</Text>
+          ) : null}
+        </TouchableOpacity>
+
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: "rgba(255, 255, 255, 0.92)",
+              fontSize: 12,
+              fontFamily: "Outfit",
+              lineHeight: 17,
+            }}
+          >
+            I have read and agree to CURA&apos;s{" "}
+            <Text
+              onPress={onOpenPolicy}
+              style={{
+                color: "#93C5FD",
+                fontWeight: "700",
+                textDecorationLine: "underline",
+              }}
+            >
+              Data Privacy Policy (RA 10173)
+            </Text>{" "}
+            for secure clinical and personal health record processing.
+          </Text>
+        </View>
+      </View>
+
+      {error ? (
+        <Text
+          style={{
+            color: "#FCA5A5",
+            fontSize: 11,
+            fontFamily: "Outfit",
+            fontWeight: "600",
+            marginTop: 6,
+            marginLeft: 30,
+          }}
+        >
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 // ── Standalone Glassmorphism Auth Modal ──────────────────────────────────────
 
 interface AuthModalProps {
@@ -1271,6 +1363,10 @@ const AuthModal = memo(function AuthModal({
   const [claimErrors, setClaimErrors] = useState<Record<string, string>>({});
   const [claimLoading, setClaimLoading] = useState(false);
   const [claimResendCooldown, setClaimResendCooldown] = useState(0);
+  const [regPrivacyAccepted, setRegPrivacyAccepted] = useState(false);
+  const [claimPrivacyAccepted, setClaimPrivacyAccepted] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyModalTarget, setPrivacyModalTarget] = useState<"register" | "claim" | null>(null);
 
   // Real-time detection for Sign In
   const [signInCheckingEmail, setSignInCheckingEmail] = useState(false);
@@ -2430,6 +2526,10 @@ const AuthModal = memo(function AuthModal({
       }
     }
 
+    if (!regPrivacyAccepted) {
+      errs.privacy = "Please agree to the Data Privacy Policy (RA 10173) to continue.";
+    }
+
     if (Object.keys(errs).length > 0) {
       setRegErrors(errs);
       return;
@@ -2457,6 +2557,8 @@ const AuthModal = memo(function AuthModal({
           name: trimmedName,
           id_number: selectedId,
           role: category,
+          privacy_accepted: regPrivacyAccepted,
+          privacy_policy_version: PRIVACY_POLICY_VERSION,
         }),
       });
 
@@ -2576,7 +2678,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setRegLoading(false);
     }
-  }, [createForm, onSuccessRegister, showAlert]);
+  }, [createForm, isGooglePrefilled, regPrivacyAccepted, onSuccessRegister, showAlert]);
 
   // Step 4 Validation & Next: Category-Specific Details
   const handleStep4Next = useCallback(() => {
@@ -2688,6 +2790,10 @@ const AuthModal = memo(function AuthModal({
       }
     }
 
+    if (!claimPrivacyAccepted) {
+      errs.privacy = "Please agree to the Data Privacy Policy (RA 10173) to activate your record.";
+    }
+
     if (Object.keys(errs).length > 0) {
       setClaimErrors(errs);
       return;
@@ -2702,7 +2808,13 @@ const AuthModal = memo(function AuthModal({
       const res = await fetchWithRetry(`${API_URL}/auth/set-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, password: claimPassword, id: targetId }),
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: claimPassword,
+          id: targetId,
+          privacy_accepted: claimPrivacyAccepted,
+          privacy_policy_version: PRIVACY_POLICY_VERSION,
+        }),
       });
 
       const resData = await res.json().catch(() => ({}));
@@ -2758,7 +2870,7 @@ const AuthModal = memo(function AuthModal({
     } finally {
       setClaimLoading(false);
     }
-  }, [claimPassword, claimConfirmPassword, claimMissingFields, claimMissingData, createForm, createDetectedPatient, onSuccessRegister, showAlert]);
+  }, [claimPassword, claimConfirmPassword, claimPrivacyAccepted, claimMissingFields, claimMissingData, createForm, createDetectedPatient, onSuccessRegister, showAlert]);
 
   const handleResendClaimOTP = useCallback(async () => {
     if (claimResendCooldown > 0 || claimLoading) return;
@@ -3952,6 +4064,29 @@ const AuthModal = memo(function AuthModal({
                         </Text>
                       </TouchableOpacity>
                     </View>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        setPrivacyModalTarget(null);
+                        setShowPrivacyModal(true);
+                      }}
+                      activeOpacity={0.75}
+                      style={{ alignItems: "center", marginTop: 12, paddingVertical: 2 }}
+                    >
+                      <Text
+                        style={{
+                          color: "rgba(255, 255, 255, 0.68)",
+                          fontSize: 11.5,
+                          fontFamily: "Outfit",
+                          textAlign: "center",
+                        }}
+                      >
+                        Protected under Philippine RA 10173 ·{" "}
+                        <Text style={{ color: "#93C5FD", fontWeight: "700", textDecorationLine: "underline" }}>
+                          Privacy Policy
+                        </Text>
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 ) : (
                   // Create Account Multi-Step Flow
@@ -4240,6 +4375,24 @@ const AuthModal = memo(function AuthModal({
                               error={claimErrors.confirmPassword}
                               returnKeyType="done"
                               onSubmitEditing={handleSetClaimPassword}
+                            />
+
+                            <PrivacyConsentRow
+                              accepted={claimPrivacyAccepted}
+                              onToggle={() => {
+                                setClaimPrivacyAccepted((prev) => {
+                                  const next = !prev;
+                                  if (next && claimErrors.privacy) {
+                                    setClaimErrors((e) => ({ ...e, privacy: "" }));
+                                  }
+                                  return next;
+                                });
+                              }}
+                              onOpenPolicy={() => {
+                                setPrivacyModalTarget("claim");
+                                setShowPrivacyModal(true);
+                              }}
+                              error={claimErrors.privacy}
                             />
 
                             <TouchableOpacity
@@ -5276,6 +5429,24 @@ const AuthModal = memo(function AuthModal({
                           error={regErrors.confirmPassword}
                         />
 
+                        <PrivacyConsentRow
+                          accepted={regPrivacyAccepted}
+                          onToggle={() => {
+                            setRegPrivacyAccepted((prev) => {
+                              const next = !prev;
+                              if (next && regErrors.privacy) {
+                                setRegErrors((e) => ({ ...e, privacy: "" }));
+                              }
+                              return next;
+                            });
+                          }}
+                          onOpenPolicy={() => {
+                            setPrivacyModalTarget("register");
+                            setShowPrivacyModal(true);
+                          }}
+                          error={regErrors.privacy}
+                        />
+
                         <TouchableOpacity
                           onPress={handleGetStarted}
                           disabled={regLoading}
@@ -5371,6 +5542,24 @@ const AuthModal = memo(function AuthModal({
           if (regErrors.yearLevel) setRegErrors((e) => ({ ...e, yearLevel: "" }));
         }}
         onClose={() => setSelectModalType(null)}
+      />
+
+      <PrivacyPolicyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+        onAccept={
+          privacyModalTarget === "register"
+            ? () => {
+                setRegPrivacyAccepted(true);
+                if (regErrors.privacy) setRegErrors((e) => ({ ...e, privacy: "" }));
+              }
+            : privacyModalTarget === "claim"
+            ? () => {
+                setClaimPrivacyAccepted(true);
+                if (claimErrors.privacy) setClaimErrors((e) => ({ ...e, privacy: "" }));
+              }
+            : undefined
+        }
       />
     </Modal>
   );

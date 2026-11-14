@@ -18,7 +18,8 @@ import {
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "../services/api";
+import { API_URL, getAuthHeaders } from "../services/api";
+import { PrivacyPolicyModal } from "../components/PrivacyPolicyModal";
 import Svg, { Path, Polyline, Rect, Circle, Line } from "react-native-svg";
 import * as ImagePicker from "expo-image-picker";
 import type { Screen, AppUser } from "../types";
@@ -181,6 +182,7 @@ export function ProfileScreen({
   const [showMascotModal, setShowMascotModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   // Saving states
   const [savingInfo, setSavingInfo] = useState(false);
@@ -494,11 +496,12 @@ export function ProfileScreen({
     }
 
     try {
+      const authHeaders = await getAuthHeaders();
       // 1. Sync with backend Patient record by ID
       if (patientId) {
         await fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify(payload),
         }).catch(() => {});
       }
@@ -507,7 +510,7 @@ export function ProfileScreen({
       if (user.email) {
         await fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ email: user.email, ...payload }),
         }).catch(() => {});
       }
@@ -648,10 +651,11 @@ export function ProfileScreen({
     }
 
     try {
+      const authHeaders = await getAuthHeaders();
       if (patientId) {
         await fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify(payload),
         }).catch(() => {});
       }
@@ -659,7 +663,7 @@ export function ProfileScreen({
       if (user.email) {
         await fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ email: user.email, ...payload }),
         }).catch(() => {});
       }
@@ -759,10 +763,11 @@ export function ProfileScreen({
           await AsyncStorage.setItem("@cura_user_session", JSON.stringify(updatedUser)).catch(() => {});
         }
       };
+      const authHeaders = await getAuthHeaders();
       if (patientId) {
         fetch(`${API_URL}/patients/${patientId}/`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify(avatarPayload),
         })
           .then(r => (r.ok ? r.json() : null))
@@ -772,7 +777,7 @@ export function ProfileScreen({
       if (user.email) {
         fetch(`${API_URL}/patients/update-by-email/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ email: user.email, ...avatarPayload }),
         })
           .then(r => (r.ok ? r.json() : null))
@@ -807,6 +812,10 @@ export function ProfileScreen({
   // Save Privacy & Security
   const handleSaveSecurity = async () => {
     if (newPassword || confirmPassword) {
+      if (!currentPassword.trim()) {
+        Alert.alert("Current Password Required", "Please enter your current password to verify your identity before changing your password.");
+        return;
+      }
       if (newPassword.length < 6) {
         Alert.alert("Invalid Password", "New password must be at least 6 characters long.");
         return;
@@ -818,9 +827,10 @@ export function ProfileScreen({
 
       setSavingSecurity(true);
       try {
+        const authHeaders = await getAuthHeaders();
         const res = await fetch(`${API_URL}/auth/change-password/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({
             email: user.email,
             current_password: currentPassword,
@@ -1184,8 +1194,8 @@ export function ProfileScreen({
           label: "Privacy & Security",
           cooldownActive: securityCooldown.active,
           sub: securityCooldown.active
-            ? `Cooldown (${securityCooldown.days}d) · Password & lock`
-            : "Password, biometrics & lock",
+            ? `Cooldown (${securityCooldown.days}d) · Password, lock & RA 10173`
+            : "Password, biometrics & RA 10173 privacy",
           color: "#ECFDF5",
           onPress: handleOpenSecurityModal,
         },
@@ -2534,7 +2544,7 @@ export function ProfileScreen({
                 />
               </View>
 
-              <View className="p-3 bg-sky-50 rounded-xl border border-sky-200 mb-2 flex-row items-start gap-2">
+              <View className="p-3 bg-sky-50 rounded-xl border border-sky-200 mb-3 flex-row items-start gap-2">
                 <View className="mt-0.5">
                   <CooldownBlueIcon size={14} color="#0056B3" />
                 </View>
@@ -2544,6 +2554,25 @@ export function ProfileScreen({
                     Password and security changes are subject to a 7-day cooldown to prevent unauthorized tampering.
                   </Text>
                 </View>
+              </View>
+
+              <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">RA 10173 Data Privacy &amp; Rights</Text>
+              <View className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 mb-2">
+                <Text className="text-xs font-bold text-slate-800 mb-1">Philippine Data Privacy Act Compliance</Text>
+                <Text className="text-[11px] text-slate-600 leading-relaxed mb-2.5">
+                  Clinical logs are retained 3–5 yrs (routine) or 10 yrs / age 18+10 yrs (clinical &amp; medcert). For record access, correction, or DPO requests, contact clinic@ua.edu.ph.
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setShowSecurityModal(false);
+                    setShowPrivacyModal(true);
+                  }}
+                  className="py-2 px-3 rounded-xl bg-sky-100/80 border border-sky-200 items-center active:opacity-80"
+                >
+                  <Text className="text-xs font-bold text-[#0056B3]" style={{ fontFamily: "Outfit" }}>
+                    Read Full Data Privacy Policy (RA 10173) →
+                  </Text>
+                </Pressable>
               </View>
             </ScrollView>
 
@@ -2657,11 +2686,23 @@ export function ProfileScreen({
                 </View>
               </View>
 
-              <View className="p-3 bg-sky-50 rounded-xl border border-sky-100 mb-2">
+              <View className="p-3 bg-sky-50 rounded-xl border border-sky-100 mb-3">
                 <Text className="text-[11px] font-semibold text-sky-900 text-center">
                   “Your health, our priority — committed to compassionate Assumptionist care.” 💙
                 </Text>
               </View>
+
+              <Pressable
+                onPress={() => {
+                  setShowAboutModal(false);
+                  setShowPrivacyModal(true);
+                }}
+                className="py-2.5 px-3 rounded-xl bg-slate-100 border border-slate-200 items-center mb-1 active:opacity-80"
+              >
+                <Text className="text-xs font-bold text-[#0056B3]" style={{ fontFamily: "Outfit" }}>
+                  View Data Privacy Policy (RA 10173)
+                </Text>
+              </Pressable>
             </ScrollView>
 
             <Pressable
@@ -2696,6 +2737,11 @@ export function ProfileScreen({
           </View>
         </View>
       </Modal>
+
+      <PrivacyPolicyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
     </View>
   );
 }
