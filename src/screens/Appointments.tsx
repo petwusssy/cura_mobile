@@ -428,10 +428,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     return (
       <View className="flex-1 bg-transparent">
         <Header title="Appointments" onBack={goBack} />
-        <ComingSoonView
-          title="Appointments are Coming Soon"
-          message="In-person appointment scheduling is currently locked by the University Clinic. Please visit the clinic counter for assistance."
-        />
+        <ComingSoonView title="Appointments are Coming Soon" />
       </View>
     );
   }

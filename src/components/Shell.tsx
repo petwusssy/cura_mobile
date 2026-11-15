@@ -478,7 +478,7 @@ export function EmptyState({ emoji, title, message }: { emoji: string; title: st
   );
 }
 
-export function ComingSoonView({ title, message }: { title: string; message: string }) {
+export function ComingSoonView({ title }: { title: string }) {
   return (
     <View className="flex-1 items-center justify-center px-6 pb-24">
       <View
@@ -502,11 +502,8 @@ export function ComingSoonView({ title, message }: { title: string; message: str
         <View className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 mb-3">
           <Text className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700">Coming Soon</Text>
         </View>
-        <Text className="text-lg font-black text-center mb-2" style={{ color: '#002D72', fontFamily: 'Outfit' }}>
+        <Text className="text-lg font-black text-center" style={{ color: '#002D72', fontFamily: 'Outfit' }}>
           {title}
-        </Text>
-        <Text className="text-sm text-slate-500 text-center leading-5">
-          {message}
         </Text>
       </View>
     </View>

@@ -670,10 +670,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     return (
       <View className="flex-1 bg-transparent">
         <Header title="Telemedicine" onBack={goBack} />
-        <ComingSoonView
-          title="Telemedicine is Coming Soon"
-          message="Online consultations are currently locked by the University Clinic. Please visit the clinic counter for assistance."
-        />
+        <ComingSoonView title="Telemedicine is Coming Soon" />
       </View>
     );
   }
