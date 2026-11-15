@@ -15,7 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 cssInterop(LinearGradient, { className: "style" });
 
 // Auth
-import { WelcomeScreen, LoginScreen, RegisterScreen, ForgotPasswordScreen } from "./screens/auth";
+import { WelcomeScreen, ForgotPasswordScreen } from "./screens/auth";
 
 
 // Main app
@@ -118,12 +118,62 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
   return null;
 }
 
+async function syncMedicationsFromConsultations(
+  userConsultations: any[],
+  setMedications: (meds: any[]) => void
+) {
+  const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
+  let intakedIds = new Set<string>();
+  if (intakedStored) {
+    try {
+      const parsed = JSON.parse(intakedStored);
+      if (Array.isArray(parsed)) intakedIds = new Set(parsed);
+    } catch {}
+  }
+
+  const extracted = userConsultations.flatMap((c: any) =>
+    (c.treatments || []).map((t: any, idx: number) => {
+      const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
+      const rawRemarks = t.remarks || "";
+      const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
+      const hasNextDose = Boolean(
+        t.nextDose &&
+        String(t.nextDose).trim() &&
+        String(t.nextDose).toLowerCase() !== 'none' &&
+        String(t.nextDose).toLowerCase() !== 'null'
+      );
+      const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id))) || !hasNextDose;
+      if (isServerIntaked || !hasNextDose) {
+        intakedIds.add(medId);
+        if (t.id) intakedIds.add(String(t.id));
+      }
+      return {
+        id: medId,
+        treatmentId: t.id ? String(t.id) : null,
+        rawRemarks,
+        name: t.medicineName,
+        dose: `${t.quantity} ${t.unit}`,
+        instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
+        timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
+        nextDose: hasNextDose ? `${c.date} ${t.nextDose}` : null,
+        status: isIntaked ? "intaked" : "next-intake",
+        consultationId: c.id
+      };
+    })
+  );
+  AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
+  setMedications(extracted);
+  AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(extracted)).catch(() => {});
+}
+
 export default function App({ initialScreen }: { initialScreen?: Screen } = {}) {
   const [splashDone, setSplashDone] = useState(false);
   const [stack, setStack] = useState<NavEntry[]>([{ screen: initialScreen || "welcome" }]);
   const [user, setUser] = useState<Partial<AppUser>>(DEFAULT_USER);
   const [consultations, setConsultations] = useState<any[]>([]);
   const [medications, setMedications] = useState<any[]>([]);
+  const medicationsRef = useRef<any[]>([]);
+  medicationsRef.current = medications;
   const [certificates, setCertificates] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [theme, setTheme] = useState<string>("light");
@@ -192,6 +242,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
             avatar: patient.avatar || patient.avatarUrl || prev?.avatar || null,
           };
           AsyncStorage.setItem('@cura_user_session', JSON.stringify(updated)).catch(() => {});
+          AsyncStorage.setItem('@cura_cached_owner_id', String(updated.id || '')).catch(() => {});
           if (token) {
             AsyncStorage.setItem('@cura_access_token', token).catch(() => {});
           }
@@ -220,49 +271,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         setConsultations(userConsultations);
         AsyncStorage.setItem('@cura_cached_consultations', JSON.stringify(userConsultations)).catch(() => {});
 
-        // Extract medications from treatments
-        const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
-        let intakedIds = new Set<string>();
-        if (intakedStored) {
-          try {
-            const parsed = JSON.parse(intakedStored);
-            if (Array.isArray(parsed)) intakedIds = new Set(parsed);
-          } catch {}
-        }
-
-        const extractedMedications = userConsultations.flatMap((c: any) => 
-          (c.treatments || []).map((t: any, idx: number) => {
-            const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
-            const rawRemarks = t.remarks || "";
-            const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
-            const hasNextDose = Boolean(
-              t.nextDose &&
-              String(t.nextDose).trim() &&
-              String(t.nextDose).toLowerCase() !== 'none' &&
-              String(t.nextDose).toLowerCase() !== 'null'
-            );
-            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id))) || !hasNextDose;
-            if (isServerIntaked || !hasNextDose) {
-              intakedIds.add(medId);
-              if (t.id) intakedIds.add(String(t.id));
-            }
-            return {
-              id: medId,
-              treatmentId: t.id ? String(t.id) : null,
-              rawRemarks,
-              name: t.medicineName,
-              dose: `${t.quantity} ${t.unit}`,
-              instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
-              timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
-              nextDose: hasNextDose ? `${c.date} ${t.nextDose}` : null,
-              status: isIntaked ? "intaked" : "next-intake",
-              consultationId: c.id
-            };
-          })
-        );
-        AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
-        setMedications(extractedMedications);
-        AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(extractedMedications)).catch(() => {});
+        await syncMedicationsFromConsultations(userConsultations, setMedications);
 
         const ptName = (patient.name || '').trim().toUpperCase();
         const userCertificates = allCertificates.filter((c: any) =>
@@ -300,48 +309,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         setConsultations(userConsultations);
         AsyncStorage.setItem('@cura_cached_consultations', JSON.stringify(userConsultations)).catch(() => {});
 
-        const intakedStored = await AsyncStorage.getItem('@cura_intaked_meds').catch(() => null);
-        let intakedIds = new Set<string>();
-        if (intakedStored) {
-          try {
-            const parsed = JSON.parse(intakedStored);
-            if (Array.isArray(parsed)) intakedIds = new Set(parsed);
-          } catch {}
-        }
-
-        const extracted = userConsultations.flatMap((c: any) =>
-          (c.treatments || []).map((t: any, idx: number) => {
-            const medId = t.id ? String(t.id) : `${c.id}-${t.medicineName}-${t.nextDose || t.timeGiven || idx}`;
-            const rawRemarks = t.remarks || "";
-            const isServerIntaked = rawRemarks.includes('[INTAKED]') || t.status === 'intaked' || t.status === 'taken';
-            const hasNextDose = Boolean(
-              t.nextDose &&
-              String(t.nextDose).trim() &&
-              String(t.nextDose).toLowerCase() !== 'none' &&
-              String(t.nextDose).toLowerCase() !== 'null'
-            );
-            const isIntaked = isServerIntaked || intakedIds.has(medId) || (t.id && intakedIds.has(String(t.id))) || !hasNextDose;
-            if (isServerIntaked || !hasNextDose) {
-              intakedIds.add(medId);
-              if (t.id) intakedIds.add(String(t.id));
-            }
-            return {
-              id: medId,
-              treatmentId: t.id ? String(t.id) : null,
-              rawRemarks,
-              name: t.medicineName,
-              dose: `${t.quantity} ${t.unit}`,
-              instructions: rawRemarks.replace(/\[INTAKED\]/g, "").trim() || "No instructions",
-              timeGiven: t.timeGiven ? `${c.date} ${t.timeGiven}` : c.date,
-              nextDose: hasNextDose ? `${c.date} ${t.nextDose}` : null,
-              status: isIntaked ? "intaked" : "next-intake",
-              consultationId: c.id
-            };
-          })
-        );
-        AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...intakedIds])).catch(() => {});
-        setMedications(extracted);
-        AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(extracted)).catch(() => {});
+        await syncMedicationsFromConsultations(userConsultations, setMedications);
       }
     } catch (e) {
       // silent
@@ -407,10 +375,12 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     AsyncStorage.multiRemove([
       '@cura_user_session',
       '@cura_access_token',
+      '@cura_cached_owner_id',
       '@cura_cached_consultations',
       '@cura_cached_medications',
       '@cura_cached_certificates',
       '@cura_cached_notifications',
+      '@cura_cached_telemed_all_requests',
       '@cura_intaked_meds',
     ]).catch(() => {});
     setUser(DEFAULT_USER);
@@ -435,10 +405,11 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     let isMounted = true;
     const restoreSession = async () => {
       try {
-        const [stored, storedToken, storedTheme, cachedConsults, cachedMeds, cachedCerts, cachedNotifs] = await Promise.all([
+        const [stored, storedToken, storedTheme, cachedOwnerId, cachedConsults, cachedMeds, cachedCerts, cachedNotifs] = await Promise.all([
           AsyncStorage.getItem('@cura_user_session').catch(() => null),
           AsyncStorage.getItem('@cura_access_token').catch(() => null),
           AsyncStorage.getItem('@cura_theme').catch(() => null),
+          AsyncStorage.getItem('@cura_cached_owner_id').catch(() => null),
           AsyncStorage.getItem('@cura_cached_consultations').catch(() => null),
           AsyncStorage.getItem('@cura_cached_medications').catch(() => null),
           AsyncStorage.getItem('@cura_cached_certificates').catch(() => null),
@@ -457,24 +428,40 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
               }
               if (isMounted) {
                 setUser(parsed);
-                // Instantly hydrate offline cache strictly belonging to this restored user
-                if (cachedConsults) {
-                  try {
-                    const d = JSON.parse(cachedConsults);
-                    if (Array.isArray(d)) {
-                      const userOnly = d.filter((c: any) => currentUserId && String(c.patient) === currentUserId);
-                      setConsultations(userOnly);
-                    }
-                  } catch (e) {}
-                }
-                if (cachedMeds) {
-                  try { const d = JSON.parse(cachedMeds); if (Array.isArray(d)) setMedications(d); } catch (e) {}
-                }
-                if (cachedCerts) {
-                  try { const d = JSON.parse(cachedCerts); if (Array.isArray(d)) setCertificates(d); } catch (e) {}
-                }
-                if (cachedNotifs) {
-                  try { const d = JSON.parse(cachedNotifs); if (Array.isArray(d)) setNotifications(d); } catch (e) {}
+                const cacheBelongsToUser = !cachedOwnerId || !currentUserId || cachedOwnerId === currentUserId;
+                if (cachedOwnerId && currentUserId && cachedOwnerId !== currentUserId) {
+                  AsyncStorage.multiRemove([
+                    '@cura_cached_consultations',
+                    '@cura_cached_medications',
+                    '@cura_cached_certificates',
+                    '@cura_cached_notifications',
+                  ]).catch(() => {});
+                } else if (cacheBelongsToUser) {
+                  // Instantly hydrate offline cache strictly belonging to this restored user
+                  if (cachedConsults) {
+                    try {
+                      const d = JSON.parse(cachedConsults);
+                      if (Array.isArray(d)) {
+                        const userOnly = d.filter((c: any) => currentUserId && String(c.patient) === currentUserId);
+                        setConsultations(userOnly);
+                      }
+                    } catch (e) {}
+                  }
+                  if (cachedMeds) {
+                    try { const d = JSON.parse(cachedMeds); if (Array.isArray(d)) setMedications(d); } catch (e) {}
+                  }
+                  if (cachedCerts) {
+                    try { const d = JSON.parse(cachedCerts); if (Array.isArray(d)) setCertificates(d); } catch (e) {}
+                  }
+                  if (cachedNotifs) {
+                    try {
+                      const d = JSON.parse(cachedNotifs);
+                      if (Array.isArray(d)) {
+                        const filteredNotifs = d.filter((n: any) => !currentUserId || !n?.patient_id || String(n.patient_id) === currentUserId);
+                        setNotifications(filteredNotifs);
+                      }
+                    } catch (e) {}
+                  }
                 }
                 setStack([{ screen: initialScreen || "home" }]);
               }
@@ -499,7 +486,10 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
                   .join('')
               );
               const payload = JSON.parse(jsonPayload);
-              if (payload?.email || payload?.user_id) {
+              const isExpired = typeof payload?.exp === 'number' && payload.exp * 1000 <= Date.now();
+              if (isExpired) {
+                AsyncStorage.removeItem('@cura_access_token').catch(() => {});
+              } else if (payload?.email || payload?.user_id) {
                 const recovered = {
                   id: String(payload.user_id || ''),
                   email: payload.email || '',
@@ -568,22 +558,17 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     AsyncStorage.setItem('@cura_theme', newTheme).catch(() => {});
   }, []);
 
-  const navProps = { navigate, goBack, user, setUser, params: current.params, resetApp, theme, setTheme: handleSetTheme };
-
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   const handleIntakeMedication = useCallback((id: string) => {
-    let resolvedTreatmentId: string | null = null;
-    let updatedRemarks = "[INTAKED]";
+    const targetMed = medicationsRef.current.find(m => m.id === id);
+    const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    const resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
+    const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
+    const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
+    const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
 
     setMedications(prev => {
-      const targetMed = prev.find(m => m.id === id);
-      const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
-      const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
-      const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
-      updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
-
       const updatedMeds = prev.map(m => m.id === id ? { ...m, status: "intaked", rawRemarks: updatedRemarks } : m);
       AsyncStorage.setItem('@cura_cached_medications', JSON.stringify(updatedMeds)).catch(() => {});
       return updatedMeds;
@@ -596,12 +581,10 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
         body: JSON.stringify({ remarks: updatedRemarks }),
       }).catch(() => {});
 
-      const treatmentIdToUpdate = resolvedTreatmentId;
-      const remarksToApply = updatedRemarks;
       setConsultations(prevConsults => prevConsults.map(c => ({
         ...c,
         treatments: (c.treatments || []).map((t: any) =>
-          String(t.id) === String(treatmentIdToUpdate) ? { ...t, remarks: remarksToApply } : t
+          String(t.id) === String(resolvedTreatmentId) ? { ...t, remarks: updatedRemarks } : t
         )
       })));
     }

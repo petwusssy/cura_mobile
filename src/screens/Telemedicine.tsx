@@ -4,13 +4,12 @@ import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient";
 import { Header, Button, Card, Badge, ComingSoonView } from "../components/Shell";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, isAppForeground, getTelemedicineCallUrl } from "../services/api";
+import { API_URL, WEB_APP_URL, isAppForeground, getTelemedicineCallUrl } from "../services/api";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { WebView } from 'react-native-webview';
-import { LiquidGlassTimePicker } from "../components/LiquidGlassTimePicker";
 import { LiquidGlassTimePickerModal, TELEMEDICINE_TIME_SLOTS } from "../components/LiquidGlassTimePickerModal";
 import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
 import type { Screen, AppUser } from "../types";
@@ -167,42 +166,6 @@ export function getScheduleAccess(scheduledDateRaw?: string, scheduledTimeRaw?: 
   };
 }
 
-function BlueMailboxIcon({ size = 44 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 44 44" fill="none" style={{ marginBottom: 12 }}>
-      <Defs>
-        <SvgLinearGradient id="gMailboxBlueTele" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor="#38BDF8" />
-          <Stop offset="100%" stopColor="#0284C7" />
-        </SvgLinearGradient>
-        <SvgLinearGradient id="gMailboxPostTele" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor="#0369A1" />
-          <Stop offset="100%" stopColor="#0B2136" />
-        </SvgLinearGradient>
-      </Defs>
-      <Rect x="20" y="30" width="4" height="10" rx="1.5" fill="url(#gMailboxPostTele)" />
-      <Path
-        d="M10 17 C10 10.5 15.5 6 22 6 C28.5 6 34 10.5 34 17 L34 29 C34 30.1 33.1 31 32 31 L12 31 C10.9 31 10 30.1 10 29 Z"
-        fill="url(#gMailboxBlueTele)"
-      />
-      <Path
-        d="M13 18 C13 13 17 9.5 22 9.5 C27 9.5 31 13 31 18 L31 28 C31 29 30 29.5 29 29.5 L15 29.5 C14 29.5 13 29 13 28 Z"
-        fill="#002D72"
-        opacity={0.85}
-      />
-      <Rect x="34" y="16" width="6" height="2.5" rx="1" fill="#BAE6FD" />
-      <Rect x="37" y="18.5" width="4" height="6" rx="1" fill="#38BDF8" />
-      <Path
-        d="M14 15 C15.5 11 18.5 8.5 22 8.5"
-        stroke="#FFFFFF"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        opacity={0.6}
-      />
-    </Svg>
-  );
-}
-
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
@@ -236,33 +199,19 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [isLocked, setIsLocked] = useState(true);
   const [allTelemedRequests, setAllTelemedRequests] = useState<any[]>([]);
 
-  // Instantly hydrate cached all-requests for immediate slot locking
+  // Remove legacy clinic-wide cache if present
   useEffect(() => {
-    AsyncStorage.getItem("@cura_cached_telemed_all_requests").then((stored) => {
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setAllTelemedRequests(parsed);
-          }
-        } catch (e) { }
-      }
-    }).catch(() => { });
+    AsyncStorage.removeItem("@cura_cached_telemed_all_requests").catch(() => { });
   }, []);
 
   const fetchAvailability = async () => {
     try {
-      const [availRes, telemedRes] = await Promise.allSettled([
-        fetch(`${API_URL}/telemedicine/availability/?t=${Date.now()}`, {
-          headers: { "Cache-Control": "no-cache" }
-        }),
-        fetch(`${API_URL}/telemedicine/?t=${Date.now()}`, {
-          headers: { "Accept": "application/json", "Cache-Control": "no-cache" }
-        }),
-      ]);
+      const availRes = await fetch(`${API_URL}/telemedicine/availability/?t=${Date.now()}`, {
+        headers: { "Cache-Control": "no-cache" }
+      });
 
-      if (availRes.status === "fulfilled" && availRes.value.ok) {
-        const data = await availRes.value.json();
+      if (availRes.ok) {
+        const data = await availRes.json();
         if (Array.isArray(data.unavailable_dates)) {
           setUnavailableDates(data.unavailable_dates);
         }
@@ -272,13 +221,8 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         if (typeof data.is_locked === "boolean") {
           setIsLocked(data.is_locked);
         }
-      }
-
-      if (telemedRes.status === "fulfilled" && telemedRes.value.ok) {
-        const allData = await telemedRes.value.json();
-        if (Array.isArray(allData)) {
-          setAllTelemedRequests(allData);
-          AsyncStorage.setItem("@cura_cached_telemed_all_requests", JSON.stringify(allData)).catch(() => { });
+        if (Array.isArray(data.booked_slots)) {
+          setAllTelemedRequests(data.booked_slots);
         }
       }
     } catch (err) {
@@ -380,19 +324,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   }, [date, activeUnavailableTimes, time]);
 
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    if (event?.type === 'dismissed') return;
-    if (selectedDate) {
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      setDate(`${year}-${month}-${day}`);
-    }
-    if (Platform.OS !== "ios") {
-      setShowDatePicker(false);
-    }
-  };
-
   const getRoomId = (rawUrl?: string, reqId?: string) => {
     if (rawUrl) {
       const match = rawUrl.match(/CURA-Telemed-[a-zA-Z0-9_-]+/i);
@@ -476,7 +407,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const res = await fetch(`${API_URL}/telemedicine/`, {
+        const res = await fetch(`${API_URL}/telemedicine/?patient=${encodeURIComponent(String(user.id))}`, {
           signal: controller.signal,
           headers: {
             "Accept": "application/json",
@@ -487,7 +418,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
-            setAllTelemedRequests(data);
             const uIds = [
               String(user?.id || ""),
               String((user as any)?.id_number || ""),
@@ -550,7 +480,11 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   }, [activeTab, fetchRequests]);
 
   const handleSubmit = async () => {
-    if (!user?.id || isSubmitting) return;
+    if (isSubmitting) return;
+    if (!user?.id) {
+      Alert.alert("Session Required", "Please sign in again to submit a telemedicine request.");
+      return;
+    }
 
     const newErrors: { date?: boolean; time?: boolean; reason?: boolean } = {};
     if (!date.trim()) newErrors.date = true;
@@ -1086,14 +1020,22 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
               mediaPlaybackRequiresUserAction={false}
               javaScriptEnabled={true}
               domStorageEnabled={true}
-              originWhitelist={["*"]}
+              originWhitelist={[WEB_APP_URL, 'curamobile://*']}
               cameraEnabled={true}
               microphoneEnabled={true}
               mediaCapturePermissionGrantType="grant"
               androidHardwareAccelerationDisabled={false}
               androidLayerType="hardware"
               onPermissionRequest={(request: any) => {
-                request.grant(request.resources);
+                try {
+                  const reqOrigin = request?.origin ? new URL(request.origin).origin : '';
+                  const allowedOrigin = new URL(WEB_APP_URL).origin;
+                  if (reqOrigin === allowedOrigin) {
+                    request.grant(request.resources);
+                    return;
+                  }
+                } catch {}
+                request.deny?.();
               }}
               onNavigationStateChange={(navState: any) => {
                 if (navState.url.startsWith("curamobile://")) {

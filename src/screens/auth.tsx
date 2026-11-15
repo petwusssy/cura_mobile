@@ -38,13 +38,6 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import type { Screen, AppUser, PatientCategory } from "../types";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import {
-  PH_REGIONS,
-  getProvincesByRegion,
-  getCitiesByProvince,
-  getBarangaysByCity,
-} from "../constants/phLocations";
-import { MASCOTS } from "../data";
 import { useAlert } from "../components/AlertProvider";
 import { Button, Input } from "../components/Shell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

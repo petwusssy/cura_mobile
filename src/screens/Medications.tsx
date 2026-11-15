@@ -24,31 +24,19 @@ function parseNextDoseTime(nextDoseStr?: string | null): Date | null {
   const str = String(nextDoseStr).trim();
   if (!str) return null;
 
-  const dateMatch = str.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp][Mm]))?/);
+  const dateMatch = str.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
   if (dateMatch) {
-    const [_, datePart, hhRaw, mm, ss, ampm] = dateMatch;
+    const [_, datePart, hh, mm, ss] = dateMatch;
     const [y, m, d] = datePart.split("-").map(Number);
-    let hh = parseInt(hhRaw, 10);
-    if (ampm) {
-      const upper = ampm.toUpperCase();
-      if (upper === "PM" && hh < 12) hh += 12;
-      if (upper === "AM" && hh === 12) hh = 0;
-    }
-    return new Date(y, m - 1, d, hh, parseInt(mm, 10), ss ? parseInt(ss, 10) : 0);
+    return new Date(y, m - 1, d, parseInt(hh, 10), parseInt(mm, 10), ss ? parseInt(ss, 10) : 0);
   }
 
-  const time12Or24Match = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp][Mm]))?$/);
-  if (time12Or24Match) {
+  const time24Match = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (time24Match) {
     const now = new Date();
-    let hh = parseInt(time12Or24Match[1], 10);
-    const mm = parseInt(time12Or24Match[2], 10);
-    const ss = time12Or24Match[3] ? parseInt(time12Or24Match[3], 10) : 0;
-    const ampm = time12Or24Match[4];
-    if (ampm) {
-      const upper = ampm.toUpperCase();
-      if (upper === "PM" && hh < 12) hh += 12;
-      if (upper === "AM" && hh === 12) hh = 0;
-    }
+    const hh = parseInt(time24Match[1], 10);
+    const mm = parseInt(time24Match[2], 10);
+    const ss = time24Match[3] ? parseInt(time24Match[3], 10) : 0;
     return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss);
   }
 
@@ -81,13 +69,13 @@ function MedicinePillIcon({ size = 26 }: { size?: number }) {
 }
 
 const statusConfig: Record<string, { badge: "success" | "warning" | "error" | "info" | "neutral"; label: string; dot: string; bg: string; icon: string }> = {
-  "next-intake": { badge: "info",    label: "To Take",     dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
-  "to-intake":   { badge: "info",    label: "To Take",     dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
-  "intaked":     { badge: "success", label: "Taken",       dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
-  "due-now":     { badge: "warning", label: "Due Now",     dot: "#F59E0B", bg: "#FFFBEB", icon: "⚠️" },
-  "upcoming":    { badge: "info",    label: "To Take",     dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
-  "taken":       { badge: "success", label: "Taken",       dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
-  "missed":      { badge: "error",   label: "Missed",      dot: "#F43F5E", bg: "#FFF1F2", icon: "❌" },
+  "next-intake": { badge: "info", label: "To Take", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "to-intake": { badge: "info", label: "To Take", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "intaked": { badge: "success", label: "Taken", dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
+  "due-now": { badge: "warning", label: "Due Now", dot: "#F59E0B", bg: "#FFFBEB", icon: "⚠️" },
+  "upcoming": { badge: "info", label: "To Take", dot: "#0994E8", bg: "#EFF8FF", icon: "⏰" },
+  "taken": { badge: "success", label: "Taken", dot: "#10B981", bg: "#ECFDF5", icon: "✅" },
+  "missed": { badge: "error", label: "Missed", dot: "#F43F5E", bg: "#FFF1F2", icon: "❌" },
 };
 
 export function MedicationsScreen({ navigate: _navigate, goBack, medications = [], onIntake }: Props) {
@@ -98,11 +86,11 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
   const notifiedMedsRef = useRef<Set<string>>(new Set());
   const notifiedUpcomingMedsRef = useRef<Set<string>>(new Set());
 
-  // 15-second interval for countdown timer (avoids 1Hz full-screen re-renders)
+  // 1-second interval for real-time countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 15000);
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -115,10 +103,10 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
             if (Array.isArray(parsed)) {
               setLocalIntakedIds(new Set(parsed));
             }
-          } catch {}
+          } catch { }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Normalize incoming list and sync with intaked state
@@ -149,11 +137,28 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
     setLocalIntakedIds((prev) => {
       const next = new Set(prev);
       next.add(id);
-      AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...next])).catch(() => {});
+      AsyncStorage.setItem('@cura_intaked_meds', JSON.stringify([...next])).catch(() => { });
       return next;
     });
     onIntake?.(id);
-  }, [onIntake]);
+
+    // Patch directly to server so it never reverts across devices
+    const targetMed = normalizedMeds.find((m) => m.id === id);
+    const uuidMatch = (targetMed?.treatmentId || id).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    const resolvedTreatmentId = uuidMatch ? uuidMatch[0] : null;
+
+    if (resolvedTreatmentId) {
+      const currentRemarks = targetMed?.rawRemarks || targetMed?.instructions || "";
+      const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
+      const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
+
+      fetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remarks: updatedRemarks }),
+      }).catch(() => { });
+    }
+  }, [normalizedMeds, onIntake]);
 
   const toTakeList = useMemo(() => {
     return normalizedMeds.filter((m) => m.status !== "intaked");
@@ -194,8 +199,8 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
 
   const statusItems = [
     { id: "to-intake" as const, label: "To Take", count: toTakeList.length, dot: "#0994E8" },
-    { id: "intaked" as const,   label: "Taken",   count: intakedList.length, dot: "#10B981" },
-    { id: "all" as const,       label: "Total Meds", count: normalizedMeds.length, dot: "#0B2136" },
+    { id: "intaked" as const, label: "Taken", count: intakedList.length, dot: "#10B981" },
+    { id: "all" as const, label: "Total Meds", count: normalizedMeds.length, dot: "#0B2136" },
   ];
 
   const renderMedCard = (med: any, isToIntakeSection: boolean) => {
@@ -273,8 +278,8 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                   {isDue && isToIntakeSection
                     ? "⚠️ Due Now"
                     : isToIntakeSection && diffSec !== null && diffSec > 0
-                    ? `⏳ In ${timeRemainingText}`
-                    : cfg.label}
+                      ? `⏳ In ${timeRemainingText}`
+                      : cfg.label}
                 </Badge>
               </View>
               <Text className="text-xs font-semibold text-white/80">{med.dose}</Text>
@@ -304,7 +309,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
                 width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
               >
-                <Polyline points="6 9 12 15 18 9"/>
+                <Polyline points="6 9 12 15 18 9" />
               </Svg>
             </View>
           </View>

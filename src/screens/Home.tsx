@@ -951,7 +951,7 @@ export function NotificationsScreen({
     if (setNotifications) {
       setNotifications((prev: any[]) => {
         const next = prev.filter((item) => item.id !== id);
-        AsyncStorage.setItem("@cura_cached_notifications", JSON.stringify(next)).catch(() => {});
+        AsyncStorage.setItem("@cura_cached_notifications", JSON.stringify(next)).catch(() => { });
         return next;
       });
     }
@@ -964,7 +964,7 @@ export function NotificationsScreen({
     if (setNotifications) {
       setNotifications([]);
     }
-    AsyncStorage.setItem("@cura_cached_notifications", JSON.stringify([])).catch(() => {});
+    AsyncStorage.setItem("@cura_cached_notifications", JSON.stringify([])).catch(() => { });
     try {
       const queryTarget = user?.id || user?.id_number || "";
       const userName = (user?.displayName || `${user?.firstName || ""} ${user?.lastName || ""}`).trim().toUpperCase();

@@ -855,11 +855,15 @@ export function ProfileScreen({
           }),
         });
 
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
           Alert.alert("Update Failed", data.error || "Could not update password. Please check your current password.");
           setSavingSecurity(false);
           return;
+        }
+        if (data?.access) {
+          await AsyncStorage.setItem("@cura_access_token", data.access).catch(() => {});
+          setUser?.((prev: any) => ({ ...prev, accessToken: data.access }));
         }
       } catch (e) {
         Alert.alert("Network Notice", "Password update request could not reach the server. Please try again.");
