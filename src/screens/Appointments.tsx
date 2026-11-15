@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL, isAppForeground } from "../services/api";
-import { Header, Button, Card, Badge } from "../components/Shell";
+import { Header, Button, Card, Badge, ComingSoonView } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
 import { RequestConfirmationModal } from "../components/RequestConfirmationModal";
@@ -174,11 +174,14 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
+  const [isLocked, setIsLocked] = useState(true);
   const [allAppointmentRequests, setAllAppointmentRequests] = useState<any[]>([]);
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`${API_URL}/appointments/availability/?t=${Date.now()}`);
+      const res = await fetch(`${API_URL}/appointments/availability/?t=${Date.now()}`, {
+        headers: { "Cache-Control": "no-cache" }
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.unavailable_dates)) {
@@ -186,6 +189,9 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         }
         if (Array.isArray(data.unavailable_times)) {
           setUnavailableTimes(data.unavailable_times);
+        }
+        if (typeof data.is_locked === "boolean") {
+          setIsLocked(data.is_locked);
         }
       }
     } catch (err) {
@@ -196,6 +202,10 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
 
   useEffect(() => {
     fetchAvailability();
+    const interval = setInterval(() => {
+      if (isAppForeground()) fetchAvailability();
+    }, 25000);
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -413,6 +423,18 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
       default: return <Badge variant="warning">Pending</Badge>;
     }
   };
+
+  if (isLocked) {
+    return (
+      <View className="flex-1 bg-transparent">
+        <Header title="Appointments" onBack={goBack} />
+        <ComingSoonView
+          title="Appointments are Coming Soon"
+          message="In-person appointment scheduling is currently locked by the University Clinic. Please visit the clinic counter for assistance."
+        />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-transparent">

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { View, ScrollView, Text, TextInput, Pressable, TouchableOpacity, RefreshControl, Modal, Platform, PermissionsAndroid, Alert, StyleSheet, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Header, Button, Card, Badge } from "../components/Shell";
+import { Header, Button, Card, Badge, ComingSoonView } from "../components/Shell";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL, isAppForeground, getTelemedicineCallUrl } from "../services/api";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
@@ -110,7 +110,7 @@ function formatDisplayDate(dateStr: string): string {
         });
       }
     }
-  } catch (e) {}
+  } catch (e) { }
   return dateStr;
 }
 
@@ -233,6 +233,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
+  const [isLocked, setIsLocked] = useState(true);
   const [allTelemedRequests, setAllTelemedRequests] = useState<any[]>([]);
 
   // Instantly hydrate cached all-requests for immediate slot locking
@@ -244,9 +245,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           if (Array.isArray(parsed) && parsed.length > 0) {
             setAllTelemedRequests(parsed);
           }
-        } catch (e) {}
+        } catch (e) { }
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const fetchAvailability = async () => {
@@ -268,13 +269,16 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         if (Array.isArray(data.unavailable_times)) {
           setUnavailableTimes(data.unavailable_times);
         }
+        if (typeof data.is_locked === "boolean") {
+          setIsLocked(data.is_locked);
+        }
       }
 
       if (telemedRes.status === "fulfilled" && telemedRes.value.ok) {
         const allData = await telemedRes.value.json();
         if (Array.isArray(allData)) {
           setAllTelemedRequests(allData);
-          AsyncStorage.setItem("@cura_cached_telemed_all_requests", JSON.stringify(allData)).catch(() => {});
+          AsyncStorage.setItem("@cura_cached_telemed_all_requests", JSON.stringify(allData)).catch(() => { });
         }
       }
     } catch (err) {
@@ -457,9 +461,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           if (Array.isArray(parsed) && parsed.length > 0) {
             setRequests(parsed);
           }
-        } catch (e) {}
+        } catch (e) { }
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, [user?.id]);
 
   const fetchRequests = useCallback(async (background = false) => {
@@ -495,7 +499,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
               return uIds.includes(pId);
             });
             setRequests(myRequests);
-            AsyncStorage.setItem(`@cura_cached_telemedicine_${user.id}`, JSON.stringify(myRequests)).catch(() => {});
+            AsyncStorage.setItem(`@cura_cached_telemedicine_${user.id}`, JSON.stringify(myRequests)).catch(() => { });
           }
         }
       } catch (err: any) {
@@ -607,7 +611,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           setRequests((prev) => {
             const updated = [createdReq, ...prev.filter((r) => r.id !== createdReq.id)];
             if (user?.id) {
-              AsyncStorage.setItem(`@cura_cached_telemedicine_${user.id}`, JSON.stringify(updated)).catch(() => {});
+              AsyncStorage.setItem(`@cura_cached_telemedicine_${user.id}`, JSON.stringify(updated)).catch(() => { });
             }
             return updated;
           });
@@ -661,6 +665,18 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         );
     }
   };
+
+  if (isLocked) {
+    return (
+      <View className="flex-1 bg-transparent">
+        <Header title="Telemedicine" onBack={goBack} />
+        <ComingSoonView
+          title="Telemedicine is Coming Soon"
+          message="Online consultations are currently locked by the University Clinic. Please visit the clinic counter for assistance."
+        />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-transparent">

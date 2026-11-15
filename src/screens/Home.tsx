@@ -58,6 +58,27 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const latestConsult = userConsultations.length > 0 ? userConsultations[0] : null;
 
   const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
+  const [featureLocks, setFeatureLocks] = useState<{ telemed: boolean; appoint: boolean }>({ telemed: true, appoint: true });
+
+  useEffect(() => {
+    const syncFeatureLocks = async () => {
+      try {
+        const [tRes, aRes] = await Promise.allSettled([
+          fetch(`${API_URL}/telemedicine/availability/?t=${Date.now()}`),
+          fetch(`${API_URL}/appointments/availability/?t=${Date.now()}`),
+        ]);
+        const tJson = tRes.status === "fulfilled" && tRes.value.ok ? await tRes.value.json() : null;
+        const aJson = aRes.status === "fulfilled" && aRes.value.ok ? await aRes.value.json() : null;
+        setFeatureLocks(prev => ({
+          telemed: typeof tJson?.is_locked === "boolean" ? tJson.is_locked : prev.telemed,
+          appoint: typeof aJson?.is_locked === "boolean" ? aJson.is_locked : prev.appoint,
+        }));
+      } catch { }
+    };
+    syncFeatureLocks();
+    const t = setInterval(() => { if (isAppForeground()) syncFeatureLocks(); }, 25000);
+    return () => clearInterval(t);
+  }, []);
 
   const pendingMedsCount = useMemo(() => {
     if (!medications || medications.length === 0) return 0;
@@ -658,9 +679,14 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
               <Pressable
                 onPress={() => navigate("telemedicine")}
-                className="items-center flex-1 active:opacity-75"
+                className="items-center flex-1 active:opacity-75 relative"
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
+                {featureLocks.telemed && (
+                  <View className="absolute -top-1 right-1 z-10 px-1.5 py-0.5 rounded-full bg-amber-100 border border-amber-300">
+                    <Text className="text-[8px] font-extrabold uppercase text-amber-800">Soon</Text>
+                  </View>
+                )}
                 <Svg width="38" height="38" viewBox="0 0 40 40" fill="none">
                   <Defs>
                     <SvgLinearGradient id="gTelemed" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -684,9 +710,14 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
 
               <Pressable
                 onPress={() => navigate("appointment")}
-                className="items-center flex-1 active:opacity-75"
+                className="items-center flex-1 active:opacity-75 relative"
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
+                {featureLocks.appoint && (
+                  <View className="absolute -top-1 right-1 z-10 px-1.5 py-0.5 rounded-full bg-amber-100 border border-amber-300">
+                    <Text className="text-[8px] font-extrabold uppercase text-amber-800">Soon</Text>
+                  </View>
+                )}
                 <Svg width="38" height="38" viewBox="0 0 40 40" fill="none">
                   <Defs>
                     <SvgLinearGradient id="gAppoint" x1="0%" y1="0%" x2="100%" y2="100%">

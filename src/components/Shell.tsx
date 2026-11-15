@@ -478,6 +478,41 @@ export function EmptyState({ emoji, title, message }: { emoji: string; title: st
   );
 }
 
+export function ComingSoonView({ title, message }: { title: string; message: string }) {
+  return (
+    <View className="flex-1 items-center justify-center px-6 pb-24">
+      <View
+        className="w-full max-w-[340px] bg-white rounded-[28px] p-7 items-center"
+        style={{
+          borderWidth: 1,
+          borderColor: '#E2E8F0',
+          shadowColor: '#002D72',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.08,
+          shadowRadius: 20,
+          elevation: 4,
+        }}
+      >
+        <View className="w-16 h-16 rounded-2xl bg-sky-50 border border-sky-100 items-center justify-center mb-4">
+          <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </Svg>
+        </View>
+        <View className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 mb-3">
+          <Text className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700">Coming Soon</Text>
+        </View>
+        <Text className="text-lg font-black text-center mb-2" style={{ color: '#002D72', fontFamily: 'Outfit' }}>
+          {title}
+        </Text>
+        <Text className="text-sm text-slate-500 text-center leading-5">
+          {message}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 // ── Select (Chips) ────────────────────────────────────────────────────────────
 
 interface SelectProps {
