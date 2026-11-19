@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "../services/api";
+import { API_URL, apiFetch } from "../services/api";
 import Svg, { Polyline, Path, Line, Rect, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
 import type { Screen } from "../types";
 import { Badge, Header } from "../components/Shell";
@@ -152,7 +152,7 @@ export function MedicationsScreen({ navigate: _navigate, goBack, medications = [
       const cleanRemarks = currentRemarks.replace(/\[INTAKED\]/g, "").trim();
       const updatedRemarks = cleanRemarks ? `${cleanRemarks} [INTAKED]` : "[INTAKED]";
 
-      fetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
+      apiFetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remarks: updatedRemarks }),

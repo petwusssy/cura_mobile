@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet, Image, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, isAppForeground } from "../services/api";
+import { API_URL, apiFetch, isAppForeground } from "../services/api";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
@@ -158,7 +158,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   useEffect(() => {
     const fetchBedAssignment = async () => {
       try {
-        const res = await fetch(`${API_URL}/beds/`);
+        const res = await apiFetch(`${API_URL}/beds/`);
         if (!res.ok) return;
         const beds = await res.json();
         if (!Array.isArray(beds)) return;
@@ -249,7 +249,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       if (joiningRef.current) return;
 
       try {
-        const res = await fetch(`${API_URL}/queue/`);
+        const res = await apiFetch(`${API_URL}/queue/`);
         if (!res.ok) return;
         const qs = await res.json();
         if (!Array.isArray(qs)) return;
@@ -346,7 +346,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       if (!patientId && user?.email) {
         try {
           const cleanEmail = user.email.trim();
-          const pRes = await fetch(`${API_URL}/patients/?email=${encodeURIComponent(cleanEmail)}`);
+          const pRes = await apiFetch(`${API_URL}/patients/?email=${encodeURIComponent(cleanEmail)}`);
           if (pRes.ok) {
             const patients = await pRes.json();
             const p = Array.isArray(patients) ? patients.find((item: any) => item.email?.toLowerCase().trim() === cleanEmail.toLowerCase()) : null;
@@ -358,7 +358,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
       if (!patientId) return;
 
       cancelledQueueIdRef.current = null;
-      const res = await fetch(`${API_URL}/queue/`, {
+      const res = await apiFetch(`${API_URL}/queue/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ patient: String(patientId) })
@@ -382,7 +382,7 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
     setQueue(null);
     setAheadCount(0);
     try {
-      await fetch(`${API_URL}/queue/${targetId}/cancel/`, {
+      await apiFetch(`${API_URL}/queue/${targetId}/cancel/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -956,7 +956,7 @@ export function NotificationsScreen({
       });
     }
     try {
-      await fetch(`${API_URL}/notifications/${id}/`, { method: "DELETE" });
+      await apiFetch(`${API_URL}/notifications/${id}/`, { method: "DELETE" });
     } catch { }
   };
 
@@ -971,7 +971,7 @@ export function NotificationsScreen({
       let url = `${API_URL}/notifications/clear_all/?audience=patient`;
       if (queryTarget) url += `&patient_id=${encodeURIComponent(String(queryTarget))}`;
       if (userName) url += `&patient_name=${encodeURIComponent(userName)}`;
-      await fetch(url, { method: "POST" });
+      await apiFetch(url, { method: "POST" });
     } catch { }
   };
 
@@ -984,7 +984,7 @@ export function NotificationsScreen({
     // Mark as read in backend
     if (!n.read && n.id) {
       try {
-        await fetch(`${API_URL}/notifications/${n.id}/`, {
+        await apiFetch(`${API_URL}/notifications/${n.id}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ read: true }),

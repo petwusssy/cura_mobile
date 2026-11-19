@@ -48,6 +48,17 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const auth = await getAuthHeaders();
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...auth,
+      ...(options.headers as Record<string, string> | undefined),
+    },
+  });
+}
+
 export function isAppForeground(): boolean {
   if (typeof document !== 'undefined' && typeof document.hidden === 'boolean') {
     return !document.hidden;

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, Input, Button, Select, Card, Badge, EmptyState } from "../components/Shell";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Screen, AppUser } from "../types";
-import { API_URL, isAppForeground } from "../services/api";
+import { API_URL, apiFetch, isAppForeground } from "../services/api";
 
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
@@ -44,7 +44,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
     if (!user?.id) return;
     if (!background) setIsLoadingHistory(true);
     try {
-      const res = await fetch(`${API_URL}/medcert-requests/?patient=${encodeURIComponent(String(user.id))}`);
+      const res = await apiFetch(`${API_URL}/medcert-requests/?patient=${encodeURIComponent(String(user.id))}`);
       if (res.ok) {
         const data = await res.json();
         const myRequests = Array.isArray(data) ? data.filter((r: any) => String(r.patient) === String(user.id)) : [];
@@ -100,7 +100,7 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${API_URL}/medcert-requests/`, {
+      const res = await apiFetch(`${API_URL}/medcert-requests/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

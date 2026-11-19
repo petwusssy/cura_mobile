@@ -4,7 +4,7 @@ import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient";
 import { Header, Button, Card, Badge, ComingSoonView } from "../components/Shell";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, WEB_APP_URL, isAppForeground, getTelemedicineCallUrl } from "../services/api";
+import { API_URL, WEB_APP_URL, apiFetch, isAppForeground, getTelemedicineCallUrl } from "../services/api";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import * as WebBrowser from 'expo-web-browser';
@@ -407,7 +407,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const res = await fetch(`${API_URL}/telemedicine/?patient=${encodeURIComponent(String(user.id))}`, {
+        const res = await apiFetch(`${API_URL}/telemedicine/?patient=${encodeURIComponent(String(user.id))}`, {
           signal: controller.signal,
           headers: {
             "Accept": "application/json",
@@ -526,7 +526,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${API_URL}/telemedicine/`, {
+      const res = await apiFetch(`${API_URL}/telemedicine/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

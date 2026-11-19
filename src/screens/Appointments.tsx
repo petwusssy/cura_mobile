@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, isAppForeground } from "../services/api";
+import { API_URL, apiFetch, isAppForeground } from "../services/api";
 import { Header, Button, Card, Badge, ComingSoonView } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
@@ -199,7 +199,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     if (!user?.id) return;
     if (!background) setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/appointments/?patient=${encodeURIComponent(String(user.id))}`);
+      const res = await apiFetch(`${API_URL}/appointments/?patient=${encodeURIComponent(String(user.id))}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -338,7 +338,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${API_URL}/appointments/`, {
+      const res = await apiFetch(`${API_URL}/appointments/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

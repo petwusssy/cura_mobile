@@ -3,7 +3,7 @@ import { Image, View, Platform } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, isAppForeground } from "./services/api";
+import { API_URL, apiFetch, isAppForeground } from "./services/api";
 import type { Screen, AppUser } from "./types";
 import { MobileShell, BottomNav } from "./components/Shell";
 import { DEFAULT_USER } from "./data";
@@ -60,7 +60,7 @@ function NotificationPoller({ user, setNotifications }: { user: Partial<AppUser>
         if (userName) {
           url += `&patient_name=${encodeURIComponent(userName)}`;
         }
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         if (res.ok) {
           const data = await res.json();
           const myNotifs = Array.isArray(data) ? data.filter((n: any) => {
@@ -199,7 +199,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
   const safeFetchJson = async (url: string, options?: RequestInit, retries = 2) => {
     for (let i = 0; i <= retries; i++) {
       try {
-        const res = await fetch(url, options);
+        const res = await apiFetch(url, options);
         if (res.ok) {
           const text = await res.text();
           return text ? JSON.parse(text) : null;
@@ -575,7 +575,7 @@ export default function App({ initialScreen }: { initialScreen?: Screen } = {}) 
     });
 
     if (resolvedTreatmentId) {
-      fetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
+      apiFetch(`${API_URL}/treatments/${resolvedTreatmentId}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remarks: updatedRemarks }),
