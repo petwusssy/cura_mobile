@@ -166,6 +166,118 @@ export function getScheduleAccess(scheduledDateRaw?: string, scheduledTimeRaw?: 
   };
 }
 
+export interface TelemedCaseOption {
+  id: string;
+  label: string;
+  fullLabel: string;
+  keywords: string[];
+  isEmergency?: boolean;
+}
+
+export const TELEMED_CASE_OPTIONS: TelemedCaseOption[] = [
+  {
+    id: "Fever / Flu",
+    label: "🌡️ Fever / Flu",
+    fullLabel: "Fever / Flu-like Symptoms",
+    keywords: ["fever", "flu", "lagnat", "nilalagnat", "sinat", "chills", "trangkaso"],
+  },
+  {
+    id: "Cough / Colds",
+    label: "😷 Cough / Colds",
+    fullLabel: "Cough / Colds / Sore Throat",
+    keywords: ["cough", "cold", "sore throat", "ubo", "sipon", "lalamunan", "rhinitis", "phlegm"],
+  },
+  {
+    id: "Headache",
+    label: "🤕 Headache",
+    fullLabel: "Headache / Migraine",
+    keywords: ["headache", "migraine", "sakit ng ulo", "masakit ulo", "head pain"],
+  },
+  {
+    id: "Stomach / GI",
+    label: "🤢 Stomach / GI",
+    fullLabel: "Stomachache / Diarrhea / Hyperacidity",
+    keywords: ["stomach", "abdominal", "diarrhea", "lbm", "vomit", "nausea", "hyperacidity", "gastritis", "dyspepsia", "tiyan", "sikmura"],
+  },
+  {
+    id: "Dizziness",
+    label: "😵 Dizziness",
+    fullLabel: "Dizziness / Vertigo / Fatigue",
+    keywords: ["dizz", "vertigo", "nahihilo", "hilo", "fatigue", "weakness", "lightheaded"],
+  },
+  {
+    id: "Dysmenorrhea",
+    label: "🩸 Dysmenorrhea",
+    fullLabel: "Dysmenorrhea / Menstrual Cramps",
+    keywords: ["dysmenorrhea", "cramps", "menstrual", "period", "puson"],
+  },
+  {
+    id: "Allergy / Skin",
+    label: "🩹 Allergy / Skin",
+    fullLabel: "Allergy / Skin Rash / Itching",
+    keywords: ["allerg", "rash", "itch", "pantal", "skin", "blister", "insect", "hive"],
+  },
+  {
+    id: "Eye / Dental",
+    label: "👁️ Eye / Dental",
+    fullLabel: "Eye Irritation / Minor Dental Inquiry",
+    keywords: ["eye", "sore eyes", "tooth", "dental", "mouth sore", "gum", "ear"],
+  },
+  {
+    id: "Lab / Follow-Up",
+    label: "🧪 Lab / Follow-Up",
+    fullLabel: "Lab Results Reading / Follow-Up",
+    keywords: ["lab", "result", "follow-up", "follow up", "prescription", "refill", "checkup", "medcert"],
+  },
+  {
+    id: "Others",
+    label: "📝 Others",
+    fullLabel: "Other Non-Emergency Case",
+    keywords: [],
+  },
+  {
+    id: "Emergency",
+    label: "🚨 Severe / Emergency",
+    fullLabel: "Severe / Emergency Case (In-Person Only)",
+    keywords: ["chest pain", "difficulty breathing", "fracture", "fainting", "seizure", "severe bleeding"],
+    isEmergency: true,
+  },
+];
+
+export function parseTelemedReasonCase(rawReason?: string): { caseId: string; caseLabel: string; cleanReason: string } {
+  const text = String(rawReason || "").trim();
+  const bracketMatch = text.match(/^\[([^\]]+)\]\s*(.*)$/s);
+  if (bracketMatch) {
+    const tag = bracketMatch[1].trim();
+    const rest = bracketMatch[2].trim();
+    const matchedOpt = TELEMED_CASE_OPTIONS.find(
+      (o) => o.id.toLowerCase() === tag.toLowerCase() || o.fullLabel.toLowerCase() === tag.toLowerCase()
+    );
+    return {
+      caseId: matchedOpt ? matchedOpt.id : tag,
+      caseLabel: matchedOpt ? matchedOpt.label : `🩺 ${tag}`,
+      cleanReason: rest || tag,
+    };
+  }
+
+  const lower = text.toLowerCase();
+  for (const opt of TELEMED_CASE_OPTIONS) {
+    if (opt.keywords.length > 0 && opt.keywords.some((k) => lower.includes(k))) {
+      return {
+        caseId: opt.id,
+        caseLabel: opt.label,
+        cleanReason: text,
+      };
+    }
+  }
+
+  return {
+    caseId: "Others",
+    caseLabel: "📝 Others",
+    cleanReason: text,
+  };
+}
+
 interface Props {
   navigate: (screen: Screen, params?: Record<string, unknown>) => void;
   goBack: () => void;
@@ -185,10 +297,13 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   }, []);
 
   // Book Form State
+  const [selectedCase, setSelectedCase] = useState<string>("");
   const [date, setDate] = useState(() => getManilaDate());
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
-  const [errors, setErrors] = useState<{ date?: boolean; time?: boolean; reason?: boolean }>({});
+  const [errors, setErrors] = useState<{ selectedCase?: boolean; date?: boolean; time?: boolean; reason?: boolean }>({});
+  const [historyCaseFilter, setHistoryCaseFilter] = useState<string>("All");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<"All" | "Pending" | "Approved" | "Rejected">("All");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedDetails, setConfirmedDetails] = useState<{ date: string; time: string }>({ date: "", time: "" });
@@ -486,7 +601,17 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       return;
     }
 
-    const newErrors: { date?: boolean; time?: boolean; reason?: boolean } = {};
+    const selectedCaseOption = TELEMED_CASE_OPTIONS.find((o) => o.id === selectedCase);
+    if (selectedCaseOption?.isEmergency) {
+      Alert.alert(
+        "Immediate In-Person Care Required",
+        "Severe or emergency cases (such as chest pain, difficulty breathing, fainting, deep wounds, or fractures) require immediate in-person clinic or emergency attention and cannot be consulted via video call."
+      );
+      return;
+    }
+
+    const newErrors: { selectedCase?: boolean; date?: boolean; time?: boolean; reason?: boolean } = {};
+    if (!selectedCase.trim()) newErrors.selectedCase = true;
     if (!date.trim()) newErrors.date = true;
     if (!time.trim()) newErrors.time = true;
     if (!reason.trim()) newErrors.reason = true;
@@ -494,6 +619,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       const missingList: string[] = [];
+      if (newErrors.selectedCase) missingList.push("Consultation Case Category");
       if (newErrors.date) missingList.push("Preferred Date");
       if (newErrors.time) missingList.push("Preferred Time");
       if (newErrors.reason) missingList.push("Reason for Consult");
@@ -526,6 +652,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
     setIsSubmitting(true);
 
     try {
+      const formattedReason = selectedCase && !reason.trim().startsWith("[")
+        ? `[${selectedCase}] ${reason.trim()}`
+        : reason.trim();
       const res = await apiFetch(`${API_URL}/telemedicine/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -533,7 +662,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           patient: user.id,
           preferred_date: date, // format should be YYYY-MM-DD for Django DateField
           preferred_time: time,
-          reason: reason,
+          reason: formattedReason,
           status: "Pending"
         }),
       });
@@ -553,6 +682,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         setConfirmedDetails({ date, time });
         setShowConfirmation(true);
         // Keep date selected so the newly booked slot remains visible as locked
+        setSelectedCase("");
         setTime("");
         setReason("");
         setErrors({});
@@ -632,6 +762,98 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
           <View className="flex-col gap-6">
+            {/* Case Category Filter / Selector */}
+            <View className="flex-col gap-2">
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Consultation Case Category
+                </Text>
+                {selectedCase ? (
+                  <TouchableOpacity
+                    onPress={() => setSelectedCase("")}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text className="text-[11px] font-semibold text-rose-500">Clear Case</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <View
+                className="bg-white rounded-[24px] p-3.5"
+                style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.selectedCase ? "#F87171" : "#E2E8F0",
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                }}
+              >
+                <Text className="text-[11px] text-slate-500 mb-2.5 px-0.5">
+                  Select your primary symptom or case to filter telemedicine eligibility:
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {TELEMED_CASE_OPTIONS.map((opt) => {
+                    const isSelected = selectedCase === opt.id;
+                    const isEmerg = Boolean(opt.isEmergency);
+                    return (
+                      <TouchableOpacity
+                        key={opt.id}
+                        activeOpacity={0.75}
+                        onPress={() => {
+                          setSelectedCase(opt.id);
+                          setErrors((prev) => ({ ...prev, selectedCase: false }));
+                        }}
+                        className="px-3 py-2 rounded-2xl relative overflow-hidden"
+                        style={{
+                          backgroundColor: isSelected
+                            ? isEmerg
+                              ? "#DC2626"
+                              : "#002D72"
+                            : isEmerg
+                            ? "#FEF2F2"
+                            : "#F8FAFC",
+                          borderWidth: 1,
+                          borderColor: isSelected
+                            ? isEmerg
+                              ? "#DC2626"
+                              : "#002D72"
+                            : isEmerg
+                            ? "#FECACA"
+                            : "#E2E8F0",
+                        }}
+                      >
+                        <Text
+                          className="text-xs font-bold"
+                          style={{
+                            color: isSelected
+                              ? "#FFFFFF"
+                              : isEmerg
+                              ? "#B91C1C"
+                              : "#1E293B",
+                            fontFamily: "Outfit",
+                          }}
+                        >
+                          {opt.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {selectedCase === "Emergency" && (
+                  <View className="mt-3 p-3.5 rounded-2xl bg-rose-50 border border-rose-200">
+                    <Text className="text-xs font-bold text-rose-800 mb-1">
+                      ⚠️ In-Person / Emergency Care Required
+                    </Text>
+                    <Text className="text-xs text-rose-700 leading-relaxed">
+                      Severe chest pain, difficulty breathing, fainting, deep wounds, or fractures cannot be safely managed via video call. Please proceed directly to the University Clinic or nearest emergency room.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">
               <View className="flex-row items-center justify-between pl-1">
@@ -818,9 +1040,10 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 fullWidth
                 onPress={handleSubmit}
                 loading={isSubmitting}
+                disabled={selectedCase === "Emergency"}
               >
                 <Text style={{ color: "#FFFFFF", fontFamily: "Outfit" }}>
-                  Submit Request
+                  {selectedCase === "Emergency" ? "In-Person Visit Required" : "Submit Request"}
                 </Text>
               </Button>
             </View>
@@ -832,21 +1055,121 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           contentContainerStyle={{ padding: 24, paddingBottom: 120, gap: 16 }}
           refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchRequests} />}
         >
-          {isLoading && requests.length === 0 ? (
-            <View className="items-center justify-center py-16">
-              <ActivityIndicator size="small" color="#002D72" />
+          {/* Filter Cases & Status Bar in My Requests */}
+          <View className="bg-white/90 rounded-[22px] p-3.5 border border-slate-200/80 gap-3">
+            <View>
+              <View className="flex-row items-center justify-between mb-2 px-1">
+                <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Filter by Case
+                </Text>
+                {(historyCaseFilter !== "All" || historyStatusFilter !== "All") && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setHistoryCaseFilter("All");
+                      setHistoryStatusFilter("All");
+                    }}
+                  >
+                    <Text className="text-[11px] font-bold text-sky-600">Reset Filters</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                {[
+                  { id: "All", label: "All Cases" },
+                  ...TELEMED_CASE_OPTIONS.filter((o) => !o.isEmergency).map((o) => ({
+                    id: o.id,
+                    label: o.label,
+                  })),
+                ].map((c) => {
+                  const active = historyCaseFilter === c.id;
+                  return (
+                    <TouchableOpacity
+                      key={c.id}
+                      onPress={() => setHistoryCaseFilter(c.id)}
+                      className="px-3 py-1.5 rounded-full"
+                      style={{
+                        backgroundColor: active ? "#002D72" : "#F1F5F9",
+                        borderWidth: 1,
+                        borderColor: active ? "#002D72" : "#E2E8F0",
+                      }}
+                    >
+                      <Text
+                        className="text-xs font-bold"
+                        style={{
+                          color: active ? "#FFFFFF" : "#334155",
+                          fontFamily: "Outfit",
+                        }}
+                      >
+                        {c.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             </View>
-          ) : requests.length === 0 ? (
-            <View className="items-center justify-center py-16 px-4">
-              <Text
-                className="text-slate-600 text-sm font-semibold text-center"
-                style={{ fontFamily: "Outfit" }}
-              >
-                No telemedicine requests found.
-              </Text>
+
+            <View className="flex-row items-center gap-2 pt-1 border-t border-slate-100">
+              {(["All", "Pending", "Approved", "Rejected"] as const).map((st) => {
+                const active = historyStatusFilter === st;
+                return (
+                  <TouchableOpacity
+                    key={st}
+                    onPress={() => setHistoryStatusFilter(st)}
+                    className="flex-1 py-1.5 rounded-full items-center"
+                    style={{
+                      backgroundColor: active ? "#0284C7" : "#F8FAFC",
+                      borderWidth: 1,
+                      borderColor: active ? "#0284C7" : "#E2E8F0",
+                    }}
+                  >
+                    <Text
+                      className="text-[11px] font-bold"
+                      style={{ color: active ? "#FFFFFF" : "#64748B", fontFamily: "Outfit" }}
+                    >
+                      {st}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          ) : (
-            requests.map((req) => (
+          </View>
+
+          {(() => {
+            const filteredHistory = requests.filter((req) => {
+              const parsed = parseTelemedReasonCase(req.reason);
+              const matchCase = historyCaseFilter === "All" || parsed.caseId === historyCaseFilter;
+              const matchStatus =
+                historyStatusFilter === "All" ||
+                String(req.status || "").toLowerCase() === historyStatusFilter.toLowerCase();
+              return matchCase && matchStatus;
+            });
+
+            if (isLoading && requests.length === 0) {
+              return (
+                <View className="items-center justify-center py-16">
+                  <ActivityIndicator size="small" color="#002D72" />
+                </View>
+              );
+            }
+
+            if (filteredHistory.length === 0) {
+              return (
+                <View className="items-center justify-center py-16 px-4">
+                  <Text
+                    className="text-slate-600 text-sm font-semibold text-center"
+                    style={{ fontFamily: "Outfit" }}
+                  >
+                    {requests.length === 0
+                      ? "No telemedicine requests found."
+                      : `No telemedicine requests match "${historyCaseFilter}"${historyStatusFilter !== "All" ? ` (${historyStatusFilter})` : ""}.`}
+                  </Text>
+                </View>
+              );
+            }
+
+            return filteredHistory.map((req) => {
+              const parsedCase = parseTelemedReasonCase(req.reason);
+              return (
               <View
                 key={req.id}
                 className="p-5 rounded-[24px] relative overflow-hidden"
@@ -870,15 +1193,20 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   style={StyleSheet.absoluteFill}
                 />
                 <View className="flex-row justify-between items-start mb-3">
-                  <View>
+                  <View className="flex-1 mr-2">
                     <Text className="text-sm font-bold text-white mb-1" style={{ fontFamily: "Outfit" }}>{req.preferred_date}</Text>
                     <Text className="text-xs text-white/80">{formatTime12(req.preferred_time)}</Text>
+                    <View className="self-start mt-2 px-2.5 py-1 rounded-full bg-white/15 border border-white/25">
+                      <Text className="text-[11px] font-bold text-sky-200">
+                        Case: {parsedCase.caseLabel}
+                      </Text>
+                    </View>
                   </View>
                   {renderStatusBadge(req.status)}
                 </View>
 
                 <Text className="text-sm text-white/95 mb-4 bg-white/10 p-3 rounded-xl border border-white/15">
-                  "{req.reason}"
+                  "{parsedCase.cleanReason}"
                 </Text>
 
                 {req.status === "Approved" && (() => {
@@ -969,8 +1297,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   </View>
                 )}
               </View>
-            ))
-          )}
+              );
+            });
+          })()}
         </ScrollView>
       )}
 
