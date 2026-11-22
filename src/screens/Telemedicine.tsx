@@ -566,7 +566,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         `"${caseCategory}" requires physical clinic examination.`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Book In-Person", onPress: () => navigate("appointments") },
+          { text: "Book In-Person", onPress: () => navigate("appointment") },
         ]
       );
       return;
@@ -721,33 +721,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Case / Chief Complaint
                 </Text>
-                {caseCategory ? (
-                  <View
-                    className={`px-2.5 py-0.5 rounded-full ${
-                      caseRules[caseCategory] === "urgent"
-                        ? "bg-rose-100"
-                        : caseRules[caseCategory] === "in_person_only"
-                        ? "bg-amber-100"
-                        : "bg-sky-100"
-                    }`}
-                  >
-                    <Text
-                      className={`text-[10px] font-bold uppercase ${
-                        caseRules[caseCategory] === "urgent"
-                          ? "text-rose-700"
-                          : caseRules[caseCategory] === "in_person_only"
-                          ? "text-amber-800"
-                          : "text-sky-700"
-                      }`}
-                    >
-                      {caseRules[caseCategory] === "urgent"
-                        ? "Urgent Priority"
-                        : caseRules[caseCategory] === "in_person_only"
-                        ? "In-Person Only"
-                        : "Telemed Available"}
-                    </Text>
-                  </View>
-                ) : null}
               </View>
               <TouchableOpacity
                 onPress={() => setShowCasePicker(true)}
@@ -774,20 +747,6 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                 </View>
               </TouchableOpacity>
 
-              {caseCategory && caseRules[caseCategory] === "in_person_only" ? (
-                <View className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 mt-1 flex-row items-center justify-between gap-2">
-                  <Text className="text-xs font-semibold text-rose-800 flex-1">
-                    Requires physical examination at the clinic.
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => navigate("appointments")}
-                    className="bg-rose-600 px-3 py-2 rounded-xl"
-                  >
-                    <Text className="text-white text-xs font-bold">In-Person</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-
               <Modal
                 visible={showCasePicker}
                 transparent
@@ -813,44 +772,25 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                     />
                     <ScrollView showsVerticalScrollIndicator={false}>
                       {Object.entries(caseRules)
-                        .filter(([name]) => !caseSearch.trim() || name.toLowerCase().includes(caseSearch.trim().toLowerCase()))
-                        .sort((a, b) => {
-                          const order = { urgent: 0, routine: 1, in_person_only: 2 };
-                          return order[a[1]] - order[b[1]];
-                        })
-                        .map(([name, mode]) => (
+                        .filter(([name, mode]) => mode !== "in_person_only" && (!caseSearch.trim() || name.toLowerCase().includes(caseSearch.trim().toLowerCase())))
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(([name]) => (
                           <TouchableOpacity
                             key={name}
                             onPress={() => {
                               setCaseCategory(name);
                               setErrors((prev) => ({ ...prev, caseCategory: false }));
-                              if (!reason.trim() && mode !== "in_person_only") setReason(name);
+                              if (!reason.trim()) setReason(name);
                               setShowCasePicker(false);
                             }}
-                            className="py-3 px-3 border-b border-slate-100 flex-row items-center justify-between"
+                            className="py-3.5 px-3 border-b border-slate-100 flex-row items-center justify-between"
                           >
                             <Text className="text-sm font-semibold text-slate-800 flex-1 pr-2">{name}</Text>
-                            <View
-                              className={`px-2.5 py-1 rounded-full ${
-                                mode === "urgent"
-                                  ? "bg-rose-100"
-                                  : mode === "in_person_only"
-                                  ? "bg-slate-200"
-                                  : "bg-sky-100"
-                              }`}
-                            >
-                              <Text
-                                className={`text-[10px] font-bold uppercase ${
-                                  mode === "urgent"
-                                    ? "text-rose-700"
-                                    : mode === "in_person_only"
-                                    ? "text-slate-600"
-                                    : "text-sky-700"
-                                }`}
-                              >
-                                {mode === "urgent" ? "Urgent" : mode === "in_person_only" ? "In-Person" : "Available"}
-                              </Text>
-                            </View>
+                            {caseCategory === name ? (
+                              <View className="px-2.5 py-0.5 rounded-full bg-sky-100">
+                                <Text className="text-[10px] font-bold text-sky-700 uppercase">Selected</Text>
+                              </View>
+                            ) : null}
                           </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -1100,18 +1040,11 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   <View>
                     <Text className="text-sm font-bold text-white mb-1" style={{ fontFamily: "Outfit" }}>{req.preferred_date}</Text>
                     <Text className="text-xs text-white/80">{formatTime12(req.preferred_time)}</Text>
-                    {(req.case_category || req.triage_level === "Urgent") ? (
+                    {req.case_category ? (
                       <View className="flex-row items-center gap-1.5 mt-1.5 flex-wrap">
-                        {req.triage_level === "Urgent" ? (
-                          <View className="bg-rose-500 px-2 py-0.5 rounded-md">
-                            <Text className="text-[10px] font-bold text-white uppercase">Urgent Priority</Text>
-                          </View>
-                        ) : null}
-                        {req.case_category ? (
-                          <View className="bg-white/20 px-2 py-0.5 rounded-md">
-                            <Text className="text-[10px] font-semibold text-white">{req.case_category}</Text>
-                          </View>
-                        ) : null}
+                        <View className="bg-white/20 px-2 py-0.5 rounded-md">
+                          <Text className="text-[10px] font-semibold text-white">{req.case_category}</Text>
+                        </View>
                       </View>
                     ) : null}
                   </View>
