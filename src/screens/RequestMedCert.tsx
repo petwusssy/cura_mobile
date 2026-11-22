@@ -178,9 +178,8 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
       <View className="flex-row px-6 mb-4 gap-3">
         <Pressable
           onPress={() => setActiveTab("request")}
-          className={`flex-1 py-3 items-center rounded-2xl ${
-            activeTab === "request" ? "bg-white" : "bg-white/60"
-          }`}
+          className={`flex-1 py-3 items-center rounded-2xl ${activeTab === "request" ? "bg-white" : "bg-white/60"
+            }`}
           style={activeTab === "request" ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 } : {}}
         >
           <Text className={`text-xs font-bold ${activeTab === "request" ? "text-cura-900" : "text-slate-600"}`}>
@@ -189,9 +188,8 @@ export function RequestMedCertScreen({ navigate, goBack, user }: Props) {
         </Pressable>
         <Pressable
           onPress={() => setActiveTab("history")}
-          className={`flex-1 py-3 items-center rounded-2xl flex-row justify-center gap-1.5 ${
-            activeTab === "history" ? "bg-white" : "bg-white/60"
-          }`}
+          className={`flex-1 py-3 items-center rounded-2xl flex-row justify-center gap-1.5 ${activeTab === "history" ? "bg-white" : "bg-white/60"
+            }`}
           style={activeTab === "history" ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 } : {}}
         >
           <Text className={`text-xs font-bold ${activeTab === "history" ? "text-cura-900" : "text-slate-600"}`}>

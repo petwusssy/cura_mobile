@@ -187,8 +187,73 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   // Book Form State
   const [date, setDate] = useState(() => getManilaDate());
   const [time, setTime] = useState("");
+  const [caseCategory, setCaseCategory] = useState("");
+  const [showCasePicker, setShowCasePicker] = useState(false);
+  const [caseSearch, setCaseSearch] = useState("");
+  const [caseRules, setCaseRules] = useState<Record<string, "routine" | "urgent" | "in_person_only">>({
+    "Fever": "urgent",
+    "Dengue Fever": "urgent",
+    "Asthma": "urgent",
+    "Hypertension": "urgent",
+    "Hypotension": "urgent",
+    "Hypoglycemia": "urgent",
+    "Vomiting": "urgent",
+    "Diarrhea/LBM": "urgent",
+    "Acute Resp. Tract Infection": "urgent",
+    "Allergy": "urgent",
+    "Vertigo": "urgent",
+    "Hyperventilation": "urgent",
+    "UTI (urinary tract infection)": "urgent",
+    "Heat stress": "urgent",
+    "Headache": "routine",
+    "Dizziness": "routine",
+    "Cough": "routine",
+    "Colds": "routine",
+    "Sore throat": "routine",
+    "Nausea": "routine",
+    "Abdominal Pain/Stomachache": "routine",
+    "Dysmenorrhea": "routine",
+    "Rashes": "routine",
+    "Back Pain": "routine",
+    "Body pain": "routine",
+    "Eye irritation/Sore eyes": "routine",
+    "Ear pain": "routine",
+    "Stiff neck": "routine",
+    "Allergic Rhinitis": "routine",
+    "Anxiety": "routine",
+    "Body weakness/malaise": "routine",
+    "Dyspepsia": "routine",
+    "Gastritis/Hyperacidity/epigastric pain/heartburn": "routine",
+    "Joint pain": "routine",
+    "Lack of sleep": "routine",
+    "Migraine": "routine",
+    "Mouth sore": "routine",
+    "Muscle pain": "routine",
+    "Pruritus/skin irritation/skin condition": "routine",
+    "Lab works reading": "routine",
+    "Constipation": "routine",
+    "Indigestion": "routine",
+    "Sinusitis": "routine",
+    "Others": "routine",
+    "Chest pain/tightness/Palpitation": "in_person_only",
+    "Difficulty of breathing": "in_person_only",
+    "Fainting": "in_person_only",
+    "Seizure": "in_person_only",
+    "Accidents": "in_person_only",
+    "Burns": "in_person_only",
+    "Dislocation/Fracture": "in_person_only",
+    "Fracture": "in_person_only",
+    "Wounds (abrasion,laceration,puncture)": "in_person_only",
+    "Sprain": "in_person_only",
+    "Dog bite/scratch": "in_person_only",
+    "Cat bite/scratch": "in_person_only",
+    "Nose bleeding (epistaxis)": "in_person_only",
+    "Pain Right lower quadrant (T/C Appendicitis)": "in_person_only",
+    "Toothache": "in_person_only",
+    "Acute Gingivitis": "in_person_only",
+  });
   const [reason, setReason] = useState("");
-  const [errors, setErrors] = useState<{ date?: boolean; time?: boolean; reason?: boolean }>({});
+  const [errors, setErrors] = useState<{ caseCategory?: boolean; date?: boolean; time?: boolean; reason?: boolean }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedDetails, setConfirmedDetails] = useState<{ date: string; time: string }>({ date: "", time: "" });
@@ -223,6 +288,9 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         }
         if (Array.isArray(data.booked_slots)) {
           setAllTelemedRequests(data.booked_slots);
+        }
+        if (data.case_rules && typeof data.case_rules === "object") {
+          setCaseRules((prev) => ({ ...prev, ...data.case_rules }));
         }
       }
     } catch (err) {
@@ -486,14 +554,28 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       return;
     }
 
-    const newErrors: { date?: boolean; time?: boolean; reason?: boolean } = {};
+    const newErrors: { caseCategory?: boolean; date?: boolean; time?: boolean; reason?: boolean } = {};
+    if (!caseCategory.trim()) newErrors.caseCategory = true;
     if (!date.trim()) newErrors.date = true;
     if (!time.trim()) newErrors.time = true;
     if (!reason.trim()) newErrors.reason = true;
 
+    if (caseCategory && caseRules[caseCategory] === "in_person_only") {
+      Alert.alert(
+        "In-Person Visit Required",
+        `"${caseCategory}" requires physical clinic examination.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Book In-Person", onPress: () => navigate("appointments") },
+        ]
+      );
+      return;
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       const missingList: string[] = [];
+      if (newErrors.caseCategory) missingList.push("Case / Chief Complaint");
       if (newErrors.date) missingList.push("Preferred Date");
       if (newErrors.time) missingList.push("Preferred Time");
       if (newErrors.reason) missingList.push("Reason for Consult");
@@ -533,6 +615,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
           patient: user.id,
           preferred_date: date, // format should be YYYY-MM-DD for Django DateField
           preferred_time: time,
+          case_category: caseCategory,
           reason: reason,
           status: "Pending"
         }),
@@ -632,6 +715,150 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
       {activeTab === "book" ? (
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
           <View className="flex-col gap-6">
+            {/* Case / Chief Complaint */}
+            <View className="flex-col gap-1.5">
+              <View className="flex-row items-center justify-between pl-1">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Case / Chief Complaint
+                </Text>
+                {caseCategory ? (
+                  <View
+                    className={`px-2.5 py-0.5 rounded-full ${
+                      caseRules[caseCategory] === "urgent"
+                        ? "bg-rose-100"
+                        : caseRules[caseCategory] === "in_person_only"
+                        ? "bg-amber-100"
+                        : "bg-sky-100"
+                    }`}
+                  >
+                    <Text
+                      className={`text-[10px] font-bold uppercase ${
+                        caseRules[caseCategory] === "urgent"
+                          ? "text-rose-700"
+                          : caseRules[caseCategory] === "in_person_only"
+                          ? "text-amber-800"
+                          : "text-sky-700"
+                      }`}
+                    >
+                      {caseRules[caseCategory] === "urgent"
+                        ? "Urgent Priority"
+                        : caseRules[caseCategory] === "in_person_only"
+                        ? "In-Person Only"
+                        : "Telemed Available"}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowCasePicker(true)}
+                activeOpacity={0.75}
+                className="w-full bg-white rounded-[24px] px-5 py-4 flex-row items-center justify-between"
+                style={{
+                  borderWidth: 1.5,
+                  borderColor: errors.caseCategory ? "#F87171" : "#E2E8F0",
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                }}
+              >
+                <Text
+                  className="text-sm font-bold flex-1 pr-3"
+                  style={{ color: "#002D72", fontFamily: "Outfit" }}
+                >
+                  {caseCategory ? caseCategory : "Select clinic case..."}
+                </Text>
+                <View className="px-3 py-1 rounded-full bg-slate-100">
+                  <Text className="text-[11px] font-bold text-slate-600">Select</Text>
+                </View>
+              </TouchableOpacity>
+
+              {caseCategory && caseRules[caseCategory] === "in_person_only" ? (
+                <View className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 mt-1 flex-row items-center justify-between gap-2">
+                  <Text className="text-xs font-semibold text-rose-800 flex-1">
+                    Requires physical examination at the clinic.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => navigate("appointments")}
+                    className="bg-rose-600 px-3 py-2 rounded-xl"
+                  >
+                    <Text className="text-white text-xs font-bold">In-Person</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              <Modal
+                visible={showCasePicker}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowCasePicker(false)}
+              >
+                <View className="flex-1 bg-black/50 justify-end">
+                  <View className="bg-white rounded-t-[28px] p-5 max-h-[75%]">
+                    <View className="flex-row items-center justify-between mb-3">
+                      <Text className="text-base font-bold text-slate-900" style={{ fontFamily: "Outfit" }}>
+                        Select Clinic Case
+                      </Text>
+                      <TouchableOpacity onPress={() => setShowCasePicker(false)} className="px-3 py-1 rounded-full bg-slate-100">
+                        <Text className="text-xs font-bold text-slate-600">Close</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TextInput
+                      placeholder="Search cases..."
+                      placeholderTextColor="#94A3B8"
+                      value={caseSearch}
+                      onChangeText={setCaseSearch}
+                      className="bg-slate-100 rounded-2xl px-4 py-2.5 text-sm text-slate-800 mb-3"
+                    />
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                      {Object.entries(caseRules)
+                        .filter(([name]) => !caseSearch.trim() || name.toLowerCase().includes(caseSearch.trim().toLowerCase()))
+                        .sort((a, b) => {
+                          const order = { urgent: 0, routine: 1, in_person_only: 2 };
+                          return order[a[1]] - order[b[1]];
+                        })
+                        .map(([name, mode]) => (
+                          <TouchableOpacity
+                            key={name}
+                            onPress={() => {
+                              setCaseCategory(name);
+                              setErrors((prev) => ({ ...prev, caseCategory: false }));
+                              if (!reason.trim() && mode !== "in_person_only") setReason(name);
+                              setShowCasePicker(false);
+                            }}
+                            className="py-3 px-3 border-b border-slate-100 flex-row items-center justify-between"
+                          >
+                            <Text className="text-sm font-semibold text-slate-800 flex-1 pr-2">{name}</Text>
+                            <View
+                              className={`px-2.5 py-1 rounded-full ${
+                                mode === "urgent"
+                                  ? "bg-rose-100"
+                                  : mode === "in_person_only"
+                                  ? "bg-slate-200"
+                                  : "bg-sky-100"
+                              }`}
+                            >
+                              <Text
+                                className={`text-[10px] font-bold uppercase ${
+                                  mode === "urgent"
+                                    ? "text-rose-700"
+                                    : mode === "in_person_only"
+                                    ? "text-slate-600"
+                                    : "text-sky-700"
+                                }`}
+                              >
+                                {mode === "urgent" ? "Urgent" : mode === "in_person_only" ? "In-Person" : "Available"}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                  </View>
+                </View>
+              </Modal>
+            </View>
+
             {/* Preferred Date */}
             <View className="flex-col gap-1.5">
               <View className="flex-row items-center justify-between pl-1">
@@ -873,6 +1100,20 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
                   <View>
                     <Text className="text-sm font-bold text-white mb-1" style={{ fontFamily: "Outfit" }}>{req.preferred_date}</Text>
                     <Text className="text-xs text-white/80">{formatTime12(req.preferred_time)}</Text>
+                    {(req.case_category || req.triage_level === "Urgent") ? (
+                      <View className="flex-row items-center gap-1.5 mt-1.5 flex-wrap">
+                        {req.triage_level === "Urgent" ? (
+                          <View className="bg-rose-500 px-2 py-0.5 rounded-md">
+                            <Text className="text-[10px] font-bold text-white uppercase">Urgent Priority</Text>
+                          </View>
+                        ) : null}
+                        {req.case_category ? (
+                          <View className="bg-white/20 px-2 py-0.5 rounded-md">
+                            <Text className="text-[10px] font-semibold text-white">{req.case_category}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    ) : null}
                   </View>
                   {renderStatusBadge(req.status)}
                 </View>
