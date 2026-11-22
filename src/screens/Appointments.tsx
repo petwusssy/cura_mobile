@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, apiFetch, isAppForeground } from "../services/api";
+import { API_URL, apiFetch, isAppForeground, getCachedFeatureLock, setCachedFeatureLock } from "../services/api";
 import { Header, Button, Card, Badge, ComingSoonView } from "../components/Shell";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import { LiquidGlassTimePickerModal } from "../components/LiquidGlassTimePickerModal";
@@ -138,7 +138,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
-  const [isLocked, setIsLocked] = useState(true);
+  const [isLocked, setIsLocked] = useState(() => getCachedFeatureLock("appoint"));
   const [allAppointmentRequests, setAllAppointmentRequests] = useState<any[]>([]);
 
   const fetchAvailability = async () => {
@@ -159,6 +159,7 @@ export function AppointmentsScreen({ navigate, goBack, user }: Props) {
         }
         if (typeof data.is_locked === "boolean") {
           setIsLocked(data.is_locked);
+          setCachedFeatureLock("appoint", data.is_locked);
         }
       }
     } catch (err) {

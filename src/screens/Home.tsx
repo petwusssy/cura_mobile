@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Animated, Easing, useWindowDimensions, StyleSheet, Image, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, apiFetch, isAppForeground } from "../services/api";
+import { API_URL, apiFetch, isAppForeground, getCachedFeatureLock, setCachedFeatureLock } from "../services/api";
 import Svg, { Path, Polyline, Circle, Rect, Line, Defs, LinearGradient as SvgLinearGradient, Stop, G } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Screen, AppUser } from "../types";
@@ -58,7 +58,10 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
   const latestConsult = userConsultations.length > 0 ? userConsultations[0] : null;
 
   const [intakedIds, setIntakedIds] = useState<Set<string>>(new Set());
-  const [featureLocks, setFeatureLocks] = useState<{ telemed: boolean; appoint: boolean }>({ telemed: true, appoint: true });
+  const [featureLocks, setFeatureLocks] = useState<{ telemed: boolean; appoint: boolean }>(() => ({
+    telemed: getCachedFeatureLock("telemed"),
+    appoint: getCachedFeatureLock("appoint"),
+  }));
 
   useEffect(() => {
     const syncFeatureLocks = async () => {
@@ -69,6 +72,8 @@ export function HomeScreen({ navigate, user, consultations = [], notifications =
         ]);
         const tJson = tRes.status === "fulfilled" && tRes.value.ok ? await tRes.value.json() : null;
         const aJson = aRes.status === "fulfilled" && aRes.value.ok ? await aRes.value.json() : null;
+        if (typeof tJson?.is_locked === "boolean") setCachedFeatureLock("telemed", tJson.is_locked);
+        if (typeof aJson?.is_locked === "boolean") setCachedFeatureLock("appoint", aJson.is_locked);
         setFeatureLocks(prev => ({
           telemed: typeof tJson?.is_locked === "boolean" ? tJson.is_locked : prev.telemed,
           appoint: typeof aJson?.is_locked === "boolean" ? aJson.is_locked : prev.appoint,

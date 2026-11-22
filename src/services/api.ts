@@ -65,3 +65,25 @@ export function isAppForeground(): boolean {
   }
   return AppState.currentState !== 'background' && AppState.currentState !== 'inactive';
 }
+
+const memoryFeatureLocks: { telemed: boolean; appoint: boolean } = { telemed: false, appoint: false };
+try {
+  AsyncStorage.getItem('@cura_feature_locks').then((raw) => {
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.telemed === 'boolean') memoryFeatureLocks.telemed = parsed.telemed;
+        if (typeof parsed?.appoint === 'boolean') memoryFeatureLocks.appoint = parsed.appoint;
+      } catch {}
+    }
+  }).catch(() => {});
+} catch {}
+
+export function getCachedFeatureLock(key: 'telemed' | 'appoint'): boolean {
+  return memoryFeatureLocks[key];
+}
+
+export function setCachedFeatureLock(key: 'telemed' | 'appoint', locked: boolean): void {
+  memoryFeatureLocks[key] = locked;
+  AsyncStorage.setItem('@cura_feature_locks', JSON.stringify(memoryFeatureLocks)).catch(() => {});
+}

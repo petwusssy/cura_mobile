@@ -4,7 +4,7 @@ import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient";
 import { Header, Button, Card, Badge, ComingSoonView } from "../components/Shell";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL, WEB_APP_URL, apiFetch, isAppForeground, getTelemedicineCallUrl } from "../services/api";
+import { API_URL, WEB_APP_URL, apiFetch, isAppForeground, getTelemedicineCallUrl, getCachedFeatureLock, setCachedFeatureLock } from "../services/api";
 import { ADMIN_PORTAL_GRADIENT } from "../constants/theme";
 import { LiquidGlassDatePickerModal } from "../components/LiquidGlassDatePickerModal";
 import * as WebBrowser from 'expo-web-browser';
@@ -261,7 +261,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
-  const [isLocked, setIsLocked] = useState(true);
+  const [isLocked, setIsLocked] = useState(() => getCachedFeatureLock("telemed"));
   const [allTelemedRequests, setAllTelemedRequests] = useState<any[]>([]);
 
   // Remove legacy clinic-wide cache if present
@@ -285,6 +285,7 @@ export function TelemedicineScreen({ navigate, goBack, user }: Props) {
         }
         if (typeof data.is_locked === "boolean") {
           setIsLocked(data.is_locked);
+          setCachedFeatureLock("telemed", data.is_locked);
         }
         if (Array.isArray(data.booked_slots)) {
           setAllTelemedRequests(data.booked_slots);
